@@ -38,7 +38,7 @@ uint8_t lld_flash_get_sector(uint32_t addr)
 uint8_t lld_flash_get_status(uint8_t bank_x)
 {
 	uint32_t status_reg;
-	
+
 	if (bank_x == 1)
 		status_reg = FLASH->SR1;
 	else if(bank_x == 2)
