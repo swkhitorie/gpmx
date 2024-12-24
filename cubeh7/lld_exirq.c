@@ -20,7 +20,7 @@ void lld_exit_init(lld_exirq_t *obj, GPIO_TypeDef *port, uint8_t pin, uint32_t m
 	
 	HAL_NVIC_SetPriority(tmpIRQn[pin], 2, 0);
 	HAL_NVIC_EnableIRQ(tmpIRQn[pin]);
-        
+
     mcu_exit_list[pin] = obj;
 }
 
