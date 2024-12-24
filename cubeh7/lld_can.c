@@ -29,7 +29,7 @@ void lld_canframelist_reset(lld_canframelist_t *obj)
 void lld_canframelist_read(lld_canframelist_t *obj, lld_canframe_t *p)
 {
     if (lld_canframelist_size(obj) == 0) return;
-    
+
     lld_canframe_set(p, obj->buf[obj->idx_out]._identifier, 
     obj->buf[obj->idx_out]._idtype, obj->buf[obj->idx_out]._frametype,
     obj->buf[obj->idx_out]._datalength, obj->buf[obj->idx_out]._data);
