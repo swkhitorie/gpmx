@@ -7,17 +7,17 @@ file source:
         STM32Cube_FW_H7_V1.11.2\Drivers\STM32H7xx_HAL_Driver\Inc\*
         STM32Cube_FW_H7_V1.11.2\Drivers\STM32H7xx_HAL_Driver\Src\Legacy\*
         STM32Cube_FW_H7_V1.11.2\Drivers\STM32H7xx_HAL_Driver\Inc\Legacy\*
-	./dev:
+    ./dev:
         STM32Cube_FW_H7_V1.11.2\Drivers\CMSIS\Device\ST\STM32H7xx\Include\stm32h7*.h
-	./template/arm:
+    ./template/arm:
         STM32Cube_FW_H7_V1.11.2\Drivers\CMSIS\Device\ST\STM32H7xx\Source\Templates\arm\*
-	./template/gcc:
+    ./template/gcc:
         STM32Cube_FW_H7_V1.11.2\Drivers\CMSIS\Device\ST\STM32H7xx\Source\Templates\gcc\*
-	./template/arm/linker:
+    ./template/arm/linker:
         STM32Cube_FW_H7_V1.11.2\Drivers\CMSIS\Device\ST\STM32H7xx\Source\Templates\arm\linker\*
-	./template/gcc/linker:
+    ./template/gcc/linker:
         STM32Cube_FW_H7_V1.11.2\Drivers\CMSIS\Device\ST\STM32H7xx\Source\Templates\gcc\linker\*
-	./template:
+    ./template:
         STM32Cube_FW_H7_V1.11.2\Drivers\CMSIS\Device\ST\STM32H7xx\Include\system_stm32h7xx.h
         STM32Cube_FW_H7_V1.11.2\Drivers\CMSIS\Device\ST\STM32H7xx\Source\Templates\system_stm32h7xx.c
         STM32Cube_FW_H7_V1.11.2\Projects\STM32H743I-EVAL\Templates\Src\stm32h7xx_it.c
