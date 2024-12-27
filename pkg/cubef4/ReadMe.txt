@@ -9,6 +9,7 @@ file source:
         STM32Cube_FW_F4_V1.28.0\Drivers\STM32F4xx_HAL_Driver\Inc\Legacy\*
     ./dev:
         STM32Cube_FW_F4_V1.28.0\Drivers\CMSIS\Device\ST\STM32F4xx\Include\stm32f4*.h
+        STM32Cube_FW_F4_V1.28.0\Drivers\CMSIS\Device\ST\STM32F4xx\Include\system_stm32h7xx.h
     ./template/arm:
         STM32Cube_FW_F4_V1.28.0\Drivers\CMSIS\Device\ST\STM32F4xx\Source\Templates\arm\*
     ./template/gcc:
@@ -18,7 +19,6 @@ file source:
     ./template/gcc/linker:
         (gcc startup file and gcc link file, for STM32F427VIT6(fmu-v2))
     ./template:
-        STM32Cube_FW_F4_V1.28.0\Drivers\CMSIS\Device\ST\STM32F4xx\Include\system_stm32h7xx.h
         STM32Cube_FW_F4_V1.28.0\Drivers\CMSIS\Device\ST\STM32F4xx\Source\Templates\system_stm32h7xx.c
         STM32Cube_FW_F4_V1.28.0\Projects\STM32F401RE-Nucleo\Templates\Inc\stm32f4xx_it.h
         STM32Cube_FW_F4_V1.28.0\Projects\STM32F401RE-Nucleo\Templates\Src\stm32f4xx_it.c
