@@ -6,8 +6,6 @@
 #include <stdbool.h>
 #include "stm32h7xx.h"
 
-#define SECTIONS_H7_RAMD1 ".RAM_D1"
-
 typedef enum __lld_rwway {
     RWPOLL,
     RWIT,
