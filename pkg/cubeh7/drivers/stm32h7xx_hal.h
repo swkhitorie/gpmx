@@ -26,7 +26,7 @@
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32h7xx_hal_conf.h"
+#include "board_sdk_config.h"
 
 /** @addtogroup STM32H7xx_HAL_Driver
   * @{

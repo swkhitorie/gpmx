@@ -1,4 +1,5 @@
 
+drivers/stm32h7xx_hal.h change #include "stm32h7xx_hal_conf.h" into #include "board_sdk_config.h"
 file source:
     ./core:
         STM32Cube_FW_H7_V1.11.2\Drivers\CMSIS\Core\Include\*

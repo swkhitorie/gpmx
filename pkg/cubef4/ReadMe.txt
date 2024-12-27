@@ -1,4 +1,5 @@
 
+drivers/stm32f4xx_hal.h change #include "stm32f4xx_hal_conf.h" into #include "board_sdk_config.h"
 file source:
     ./core:
         STM32Cube_FW_F4_V1.28.0\Drivers\CMSIS\Core\Include\*
