@@ -139,7 +139,7 @@ void board_config_power_rcc()
     __HAL_RCC_BKPRAM_CLKAM_ENABLE();
     __HAL_RCC_D3SRAM1_CLKAM_ENABLE();
 
-	for (int i = 0; i < 1000 * 10; i++);
+	for (int i = 0; i < 3000; i++);
 }
 
 void board_config_io()
@@ -201,7 +201,7 @@ void board_init()
 
     BOARD_BLUE_LED(false);
 
-    HAL_Delay(800);
+    HAL_Delay(400);
 
     board_usb_init();
 }
