@@ -1,5 +1,4 @@
 /**
- * board_sdk_config.h included by stm32h7xx_hal.h
  * same with stm32h7xx_hal_conf.h
  */
 #ifndef BOARD_SDK_CONFIG_H_
@@ -10,7 +9,7 @@
 #endif
 
 #if !defined(HSE_VALUE)
-#define HSE_VALUE               ((uint32_t)25000000)
+#define HSE_VALUE               ((uint32_t)16000000)
 #endif
 
 #if !defined(LSE_VALUE)

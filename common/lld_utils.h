@@ -3,8 +3,8 @@
  *
  * Generally used tools function
 */
-#ifndef __PLAFTORM_DEFINE_H_
-#define __PLAFTORM_DEFINE_H_
+#ifndef LLD_UTILS_H_
+#define LLD_UTILS_H_
 
 #ifdef __cplusplus
 extern "C" {

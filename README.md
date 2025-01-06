@@ -1,2 +1,2 @@
-# edrvlib
-Basic peripheral driver package based on MCU SDK provided by different manufacturers
+# BSP
+Board support packages and driver programs based on chips from different manufacturers
