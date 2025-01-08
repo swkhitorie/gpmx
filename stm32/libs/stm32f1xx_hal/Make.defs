@@ -1,0 +1,47 @@
+
+LIB_CINCDIRS += device
+
+LIB_CINCDIRS += hal_driver
+LIB_CSRCS += hal_driver/stm32f1xx_hal.c
+LIB_CSRCS += hal_driver/stm32f1xx_hal_cortex.c
+LIB_CSRCS += hal_driver/stm32f1xx_hal_pwr.c
+LIB_CSRCS += hal_driver/stm32f1xx_hal_pwr_ex.c
+LIB_CSRCS += hal_driver/stm32f1xx_hal_rcc.c
+LIB_CSRCS += hal_driver/stm32f1xx_hal_rcc_ex.c
+LIB_CSRCS += hal_driver/stm32f1xx_hal_gpio.c
+LIB_CSRCS += hal_driver/stm32f1xx_hal_exti.c
+LIB_CSRCS += hal_driver/stm32f1xx_hal_dma.c
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_FLASH),y)
+LIB_CSRCS += hal_driver/stm32f1xx_hal_flash.c
+LIB_CSRCS += hal_driver/stm32f1xx_hal_flash_ex.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_IWDG),y)
+LIB_CSRCS += hal_driver/stm32f1xx_hal_iwdg.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_RTC),y)
+LIB_CSRCS += hal_driver/stm32f1xx_hal_rtc.c
+LIB_CSRCS += hal_driver/stm32f1xx_hal_rtc_ex.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_I2C),y)
+LIB_CSRCS += hal_driver/stm32f1xx_hal_i2c.c
+LIB_CSRCS += hal_driver/stm32f1xx_hal_i2c_ex.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_USART),y)
+LIB_CSRCS += hal_driver/stm32f1xx_hal_uart.c
+LIB_CSRCS += hal_driver/stm32f1xx_hal_usart.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_SPI),y)
+LIB_CSRCS += hal_driver/stm32f1xx_hal_spi.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_BASTIM),y)
+LIB_CSRCS += hal_driver/stm32f1xx_hal_tim.c
+LIB_CSRCS += hal_driver/stm32f1xx_hal_tim_ex.c
+endif
+
