@@ -11,37 +11,34 @@ BSP_LIBCONFIG_STM32_HAL_USART := y
 BSP_LIBCONFIG_STM32_HAL_SPI   := y
 BSP_LIBCONFIG_STM32_HAL_BASTIM:= y
 
-BSP_CDEFS := STM32H743
-BSP_CDEFS += USE_HAL_DRIVER
+BSP_BOARD_CDEFS := STM32H743
+BSP_BOARD_CDEFS += USE_HAL_DRIVER
 
 include libs/bsp_libs_stm32.mk
 
-LIB_DRVCINCDIRS = ${addprefix libs/,${LIB_DRVCINCDIRS}}
-LIB_DRVCSRCS = ${addprefix libs/,${LIB_DRVCSRCS}}
+BSP_LIB_DRVCINCDIRS = ${addprefix libs/,${LIB_DRVCINCDIRS}}
+BSP_LIB_DRVCSRCS = ${addprefix libs/,${LIB_DRVCSRCS}}
 
-LIB_CINCDIRS = ${addprefix libs/,${LIB_DRVCINCDIRS}}
-LIB_CSRCS = ${addprefix libs/,${LIB_DRVCSRCS}}
+BSP_LIB_CINCDIRS = ${addprefix libs/,${LIB_DRVCINCDIRS}}
+BSP_LIB_CSRCS = ${addprefix libs/,${LIB_DRVCSRCS}}
 
-BSP_CINCDIRS += ${LIB_DRVCINCDIRS}
-BSP_CINCDIRS += ${LIB_CINCDIRS}
+BSP_BOARD_CSRCS += ${LIB_CSRCS}
+BSP_BOARD_CSRCS += ${LIB_DRVCSRCS}
+BSP_BOARD_CSRCS += board_irq.c
+BSP_BOARD_CSRCS += board_rcc_init.c
+BSP_BOARD_CSRCS += board_usb.c
+BSP_BOARD_CSRCS += board_init.c
+BSP_BOARD_CSRCS += board_bsp.c
 
-BSP_CSRCS += ${LIB_CSRCS}
-BSP_CSRCS += ${LIB_DRVCSRCS}
-BSP_CSRCS += board_irq.c
-BSP_CSRCS += board_rcc_init.c
-BSP_CSRCS += board_usb.c
-BSP_CSRCS += board_init.c
-BSP_CSRCS += board_bsp.c
+BSP_BOARD_ENTRY_POINT :=  Reset_Handler
 
-BSP_ENTRY_POINT :=  Reset_Handler
-
-BSP_ASMSOURCES += fankeh7_startup_gcc.s
-BSP_LNK_FILE   += fankeh7_lnk_gcc.ld
+BSP_BOARD_ASMSOURCES += fankeh7_startup_gcc.s
+BSP_BOARD_LNK_FILE   += fankeh7_lnk_gcc.ld
 
 # user use values: 
-# BSP_CDEFS
+# BSP_BOARD_CDEFS
 # BSP_CINCDIRS     (need add user path prefix)
-# BSP_CSRCS        (need add user path prefix)
-# BSP_ASMSOURCES   (need add user path prefix)
-# BSP_LNK_FILE     (need add user path prefix)
-# BSP_ENTRY_POINT
+# BSP_BOARD_CSRCS        (need add user path prefix)
+# BSP_BOARD_ASMSOURCES   (need add user path prefix)
+# BSP_BOARD_LNK_FILE     (need add user path prefix)
+# BSP_BOARD_ENTRY_POINT
