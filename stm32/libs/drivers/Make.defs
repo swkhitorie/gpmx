@@ -1,6 +1,7 @@
 
 LIB_DRVCINCDIRS += include
 
+LIB_DRVCSRCS += lld_utils.c
 LIB_DRVCSRCS += lld_gpio.c
 LIB_DRVCSRCS += lld_exirq.c
 
