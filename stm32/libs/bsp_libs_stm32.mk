@@ -27,4 +27,4 @@ LIB_CINCDIRS = ${addprefix ${BSP_ROOT}/stm32/libs/stm32h7xx_hal/,${LIB_DRVCINCDI
 LIB_CSRCS = ${addprefix ${BSP_ROOT}/stm32/libs/stm32h7xx_hal/,${LIB_DRVCSRCS}}
 endif
 
-LIB_CINCDIRS += cmsis
+LIB_CINCDIRS += ${BSP_ROOT}/stm32/libs/cmsis
