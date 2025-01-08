@@ -1,4 +1,6 @@
 #include "board_config.h"
+#include <lld_uart.h>
+
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
