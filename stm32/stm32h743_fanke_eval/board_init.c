@@ -201,7 +201,5 @@ void board_init()
 
     BOARD_BLUE_LED(false);
 
-    HAL_Delay(400);
-
-    board_usb_init();
+    board_bsp_init();
 }

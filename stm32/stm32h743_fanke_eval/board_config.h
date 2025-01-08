@@ -73,6 +73,13 @@ void board_usb_init();
  */
 void board_init();
 
+/**
+ * initialize bsp
+ * 1. serial com, with redirectly printf
+ * 2. ...
+ */
+void board_bsp_init();
+
 #ifdef __cplusplus
 }
 #endif

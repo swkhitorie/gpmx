@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "stm32h7xx.h"
+#include "script_macros.h"
 
 typedef enum __lld_rwway {
     RWPOLL,
