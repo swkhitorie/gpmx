@@ -8,7 +8,7 @@ endif
 
 ifeq (${BSP_LIBCONFIG_STM32_SERIES},BSP_STM32_G0)
 
-include ${BSP_ABSROOTDIR}/stm32/libs/stm32f1xx_hal/Make.defs
+include ${BSP_ABSROOTDIR}/stm32/libs/stm32g0xx_hal/Make.defs
 TMPHAL_CINCDIRS = ${addprefix ${BSP_ROOT}/stm32/libs/stm32g0xx_hal/,${LIBHAL_CINCDIRS}}
 TMPHAL_CSRCS = ${addprefix ${BSP_ROOT}/stm32/libs/stm32g0xx_hal/,${LIBHAL_CSRCS}}
 
