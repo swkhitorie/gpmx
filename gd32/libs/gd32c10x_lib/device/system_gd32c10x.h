@@ -45,7 +45,7 @@ extern "C" {
 
 /* system clock frequency (core clock) */
 extern uint32_t SystemCoreClock;
-
+extern volatile uint32_t CoreTick;
 /* function declarations */
 /* initialize the system and update the SystemCoreClock variable */
 extern void SystemInit (void);
