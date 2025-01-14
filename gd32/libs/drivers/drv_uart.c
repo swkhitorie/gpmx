@@ -77,6 +77,13 @@ void drv_uart_attr_init(struct drv_uart_attr_t *obj,
     obj->priority = priority;
 }
 
+void drv_uart_buff_init(struct drv_uart_t *obj, uint8_t *txbuf, uint16_t tlen,
+                        uint8_t *rxbuf, uint16_t rlen)
+{
+    devbuf_init(&obj->tx_buf, txbuf, tlen);
+    devbuf_init(&obj->rx_buf, rxbuf, rlen);
+}
+
 /**
  * init uart with configure obj of uart, uart_tx_dma, uart_rx_dma
  * if dma is not used, give param with NULL
@@ -158,13 +165,6 @@ void drv_uart_init(uint8_t num, struct drv_uart_t *obj,
     
     obj->tx_busy = false;
     drv_uart_list[num] = obj;
-}
-
-void drv_uart_buff_init(struct drv_uart_t *obj, uint8_t *txbuf, uint16_t tlen,
-                        uint8_t *rxbuf, uint16_t rlen)
-{
-    devbuf_init(&obj->tx_buf, txbuf, tlen);
-    devbuf_init(&obj->rx_buf, rxbuf, rlen);
 }
 
 /**

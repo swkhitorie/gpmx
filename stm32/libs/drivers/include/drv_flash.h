@@ -1,24 +1,16 @@
-#ifndef __LLD_FLASH_H_
-#define __LLD_FLASH_H_
+#ifndef DRV_FLASH_H_
+#define DRV_FLASH_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "drv_common.h"
 
-/**
- * low level driver for stm32h7 series, base on cubehal library
- * module cpu flash
-*/
+#define STM32_FLASH_BASE_ADDR       (0x08000000)
+#define STM32_FLASH_END_ADDR        (0x081FFFFF)
 
-#include "lld_h7_global.h"
-
-#define NOR_FLASH_BASE_ADDR		(0x08000000)
-#define NOR_FLASH_END_ADDR		(0x081FFFFF)
-#define NOR_FLASH_WAIT_TIME		(50000)
-#define NOR_FLASH_PROGRAMM_WORD	(8)
+#define STM32_FLASH_WAIT_TIME       (50000)
+#define STM32_FLASH_PROGRAMM_WORD   (8)
 
 /**
- * @brief Flash Features -->
+ *        H7xx Flash Features -->
  *		  max memory capacity is 2MB
  *		  h7 flash is 266bits word memory, each word includes -->
  *		  one flash word( 8 memory word, or 32 bytes, 256bits)
@@ -49,8 +41,13 @@ extern "C" {
 	|================================================================================================|
 */
 
-uint8_t lld_flash_write(uint32_t WriteAddr, uint32_t *pBuffer, uint32_t NumToWrite);
-void lld_flash_read(uint32_t ReadAddr, uint32_t *pBuffer, uint32_t NumToRead);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+uint8_t drv_flash_write(uint32_t addr, const uint32_t *p, uint32_t len);
+
+void drv_flash_read(uint32_t addr, uint32_t *p, uint32_t len);
 
 #ifdef __cplusplus
 }

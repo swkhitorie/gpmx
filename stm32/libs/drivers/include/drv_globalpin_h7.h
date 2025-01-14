@@ -1,30 +1,26 @@
 
-#ifndef __LLD_H7_GLOBALPIN_H_
-#define __LLD_H7_GLOBALPIN_H_
+#ifndef __DRV_GLOBALPIN_H7_H_
+#define __DRV_GLOBALPIN_H7_H_
 
 #include <stdint.h>
 #include <stdbool.h>
 #include "stm32h7xx.h"
-#include "script_macros.h"
-
-typedef enum __lld_rwway {
-    RWPOLL,
-    RWIT,
-    RWDMA
-} lld_rwway;
 
 /**
  * @brief the abstraction of peripherals's pin resource
 */
 struct pin_node{
-	GPIO_TypeDef *gpio_port;
-	uint8_t pin_num;
+	GPIO_TypeDef *port;
+	uint8_t pin;
 	uint32_t alternate;
 };
 
 #define INDEX(a)  a
-#define PINNODE(a) (a)
-//#define PINNODE(a) reinterpret_cast<a>
+#ifdef cplusplus
+    #define PINNODE(a) reinterpret_cast<a>
+#else
+    #define PINNODE(a) (a)
+#endif
 
 /**
  * @brief 
@@ -125,7 +121,6 @@ static const struct pin_node uart8_pinctrl[2][2] = {
 #define		TIM_PIN_ETR  			4				
 #define		TIM_PIN_TYPE_NUM		5
 static const uint8_t tim_max_selection_number[8] = { 3, 3, 3, 2, 2, 0, 0, 4 };
-
 
 
 static const struct pin_node timer1_pinctrl[5][3] = {
