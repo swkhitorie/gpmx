@@ -1,4 +1,8 @@
 #include "board_config.h"
+#ifdef RTOS_FR
+#include "FreeRTOS.h"
+#include "task.h"
+#endif
 
 void NMI_Handler(void) {}
 void HardFault_Handler(void) {}
@@ -11,13 +15,13 @@ void DebugMon_Handler(void) {}
 // {
 // }
 
-#include "FreeRTOS.h"
-#include "task.h"
 void SysTick_Handler(void)
 {
+#ifdef RTOS_FR
     if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
         xPortSysTickHandler();
     }
+#endif
     HAL_IncTick();
 }
 

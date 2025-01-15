@@ -46,7 +46,7 @@
 #define STM32_APB2_TIM8_CLKIN   (2*STM32_PCLK2_FREQUENCY)
 
 #ifdef __cplusplus
-    extern "C" {
+extern "C" {
 #endif
 
 void board_irqreset();
