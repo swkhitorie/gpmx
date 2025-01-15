@@ -37,7 +37,7 @@ FR_CSOURCES += mm/heap_5.c
 endif
 
 include ${FR_ROOTDIR}/libs/frtos_libs_defs.mk
-FR_CSOURCES += ${addprefix libs/,${FR_LIB_CSOURCES}}
+FR_CSOURCES += ${FR_LIB_CSOURCES}
 
 ifeq (${CONFIG_FR_POSIX},y)
 FR_CINCDIRS += include

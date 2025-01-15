@@ -8,6 +8,6 @@ FR_LIB_CSOURCES += $(subst ${FR_ROOTDIR}/,,$(wildcard ${FR_ROOTDIR}/libs/semapho
 FR_LIB_CSOURCES += $(subst ${FR_ROOTDIR}/,,$(wildcard ${FR_ROOTDIR}/libs/time/*c))
 FR_LIB_CSOURCES += $(subst ${FR_ROOTDIR}/,,$(wildcard ${FR_ROOTDIR}/libs/timer/*c))
 FR_LIB_CSOURCES += $(subst ${FR_ROOTDIR}/,,$(wildcard ${FR_ROOTDIR}/libs/unistd/*c))
-FR_LIB_CSOURCES += utils.c
+FR_LIB_CSOURCES += libs/utils.c
 endif
 
