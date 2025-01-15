@@ -47,5 +47,5 @@ PROJ_CDEFS += BSP_COM_PRINTF
 PROJ_CINCDIRS += app
 
 CPPSOURCES += app/stm32h743_eval/app_main.cpp
-
+CSOURCES += app/stm32h743_eval/app_syscall.c
 

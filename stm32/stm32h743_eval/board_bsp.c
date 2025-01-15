@@ -27,13 +27,10 @@ void board_debug()
 
 
 #ifdef BSP_COM_PRINTF
-#include <sys/stat.h>
 #include <stdlib.h>
-#include <errno.h>
 #include <stdio.h>
-#include <signal.h>
 FILE __stdin, __stdout, __stderr;
-__attribute__((weak)) int _write(int file, char *ptr, int len)
+int _write(int file, char *ptr, int len)
 {
     const int stdin_fileno = 0;
     const int stdout_fileno = 1;
@@ -43,21 +40,5 @@ __attribute__((weak)) int _write(int file, char *ptr, int len)
     }
     return len;
 }
-int _getpid(void)
-{
-    return 1;
-}
-int _kill(int pid, int sig)
-{
-    (void)pid;
-    (void)sig;
-    errno = EINVAL;
-    return -1;
-}
 
-void _exit (int status)
-{
-    _kill(status, -1);
-    while (1) {}    /* Make sure we hang here */
-}
 #endif
