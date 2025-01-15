@@ -48,7 +48,7 @@ enum iomode {
 extern struct drv_pin_t *drv_external_irq_pin_list[GPIO_EXTERNAL_IRQ_LINE_NUM];
 
 #ifdef cplusplus
-  extern "C" {
+extern "C" {
 #endif
 
 struct drv_pin_t drv_gpio_init(GPIO_TypeDef *port, uint32_t pin, uint32_t mode, 
