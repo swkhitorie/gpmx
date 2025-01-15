@@ -1,9 +1,0 @@
-
-#PROJ_OPENOCD_DEBUG := stlink
-#PROJ_OPENOCD_CHIP := stm32h7x
-#PROJ_OPENOCD_LOAD_ADDR := 0x08000000
-
-# example:
-# make program PROJ_OPENOCD_DEBUG=stlink PROJ_OPENOCD_CHIP=stm32h7x -j4
-
-

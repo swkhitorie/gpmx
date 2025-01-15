@@ -18,4 +18,12 @@ TC_OPENOCD_PATH := D:\envir\openocd\xpack-openocd-0.11.0-1
 # including common build makefile
 include $(MAKEFILES_ROOTDIR)/common/build.mk
 
+#PROJ_OPENOCD_DEBUG := stlink
+#PROJ_OPENOCD_CHIP := stm32h7x
+#PROJ_OPENOCD_LOAD_ADDR := 0x08000000
+
+# example:
+# make program PROJ_OPENOCD_DEBUG=stlink PROJ_OPENOCD_CHIP=stm32h7x -j4
+
 all: prebuild build postbuild
+
