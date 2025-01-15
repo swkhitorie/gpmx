@@ -49,3 +49,8 @@ FR_CSOURCES += ${addprefix usb/,${USB_CSOURCES}}
 FR_CINCDIRS += ${addprefix usb/,${USB_CINCDIRS}}
 endif
 
+ifeq (${CONFIG_FR_PX4_SUPPORT},y)
+include ${FR_ROOTDIR}/usb/usb.mk
+FR_CSOURCES += px4/stm/hrt.c
+FR_CPPSOURCES += px4/ptasks.cpp
+endif
