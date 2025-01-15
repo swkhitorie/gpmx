@@ -296,6 +296,11 @@ int drv_uart_send(struct drv_uart_t *obj, const uint8_t *p, uint16_t len, enum _
     return true;
 }
 
+devbuf_t drv_uart_devbuf(struct drv_uart_t *obj)
+{
+    return obj->rx_buf;
+}
+
 void drv_uart_irq(struct drv_uart_t *obj)
 {
     if (obj == NULL) return;

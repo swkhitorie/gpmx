@@ -45,14 +45,17 @@ enum iomode {
     IOMODE_IT_BOTH = GPIO_MODE_IT_RISING_FALLING,
 };
 
-extern struct drv_pin_t *drv_external_irq_pin_list[CONFIG_DRV_GPIO_EXTERNAL_IRQ_LINE_NUM];
+extern struct drv_pin_irq_t *drv_external_irq_pin_list[CONFIG_DRV_GPIO_EXTERNAL_IRQ_LINE_NUM];
 
 #ifdef cplusplus
 extern "C" {
 #endif
 
+void drv_gpio_irq_init(struct drv_pin_irq_t *obj, uint32_t priority, void (*entry)());
+
 struct drv_pin_t drv_gpio_init(GPIO_TypeDef *port, uint32_t pin, uint32_t mode, 
                     uint32_t pull, uint32_t speed, uint32_t alternate, struct drv_pin_irq_t *irq);
+
 void drv_gpio_deinit(struct drv_pin_t *obj);
 void drv_gpio_write(struct drv_pin_t *obj, uint8_t val);
 uint8_t drv_gpio_read(struct drv_pin_t *obj);

@@ -86,13 +86,17 @@ void drv_uart_init(uint8_t num, struct drv_uart_t *obj,
 void drv_uart_buff_init(struct drv_uart_t *obj, uint8_t *txbuf, uint16_t tlen,
                         uint8_t *rxbuf, uint16_t rlen);
 
-int drv_uart_send(struct drv_uart_t *obj, const uint8_t *p, uint16_t len, enum __drv_rwway way);
-
 void drv_uart_irq(struct drv_uart_t *obj);
 
 void drv_uart_txdma_irq(struct drv_uart_t *obj);
 
 void drv_uart_rxdma_irq(struct drv_uart_t *obj);
+
+/* operation need thread safe */
+int drv_uart_send(struct drv_uart_t *obj, const uint8_t *p, uint16_t len, enum __drv_rwway way);
+
+/* operation need thread safe */
+devbuf_t drv_uart_devbuf(struct drv_uart_t *obj);
 
 #ifdef cplusplus
 }

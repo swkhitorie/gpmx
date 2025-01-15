@@ -1,10 +1,5 @@
 #include "board_config.h"
 
-void board_usb_init()
-{
-    cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
-}
-
 void usb_dc_low_level_init(uint8_t busid)
 {
 	/* select usb clock -> PLL3Q 48M, from HSE */

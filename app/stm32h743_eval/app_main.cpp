@@ -7,7 +7,7 @@ int main(int argc, char *argv[])
 
     uint32_t m = HAL_GetTick();
     for (;;) {
-        if (HAL_GetTick() - m >= 100) {
+        if (HAL_GetTick() - m >= 200) {
             m = HAL_GetTick();
             board_debug();
         }

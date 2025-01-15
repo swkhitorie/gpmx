@@ -3,13 +3,6 @@
 static void board_config_mmu();
 static void board_config_cache();
 static void board_config_power_rcc();
-static void board_config_sdk();
-static void board_config_io();
-
-void board_config_sdk()
-{
-    HAL_Init();
-}
 
 void board_config_cache()
 {
@@ -142,20 +135,7 @@ void board_config_power_rcc()
 	for (int i = 0; i < 3000; i++);
 }
 
-void board_config_io()
-{
-	GPIO_InitTypeDef obj;
-    __HAL_RCC_GPIOH_CLK_ENABLE();
-
-	// Blue Led
-	obj.Pin = GPIO_nLED_BLUE_PIN;
-	obj.Mode = GPIO_MODE_OUTPUT_PP;
-	obj.Pull = GPIO_NOPULL;
-	obj.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-	HAL_GPIO_Init(GPIO_nLED_BLUE_PORT, &obj);
-}
-
-void board_irqreset()
+void board_irq_reset()
 {
     /* clear RCC and all periphal interrupt */
     HAL_RCC_DeInit();
@@ -178,28 +158,19 @@ void board_reboot()
     NVIC_SystemReset();
 }
 
-void board_blue_led_toggle()
-{
-	int val = HAL_GPIO_ReadPin(GPIO_nLED_BLUE_PORT, GPIO_nLED_BLUE_PIN);
-	HAL_GPIO_WritePin(GPIO_nLED_BLUE_PORT, GPIO_nLED_BLUE_PIN, !val);
-}
-
 void board_init()
 {
     SCB->VTOR = APP_LOAD_ADDRESS;
-    board_irqreset();
+
+    board_irq_reset();
 
     board_config_mmu();
 
     board_config_cache();
 
-    board_config_sdk();
+    HAL_Init();
 
     board_config_power_rcc();
-
-    board_config_io();
-
-    BOARD_BLUE_LED(false);
 
     board_bsp_init();
 }

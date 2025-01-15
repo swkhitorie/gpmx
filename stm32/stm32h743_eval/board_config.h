@@ -16,10 +16,10 @@
 #define __FPU_USED            1
 
 #define GPIO_nLED_BLUE_PORT   (GPIOH)
-#define GPIO_nLED_BLUE_PIN    (GPIO_PIN_7)
+#define GPIO_nLED_BLUE_PIN    (7)
 
 #define BOARD_BLUE_LED(on_true)  HAL_GPIO_WritePin(GPIO_nLED_BLUE_PORT, \
-                                    GPIO_nLED_BLUE_PIN, !(on_true))
+                                    (0x01<<GPIO_nLED_BLUE_PIN), !(on_true))
 
 #define STM32_PLLCFG_PLL1M       (5)
 #define STM32_PLLCFG_PLL1N       (160)
@@ -49,7 +49,7 @@
 extern "C" {
 #endif
 
-void board_irqreset();
+void board_irq_reset();
 
 void board_reboot();
 
@@ -69,14 +69,6 @@ void board_init();
  * 2. ...
  */
 void board_bsp_init();
-
-/**
- * initialize cherryusb module
- * 1. usb clock
- * 2. cherry usb
- * 3. usb dm dp
- */
-void board_usb_init();
 
 void board_blue_led_toggle();
 
