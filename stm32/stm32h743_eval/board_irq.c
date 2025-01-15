@@ -18,7 +18,7 @@ void PendSV_Handler(void) {}
 
 #ifdef BSP_MODULE_FR
 #include <FreeRTOS.h>
-#include <tasks.h>
+#include <task.h>
 #endif
 void SysTick_Handler(void)
 {
