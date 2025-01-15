@@ -13,8 +13,8 @@ else ifeq (${CONFIG_FR_ARCH},m0)
 FR_PLATFORM := cortex_m0
 endif
 
-FR_CINCDIRS += arch/${CONFIG_FR_ARCH}/${CONFIG_FR_TOOLCHAIN}
-FR_CSOURCES += arch/${CONFIG_FR_ARCH}/${CONFIG_FR_TOOLCHAIN}/port.c
+FR_CINCDIRS += arch/${FR_PLATFORM}/${CONFIG_FR_TOOLCHAIN}
+FR_CSOURCES += arch/${FR_PLATFORM}/${CONFIG_FR_TOOLCHAIN}/port.c
 
 FR_CSOURCES += sched/event_groups.c
 FR_CSOURCES += sched/list.c
