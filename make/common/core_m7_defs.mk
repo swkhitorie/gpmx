@@ -39,7 +39,7 @@ CORE_ASMOPTS:=\
   -mcpu=cortex-m7                  \
   -mthumb                          \
   -mthumb-interwork
-  
+
 CORE_COPTS:=\
   -mcpu=cortex-m7                  \
   -mfpu=fpv5-d16                   \

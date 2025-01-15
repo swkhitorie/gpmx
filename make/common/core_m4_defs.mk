@@ -40,7 +40,7 @@ CORE_ASMOPTS:=\
   -mcpu=cortex-m4                  \
   -mthumb                          \
   -mthumb-interwork
-  
+
 CORE_COPTS:=\
   -mcpu=cortex-m4                  \
   -mfpu=fpv4-sp-d16                \
@@ -56,5 +56,5 @@ CORE_LIBOPTS:=\
   -mfloat-abi=hard                 \
   -mthumb                          \
   -mthumb-interwork
-  
+
 endif # TC_NAME - gae

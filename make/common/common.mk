@@ -13,7 +13,7 @@ include ${MAKEFILES_ROOTDIR}/common/macros.mk
 #####################################
 
 # folder for tools
-TOOLS_DIR := ${SDK_ROOTDIR}/tools
+TOOLS_DIR := ${MAKEFILES_ROOTDIR}/tools
 
 # folder for common makefiles
 MAKEFILES_COMMONDIR := ${MAKEFILES_ROOTDIR}/common

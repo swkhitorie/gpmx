@@ -17,6 +17,24 @@ endif # TC_NAME - arm clang
 
 ifeq (${TC_NAME},gae)
 
+CORE_ASMOPTS:=\
+  -mcpu=cortex-m3                  \
+  -mthumb                          \
+  -mthumb-interwork
 
-  
+CORE_COPTS:=\
+  -mcpu=cortex-m3                  \
+  -mfloat-abi=soft                 \
+  -mthumb                          \
+  -mthumb-interwork                \
+  -mapcs-frame                     \
+  -mapcs-stack-check
+
+CORE_LIBOPTS:=\
+  -mcpu=cortex-m3                  \
+  -mfloat-abi=soft                 \
+  -mthumb                          \
+  -mthumb-interwork
+
+
 endif # TC_NAME - gae
