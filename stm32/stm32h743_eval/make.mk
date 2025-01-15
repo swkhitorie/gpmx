@@ -19,6 +19,7 @@ include ${BSP_ABSROOTDIR}/stm32/libs/bsp_libs_stm32.mk
 
 BOARD_CDEFS := STM32H743xx
 BOARD_CDEFS += USE_HAL_DRIVER
+BOARD_CDEFS := DRV_BSP_H7
 
 BOARD_CSRCS += board_irq.c
 BOARD_CSRCS += board_rcc_init.c
