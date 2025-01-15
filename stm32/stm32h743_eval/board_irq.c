@@ -6,12 +6,16 @@ void MemManage_Handler(void) {}
 void BusFault_Handler(void) {}
 void UsageFault_Handler(void) {}
 void DebugMon_Handler(void) {}
-void SVC_Handler(void) {}
-void PendSV_Handler(void) {}
 
 // void PPP_IRQHandler(void)
 // {
 // }
+
+#ifndef BSP_MODULE_FR
+void SVC_Handler(void) {}
+void PendSV_Handler(void) {}
+#endif
+
 #ifdef BSP_MODULE_FR
 #include <FreeRTOS.h>
 #include <tasks.h>
