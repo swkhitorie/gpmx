@@ -52,7 +52,7 @@ void board_config_mmu()
 	MPU_InitStruct.SubRegionDisable = 0x00;
 	MPU_InitStruct.DisableExec      = MPU_INSTRUCTION_ACCESS_ENABLE;
 	HAL_MPU_ConfigRegion(&MPU_InitStruct);
-	
+
 	MPU_InitStruct.Enable           = MPU_REGION_ENABLE;
 	MPU_InitStruct.BaseAddress      = 0x38000000;
 	MPU_InitStruct.Size             = MPU_REGION_SIZE_64KB;

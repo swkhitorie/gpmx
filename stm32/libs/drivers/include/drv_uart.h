@@ -6,6 +6,10 @@
 #include "drv_gpio.h"
 #include "drv_buffer.h"
 
+#if defined (DRV_BSP_H7)
+#include "drv_globalpin_h7.h"
+#endif
+
 #define DRV_UART_PERIPHAL_NUM   CONFIG_UART_PERIPHAL_NUM
 
 enum uart_wordlen {
@@ -61,7 +65,7 @@ struct drv_uart_t
 extern struct drv_uart_t *drv_uart_list[DRV_UART_PERIPHAL_NUM];
 
 #ifdef cplusplus
-  extern "C" {
+extern "C" {
 #endif
 
 void drv_uart_dma_attr_init(struct drv_uart_dma_attr_t *obj, 

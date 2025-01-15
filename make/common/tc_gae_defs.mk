@@ -64,12 +64,18 @@ TC_DBG_ASMOPTS:=
 # Assembly compiler defines
 TC_ASMDEFS:=
 
+ifeq (${CONFIG_COMPILE_OPTIMIZE},)
+COMPILE_OPTIMIZE := O1
+else
+COMPILE_OPTIMIZE := ${CONFIG_COMPILE_OPTIMIZE}
+endif
+
 # C compiler options
 TC_COPTS:=\
   -c                    \
   -ffunction-sections   \
   -fdata-sections       \
-  -O1                   \
+  -${COMPILE_OPTIMIZE}  \
   -gdwarf-2             \
   -MD                   \
   -w -Wno-empty-body       \
@@ -81,7 +87,7 @@ TC_CPPOPTS:=\
   -c                    \
   -ffunction-sections   \
   -fdata-sections       \
-  -O1                   \
+  -${COMPILE_OPTIMIZE}  \
   -gdwarf-2             \
   -MD                   \
   -w -Wno-empty-body       \
@@ -103,12 +109,18 @@ TC_LIBOPTS:=\
   -Wl,--gc-sections         \
   --data-sections           \
   --specs=nano.specs        \
-  -u _printf_float          \
-  -u _scanf_float           \
   -lc                       \
   -lm                       \
   -lnosys                   
   #-nostartfiles             
+
+ifeq (${CONFIG_LINK_PRINTF_FLOAT},y)
+TC_LIBOPTS += -u _printf_float 
+endif
+
+ifeq (${CONFIG_LINK_SCANF_FLOAT},y)
+TC_LIBOPTS += -u _scanf_float 
+endif
 
 # Scatter file extension
 TC_SCFEXT:=ld

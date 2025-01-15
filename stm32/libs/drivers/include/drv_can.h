@@ -4,6 +4,10 @@
 #include "drv_common.h"
 #include "drv_gpio.h"
 
+#if defined (DRV_BSP_H7)
+#include "drv_globalpin_h7.h"
+#endif
+
 struct drv_canframe {
     uint32_t _identifier;
     uint32_t _idtype;

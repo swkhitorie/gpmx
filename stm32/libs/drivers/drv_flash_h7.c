@@ -178,13 +178,13 @@ static uint8_t drv_flash_write_word(uint32_t faddr, uint32_t *pdata)
 }
 
 
-uint8_t drv_flash_write(uint32_t WriteAddr, uint32_t *pBuffer, uint32_t NumToWrite)
+uint8_t drv_flash_write(uint32_t WriteAddr, const uint32_t *pBuffer, uint32_t NumToWrite)
 {
 	uint8_t res = 0;
 	uint8_t status = 0;
 	uint32_t addrx = 0;
 	uint32_t endaddr = 0;	
-    if (WriteAddr < NOR_FLASH_BASE_ADDR || WriteAddr % 32)
+    if (WriteAddr < STM32_FLASH_BASE_ADDR || WriteAddr % 32)
 		return 0xFF;
 	drv_flash_unlock();
 	addrx = WriteAddr;

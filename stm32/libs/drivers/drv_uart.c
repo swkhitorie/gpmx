@@ -204,22 +204,22 @@ void drv_uart_init(uint8_t num, struct drv_uart_t *obj,
         obj->attr_txdma = *txdma_attr;
         __HAL_RCC_DMA1_CLK_ENABLE();
 
-        __HAL_LINKDMA(&obj->com, hdmatx, obj->txdma.handle);
-        HAL_DMA_DeInit(&obj->txdma.handle);
-        obj->txdma.handle.Instance = uart_txdma_stream[num-1];
-        obj->txdma.handle.Init.Request = uart_txdma_request[num-1];
-        obj->txdma.handle.Init.Direction = DMA_MEMORY_TO_PERIPH;
-        obj->txdma.handle.Init.PeriphInc = DMA_PINC_DISABLE;
-        obj->txdma.handle.Init.MemInc = DMA_MINC_ENABLE;
-        obj->txdma.handle.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
-        obj->txdma.handle.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-        obj->txdma.handle.Init.Mode = DMA_NORMAL;
-        obj->txdma.handle.Init.Priority = DMA_PRIORITY_MEDIUM;
-        obj->txdma.handle.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
-        obj->txdma.handle.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
-        obj->txdma.handle.Init.MemBurst = DMA_MBURST_SINGLE;
-        obj->txdma.handle.Init.PeriphBurst = DMA_PBURST_SINGLE;
-        HAL_DMA_Init(&obj->txdma.handle);
+        __HAL_LINKDMA(&obj->com, hdmatx, obj->txdma);
+        HAL_DMA_DeInit(&obj->txdma);
+        obj->txdma.Instance = uart_txdma_stream[num-1];
+        obj->txdma.Init.Request = uart_txdma_request[num-1];
+        obj->txdma.Init.Direction = DMA_MEMORY_TO_PERIPH;
+        obj->txdma.Init.PeriphInc = DMA_PINC_DISABLE;
+        obj->txdma.Init.MemInc = DMA_MINC_ENABLE;
+        obj->txdma.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+        obj->txdma.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+        obj->txdma.Init.Mode = DMA_NORMAL;
+        obj->txdma.Init.Priority = DMA_PRIORITY_MEDIUM;
+        obj->txdma.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+        obj->txdma.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+        obj->txdma.Init.MemBurst = DMA_MBURST_SINGLE;
+        obj->txdma.Init.PeriphBurst = DMA_PBURST_SINGLE;
+        HAL_DMA_Init(&obj->txdma);
         HAL_NVIC_SetPriority(uart_txdma_irq[num-1], txdma_attr->priority, 0);
         HAL_NVIC_EnableIRQ(uart_txdma_irq[num-1]);
     } else {
@@ -230,22 +230,22 @@ void drv_uart_init(uint8_t num, struct drv_uart_t *obj,
         obj->attr_rxdma = *rxdma_attr;
         __HAL_RCC_DMA2_CLK_ENABLE();
 
-        __HAL_LINKDMA(&obj->com, hdmarx, obj->rxdma.handle);
-        HAL_DMA_DeInit(&obj->rxdma.handle);
-        obj->rxdma.handle.Instance = uart_rxdma_stream[num-1];
-        obj->rxdma.handle.Init.Request = uart_rxdma_request[num-1];
-        obj->rxdma.handle.Init.Direction = DMA_PERIPH_TO_MEMORY;
-        obj->rxdma.handle.Init.PeriphInc = DMA_PINC_DISABLE;
-        obj->rxdma.handle.Init.MemInc = DMA_MINC_ENABLE;
-        obj->rxdma.handle.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
-        obj->rxdma.handle.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-        obj->rxdma.handle.Init.Mode = DMA_NORMAL;
-        obj->rxdma.handle.Init.Priority = DMA_PRIORITY_MEDIUM;
-        obj->rxdma.handle.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
-        obj->rxdma.handle.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
-        obj->rxdma.handle.Init.MemBurst = DMA_MBURST_SINGLE;
-        obj->rxdma.handle.Init.PeriphBurst = DMA_PBURST_SINGLE;
-        HAL_DMA_Init(&obj->rxdma.handle);
+        __HAL_LINKDMA(&obj->com, hdmarx, obj->rxdma);
+        HAL_DMA_DeInit(&obj->rxdma);
+        obj->rxdma.Instance = uart_rxdma_stream[num-1];
+        obj->rxdma.Init.Request = uart_rxdma_request[num-1];
+        obj->rxdma.Init.Direction = DMA_PERIPH_TO_MEMORY;
+        obj->rxdma.Init.PeriphInc = DMA_PINC_DISABLE;
+        obj->rxdma.Init.MemInc = DMA_MINC_ENABLE;
+        obj->rxdma.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+        obj->rxdma.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+        obj->rxdma.Init.Mode = DMA_NORMAL;
+        obj->rxdma.Init.Priority = DMA_PRIORITY_MEDIUM;
+        obj->rxdma.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+        obj->rxdma.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+        obj->rxdma.Init.MemBurst = DMA_MBURST_SINGLE;
+        obj->rxdma.Init.PeriphBurst = DMA_PBURST_SINGLE;
+        HAL_DMA_Init(&obj->rxdma);
         HAL_NVIC_SetPriority(uart_rxdma_irq[num-1], rxdma_attr->priority, 0);
         HAL_NVIC_EnableIRQ(uart_rxdma_irq[num-1]);
 
@@ -266,12 +266,12 @@ int drv_uart_send(struct drv_uart_t *obj, const uint8_t *p, uint16_t len, enum _
 {
     switch (way) {
     case RWPOLL:
-        HAL_UART_Transmit(&obj->com, (uint8_t *)p, size, 3000);
+        HAL_UART_Transmit(&obj->com, (uint8_t *)p, len, 3000);
         break;
     case RWIT:
     case RWDMA:
         {
-            devbuf_write(&obj->tx_buf, &p[0], size);
+            devbuf_write(&obj->tx_buf, &p[0], len);
             if (obj->tx_busy) return false;
             obj->tx_busy = true;
             if (obj->attr_txdma.mem_capacity != 0) {
@@ -287,7 +287,7 @@ int drv_uart_send(struct drv_uart_t *obj, const uint8_t *p, uint16_t len, enum _
             } else {
                 uint16_t bufsize = (uint32_t)devbuf_size(&obj->tx_buf);
                 // bug
-                HAL_UART_Transmit_IT(&obj->com, &obj->txbuf.buf[0], bufsize);
+                HAL_UART_Transmit_IT(&obj->com, &obj->tx_buf.buf[0], bufsize);
             }
             break; 
         }

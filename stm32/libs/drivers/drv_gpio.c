@@ -30,14 +30,14 @@ struct drv_pin_t drv_gpio_init(GPIO_TypeDef *port, uint32_t pin, uint32_t mode,
     else if (port == GPIOJ)		__HAL_RCC_GPIOJ_CLK_ENABLE();
     else if (port == GPIOK)		__HAL_RCC_GPIOK_CLK_ENABLE();
 
-    init_obj.Pin = obj->pin;
+    init_obj.Pin = obj.pin;
     init_obj.Mode = mode;
     init_obj.Pull = pull;
     init_obj.Speed = speed;
     init_obj.Alternate = alternate;
-    HAL_GPIO_Init(obj->port, &init_obj);
+    HAL_GPIO_Init(obj.port, &init_obj);
 
-    if (mode >= IOMODE_IT_RISING && obj != NULL) {
+    if (mode >= IOMODE_IT_RISING && irq != NULL) {
         obj.pin_irq_attr = *irq;
         HAL_NVIC_SetPriority(irqn_array[pin], obj.pin_irq_attr.priority, 0);
         HAL_NVIC_EnableIRQ(irqn_array[pin]);
@@ -64,22 +64,22 @@ uint8_t drv_gpio_read(struct drv_pin_t *obj)
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
     switch (GPIO_Pin) {
-    case GPIO_PIN_0:  drv_external_irq_pin_list[0]->entry();  break;
-    case GPIO_PIN_1:  drv_external_irq_pin_list[1]->entry();  break;
-    case GPIO_PIN_2:  drv_external_irq_pin_list[2]->entry();  break;
-    case GPIO_PIN_3:  drv_external_irq_pin_list[3]->entry();  break;
-    case GPIO_PIN_4:  drv_external_irq_pin_list[4]->entry();  break;
-    case GPIO_PIN_5:  drv_external_irq_pin_list[5]->entry();  break;
-    case GPIO_PIN_6:  drv_external_irq_pin_list[6]->entry();  break;
-    case GPIO_PIN_7:  drv_external_irq_pin_list[7]->entry();  break;
-    case GPIO_PIN_8:  drv_external_irq_pin_list[8]->entry();  break;
-    case GPIO_PIN_9:  drv_external_irq_pin_list[9]->entry();  break;
-    case GPIO_PIN_10:  drv_external_irq_pin_list[10]->entry();  break;
-    case GPIO_PIN_11:  drv_external_irq_pin_list[11]->entry();  break;
-    case GPIO_PIN_12:  drv_external_irq_pin_list[12]->entry();  break;
-    case GPIO_PIN_13:  drv_external_irq_pin_list[13]->entry();  break;
-    case GPIO_PIN_14:  drv_external_irq_pin_list[14]->entry();  break;
-    case GPIO_PIN_15:  drv_external_irq_pin_list[15]->entry();  break;
+    case GPIO_PIN_0:  drv_external_irq_pin_list[0]->pin_irq_attr.entry();  break;
+    case GPIO_PIN_1:  drv_external_irq_pin_list[1]->pin_irq_attr.entry();  break;
+    case GPIO_PIN_2:  drv_external_irq_pin_list[2]->pin_irq_attr.entry();  break;
+    case GPIO_PIN_3:  drv_external_irq_pin_list[3]->pin_irq_attr.entry();  break;
+    case GPIO_PIN_4:  drv_external_irq_pin_list[4]->pin_irq_attr.entry();  break;
+    case GPIO_PIN_5:  drv_external_irq_pin_list[5]->pin_irq_attr.entry();  break;
+    case GPIO_PIN_6:  drv_external_irq_pin_list[6]->pin_irq_attr.entry();  break;
+    case GPIO_PIN_7:  drv_external_irq_pin_list[7]->pin_irq_attr.entry();  break;
+    case GPIO_PIN_8:  drv_external_irq_pin_list[8]->pin_irq_attr.entry();  break;
+    case GPIO_PIN_9:  drv_external_irq_pin_list[9]->pin_irq_attr.entry();  break;
+    case GPIO_PIN_10:  drv_external_irq_pin_list[10]->pin_irq_attr.entry();  break;
+    case GPIO_PIN_11:  drv_external_irq_pin_list[11]->pin_irq_attr.entry();  break;
+    case GPIO_PIN_12:  drv_external_irq_pin_list[12]->pin_irq_attr.entry();  break;
+    case GPIO_PIN_13:  drv_external_irq_pin_list[13]->pin_irq_attr.entry();  break;
+    case GPIO_PIN_14:  drv_external_irq_pin_list[14]->pin_irq_attr.entry();  break;
+    case GPIO_PIN_15:  drv_external_irq_pin_list[15]->pin_irq_attr.entry();  break;
     }
 }
 

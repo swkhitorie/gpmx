@@ -45,7 +45,7 @@ enum iomode {
     IOMODE_IT_BOTH = GPIO_MODE_IT_RISING_FALLING,
 };
 
-extern struct drv_pin_t *drv_external_irq_pin_list[GPIO_EXTERNAL_IRQ_LINE_NUM];
+extern struct drv_pin_t *drv_external_irq_pin_list[CONFIG_DRV_GPIO_EXTERNAL_IRQ_LINE_NUM];
 
 #ifdef cplusplus
 extern "C" {

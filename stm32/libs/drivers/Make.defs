@@ -10,7 +10,7 @@ LIBDRV_CSRCS += drv_flash_h7.c
 endif
 
 ifeq ($(BSP_LIBCONFIG_STM32_HAL_I2C),y)
-LIBDRV_CSRCS += drv_i2c.c
+LIBDRV_CSRCS += drv_i2c_reg.c
 endif
 
 ifeq ($(BSP_LIBCONFIG_STM32_HAL_SPI),y)

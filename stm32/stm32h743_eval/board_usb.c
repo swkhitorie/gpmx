@@ -48,6 +48,6 @@ void usb_dc_low_level_deinit(uint8_t busid)
 
 void OTG_FS_IRQHandler(void)
 {
-    extern void USBD_IRQHandler(uint8_t busid);
-    USBD_IRQHandler(0);
+    // extern void USBD_IRQHandler(uint8_t busid);
+    // USBD_IRQHandler(0);
 }

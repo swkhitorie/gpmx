@@ -107,11 +107,11 @@ static bool drv_spi_pin_source_init(uint8_t num,
 	if (illegal != 0) {
         // drv_gpio_init(nss_node->port, nss_node->pin_num, IOMODE_AFPP,
 		// 					IO_PULLUP, IO_SPEEDMAX, nss_node->alternate, NULL);
-        drv_gpio_init(sck_node->port, sck_node->pin_num, IOMODE_AFPP,
+        drv_gpio_init(sck_node->port, sck_node->pin, IOMODE_AFPP,
 							IO_PULLUP, IO_SPEEDMAX, sck_node->alternate, NULL);
-        drv_gpio_init(miso_node->port, miso_node->pin_num, IOMODE_AFPP,
+        drv_gpio_init(miso_node->port, miso_node->pin, IOMODE_AFPP,
 							IO_PULLUP, IO_SPEEDMAX, miso_node->alternate, NULL);
-        drv_gpio_init(mosi_node->port, mosi_node->pin_num, IOMODE_AFPP,
+        drv_gpio_init(mosi_node->port, mosi_node->pin, IOMODE_AFPP,
 							IO_PULLUP, IO_SPEEDMAX, mosi_node->alternate, NULL);
 	}else {
 		return false;
@@ -124,12 +124,14 @@ void drv_spi_attr_init(struct drv_spi_attr_t *obj, uint8_t mode)
     obj->mode = mode;
 }
 
-void drv_spi_init(uint8_t num, uint32_t prescaler, struct drv_spi_t *obj,
-    uint8_t nss, uint8_t sck, uint8_t miso, uint8_t mosi)
+void drv_spi_init(uint8_t num, uint32_t prescaler, struct drv_spi_t *obj, 
+    struct drv_spi_attr_t *attr, uint8_t nss, uint8_t sck, 
+    uint8_t miso, uint8_t mosi)
 {
     uint32_t spiCLK[6] = {RCC_PERIPHCLK_SPI1, RCC_PERIPHCLK_SPI2, RCC_PERIPHCLK_SPI3, RCC_PERIPHCLK_SPI4, RCC_PERIPHCLK_SPI5, RCC_PERIPHCLK_SPI6};
 	uint32_t clsSrc[6] = {RCC_SPI1CLKSOURCE_PLL, RCC_SPI2CLKSOURCE_PLL, RCC_SPI3CLKSOURCE_PLL, RCC_SPI4CLKSOURCE_D2PCLK1, RCC_SPI5CLKSOURCE_D2PCLK1, RCC_SPI6CLKSOURCE_D3PCLK1};
 	SPI_TypeDef *SPIs[6] = {SPI1, SPI2, SPI3, SPI4, SPI5, SPI6};
+    obj->attr = *attr;
 
 	RCC_PeriphCLKInitTypeDef SPIxClkInit = {0};
 	SPIxClkInit.PeriphClockSelection = spiCLK[num-1];
@@ -154,7 +156,7 @@ void drv_spi_init(uint8_t num, uint32_t prescaler, struct drv_spi_t *obj,
 	obj->hspi.Init.Mode              = SPI_MODE_MASTER;
 	obj->hspi.Init.Direction         = SPI_DIRECTION_2LINES;
 	obj->hspi.Init.DataSize          = SPI_DATASIZE_8BIT;
-	switch (mode) {
+	switch (attr->mode) {
 	case SPI_MODE0:
 		obj->hspi.Init.CLKPolarity       = SPI_POLARITY_LOW;
 		obj->hspi.Init.CLKPhase          = SPI_PHASE_1EDGE;
