@@ -13,7 +13,6 @@ struct drv_pin_irq_t io1_irq;
 struct drv_pin_t io1;
 void io1_trigger() { printf("io1_trigger\r\n"); }
 
-
 void board_bsp_init()
 {
     struct drv_uart_attr_t com1_attr;
@@ -30,9 +29,12 @@ void board_bsp_init()
     drv_gpio_irq_init(&io1_irq, 6, io1_trigger);
     io1 = drv_gpio_init(GPIOB, 8, IOMODE_IT_RISING, IO_SPEEDHIGH, IO_PULLDOWN, 0, &io1_irq);
 
+#ifdef BSP_MODULE_USB_CHERRY
+    HAL_Delay(600);
+    cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
+#endif
 
     printf("board bsp init completed\r\n");
-    // cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
 }
 
 void board_blue_led_toggle()

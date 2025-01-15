@@ -12,8 +12,16 @@ void PendSV_Handler(void) {}
 // void PPP_IRQHandler(void)
 // {
 // }
-
+#ifdef BSP_MODULE_FR
+#include <FreeRTOS.h>
+#include <tasks.h>
+#endif
 void SysTick_Handler(void)
 {
+#ifdef BSP_MODULE_FR
+    if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
+        xPortSysTickHandler();
+    }
+#endif
     HAL_IncTick();
 }
