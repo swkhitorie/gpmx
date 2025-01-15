@@ -1,6 +1,13 @@
 #include "board_config.h"
 #include <drv_uart.h>
 
+#ifdef BSP_COM_PRINTF
+#include <string.h>
+#include <stdio.h>
+#include <stdarg.h>
+FILE __stdin, __stdout, __stderr;
+#endif
+
 struct drv_uart_t com1;
 uint8_t com1_dma_rxbuff[256];
 uint8_t com1_dma_txbuff[256];
@@ -49,20 +56,17 @@ void board_debug()
     devbuf_t buf = drv_uart_devbuf(&com1);
     int size = devbuf_size(&buf);
     if (size > 0) {
-        printf("[%d,%d] ", HAL_GetTick(),size);
+        fprintf(stdout, "[%d,%d] ", HAL_GetTick(),size);
         devbuf_read(&com1.rx_buf, &buff_debug[0], size);
         for (int i = 0; i < size; i++) {
-            printf("%d ", buff_debug[i]);
+            fprintf(stdout, "%d ", buff_debug[i]);
         }
-        printf("\r\n");
+        fprintf(stdout, "\r\n");
     }
     board_blue_led_toggle();
 }
 
 #ifdef BSP_COM_PRINTF
-#include <stdlib.h>
-#include <stdio.h>
-FILE __stdin, __stdout, __stderr;
 int _write(int file, char *ptr, int len)
 {
     const int stdin_fileno = 0;
@@ -73,5 +77,4 @@ int _write(int file, char *ptr, int len)
     }
     return len;
 }
-
 #endif
