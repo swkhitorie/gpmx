@@ -15,7 +15,9 @@ struct drv_pin_t {
     struct drv_pin_irq_t pin_irq_attr;
     GPIO_TypeDef *port;   
     uint16_t pin;
+#if !defined (DRV_BSP_F1)
     uint32_t alternate;
+#endif
 };
 
 enum pullstate {
@@ -28,7 +30,7 @@ enum iospeed {
     IO_SPEEDLOW = GPIO_SPEED_FREQ_LOW,
     IO_SPEEDMID = GPIO_SPEED_FREQ_MEDIUM,
     IO_SPEEDHIGH = GPIO_SPEED_FREQ_HIGH,
-#ifndef DRV_F1
+#if !defined (DRV_BSP_F1)
     IO_SPEEDMAX = GPIO_SPEED_FREQ_VERY_HIGH,
 #endif
 };
@@ -53,8 +55,13 @@ extern "C" {
 
 void drv_gpio_irq_init(struct drv_pin_irq_t *obj, uint32_t priority, void (*entry)());
 
+#if !defined (DRV_BSP_F1)
 struct drv_pin_t drv_gpio_init(GPIO_TypeDef *port, uint32_t pin, uint32_t mode, 
                     uint32_t pull, uint32_t speed, uint32_t alternate, struct drv_pin_irq_t *irq);
+#else
+struct drv_pin_t drv_gpio_init(GPIO_TypeDef *port, uint32_t pin, uint32_t mode, 
+                    uint32_t pull, uint32_t speed, struct drv_pin_irq_t *irq);
+#endif
 
 void drv_gpio_deinit(struct drv_pin_t *obj);
 void drv_gpio_write(struct drv_pin_t *obj, uint8_t val);

@@ -5,7 +5,6 @@ LIBHAL_CINCDIRS += hal_driver
 LIBHAL_CSRCS += hal_driver/stm32f1xx_hal.c
 LIBHAL_CSRCS += hal_driver/stm32f1xx_hal_cortex.c
 LIBHAL_CSRCS += hal_driver/stm32f1xx_hal_pwr.c
-LIBHAL_CSRCS += hal_driver/stm32f1xx_hal_pwr_ex.c
 LIBHAL_CSRCS += hal_driver/stm32f1xx_hal_rcc.c
 LIBHAL_CSRCS += hal_driver/stm32f1xx_hal_rcc_ex.c
 LIBHAL_CSRCS += hal_driver/stm32f1xx_hal_gpio.c

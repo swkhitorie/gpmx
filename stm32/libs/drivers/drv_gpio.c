@@ -8,8 +8,13 @@ void drv_gpio_irq_init(struct drv_pin_irq_t *obj, uint32_t priority, void (*entr
     obj->entry = entry;
 }
 
+#if !defined (DRV_BSP_F1)
 struct drv_pin_t drv_gpio_init(GPIO_TypeDef *port, uint32_t pin, uint32_t mode, 
-                uint32_t pull, uint32_t speed, uint32_t alternate, struct drv_pin_irq_t *irq)
+                    uint32_t pull, uint32_t speed, uint32_t alternate, struct drv_pin_irq_t *irq)
+#else
+struct drv_pin_t drv_gpio_init(GPIO_TypeDef *port, uint32_t pin, uint32_t mode, 
+                    uint32_t pull, uint32_t speed, struct drv_pin_irq_t *irq)
+#endif
 {
     struct drv_pin_t obj;
     GPIO_InitTypeDef init_obj;
@@ -22,25 +27,31 @@ struct drv_pin_t drv_gpio_init(GPIO_TypeDef *port, uint32_t pin, uint32_t mode,
 
     obj.port = port;
     obj.pin = (uint16_t)(0x01 << pin);
+#if !defined (DRV_BSP_F1)
     obj.alternate = alternate;
+#endif
 
     if (port == GPIOA)			__HAL_RCC_GPIOA_CLK_ENABLE();
     else if (port == GPIOB)		__HAL_RCC_GPIOB_CLK_ENABLE();
     else if (port == GPIOC)		__HAL_RCC_GPIOC_CLK_ENABLE();
     else if (port == GPIOD)		__HAL_RCC_GPIOD_CLK_ENABLE();
     else if (port == GPIOE)		__HAL_RCC_GPIOE_CLK_ENABLE();
+#if (BSP_CHIP_RESOURCE_LEVEL > 1)
     else if (port == GPIOF)		__HAL_RCC_GPIOF_CLK_ENABLE();
     else if (port == GPIOG)		__HAL_RCC_GPIOG_CLK_ENABLE();
     else if (port == GPIOH)		__HAL_RCC_GPIOH_CLK_ENABLE();
     else if (port == GPIOI)		__HAL_RCC_GPIOI_CLK_ENABLE();
     else if (port == GPIOJ)		__HAL_RCC_GPIOJ_CLK_ENABLE();
     else if (port == GPIOK)		__HAL_RCC_GPIOK_CLK_ENABLE();
+#endif // End With Define BSP_CHIP_RESOURCE_LEVEL
 
     init_obj.Pin = obj.pin;
     init_obj.Mode = mode;
     init_obj.Pull = pull;
     init_obj.Speed = speed;
+#if !defined (DRV_BSP_F1)
     init_obj.Alternate = alternate;
+#endif // End With Define DRV_BSP_F1
     HAL_GPIO_Init(obj.port, &init_obj);
 
     if (mode >= IOMODE_IT_RISING && irq != NULL) {

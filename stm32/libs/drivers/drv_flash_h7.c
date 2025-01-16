@@ -1,5 +1,7 @@
 #include "drv_flash.h"
 
+#if defined(DRV_BSP_H7)
+
 static void drv_flash_unlock()
 {
 	HAL_FLASH_Unlock();
@@ -227,4 +229,4 @@ void drv_flash_read(uint32_t ReadAddr, uint32_t *pBuffer, uint32_t NumToRead)
 	}
 }
 
-
+#endif // End With Define DRV_BSP_H7 

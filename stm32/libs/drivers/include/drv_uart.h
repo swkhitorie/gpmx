@@ -13,15 +13,19 @@
 #define DRV_UART_PERIPHAL_NUM   CONFIG_UART_PERIPHAL_NUM
 
 enum uart_wordlen {
+#if !defined (DRV_BSP_F1) && !defined (DRV_BSP_F4)
     WL_7BIT = UART_WORDLENGTH_7B,
+#endif
     WL_8BIT = UART_WORDLENGTH_8B,
     WL_9BIT = UART_WORDLENGTH_9B,
 };
 
 enum uart_stopbit_len {
+#if !defined (DRV_BSP_F1) && !defined (DRV_BSP_F4)
     STB_0_5BIT = UART_STOPBITS_0_5,
-    STB_1BIT = UART_STOPBITS_1,
     STB_1_5BIT = UART_STOPBITS_1_5,
+#endif
+    STB_1BIT = UART_STOPBITS_1,
     STB_2BIT = UART_STOPBITS_2,
 };
 

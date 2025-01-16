@@ -5,7 +5,7 @@
 #define BOARD_SDK_CONFIG_H_
 
 #ifdef __cplusplus
-    extern "C" {
+extern "C" {
 #endif
 
 #if !defined(HSE_VALUE)

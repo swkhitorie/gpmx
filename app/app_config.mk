@@ -2,7 +2,7 @@
 #
 # application configuration file
 #
-PROJ_NAME  :=  stm32h743_eval
+PROJ_NAME  :=  stm32f103_eval
 
 #
 # Toolchain used in this project
@@ -19,7 +19,8 @@ BSP_ROOT           := app/../
 BSP_ABSROOTDIR     := ${SDK_ROOTDIR}/${BSP_ROOT}
 
 CONFIG_PX4_HRTIMER := y
-include ${BSP_ABSROOTDIR}/stm32/stm32h743_eval/make.mk
+#include ${BSP_ABSROOTDIR}/stm32/stm32h743_eval/make.mk
+include ${BSP_ABSROOTDIR}/stm32/stm32f103_eval/make.mk
 
 PROJ_CDEFS        += ${BSP_CDEFS}
 
@@ -35,7 +36,7 @@ PROJ_ENTRY_POINT  := ${BSP_BOARD_ENTRY_POINT}
 
 PROJ_OPENOCD_LOAD_ADDR := 0x08000000
 
-MOD_ARCH  =  m7
+MOD_ARCH  =  m3
 
 
 #####################################
@@ -46,6 +47,5 @@ PROJ_CDEFS += BSP_COM_PRINTF
 
 PROJ_CINCDIRS += app
 
-CPPSOURCES += app/stm32h743_eval/app_main.cpp
-CSOURCES += app/stm32h743_eval/app_syscall.c
-
+CPPSOURCES += app/stm32_eval/app_main.cpp
+CSOURCES += app/stm32_eval/app_syscall.c
