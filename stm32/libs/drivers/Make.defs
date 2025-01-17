@@ -19,3 +19,11 @@ endif
 ifeq ($(BSP_LIBCONFIG_STM32_HAL_SPI),y)
 LIBDRV_CSRCS += drv_spi.c
 endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_QSPI),y)
+LIBDRV_CSRCS += drv_qspi.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_SDMMC),y)
+LIBDRV_CSRCS += drv_sdmmc.c
+endif

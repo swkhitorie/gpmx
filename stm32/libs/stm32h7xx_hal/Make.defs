@@ -49,3 +49,14 @@ LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_tim.c
 LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_tim_ex.c
 endif
 
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_QSPI),y)
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_qspi.c
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_mdma.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_SDMMC),y)
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_sd.c
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_sd_ex.c
+LIBHAL_CSRCS += hal_driver/stm32h7xx_ll_sdmmc.c
+LIBHAL_CSRCS += hal_driver/stm32h7xx_ll_delayblock.c
+endif

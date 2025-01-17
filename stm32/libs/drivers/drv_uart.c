@@ -126,8 +126,40 @@ bool drv_uart_pinconfig(uint8_t num, uint8_t tx_selec, uint8_t rx_selec)
         drv_gpio_init(tx_port[num-1], tx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, NULL);
         drv_gpio_init(rx_port[num-1], rx_pin[num-1], IOMODE_INPUT,IO_NOPULL, IO_SPEEDHIGH, NULL); 
     }
+    return true;
 #endif
 
+#if defined (DRV_BSP_F4)
+    if (tx_selec == 0) {
+        GPIO_TypeDef *tx_port[8] = { GPIOA,		GPIOA,      GPIOB,      GPIOC,      GPIOC,  GPIOC,	GPIOF, GPIOE };
+        uint16_t       tx_pin[8] = {   9,         2,          10,        10,          12,    6,   	7,      1    };
+
+        GPIO_TypeDef* rx_port[8] = { GPIOA,		GPIOA,      GPIOB,      GPIOC,      GPIOD,  GPIOC,	GPIOF, GPIOE };
+        uint16_t       rx_pin[8] = {   10,        3,          11,        11,          2,     7,		6,      0    };
+
+        uint32_t      alternate[3] = {
+            GPIO_AF7_USART1, GPIO_AF7_USART2, GPIO_AF7_USART3, GPIO_AF8_UART4,
+            GPIO_AF8_UART5, GPIO_AF8_USART6, GPIO_AF7_UART7, GPIO_AF8_UART8
+        };
+        drv_gpio_init(tx_port[num-1], tx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL);
+        drv_gpio_init(rx_port[num-1], rx_pin[num-1], IOMODE_INPUT,IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL); 
+    } else if (tx_selec == 1) {
+        GPIO_TypeDef *tx_port[8] = { GPIOB,		GPIOD,      GPIOD, GPIOD,   GPIOB,  GPIOG,  GPIOE,  GPIOJ};
+        uint16_t       tx_pin[8] = {   6,         5,          8,     1,      13,     14,     8,     8    };
+
+        GPIO_TypeDef* rx_port[8] = { GPIOB,		GPIOD,      GPIOD, GPIOD,   GPIOB,  GPIOG,  GPIOE,  GPIOJ};
+        uint16_t       rx_pin[8] = {   7,        6,          9,      0,      12,     9,      7,     9    };
+
+        uint32_t      alternate[3] = {
+            GPIO_AF7_USART1, GPIO_AF7_USART2, GPIO_AF7_USART3, GPIO_AF8_UART4,
+            GPIO_AF8_UART5, GPIO_AF8_USART6, GPIO_AF7_UART7, GPIO_AF8_UART8
+        };
+
+        drv_gpio_init(tx_port[num-1], tx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL);
+        drv_gpio_init(rx_port[num-1], rx_pin[num-1], IOMODE_INPUT,IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL); 
+    }
+    return true;
+#endif
 }
 
 void drv_uart_dma_attr_init(struct drv_uart_dma_attr_t *obj, 

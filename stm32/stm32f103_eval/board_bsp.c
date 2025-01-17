@@ -30,7 +30,6 @@ void board_bsp_init()
     led = drv_gpio_init(GPIOB, 9, IOMODE_OUTPP, IO_NOPULL, IO_SPEEDHIGH, NULL);
 }
 
-uint8_t buff_debug[512];
 void board_debug()
 {
     devbuf_t buf = drv_uart_devbuf(&com2);
@@ -54,7 +53,7 @@ int _write(int file, char *ptr, int len)
     const int stdout_fileno = 1;
     const int stderr_fileno = 2;
     if (file == stdout_fileno) {
-        drv_uart_send(&com2, ptr, len, RWDMA);
+        drv_uart_send(&com2, ptr, len, RWPOLL);
     }
     return len;
 }
