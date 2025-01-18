@@ -41,8 +41,10 @@ struct drv_pin_t drv_gpio_init(GPIO_TypeDef *port, uint32_t pin, uint32_t mode,
     else if (port == GPIOG)		__HAL_RCC_GPIOG_CLK_ENABLE();
     else if (port == GPIOH)		__HAL_RCC_GPIOH_CLK_ENABLE();
     else if (port == GPIOI)		__HAL_RCC_GPIOI_CLK_ENABLE();
+#if (BSP_CHIP_RESOURCE_LEVEL > 2)
     else if (port == GPIOJ)		__HAL_RCC_GPIOJ_CLK_ENABLE();
     else if (port == GPIOK)		__HAL_RCC_GPIOK_CLK_ENABLE();
+#endif
 #endif // End With Define BSP_CHIP_RESOURCE_LEVEL
 
     init_obj.Pin = obj.pin;

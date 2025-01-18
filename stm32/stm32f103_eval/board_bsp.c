@@ -30,6 +30,7 @@ void board_bsp_init()
     led = drv_gpio_init(GPIOB, 9, IOMODE_OUTPP, IO_NOPULL, IO_SPEEDHIGH, NULL);
 }
 
+uint8_t buff_debug[256];
 void board_debug()
 {
     devbuf_t buf = drv_uart_devbuf(&com2);

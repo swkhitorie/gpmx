@@ -23,7 +23,7 @@
  * level range: [1 ~ 3(MAX)]
  * Max Default
  */
-#define BSP_CHIP_RESOURCE_MAX   (3)
+#define BSP_CHIP_RESOURCE_MAX   (5)
 
 #if defined (DRV_BSP_H7)
     #define BSP_CHIP_RESOURCE_LEVEL BSP_CHIP_RESOURCE_MAX
@@ -36,7 +36,11 @@
     #define CONFIG_SPI_PERIPHAL_NUM  (2)
     #define CONFIG_DRV_GPIO_EXTERNAL_IRQ_LINE_NUM (16)
 #elif defined (DRV_BSP_F4)
-    #define BSP_CHIP_RESOURCE_LEVEL BSP_CHIP_RESOURCE_MAX
+    #if defined(STM32F407xx)
+        #define BSP_CHIP_RESOURCE_LEVEL 2
+    #else
+        #define BSP_CHIP_RESOURCE_LEVEL BSP_CHIP_RESOURCE_MAX
+    #endif
     #define CONFIG_UART_PERIPHAL_NUM (6)
     #define CONFIG_SPI_PERIPHAL_NUM  (6)
     #define CONFIG_DRV_GPIO_EXTERNAL_IRQ_LINE_NUM (16)

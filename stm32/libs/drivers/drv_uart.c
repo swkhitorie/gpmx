@@ -10,7 +10,7 @@ bool drv_uart_pinconfig(uint8_t num, uint8_t tx_selec, uint8_t rx_selec)
 	const struct pin_node *tx_pin;
 	const struct pin_node *rx_pin;
 	uint32_t illegal;
-	
+
 	switch (num) {
 	case 1:
 		if (PINNODE(uint32_t)(USART_PINCTRL_SOURCE(1, UART_PIN_TX, tx_selec)) != NULL && 
@@ -94,7 +94,7 @@ bool drv_uart_pinconfig(uint8_t num, uint8_t tx_selec, uint8_t rx_selec)
 		break;
 	default: return false;
 	}
-	
+
 	if (illegal != 0) {
         drv_gpio_init(tx_pin->port, tx_pin->pin, IOMODE_AFPP,
 						IO_PULLUP, IO_SPEEDHIGH, tx_pin->alternate, NULL);
@@ -137,26 +137,32 @@ bool drv_uart_pinconfig(uint8_t num, uint8_t tx_selec, uint8_t rx_selec)
         GPIO_TypeDef* rx_port[8] = { GPIOA,		GPIOA,      GPIOB,      GPIOC,      GPIOD,  GPIOC,	GPIOF, GPIOE };
         uint16_t       rx_pin[8] = {   10,        3,          11,        11,          2,     7,		6,      0    };
 
-        uint32_t      alternate[3] = {
+        uint32_t      alternate[8] = {
             GPIO_AF7_USART1, GPIO_AF7_USART2, GPIO_AF7_USART3, GPIO_AF8_UART4,
-            GPIO_AF8_UART5, GPIO_AF8_USART6, GPIO_AF7_UART7, GPIO_AF8_UART8
+            GPIO_AF8_UART5, GPIO_AF8_USART6, 
+#if (BSP_CHIP_RESOURCE_LEVEL > 2)
+            GPIO_AF7_UART7, GPIO_AF8_UART8
+#endif
         };
         drv_gpio_init(tx_port[num-1], tx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL);
-        drv_gpio_init(rx_port[num-1], rx_pin[num-1], IOMODE_INPUT,IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL); 
+        drv_gpio_init(rx_port[num-1], rx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL); 
     } else if (tx_selec == 1) {
-        GPIO_TypeDef *tx_port[8] = { GPIOB,		GPIOD,      GPIOD, GPIOD,   GPIOB,  GPIOG,  GPIOE,  GPIOJ};
+        GPIO_TypeDef *tx_port[8] = { GPIOB,		GPIOD,      GPIOD, GPIOD,   GPIOB,  GPIOG,  GPIOE,  /*GPIOJ*/};
         uint16_t       tx_pin[8] = {   6,         5,          8,     1,      13,     14,     8,     8    };
 
-        GPIO_TypeDef* rx_port[8] = { GPIOB,		GPIOD,      GPIOD, GPIOD,   GPIOB,  GPIOG,  GPIOE,  GPIOJ};
+        GPIO_TypeDef* rx_port[8] = { GPIOB,		GPIOD,      GPIOD, GPIOD,   GPIOB,  GPIOG,  GPIOE,  /*GPIOJ*/};
         uint16_t       rx_pin[8] = {   7,        6,          9,      0,      12,     9,      7,     9    };
 
         uint32_t      alternate[3] = {
             GPIO_AF7_USART1, GPIO_AF7_USART2, GPIO_AF7_USART3, GPIO_AF8_UART4,
-            GPIO_AF8_UART5, GPIO_AF8_USART6, GPIO_AF7_UART7, GPIO_AF8_UART8
+            GPIO_AF8_UART5, GPIO_AF8_USART6, 
+#if (BSP_CHIP_RESOURCE_LEVEL > 2)
+            GPIO_AF7_UART7, GPIO_AF8_UART8
+#endif
         };
 
         drv_gpio_init(tx_port[num-1], tx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL);
-        drv_gpio_init(rx_port[num-1], rx_pin[num-1], IOMODE_INPUT,IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL); 
+        drv_gpio_init(rx_port[num-1], rx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL); 
     }
     return true;
 #endif
@@ -199,17 +205,23 @@ void drv_uart_init(uint8_t num, struct drv_uart_t *obj,
     USART_TypeDef *uart_array[DRV_UART_PERIPHAL_NUM] = {
         USART1, USART2, USART3, 
 #if (BSP_CHIP_RESOURCE_LEVEL > 1)
-        UART4, UART5,  USART6, UART7,  UART8
+        UART4, UART5,  
+#if (BSP_CHIP_RESOURCE_LEVEL > 2)
+        USART6, UART7,  UART8
+#endif
 #endif // End With Define BSP_CHIP_RESOURCE_LEVEL
     };
 	IRQn_Type uart_irq_array[DRV_UART_PERIPHAL_NUM] = {
         USART1_IRQn, USART2_IRQn, USART3_IRQn, 
 #if (BSP_CHIP_RESOURCE_LEVEL > 1)
         UART4_IRQn, 
-        UART5_IRQn, USART6_IRQn, UART7_IRQn, UART8_IRQn
+        UART5_IRQn,
+#if (BSP_CHIP_RESOURCE_LEVEL > 2)
+        USART6_IRQn, UART7_IRQn, UART8_IRQn
+#endif
 #endif // End With Define BSP_CHIP_RESOURCE_LEVEL
     };
-#if defined (DRV_BSP_F4) || defined (DRV_BSP_H7)
+#if defined (DRV_BSP_H7)
 	DMA_Stream_TypeDef *uart_txdma_stream[DRV_UART_PERIPHAL_NUM] = {
         DMA1_Stream0, DMA1_Stream1, DMA1_Stream2, DMA1_Stream3,
         DMA1_Stream4, DMA1_Stream5, DMA1_Stream6, DMA1_Stream7
@@ -237,7 +249,7 @@ void drv_uart_init(uint8_t num, struct drv_uart_t *obj,
         DMA2_Stream0_IRQn, DMA2_Stream1_IRQn, DMA2_Stream2_IRQn, DMA2_Stream3_IRQn,
         DMA2_Stream4_IRQn, DMA2_Stream5_IRQn, DMA2_Stream6_IRQn, DMA2_Stream7_IRQn
     };
-#else
+#elif defined(DRV_BSP_F1)
     DMA_Channel_TypeDef *uart_txdma_channel[DRV_UART_PERIPHAL_NUM] = {
         DMA1_Channel4, DMA1_Channel7, DMA1_Channel2,
     };
@@ -250,7 +262,33 @@ void drv_uart_init(uint8_t num, struct drv_uart_t *obj,
     IRQn_Type uart_rxdma_irq[DRV_UART_PERIPHAL_NUM] = {
         DMA1_Channel5_IRQn, DMA1_Channel6_IRQn, DMA1_Channel3_IRQn,
     };
-#endif  // End With Define DRV_BSP_F4 and DRV_BSP_H7
+#elif defined(DRV_BSP_F4)
+	DMA_Stream_TypeDef *uart_txdma_stream[DRV_UART_PERIPHAL_NUM] = {
+        DMA2_Stream7, DMA1_Stream6, DMA1_Stream3, DMA1_Stream4,
+        DMA1_Stream7, DMA2_Stream6, DMA1_Stream1, DMA1_Stream0
+    };
+    uint32_t uart_txdma_channel[DRV_UART_PERIPHAL_NUM] = {
+        DMA_CHANNEL_4, DMA_CHANNEL_4, DMA_CHANNEL_4, DMA_CHANNEL_4,
+        DMA_CHANNEL_4, DMA_CHANNEL_5, DMA_CHANNEL_5, DMA_CHANNEL_5
+    };
+    IRQn_Type uart_txdma_irq[DRV_UART_PERIPHAL_NUM] = {
+        DMA2_Stream7_IRQn, DMA1_Stream6_IRQn, DMA1_Stream3_IRQn, DMA1_Stream4_IRQn,
+        DMA1_Stream7_IRQn, DMA2_Stream6_IRQn, DMA1_Stream1_IRQn, DMA1_Stream0_IRQn
+    };
+
+	DMA_Stream_TypeDef *uart_rxdma_stream[DRV_UART_PERIPHAL_NUM] = {
+        DMA2_Stream2, DMA1_Stream5, DMA1_Stream1, DMA1_Stream2,
+        DMA1_Stream0, DMA2_Stream1, DMA1_Stream3, DMA1_Stream6
+    };
+    uint32_t uart_rxdma_channel[DRV_UART_PERIPHAL_NUM] = {
+        DMA_CHANNEL_4, DMA_CHANNEL_4, DMA_CHANNEL_4, DMA_CHANNEL_4,
+        DMA_CHANNEL_4, DMA_CHANNEL_5, DMA_CHANNEL_5, DMA_CHANNEL_5
+    };
+    IRQn_Type uart_rxdma_irq[DRV_UART_PERIPHAL_NUM] = {
+        DMA2_Stream2_IRQn, DMA1_Stream5_IRQn, DMA1_Stream1_IRQn, DMA1_Stream2_IRQn,
+        DMA1_Stream0_IRQn, DMA2_Stream1_IRQn, DMA1_Stream3_IRQn, DMA1_Stream6_IRQn
+    };
+#endif  // End With Define DRV_BSP_F1, DRV_BSP_F4, DRV_BSP_H7
 
     obj->attr = *com_attr;
     drv_uart_pinconfig(num, tx_selc, rx_selc);
@@ -263,8 +301,10 @@ void drv_uart_init(uint8_t num, struct drv_uart_t *obj,
 	case 4:	__HAL_RCC_UART4_CLK_ENABLE();	break;
 	case 5:	__HAL_RCC_UART5_CLK_ENABLE();	break;
 	case 6:	__HAL_RCC_USART6_CLK_ENABLE();	break;
+#if (BSP_CHIP_RESOURCE_LEVEL > 2)
 	case 7:	__HAL_RCC_UART7_CLK_ENABLE();	break;
 	case 8:	__HAL_RCC_UART8_CLK_ENABLE();	break;
+#endif
 #endif // End With Define BSP_CHIP_RESOURCE_LEVEL
 	}
 
@@ -279,9 +319,9 @@ void drv_uart_init(uint8_t num, struct drv_uart_t *obj,
 
     if (txdma_attr != NULL) {
         obj->attr_txdma = *txdma_attr;
-        __HAL_RCC_DMA1_CLK_ENABLE();
         __HAL_LINKDMA(&obj->com, hdmatx, obj->txdma);
-#if defined (DRV_BSP_F4) || defined (DRV_BSP_H7)
+#if defined (DRV_BSP_H7)
+        __HAL_RCC_DMA1_CLK_ENABLE();
         HAL_DMA_DeInit(&obj->txdma);
         obj->txdma.Instance = uart_txdma_stream[num-1];
         obj->txdma.Init.Request = uart_txdma_request[num-1];
@@ -296,7 +336,8 @@ void drv_uart_init(uint8_t num, struct drv_uart_t *obj,
         obj->txdma.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
         obj->txdma.Init.MemBurst = DMA_MBURST_SINGLE;
         obj->txdma.Init.PeriphBurst = DMA_PBURST_SINGLE;
-#else
+#elif defined (DRV_BSP_F1)
+        __HAL_RCC_DMA1_CLK_ENABLE();
         obj->txdma.Instance = uart_txdma_channel[num-1];
         obj->txdma.Init.Direction = DMA_MEMORY_TO_PERIPH;
         obj->txdma.Init.PeriphInc = DMA_PINC_DISABLE;
@@ -305,7 +346,19 @@ void drv_uart_init(uint8_t num, struct drv_uart_t *obj,
         obj->txdma.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
         obj->txdma.Init.Mode = DMA_NORMAL;
         obj->txdma.Init.Priority = DMA_PRIORITY_MEDIUM;
-#endif   // End With Define DRV_BSP_F4 and DRV_BSP_H7
+#elif defined (DRV_BSP_F4)
+        __HAL_RCC_DMA2_CLK_ENABLE();
+        obj->txdma.Instance = uart_txdma_stream[num-1];
+        obj->txdma.Init.Channel = uart_txdma_channel[num-1];
+        obj->txdma.Init.Direction = DMA_MEMORY_TO_PERIPH;
+        obj->txdma.Init.PeriphInc = DMA_PINC_DISABLE;
+        obj->txdma.Init.MemInc = DMA_MINC_ENABLE;
+        obj->txdma.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+        obj->txdma.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+        obj->txdma.Init.Mode = DMA_NORMAL;
+        obj->txdma.Init.Priority = DMA_PRIORITY_MEDIUM;
+        obj->txdma.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+#endif   // End With Define DRV_BSP_F1 DRV_BSP_F4 DRV_BSP_H7
         HAL_DMA_Init(&obj->txdma);
         HAL_NVIC_SetPriority(uart_txdma_irq[num-1], txdma_attr->priority, 0);
         HAL_NVIC_EnableIRQ(uart_txdma_irq[num-1]);
@@ -315,11 +368,11 @@ void drv_uart_init(uint8_t num, struct drv_uart_t *obj,
 
     if (rxdma_attr != NULL) {
         obj->attr_rxdma = *rxdma_attr;
+        __HAL_LINKDMA(&obj->com, hdmarx, obj->rxdma);
+#if defined (DRV_BSP_H7)
 #ifdef DMA2
         __HAL_RCC_DMA2_CLK_ENABLE();
 #endif
-        __HAL_LINKDMA(&obj->com, hdmarx, obj->rxdma);
-#if defined (DRV_BSP_F4) || defined (DRV_BSP_H7)
         HAL_DMA_DeInit(&obj->rxdma);
         obj->rxdma.Instance = uart_rxdma_stream[num-1];
         obj->rxdma.Init.Request = uart_rxdma_request[num-1];
@@ -334,7 +387,10 @@ void drv_uart_init(uint8_t num, struct drv_uart_t *obj,
         obj->rxdma.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
         obj->rxdma.Init.MemBurst = DMA_MBURST_SINGLE;
         obj->rxdma.Init.PeriphBurst = DMA_PBURST_SINGLE;
-#else
+#elif defined (DRV_BSP_F1)
+#ifdef DMA2
+        __HAL_RCC_DMA2_CLK_ENABLE();
+#endif
         obj->rxdma.Instance = uart_rxdma_channel[num-1];
         obj->rxdma.Init.Direction = DMA_PERIPH_TO_MEMORY;
         obj->rxdma.Init.PeriphInc = DMA_PINC_DISABLE;
@@ -343,6 +399,18 @@ void drv_uart_init(uint8_t num, struct drv_uart_t *obj,
         obj->rxdma.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
         obj->rxdma.Init.Mode = DMA_NORMAL;
         obj->rxdma.Init.Priority = DMA_PRIORITY_MEDIUM;
+#elif defined (DRV_BSP_F4)
+        __HAL_RCC_DMA1_CLK_ENABLE();
+        obj->rxdma.Instance = uart_rxdma_stream[num-1];
+        obj->rxdma.Init.Channel = uart_rxdma_channel[num-1];
+        obj->rxdma.Init.Direction = DMA_PERIPH_TO_MEMORY;
+        obj->rxdma.Init.PeriphInc = DMA_PINC_DISABLE;
+        obj->rxdma.Init.MemInc = DMA_MINC_ENABLE;
+        obj->rxdma.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+        obj->rxdma.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+        obj->rxdma.Init.Mode = DMA_NORMAL;
+        obj->rxdma.Init.Priority = DMA_PRIORITY_MEDIUM;
+        obj->rxdma.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
 #endif   // End With Define DRV_BSP_F4 and DRV_BSP_H7
         HAL_DMA_Init(&obj->rxdma);
         HAL_NVIC_SetPriority(uart_rxdma_irq[num-1], rxdma_attr->priority, 0);
@@ -481,9 +549,11 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 #if (BSP_CHIP_RESOURCE_LEVEL > 1)
     else if (huart->Instance == UART4)	idx = 3;
     else if (huart->Instance == UART5)	idx = 4;
+#if (BSP_CHIP_RESOURCE_LEVEL > 2)
     else if (huart->Instance == USART6)	idx = 5;
     else if (huart->Instance == UART7)	idx = 6;
     else if (huart->Instance == UART8)	idx = 7;
+#endif
 #endif  // End With Define BSP_CHIP_RESOURCE_LEVEL
 
     drv_uart_txdma_irq(drv_uart_list[idx]);
@@ -498,9 +568,11 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 #if (BSP_CHIP_RESOURCE_LEVEL > 1)
     else if (huart->Instance == UART4)	idx = 3;
     else if (huart->Instance == UART5)	idx = 4;
+#if (BSP_CHIP_RESOURCE_LEVEL > 2)
     else if (huart->Instance == USART6)	idx = 5;
     else if (huart->Instance == UART7)	idx = 6;
     else if (huart->Instance == UART8)	idx = 7;
+#endif
 #endif  // End With Define BSP_CHIP_RESOURCE_LEVEL
 
     drv_uart_rxdma_irq(drv_uart_list[idx]);
@@ -670,3 +742,79 @@ void DMA1_Channel7_IRQHandler()
 }
 
 #endif  // End With Define DRV_BSP_F1
+
+#if defined (DRV_BSP_F4)
+
+void DMA1_Stream0_IRQHandler(void)
+{
+    //DMA1_Stream0 -> UART5_RX+UART8_TX, prefer to UART5_RX
+    HAL_DMA_IRQHandler(drv_uart_list[4]->com.hdmarx);
+}
+
+void DMA1_Stream1_IRQHandler(void)
+{  
+    //DMA1_Stream1 -> USART3_RX+UART7_TX, prefer to USART3_RX
+    HAL_DMA_IRQHandler(drv_uart_list[2]->com.hdmarx);
+}
+
+void DMA1_Stream2_IRQHandler(void)
+{
+    //UART4_RX
+    HAL_DMA_IRQHandler(drv_uart_list[3]->com.hdmarx);
+}
+
+void DMA1_Stream3_IRQHandler(void)
+{
+    //USART3_TX
+    HAL_DMA_IRQHandler(drv_uart_list[2]->com.hdmatx);
+}
+
+void DMA1_Stream4_IRQHandler(void)
+{
+    //USART4_TX
+    HAL_DMA_IRQHandler(drv_uart_list[3]->com.hdmatx);
+}
+
+void DMA1_Stream5_IRQHandler(void)
+{
+    //USART2_RX
+    HAL_DMA_IRQHandler(drv_uart_list[1]->com.hdmarx);
+}
+
+void DMA1_Stream6_IRQHandler(void)
+{
+    //USART2_TX
+    HAL_DMA_IRQHandler(drv_uart_list[1]->com.hdmatx);
+}
+
+void DMA1_Stream7_IRQHandler(void)
+{
+    //UART5_TX
+    HAL_DMA_IRQHandler(drv_uart_list[4]->com.hdmatx);
+}
+
+void DMA2_Stream1_IRQHandler(void)
+{
+    //USART6_RX
+    HAL_DMA_IRQHandler(drv_uart_list[5]->com.hdmarx);
+}
+
+void DMA2_Stream2_IRQHandler(void)
+{
+    //USART1_RX
+    HAL_DMA_IRQHandler(drv_uart_list[0]->com.hdmarx);
+}
+
+void DMA2_Stream6_IRQHandler(void)
+{
+    //USART6_TX
+    HAL_DMA_IRQHandler(drv_uart_list[5]->com.hdmatx);
+}
+
+void DMA2_Stream7_IRQHandler(void)
+{
+    //USART1_TX
+    HAL_DMA_IRQHandler(drv_uart_list[0]->com.hdmatx);
+}
+
+#endif  // End With Define DRV_BSP_F4

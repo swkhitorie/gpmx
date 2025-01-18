@@ -1,9 +1,13 @@
-#ifndef DRV_I2C_REG_H_
-#define DRV_I2C_REG_H_
+#ifndef DRV_I2C_V1_H_
+#define DRV_I2C_V1_H_
 
 #include <stdint.h>
 #include "drv_common.h"
 #include "drv_gpio.h"
+
+/**
+ * Only support I2C Master mode
+ */
 
 /* Constants to identify I2C bus's current status */
 enum drv_i2c_reg_bus_state {

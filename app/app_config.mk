@@ -19,8 +19,9 @@ BSP_ROOT           := app/../
 BSP_ABSROOTDIR     := ${SDK_ROOTDIR}/${BSP_ROOT}
 
 CONFIG_PX4_HRTIMER := y
-include ${BSP_ABSROOTDIR}/stm32/stm32h743_eval/make.mk
+#include ${BSP_ABSROOTDIR}/stm32/stm32h743_eval/make.mk
 #include ${BSP_ABSROOTDIR}/stm32/stm32f103_eval/make.mk
+include ${BSP_ABSROOTDIR}/stm32/stm32f407_eval/make.mk
 
 PROJ_CDEFS        += ${BSP_CDEFS}
 
