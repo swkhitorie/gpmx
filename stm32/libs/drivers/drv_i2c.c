@@ -1,175 +1,130 @@
-#include "drv_i2c_v1.h"
+#include "drv_i2c.h"
 
-/** 
-  * SR2 register flags  
-  */
-#define I2C_V1_FLAG_DUALF                  ((uint32_t)0x00800000)
-#define I2C_V1_FLAG_SMBHOST                ((uint32_t)0x00400000)
-#define I2C_V1_FLAG_SMBDEFAULT             ((uint32_t)0x00200000)
-#define I2C_V1_FLAG_GENCALL                ((uint32_t)0x00100000)
-#define I2C_V1_FLAG_TRA                    ((uint32_t)0x00040000)
-#define I2C_V1_FLAG_BUSY                   ((uint32_t)0x00020000)
-#define I2C_V1_FLAG_MSL                    ((uint32_t)0x00010000)
+struct drv_i2c_t *drv_i2c_list[4] = {0, 0, 0, 0};
 
-/** 
-  * SR1 register flags  
-  */
-#define I2C_V1_FLAG_SMBALERT               ((uint32_t)0x10008000)
-#define I2C_V1_FLAG_TIMEOUT                ((uint32_t)0x10004000)
-#define I2C_V1_FLAG_PECERR                 ((uint32_t)0x10001000)
-#define I2C_V1_FLAG_OVR                    ((uint32_t)0x10000800)
-#define I2C_V1_FLAG_AF                     ((uint32_t)0x10000400)
-#define I2C_V1_FLAG_ARLO                   ((uint32_t)0x10000200)
-#define I2C_V1_FLAG_BERR                   ((uint32_t)0x10000100)
-#define I2C_V1_FLAG_TXE                    ((uint32_t)0x10000080)
-#define I2C_V1_FLAG_RXNE                   ((uint32_t)0x10000040)
-#define I2C_V1_FLAG_STOPF                  ((uint32_t)0x10000010)
-#define I2C_V1_FLAG_ADD10                  ((uint32_t)0x10000008)
-#define I2C_V1_FLAG_BTF                    ((uint32_t)0x10000004)
-#define I2C_V1_FLAG_ADDR                   ((uint32_t)0x10000002)
-#define I2C_V1_FLAG_SB                     ((uint32_t)0x10000001)
-
-static void drv_i2c_v1_reset_clk(struct drv_i2c_v1_t *obj)
+static void drv_i2c_gpio_init(struct drv_i2c_t *obj, uint32_t mode)
 {
-	RCC->APB1RSTR |= obj->rcc;       //Start reset I2C Clock
-	RCC->APB1RSTR &= ~obj->rcc;      //Stop  reset I2C Clock
-	RCC->APB1ENR  |=  obj->rcc;      //Enable I2C clock
+    uint32_t i2c_af[3]    = {
+        GPIO_AF4_I2C1, GPIO_AF4_I2C2, GPIO_AF4_I2C3
+    };
+
+    drv_gpio_init(obj->scl_port, obj->scl_pin, mode, IO_NOPULL, IO_SPEEDHIGH, i2c_af[obj->num-1], NULL);
+    drv_gpio_init(obj->sda_port, obj->sda_pin, mode, IO_NOPULL, IO_SPEEDHIGH, i2c_af[obj->num-1], NULL);
 }
 
-static void drv_i2c_v1_set_clk(struct drv_i2c_v1_t *obj, bool state)
+static void drv_i2c_gpio_config(struct drv_i2c_t *obj, uint8_t scls, uint8_t sdas)
 {
-    if (state) {
-        RCC->APB1ENR |= obj->rcc;
-    } else {
-        RCC->APB1ENR &= ~obj->rcc;
-    }
+#if defined (DRV_BSP_H7)
+	const struct pin_node *scl_node;
+	const struct pin_node *sda_node;
+	uint32_t illegal;
+
+	switch (obj->num) {
+	case 1:
+		if (reinterpret_cast<uint32_t>(I2C_PINCTRL_SOURCE(1, I2C_PIN_SCL, scls)) != NULL &&
+			reinterpret_cast<uint32_t>(I2C_PINCTRL_SOURCE(1, I2C_PIN_SDA, sdas)) != NULL) {
+			scl_node = I2C_PINCTRL_SOURCE(1, I2C_PIN_SCL, scls);
+			sda_node = I2C_PINCTRL_SOURCE(1, I2C_PIN_SDA, sdas);
+			illegal = scl_node->port && sda_node->port;
+		}else {
+			return false;
+		}
+		break;
+	case 2:
+		if (reinterpret_cast<uint32_t>(I2C_PINCTRL_SOURCE(2, I2C_PIN_SCL, scls)) != NULL &&
+			reinterpret_cast<uint32_t>(I2C_PINCTRL_SOURCE(2, I2C_PIN_SDA, sdas)) != NULL) {
+			scl_node = I2C_PINCTRL_SOURCE(2, I2C_PIN_SCL, scls);
+			sda_node = I2C_PINCTRL_SOURCE(2, I2C_PIN_SDA, sdas);
+			illegal = scl_node->port && sda_node->port;
+		}else {
+			return false;
+		}
+		break;
+	case 3:
+		if (reinterpret_cast<uint32_t>(I2C_PINCTRL_SOURCE(3, I2C_PIN_SCL, scls)) != NULL &&
+			reinterpret_cast<uint32_t>(I2C_PINCTRL_SOURCE(3, I2C_PIN_SDA, sdas)) != NULL) {
+			scl_node = I2C_PINCTRL_SOURCE(3, I2C_PIN_SCL, scls);
+			sda_node = I2C_PINCTRL_SOURCE(3, I2C_PIN_SDA, sdas);
+			illegal = scl_node->port && sda_node->port;
+		}else {
+			return false;
+		}
+		break;
+	case 4:
+		if (reinterpret_cast<uint32_t>(I2C_PINCTRL_SOURCE(4, I2C_PIN_SCL, scls)) != NULL &&
+			reinterpret_cast<uint32_t>(I2C_PINCTRL_SOURCE(4, I2C_PIN_SDA, sdas)) != NULL) {
+			scl_node = I2C_PINCTRL_SOURCE(4, I2C_PIN_SCL, scls);
+			sda_node = I2C_PINCTRL_SOURCE(4, I2C_PIN_SDA, sdas);
+			illegal = scl_node->port && sda_node->port;
+		}else {
+			return false;
+		}
+		break;
+	default: return false;
+	}
+
+	if (illegal != 0) {
+        obj->scl_port = scl_node->port;
+        obj->sda_port = sda_node->port;
+        obj->scl_pin = scl_node->pin;
+        obj->sda_pin = sda_node->pin;
+	}else {
+		return false;
+	}
+	return true;
+#endif
+#if defined (DRV_BSP_F1) || defined (DRV_BSP_F4)
+    GPIO_TypeDef *scl_port[3]  = {GPIOB,   GPIOB,    GPIOA};
+    uint16_t      scl_pin[3]   = {6,       10,        8  };
+
+    GPIO_TypeDef *sda_port[3]  = {GPIOB,   GPIOB,    GPIOC};
+    uint16_t      sda_pin[3]   = {7,       11,        9, };
+
+    obj->scl_port = scl_port[obj->num-1];
+    obj->sda_port = sda_port[obj->num-1];
+    obj->scl_pin = scl_pin[obj->num-1];
+    obj->sda_pin = sda_pin[obj->num-1];
+    return true;
+#endif
 }
 
-static void drv_i2c_v1_reset_dev(struct drv_i2c_v1_t *obj)
+static void drv_i2c_blockwait(struct drv_i2c_t *obj, uint16_t addr)
 {
-	//Reset I2C device and RCC
-	obj->com->CR1 |=  I2C_CR1_SWRST;    //Start reset I2c Controler -- soft reset
-	obj->com->CR1 &=  ~I2C_CR1_SWRST;   //Stop  reset I2C
-	obj->com->CR1 &=  ~I2C_CR1_PE;      //DISABLE I2C
+	while (HAL_I2C_GetState(&obj->hi2c) != HAL_I2C_STATE_READY);
+	while (HAL_I2C_IsDeviceReady(&obj->hi2c, addr, 1000, 1000) == HAL_TIMEOUT);
+	while (HAL_I2C_GetState(&obj->hi2c) != HAL_I2C_STATE_READY);
 }
 
-static uint32_t drv_i2c_v1_get_flagstatus(struct drv_i2c_v1_t *obj, uint32_t flag)
+static bool drv_i2c_cmdlist_put(struct drv_i2c_t *obj, struct drv_i2c_reg_cmd *cmd)
 {
-    uint32_t status = 0x00;
-    volatile uint32_t i2c_reg = 0, i2c_base = 0;
-    i2c_base = (uint32_t)obj->com;
-    i2c_reg = flag >> 28;
-
-    /* Get bit[23:0] of the flag */
-    flag &= 0x00FFFFFF;
-    if (i2c_reg != 0) {
-        /* Get the I2Cx SR1 register address */
-        i2c_base += 0x14;
-    } else {
-        /* Flag in I2Cx SR2 Register */
-        flag = (uint32_t)(flag >> 16);
-        /* Get the I2Cx SR2 register address */
-        i2c_base += 0x18;
-    }
-    if(((*(volatile uint32_t *)i2c_base) & flag) != (uint32_t)RESET) {
-        status = SET;
-    } else {
-        status = RESET;
-    }
-    return status;
+    if (obj->cmdlist.size == obj->cmdlist.capacity)
+        return false;
+    obj->cmdlist.buf[obj->cmdlist.in] = *cmd;
+    obj->cmdlist.in++;
+    if (obj->cmdlist.in == obj->cmdlist.capacity)
+        obj->cmdlist.in -= obj->cmdlist.capacity;
+    obj->cmdlist.size++;
 }
 
-static void drv_i2c_reg_perphal_init(struct drv_i2c_v1_t *obj)
+static bool drv_i2c_cmdlist_get(struct drv_i2c_t *obj, struct drv_i2c_reg_cmd *cmd)
 {
-    uint16_t tmpreg = 0, freqrange = 0;
-    uint16_t result = 0x04;
-    uint32_t pclk1 = 8000000;
-
-
-    tmpreg = obj->com->CR2;
-    tmpreg &= (uint16_t)~((uint16_t)I2C_CR2_FREQ);
-    RCC_GetClocksFreq(&rcc_clocks);
-    pclk1 = HAL_RCC_GetPCLK1Freq();
-    freqrange = (uint16_t)(pclk1 / 1000000);
-    tmpreg |= freqrange;
-    obj->com->CR2 = tmpreg;
-
-    obj->com->CR1 &= (uint16_t)~((uint16_t)I2C_CR1_PE);
-    tmpreg = 0;
-
-    /* Configure speed in standard mode */
-    if (I2C_InitStruct->I2C_ClockSpeed <= 100000) {
-        /* Standard mode speed calculate */
-        result = (uint16_t)(pclk1 / (I2C_InitStruct->I2C_ClockSpeed << 1));
-        /* Test if CCR value is under 0x4*/
-        if (result < 0x04) {
-            /* Set minimum allowed value */
-            result = 0x04;  
-        }
-        /* Set speed value for standard mode */
-        tmpreg |= result;	  
-        /* Set Maximum Rise Time for standard mode */
-        I2Cx->TRISE = freqrange + 1; 
-    } else { /*(I2C_InitStruct->I2C_ClockSpeed <= 400000)*/
-        /* Configure speed in fast mode */
-        /* To use the I2C at 400 KHz (in fast mode), the PCLK1 frequency (I2C peripheral
-        input clock) must be a multiple of 10 MHz */
-        if (I2C_InitStruct->I2C_DutyCycle == I2C_DutyCycle_2) {
-        /* Fast mode speed calculate: Tlow/Thigh = 2 */
-        result = (uint16_t)(pclk1 / (I2C_InitStruct->I2C_ClockSpeed * 3));
-        } else { /*I2C_InitStruct->I2C_DutyCycle == I2C_DutyCycle_16_9*/
-            /* Fast mode speed calculate: Tlow/Thigh = 16/9 */
-            result = (uint16_t)(pclk1 / (I2C_InitStruct->I2C_ClockSpeed * 25));
-            /* Set DUTY bit */
-            result |= I2C_DutyCycle_16_9;
-        }
-        /* Test if CCR value is under 0x1*/
-        if ((result & I2C_CCR_CCR) == 0) {
-            /* Set minimum allowed value */
-            result |= (uint16_t)0x0001;  
-        }
-        /* Set speed value and set F/S bit for fast mode */
-        tmpreg |= (uint16_t)(result | I2C_CCR_FS);
-        /* Set Maximum Rise Time for fast mode */
-        I2Cx->TRISE = (uint16_t)(((freqrange * (uint16_t)300) / (uint16_t)1000) + (uint16_t)1);  
-    }
-
-    /* Write to I2Cx CCR */
-    I2Cx->CCR = tmpreg;
-    /* Enable the selected I2C peripheral */
-    I2Cx->CR1 |= I2C_CR1_PE;
-
-    /*---------------------------- I2Cx CR1 Configuration ------------------------*/
-    /* Get the I2Cx CR1 value */
-    tmpreg = I2Cx->CR1;
-    /* Clear ACK, SMBTYPE and  SMBUS bits */
-    tmpreg &= CR1_CLEAR_MASK;
-    /* Configure I2Cx: mode and acknowledgement */
-    /* Set SMBTYPE and SMBUS bits according to I2C_Mode value */
-    /* Set ACK bit according to I2C_Ack value */
-    tmpreg |= (uint16_t)((uint32_t)I2C_InitStruct->I2C_Mode | I2C_InitStruct->I2C_Ack);
-    /* Write to I2Cx CR1 */
-    I2Cx->CR1 = tmpreg;
-
-    /*---------------------------- I2Cx OAR1 Configuration -----------------------*/
-    /* Set I2Cx Own Address1 and acknowledged address */
-    I2Cx->OAR1 = (I2C_InitStruct->I2C_AcknowledgedAddress | I2C_InitStruct->I2C_OwnAddress1);
+    if (obj->cmdlist.size <= 0)
+        return false;
+    *cmd = obj->cmdlist.buf[obj->cmdlist.out];
+    obj->cmdlist.out++;
+    if (obj->cmdlist.out == obj->cmdlist.capacity)
+        obj->cmdlist.out -= obj->cmdlist.capacity;
+    obj->cmdlist.size--;
 }
 
-static void drv_i2c_reg_gpio_init(struct drv_i2c_v1_t *obj, uint32_t mode)
-{
-    uint32_t i2c_af[3]    = {GPIO_AF_I2C1, GPIO_AF_I2C2, GPIO_AF_I2C3};
-
-    drv_gpio_init(obj->scl_port, obj->scl_pin, mode, IO_PULLUP, IO_SPEEDHIGH, i2c_af[obj->num-1], NULL);
-    drv_gpio_init(obj->scl_port, obj->scl_pin, mode, IO_PULLUP, IO_SPEEDHIGH, i2c_af[obj->num-1], NULL);
-}
-
-void drv_i2c_reg_attr_config(struct drv_i2c_reg_attr_t *obj, uint32_t speed)
+void drv_i2c_attr_config(struct drv_i2c_attr_t *obj, uint32_t speed, uint8_t pevent, uint32_t perror)
 {
     obj->speed = speed;
+    obj->priority_event = pevent;
+    obj->priority_error = perror;
 }
 
-void drv_i2c_reg_cmdlist_config(struct drv_i2c_reg_cmdlist *obj, struct drv_i2c_reg_cmd *buf, uint8_t capacity)
+void drv_i2c_cmdlist_config(struct drv_i2c_reg_cmdlist *obj, struct drv_i2c_reg_cmd *buf, uint8_t capacity)
 {
     obj->capacity = capacity;
     obj->buf = buf;
@@ -177,85 +132,296 @@ void drv_i2c_reg_cmdlist_config(struct drv_i2c_reg_cmdlist *obj, struct drv_i2c_
     obj->in = obj->out = 0;
 }
 
-void drv_i2c_v1_config(uint8_t num, struct drv_i2c_v1_t *obj, 
-            struct drv_i2c_reg_attr_t *attr, struct drv_i2c_reg_cmdlist *list)
+void drv_i2c_config(uint8_t num, uint8_t scls, uint8_t sdas, struct drv_i2c_t *obj, 
+            struct drv_i2c_attr_t *attr, struct drv_i2c_reg_cmdlist *list)
 {
-    I2C_TypeDef *i2c_list[3] = { I2C1, I2C2, I2C3 };
-    uint32_t i2c_rcc[3] = { RCC_APB1ENR_I2C1EN, RCC_APB1ENR_I2C2EN, RCC_APB1ENR_I2C3EN};
-
-    GPIO_TypeDef *scl_port[3]  = {GPIOB,   GPIOB,    GPIOA};
-    uint16_t      scl_pin[3]   = {6,       10,        8  };
-
-    GPIO_TypeDef *sda_port[3]  = {GPIOB,   GPIOB,    GPIOC};
-    uint16_t      sda_pin[3]   = {7,       11,        9, };
+	I2C_TypeDef *i2cx[3] = {I2C1, I2C2, I2C3};
 
     obj->num = num;
-    obj->com = i2c_list[num-1];
-    obj->rcc = i2c_rcc[num-1];
-    obj->scl_port = scl_port[num-1];
-    obj->sda_port = sda_port[num-1];
-    obj->scl_pin = scl_pin[num-1];
-    obj->sda_pin = sda_pin[num-1];
-
     obj->attr = *attr;
     obj->cmdlist = *list;
+    drv_i2c_gpio_config(obj, scls, sdas);
+
+    obj->hi2c.Instance 			    = i2cx[num-1];
+#if defined (DRV_BSP_F1) || defined (DRV_BSP_F4)
+    obj->hi2c.Init.DutyCycle = I2C_DUTYCYCLE_2;
+    obj->hi2c.Init.ClockSpeed = attr->speed;    //100k, 400k
+#endif
+#if defined (DRV_BSP_H7)
+    obj->hi2c.Init.Timing  = 0x00901954;
+#endif
+    obj->hi2c.Init.OwnAddress1      = 0;
+    obj->hi2c.Init.AddressingMode   = I2C_ADDRESSINGMODE_7BIT;
+    obj->hi2c.Init.DualAddressMode  = I2C_DUALADDRESS_DISABLE;
+    obj->hi2c.Init.OwnAddress2      = 0;
+    obj->hi2c.Init.GeneralCallMode  = I2C_GENERALCALL_DISABLE;
+    obj->hi2c.Init.NoStretchMode    = I2C_NOSTRETCH_DISABLE;
 }
 
-
-
-bool drv_i2c_v1_reset(struct drv_i2c_v1_t *obj)
-{
-    drv_i2c_v1_reset_dev(obj);
-    drv_i2c_v1_reset_clk(obj);
-
-	//Check and solve I2C Bus Busy problem
-	uint16_t timeout_cnt = 0;
-	while (drv_i2c_v1_get_flagstatus(obj, I2C_V1_FLAG_BUSY) && timeout_cnt < 20) {
-		//Check Busy state and time out FLAG
-		drv_i2c_v1_set_clk(obj, false)		                //Close I2C Device;
-        drv_i2c_reg_gpio_init(obj, IOMODE_OUTPP);
-
-        HAL_GPIO_WritePin(obj->scl_port, obj->scl_pin, 0);	
-        HAL_GPIO_WritePin(obj->sda_port, obj->sda_pin, 0);
-		for(volatile uint32_t i=0;i<5;i++);                // Stop Signal by Pin simulation 
-        HAL_GPIO_WritePin(obj->scl_port, obj->scl_pin, 1);
-		for(volatile uint32_t i=0;i<5;i++);
-        HAL_GPIO_WritePin(obj->sda_port, obj->sda_pin, 1);
-		for(volatile uint32_t i=0;i<5;i++);
-
-        drv_i2c_reg_gpio_init(obj, IOMODE_INPUT);
-        drv_i2c_v1_reset_clk(obj);
-		++timeout_cnt;
-	}
-
-	return (timeout_cnt < 20);
-}
-
-bool drv_i2c_v1_init(struct drv_i2c_v1_t *obj)
+void drv_i2c_init(struct drv_i2c_t *obj)
 {
     obj->i2c_error_cnt = 0;
+    obj->state = 0;
 
-    drv_i2c_reg_gpio_init(obj, IOMODE_AFPP);
-	if (!drv_i2c_v1_reset()) {
-		obj->state = I2CSTATE_ERROR;
-		return false;
+    drv_i2c_gpio_init(obj, IOMODE_AFOD);
+
+	switch (obj->num) {
+	case 1: __HAL_RCC_I2C1_CLK_ENABLE(); break;
+	case 2: __HAL_RCC_I2C2_CLK_ENABLE(); break;
+	case 3: __HAL_RCC_I2C3_CLK_ENABLE(); break;
+	default: break;
 	}
-    drv_i2c_reg_gpio_init(obj, IOMODE_AFOD);
 
-	I2C_InitTypeDef I2C_InitStructure;
-	
-	I2C_InitStructure.I2C_ClockSpeed          = _I2CSpeed;                     
-	I2C_InitStructure.I2C_Mode                = I2C_Mode_I2C;                 
-	I2C_InitStructure.I2C_DutyCycle           = I2C_DutyCycle_2;               
-	I2C_InitStructure.I2C_OwnAddress1         = 0;                            
-	I2C_InitStructure.I2C_Ack                 = I2C_Ack_Enable;             
-	I2C_InitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;  
-	I2C_Init(_I2Cx,&I2C_InitStructure);	
+    HAL_I2C_Init(&obj->hi2c);
+#if defined (DRV_BSP_H7)
+	HAL_I2CEx_AnalogFilter_Config(&obj->hi2c, I2C_ANALOGFILTER_ENABLE); 
+#endif
 
-I2C_GetLastEvent
+	IRQn_Type i2c_err_irq[3] = {I2C1_ER_IRQn, I2C2_ER_IRQn, I2C3_ER_IRQn};
+	IRQn_Type i2c_event_irq[3] = {I2C1_EV_IRQn, I2C2_EV_IRQn, I2C3_EV_IRQn};
 
-    obj->state = I2CSTATE_FREE;
+	HAL_NVIC_SetPriority(i2c_err_irq[obj->num-1], obj->attr.priority_error, 0);
+	HAL_NVIC_EnableIRQ(i2c_err_irq[obj->num-1]);
+	HAL_NVIC_SetPriority(i2c_event_irq[obj->num-1], obj->attr.priority_event, 0);
+	HAL_NVIC_EnableIRQ(i2c_event_irq[obj->num-1]);
+    drv_i2c_list[obj->num - 1] = obj;
     return true;
 }
 
+int drv_i2c_reg_write(struct drv_i2c_t *obj, uint16_t slave, uint16_t reg, 
+                        uint16_t reg_addr_type, uint8_t *p, uint16_t len, enum __drv_rwway way)
+{
+	int ret = HAL_OK;
+    struct drv_i2c_reg_cmd cmd;
+    uint8_t in_len;
+    uint8_t idx;
 
+	switch (way) {
+	case RWPOLL:
+		ret = HAL_I2C_Mem_Write(&obj->hi2c, slave, reg, reg_addr_type, p, len, 1000);
+        //drv_i2c_blockwait(&obj->hi2c, slave);
+		break;
+	case RWIT:
+    case RWDMA:
+        in_len = (len >= DRV_I2C_REG_CMD_DATA_OUT_LEN)?DRV_I2C_REG_CMD_DATA_OUT_LEN:len;
+        cmd.slv_addr = slave;
+        cmd.reg_addr = reg;
+        cmd.reg_addr_type = reg_addr_type;
+        cmd.data_outlen = in_len;
+        for (idx = 0; idx < in_len; idx++) {
+            cmd.data_out[idx] = p[idx];
+        }
+        if (obj->isbusysend) {
+            drv_i2c_cmdlist_put(obj, &cmd);
+            return 0x04;
+        }
+        obj->isbusysend = true;
+        //if (HAL_I2C_GetState(&obj->hi2c) != HAL_I2C_STATE_READY) return HAL_ERROR;
+		ret = HAL_I2C_Mem_Write_IT(&obj->hi2c, slave, reg, reg_addr_type, p, len);
+		break;
+	default: break;
+	}
+	return ret;
+}
+
+int drv_i2c_reg_read(struct drv_i2c_t *obj, uint16_t slave, uint16_t reg, 
+                        uint16_t reg_addr_type, uint8_t *p, uint16_t len, enum __drv_rwway way)
+{
+	int ret = HAL_OK;
+    struct drv_i2c_reg_cmd cmd;
+    uint8_t idx;
+
+	switch (way) {
+	case RWPOLL:
+		ret = HAL_I2C_Mem_Read(&obj->hi2c, slave, reg, reg_addr_type, p, len, 1000);
+        //drv_i2c_blockwait(&obj->hi2c, slave);
+		break;
+	case RWIT:
+    case RWDMA:
+        cmd.slv_addr = slave;
+        cmd.reg_addr = reg;
+        cmd.reg_addr_type = reg_addr_type;
+        cmd.data_inlen = len;
+        cmd.pdatain = p;
+        if (obj->isbusysend) {
+            drv_i2c_cmdlist_put(obj, &cmd);
+            return 0x04;
+        }
+        obj->isbusysend = true;
+        //if (HAL_I2C_GetState(&obj->hi2c) != HAL_I2C_STATE_READY) return HAL_ERROR;
+		ret = HAL_I2C_Mem_Read_IT(&obj->hi2c, slave, reg, reg_addr_type, p, len);
+		break;
+	default: break;
+	}
+	return ret;
+}
+
+int drv_i2c_transfer(struct drv_i2c_t *obj, uint16_t slave, uint8_t *p, uint16_t len,
+                        enum __drv_rwway way)
+{
+	int ret = HAL_OK;
+    struct drv_i2c_reg_cmd cmd;
+    uint8_t in_len;
+    uint8_t idx;
+
+	switch (way) {
+	case RWPOLL:
+        ret = HAL_I2C_Master_Transmit(&obj->hi2c, slave, p, len, 1000);
+        drv_i2c_blockwait(&obj->hi2c, slave);
+		break;
+	case RWIT:
+    case RWDMA:
+        in_len = (len >= DRV_I2C_REG_CMD_DATA_OUT_LEN)?DRV_I2C_REG_CMD_DATA_OUT_LEN:len;
+        cmd.slv_addr = slave;
+        cmd.data_outlen = in_len;
+        for (idx = 0; idx < in_len; idx++) {
+            cmd.data_out[idx] = p[idx];
+        }
+        if (obj->isbusysend) {
+            drv_i2c_cmdlist_put(obj, &cmd);
+            return 0x04;
+        }
+        obj->isbusysend = true;
+        // if (HAL_I2C_GetState(&obj->hi2c) != HAL_I2C_STATE_READY) return HAL_ERROR;
+		ret = HAL_I2C_Master_Transmit_IT(&obj->hi2c, slave, p, len);
+		break;
+	default: break;
+	}
+	return ret;	
+}
+
+int drv_i2c_receive(struct drv_i2c_t *obj, uint16_t slave, uint8_t *p, uint16_t len,
+                        enum __drv_rwway way)
+{
+	int ret = HAL_OK;
+    struct drv_i2c_reg_cmd cmd;
+    uint8_t idx;
+
+	switch (way) {
+	case RWPOLL:
+        ret = HAL_I2C_Master_Receive(&obj->hi2c, slave, p, len, 1000);
+        drv_i2c_blockwait(&obj->hi2c, slave);
+		break;
+	case RWIT:
+    case RWDMA:
+        cmd.slv_addr = slave;
+        cmd.data_inlen = len;
+        cmd.pdatain = p;
+        if (obj->isbusysend) {
+            drv_i2c_cmdlist_put(obj, &cmd);
+            return 0x04;
+        }
+        obj->isbusysend = true;
+        // if (HAL_I2C_GetState(&obj->hi2c) != HAL_I2C_STATE_READY) return HAL_ERROR;
+		ret = HAL_I2C_Master_Receive_IT(&obj->hi2c, slave, p, len);
+		break;
+	default: break;
+	}
+	return ret;	
+}
+
+void drv_i2c_cmd_complete(struct drv_i2c_t *obj)
+{
+    struct drv_i2c_reg_cmd cmd;
+
+    if (HAL_I2C_GetState(&obj->hi2c) == HAL_I2C_STATE_READY) {
+        if (!drv_i2c_cmdlist_get(obj, &cmd)) {
+            obj->isbusysend = false;
+        } else {
+            if (cmd.reg_addr == 0 && cmd.reg_addr_type == 0) {
+                if (cmd.data_outlen == 0) {
+                    HAL_I2C_Master_Receive_IT(&obj->hi2c, cmd.slv_addr, cmd.pdatain, cmd.data_inlen);
+                } else if (cmd.data_inlen == 0) {
+                    HAL_I2C_Master_Transmit_IT(&obj->hi2c, cmd.slv_addr, &cmd.data_out[0], cmd.data_outlen);
+                }
+            } else {
+                if (cmd.data_outlen == 0) {
+                    HAL_I2C_Mem_Read_IT(&obj->hi2c, cmd.slv_addr, 
+                        cmd.reg_addr, cmd.reg_addr_type, cmd.pdatain, cmd.data_inlen);
+                } else if (cmd.data_inlen == 0) {
+                    HAL_I2C_Mem_Write_IT(&obj->hi2c, cmd.slv_addr,
+                        cmd.reg_addr, cmd.reg_addr_type, &cmd.data_out[0], cmd.data_outlen);
+                }
+            }
+        }
+    }
+}
+
+void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
+{
+    static uint8_t idx = 0;
+    if (hi2c->Instance == I2C1)		    idx = 0;
+    else if (hi2c->Instance == I2C2)    idx = 1;
+    else if (hi2c->Instance == I2C3)	idx = 2;
+
+    drv_i2c_cmd_complete(drv_i2c_list[idx]);
+}
+
+void HAL_I2C_MemTxCpltCallback(I2C_HandleTypeDef *hi2c)
+{
+    static uint8_t idx = 0;
+    if (hi2c->Instance == I2C1)		    idx = 0;
+    else if (hi2c->Instance == I2C2)    idx = 1;
+    else if (hi2c->Instance == I2C3)	idx = 2;
+    
+    drv_i2c_cmd_complete(drv_i2c_list[idx]);
+}
+
+void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
+{
+    static uint8_t idx = 0;
+    if (hi2c->Instance == I2C1)		    idx = 0;
+    else if (hi2c->Instance == I2C2)    idx = 1;
+    else if (hi2c->Instance == I2C3)	idx = 2;
+    
+    drv_i2c_cmd_complete(drv_i2c_list[idx]);
+}
+
+void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c)
+{
+    static uint8_t idx = 0;
+    if (hi2c->Instance == I2C1)		    idx = 0;
+    else if (hi2c->Instance == I2C2)    idx = 1;
+    else if (hi2c->Instance == I2C3)	idx = 2;
+    drv_i2c_list[idx]->i2c_error_cnt++;
+}
+
+void I2C1_EV_IRQHandler(void)
+{
+    HAL_I2C_EV_IRQHandler(&drv_i2c_list[0]->hi2c);
+}
+
+void I2C1_ER_IRQHandler(void)
+{
+    HAL_I2C_ER_IRQHandler(&drv_i2c_list[0]->hi2c);
+}
+
+void I2C2_EV_IRQHandler(void)
+{
+    HAL_I2C_EV_IRQHandler(&drv_i2c_list[1]->hi2c);
+}
+
+void I2C2_ER_IRQHandler(void)
+{
+    HAL_I2C_ER_IRQHandler(&drv_i2c_list[1]->hi2c);
+}
+
+void I2C3_EV_IRQHandler(void)
+{
+    HAL_I2C_EV_IRQHandler(&drv_i2c_list[2]->hi2c);
+}
+
+void I2C3_ER_IRQHandler(void)
+{
+    HAL_I2C_ER_IRQHandler(&drv_i2c_list[2]->hi2c);
+}
+
+void I2C4_EV_IRQHandler(void)
+{
+    HAL_I2C_EV_IRQHandler(&drv_i2c_list[3]->hi2c);
+}
+
+void I2C4_ER_IRQHandler(void)
+{
+    HAL_I2C_ER_IRQHandler(&drv_i2c_list[3]->hi2c);
+}

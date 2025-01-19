@@ -9,36 +9,21 @@
 #include "drv_globalpin_h7.h"
 #endif
 
+#define DRV_I2C_REG_CMD_DATA_OUT_LEN     (8)
 
-/* Constants to identify I2C bus's current status */
-enum drv_i2c_reg_bus_state {
-    I2CSTATE_NULL,         //Not working,not Initialized
-    I2CSTATE_START,        //generate a start signal
-    I2CSTATE_ADDR,         //Send a Adress Byte to Slave
-    I2CSTATE_TXMOD,        //After Send Addr, on Transmit Mode
-    I2CSTATE_RXMOD,        //After Send Addr, on Received Mode
-    I2CSTATE_TX,           //Sending a Byte to Slave
-    I2CSTATE_RX,           //Receiving a Byte From Master
-    I2CSTATE_STOP,         //generate a stop signal
-    I2CSTATE_FREE,         //current I2C Bus is free
-    I2CSTATE_ERROR,        //I2C bus ERROR
-};
-
-struct drv_i2c_reg_sensor {
-    bool _healthy;
-    bool _updated;
-    uint64_t _updated_timestamp;
-    uint64_t _interval;
+enum drv_i2c_memaddr_size {
+    I2CMEMADD_8BITS = I2C_MEMADD_SIZE_8BIT,
+    I2CMEMADD_16BITS = I2C_MEMADD_SIZE_16BIT,
 };
 
 struct drv_i2c_reg_cmd {
-    uint8_t slv_addr;
-    uint8_t data_out[5];
+    uint16_t slv_addr;
+    uint16_t reg_addr;
+    uint16_t reg_addr_type;
+    uint8_t data_out[DRV_I2C_REG_CMD_DATA_OUT_LEN];
     uint8_t data_outlen;
     uint8_t *pdatain;
     uint8_t data_inlen;
-    bool istail;
-    struct drv_i2c_reg_sensor *pdevice;
 };
 
 struct drv_i2c_reg_cmdlist {
@@ -49,46 +34,59 @@ struct drv_i2c_reg_cmdlist {
     uint8_t out;
 };
 
-struct drv_i2c_reg_attr_t {
+struct drv_i2c_attr_t {
     uint32_t speed;
+    uint8_t priority_event;
+    uint8_t priority_error;
 };
 
-struct drv_i2c_v1_t {
+struct drv_i2c_t {
     uint8_t num;
     I2C_HandleTypeDef hi2c;
 
-    uint32_t rcc;
-    GPIO_TypeDef scl_port;
-    GPIO_TypeDef sda_port;
+    GPIO_TypeDef *scl_port;
+    GPIO_TypeDef *sda_port;
     uint16_t scl_pin;
     uint16_t sda_pin;
 
-    struct drv_i2c_reg_attr_t attr;
+    struct drv_i2c_attr_t attr;
     struct drv_i2c_reg_cmdlist cmdlist;
 
     struct drv_i2c_reg_cmd current_cmd;
-    enum drv_i2c_reg_bus_state state;
-    uint8_t cmd_idx;
-    uint32_t i2c_direction;
+    uint8_t state;
     uint32_t i2c_error_cnt;
+
+    bool isbusysend;
 };
 
+extern struct drv_i2c_t *drv_i2c_list[4];
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void drv_i2c_reg_attr_config(struct drv_i2c_reg_attr_t *obj, uint32_t speed);
+void drv_i2c_attr_config(struct drv_i2c_attr_t *obj, uint32_t speed, uint8_t pevent, uint32_t perror);
 
-void drv_i2c_reg_cmdlist_config(struct drv_i2c_reg_cmdlist *obj, struct drv_i2c_reg_cmd *buf, uint8_t capacity);
+void drv_i2c_cmdlist_config(struct drv_i2c_reg_cmdlist *obj, struct drv_i2c_reg_cmd *buf, uint8_t capacity);
 
-void drv_i2c_v1_config(uint8_t num, struct drv_i2c_v1_t *obj, 
-            struct drv_i2c_reg_attr_t *attr, struct drv_i2c_reg_cmdlist *list);
+void drv_i2c_config(uint8_t num, uint8_t scls, uint8_t sdas, struct drv_i2c_t *obj, 
+            struct drv_i2c_attr_t *attr, struct drv_i2c_reg_cmdlist *list);
 
-void drv_i2c_v1_init(struct drv_i2c_v1_t *obj);
+void drv_i2c_init(struct drv_i2c_t *obj);
 
-void drv_i2c_v1_reset(struct drv_i2c_v1_t *obj);
+int drv_i2c_reg_write(struct drv_i2c_t *obj, uint16_t slave, uint16_t reg, 
+                        uint16_t reg_addr_type, uint8_t *p, uint16_t len, enum __drv_rwway way);
 
+int drv_i2c_reg_read(struct drv_i2c_t *obj, uint16_t slave, uint16_t reg, 
+                        uint16_t reg_addr_type, uint8_t *p, uint16_t len, enum __drv_rwway way);
+
+int drv_i2c_transfer(struct drv_i2c_t *obj, uint16_t slave, uint8_t *p, uint16_t len,
+                        enum __drv_rwway way);
+
+int drv_i2c_receive(struct drv_i2c_t *obj, uint16_t slave, uint8_t *p, uint16_t len,
+                        enum __drv_rwway way);
+
+void drv_i2c_cmd_complete(struct drv_i2c_t *obj);
 
 #ifdef cplusplus
 }

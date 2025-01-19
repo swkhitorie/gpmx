@@ -2,7 +2,7 @@
 #
 # application configuration file
 #
-PROJ_NAME  :=  stm32f103_eval
+PROJ_NAME  :=  stm32f407_eval
 
 #
 # Toolchain used in this project
