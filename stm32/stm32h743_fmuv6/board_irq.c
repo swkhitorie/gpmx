@@ -1,9 +1,9 @@
 #include "board_config.h"
 
 void NMI_Handler(void) {}
-void HardFault_Handler(void) {}
+void HardFault_Handler(void) { while(1) { BOARD_BLUE_LED(true);} }
 void MemManage_Handler(void) {}
-void BusFault_Handler(void) {}
+void BusFault_Handler(void) { while(1) { BOARD_RED_LED(true);} }
 void UsageFault_Handler(void) {}
 void DebugMon_Handler(void) {}
 // void PPP_IRQHandler(void)

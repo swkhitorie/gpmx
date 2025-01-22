@@ -174,7 +174,7 @@ bool drv_uart_pinconfig(uint8_t num, uint8_t tx_selec, uint8_t rx_selec)
 }
 
 void drv_uart_dma_attr_init(struct drv_uart_dma_attr_t *obj, 
-                            uint8_t *p, uint32_t len, 
+                            uint8_t *p, uint16_t len, 
                             uint8_t priority)
 {
     obj->mem_buff = p;
@@ -327,7 +327,7 @@ void drv_uart_init(uint8_t num, struct drv_uart_t *obj,
         __HAL_LINKDMA(&obj->com, hdmatx, obj->txdma);
 #if defined (DRV_BSP_H7)
         __HAL_RCC_DMA1_CLK_ENABLE();
-        HAL_DMA_DeInit(&obj->txdma);
+        //HAL_DMA_DeInit(&obj->txdma);
         obj->txdma.Instance = uart_txdma_stream[num-1];
         obj->txdma.Init.Request = uart_txdma_request[num-1];
         obj->txdma.Init.Direction = DMA_MEMORY_TO_PERIPH;
@@ -378,7 +378,7 @@ void drv_uart_init(uint8_t num, struct drv_uart_t *obj,
 #ifdef DMA2
         __HAL_RCC_DMA2_CLK_ENABLE();
 #endif
-        HAL_DMA_DeInit(&obj->rxdma);
+        //HAL_DMA_DeInit(&obj->rxdma);
         obj->rxdma.Instance = uart_rxdma_stream[num-1];
         obj->rxdma.Init.Request = uart_rxdma_request[num-1];
         obj->rxdma.Init.Direction = DMA_PERIPH_TO_MEMORY;
@@ -428,9 +428,10 @@ void drv_uart_init(uint8_t num, struct drv_uart_t *obj,
 
 	HAL_NVIC_SetPriority(uart_irq_array[num-1], obj->attr.priority, 0);
 	HAL_NVIC_EnableIRQ(uart_irq_array[num-1]);
-	__HAL_UART_ENABLE_IT(&obj->com, UART_IT_IDLE);
-	obj->tx_busy = false;
 
+	__HAL_UART_ENABLE_IT(&obj->com, UART_IT_IDLE);
+
+	obj->tx_busy = false;
     drv_uart_list[num-1] = obj;
 }
 
@@ -488,18 +489,20 @@ void drv_uart_irq(struct drv_uart_t *obj)
 		uint32_t tmp = obj->com.Instance->SR;
 		tmp = obj->com.Instance->DR;
 #endif  // End With Define DRV_BSP_G0 and DRV_BSP_H7
-		HAL_UART_AbortReceive(&obj->com);
-        
-		uint16_t rxlen = obj->attr_rxdma.mem_capacity - __HAL_DMA_GET_COUNTER(obj->com.hdmarx);
+        if (obj->attr_rxdma.mem_capacity != 0) {
+            HAL_UART_AbortReceive(&obj->com);
 
-#if defined (DRV_BSP_H7)
-		/* save SRAM(DMA) data to D-Cache data */
-		SCB_InvalidateDCache_by_Addr((uint32_t *)&obj->attr_rxdma.mem_buff[0], 
-                                obj->attr_rxdma.mem_capacity);
-#endif  // End With Define DRV_BSP_H7
-        devbuf_write(&obj->rx_buf, &obj->attr_rxdma.mem_buff[0], rxlen);
-		HAL_UART_Receive_DMA(&obj->com, &obj->attr_rxdma.mem_buff[0], 
-                                obj->attr_rxdma.mem_capacity);
+            uint16_t rxlen = obj->attr_rxdma.mem_capacity - __HAL_DMA_GET_COUNTER(obj->com.hdmarx);
+
+    #if defined (DRV_BSP_H7)
+            /* save SRAM(DMA) data to D-Cache data */
+            SCB_InvalidateDCache_by_Addr((uint32_t *)&obj->attr_rxdma.mem_buff[0], 
+                                    obj->attr_rxdma.mem_capacity);
+    #endif  // End With Define DRV_BSP_H7
+            devbuf_write(&obj->rx_buf, &obj->attr_rxdma.mem_buff[0], rxlen);
+            HAL_UART_Receive_DMA(&obj->com, &obj->attr_rxdma.mem_buff[0], 
+                                    obj->attr_rxdma.mem_capacity);
+        }
 	}
 	
 	/* Call HAL function for other UART IRQ (such as TC IRQ and RXNE IRQ) */

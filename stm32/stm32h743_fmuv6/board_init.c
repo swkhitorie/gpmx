@@ -1,7 +1,17 @@
 #include "board_config.h"
 
 static void board_config_mmu();
+static void board_config_cache();
 static void board_config_power_rcc();
+
+void board_config_cache()
+{
+	SCB_InvalidateICache();
+	SCB_InvalidateDCache();
+    
+    SCB_EnableICache();
+	SCB_EnableDCache();
+}
 
 void board_config_mmu()
 {
@@ -15,7 +25,7 @@ void board_config_mmu()
 	// when isBufferable is MPU_ACCESS_BUFFERABLE, sd+fatfs can not read/write
 	// when isBufferable is MPU_ACCESS_NOT_BUFFERABLE, sd+fatfs is available
 	MPU_InitStruct.IsBufferable     = MPU_ACCESS_NOT_BUFFERABLE;
-	MPU_InitStruct.IsCacheable      = MPU_ACCESS_CACHEABLE;
+	MPU_InitStruct.IsCacheable      = MPU_ACCESS_CACHEABLE;///MPU_ACCESS_CACHEABLE;
 	MPU_InitStruct.IsShareable      = MPU_ACCESS_NOT_SHAREABLE;
 	MPU_InitStruct.Number           = MPU_REGION_NUMBER0;
 	MPU_InitStruct.TypeExtField     = MPU_TEX_LEVEL1;
@@ -71,8 +81,10 @@ void board_config_power_rcc()
     /** Initializes the RCC Oscillators */
     /* HSE: 16M -> 16M / PLLM * PLLN / PLLP */
     RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE | RCC_OSCILLATORTYPE_HSI48;
+                                        //| RCC_OSCILLATORTYPE_LSE;
     RCC_OscInitStruct.HSEState = RCC_HSE_ON;
     RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
+    //RCC_OscInitStruct.LSEState = RCC_LSE_ON;
     RCC_OscInitStruct.HSIState = RCC_HSI_OFF;
     RCC_OscInitStruct.CSIState = RCC_CSI_OFF;
     RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
@@ -117,10 +129,10 @@ void board_config_power_rcc()
     __HAL_RCC_BKPRAM_CLKAM_ENABLE();
     __HAL_RCC_D3SRAM1_CLKAM_ENABLE();
 
-	for (int i = 0; i < 1000 * 10; i++);
+	for (int i = 0; i < 3000; i++);
 }
 
-void board_irqreset()
+void board_irq_reset()
 {
     /* clear RCC and all periphal interrupt */
     HAL_RCC_DeInit();
@@ -146,14 +158,14 @@ void board_reboot()
 void board_init()
 {
     SCB->VTOR = APP_LOAD_ADDRESS;
-    board_irqreset();
+    board_irq_reset();
 
     board_config_mmu();
-	SCB_InvalidateICache();
-	SCB_InvalidateDCache();
-    SCB_EnableICache();
-	SCB_EnableDCache();
+	
+    board_config_cache();
+
     HAL_Init();
+    HAL_Delay(500);
 
     board_config_power_rcc();
 

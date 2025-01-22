@@ -19,12 +19,25 @@
 #include <stdbool.h>
 
 #define APP_LOAD_ADDRESS      (0x08020000)
-
+//#define APP_LOAD_ADDRESS      (0x08000000)
 #define HSE_VALUE             (16000000UL)
 #define LSE_VALUE             (32768UL)
 #define __FPU_PRESENT         1
 #define __FPU_USED            1
+#define __MPU_PRESENT         1
 
+/*
+#define STM32_PLLCFG_PLL1M       (5)
+#define STM32_PLLCFG_PLL1N       (160)
+#define STM32_PLLCFG_PLL1P       (2)
+#define STM32_PLLCFG_PLL1Q       (4)
+
+#define STM32_PLLCFG_PLL1M       (1)
+#define STM32_PLLCFG_PLL1N       (60)
+#define STM32_PLLCFG_PLL1P       (2)
+#define STM32_PLLCFG_PLL1Q       (4)
+
+*/
 #define STM32_PLLCFG_PLL1M       (1)
 #define STM32_PLLCFG_PLL1N       (60)
 #define STM32_PLLCFG_PLL1P       (2)
@@ -111,7 +124,7 @@
     extern "C" {
 #endif
 
-void board_irqreset();
+void board_irq_reset();
 
 void board_reboot();
 

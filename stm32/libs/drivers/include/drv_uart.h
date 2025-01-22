@@ -35,6 +35,7 @@ enum uart_parity {
     PARITY_ODD = UART_PARITY_ODD,
 };
 
+#pragma pack (4)
 struct drv_uart_attr_t {
     uint32_t baudrate;
     uint32_t wordlen;
@@ -44,8 +45,8 @@ struct drv_uart_attr_t {
 };
 
 struct drv_uart_dma_attr_t {
+    uint16_t mem_capacity;
     uint8_t *mem_buff;
-    uint32_t mem_capacity;
     uint8_t priority;
 };
 
@@ -59,12 +60,13 @@ struct drv_uart_t
     struct drv_uart_attr_t attr;
     struct drv_uart_dma_attr_t attr_txdma;
     struct drv_uart_dma_attr_t attr_rxdma;
-    
+
     devbuf_t tx_buf;
     devbuf_t rx_buf;
-    
+
     bool tx_busy;
 };
+#pragma pack (0)
 
 extern struct drv_uart_t *drv_uart_list[DRV_UART_PERIPHAL_NUM];
 
@@ -73,7 +75,7 @@ extern "C" {
 #endif
 
 void drv_uart_dma_attr_init(struct drv_uart_dma_attr_t *obj, 
-                            uint8_t *p, uint32_t len,
+                            uint8_t *p, uint16_t len,
                             uint8_t priority);
 
 void drv_uart_attr_init(struct drv_uart_attr_t *obj, 
