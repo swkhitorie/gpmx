@@ -18,12 +18,24 @@ struct drv_pin_t drv_gpio_init(GPIO_TypeDef *port, uint32_t pin, uint32_t mode,
 {
     struct drv_pin_t obj;
     GPIO_InitTypeDef init_obj;
+#if !defined (DRV_BSP_G0)
     IRQn_Type irqn_array[16] = {
         EXTI0_IRQn,	    EXTI1_IRQn,	    EXTI2_IRQn,	    EXTI3_IRQn,      /* EXIT IRQ 0~3 */
         EXTI4_IRQn,	    EXTI9_5_IRQn,   EXTI9_5_IRQn,   EXTI9_5_IRQn,    /* EXIT IRQ 4~7 */
         EXTI9_5_IRQn,   EXTI9_5_IRQn,   EXTI15_10_IRQn,	EXTI15_10_IRQn,  /* EXIT IRQ 8~11 */
         EXTI15_10_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn   /* EXIT IRQ 12~15 */
     };
+#endif
+
+#if defined (DRV_BSP_G0)
+    IRQn_Type irqn_array[16] = {
+        EXTI0_1_IRQn,	EXTI0_1_IRQn,	EXTI2_3_IRQn,   EXTI2_3_IRQn,      /* EXIT IRQ 0~3 */
+        EXTI4_15_IRQn,	EXTI4_15_IRQn,  EXTI4_15_IRQn,  EXTI4_15_IRQn,    /* EXIT IRQ 4~7 */
+        EXTI4_15_IRQn,  EXTI4_15_IRQn,  EXTI4_15_IRQn,	EXTI4_15_IRQn,  /* EXIT IRQ 8~11 */
+        EXTI4_15_IRQn,  EXTI4_15_IRQn,  EXTI4_15_IRQn,  EXTI4_15_IRQn   /* EXIT IRQ 12~15 */
+    };
+#endif
+
 
     obj.port = port;
     obj.pin = (uint16_t)(0x01 << pin);
@@ -35,8 +47,8 @@ struct drv_pin_t drv_gpio_init(GPIO_TypeDef *port, uint32_t pin, uint32_t mode,
     else if (port == GPIOB)		__HAL_RCC_GPIOB_CLK_ENABLE();
     else if (port == GPIOC)		__HAL_RCC_GPIOC_CLK_ENABLE();
     else if (port == GPIOD)		__HAL_RCC_GPIOD_CLK_ENABLE();
-    else if (port == GPIOE)		__HAL_RCC_GPIOE_CLK_ENABLE();
 #if (BSP_CHIP_RESOURCE_LEVEL > 1)
+    else if (port == GPIOE)		__HAL_RCC_GPIOE_CLK_ENABLE();
     else if (port == GPIOF)		__HAL_RCC_GPIOF_CLK_ENABLE();
     else if (port == GPIOG)		__HAL_RCC_GPIOG_CLK_ENABLE();
     else if (port == GPIOH)		__HAL_RCC_GPIOH_CLK_ENABLE();
@@ -103,6 +115,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     }
 }
 
+#if !defined (DRV_BSP_G0)
+
 void EXTI0_IRQHandler(void)
 {
 	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0); 
@@ -157,3 +171,53 @@ void EXTI15_10_IRQHandler(void)
     else if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_15) != RESET)
         HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
 }
+
+#endif
+
+#if defined (DRV_BSP_G0)
+void EXTI0_1_IRQHandler(void)
+{
+    if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_0) != RESET)
+        HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0); 
+    else if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_1) != RESET)
+        HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
+}
+
+void EXTI2_3_IRQHandler(void)
+{
+    if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_2) != RESET)
+        HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2); 
+    else if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_3) != RESET)
+        HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_3);
+}
+
+void EXTI4_15_IRQHandler(void)
+{
+    if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_4) != RESET)
+        HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_4); 
+    else if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_5) != RESET)
+        HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_5);
+    else if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_6) != RESET)
+        HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_6);
+    else if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_7) != RESET)
+        HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_7);
+    else if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_8) != RESET)
+        HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_8);
+    else if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_9) != RESET)
+        HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_9);
+    else if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_10) != RESET)
+        HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_10);
+    else if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_11) != RESET)
+        HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_11);
+    else if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_12) != RESET)
+        HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_12);
+    else if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_13) != RESET)
+        HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
+    else if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_14) != RESET)
+        HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_14);
+    else if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_15) != RESET)
+        HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
+}
+
+#endif
+

@@ -4,6 +4,7 @@
 /** 
  * Simple STM32F407VET6 Board Config Header File
  * HSE 8MHz
+ * verified stm32 driver: uart/i2c
  */
 #include <stm32f4xx_hal.h>
 #include <stdint.h>
@@ -37,23 +38,11 @@ void board_irq_reset();
 
 void board_reboot();
 
-/**
- * initialize board
- * 1. set vector for app
- * 2. reset all interrupt
- * 3. config hal systick, power, rcc clock
- * 4. config io
- * 5. call board_usb_init()
- */
 void board_init();
 
-/**
- * initialize bsp
- * 1. serial com, with redirectly printf
- * 2. ...
- */
 void board_bsp_init();
 
+/*-------------- board bsp interface --------------*/
 void board_debug();
 
 #ifdef __cplusplus

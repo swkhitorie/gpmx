@@ -106,7 +106,7 @@ bool drv_uart_pinconfig(uint8_t num, uint8_t tx_selec, uint8_t rx_selec)
 	return true;
 #endif // End With Define DRV_BSP_H7
 
-#if defined (DRV_BSP_G0) || defined (DRV_BSP_F1)
+#if defined (DRV_BSP_F1)
     if (tx_selec == 0) {
         GPIO_TypeDef *tx_port[5] = { GPIOA,		GPIOA,      GPIOB,      GPIOC,      GPIOC};
         uint16_t       tx_pin[5] = {   9,         2,          10,        10,          12 };
@@ -141,7 +141,7 @@ bool drv_uart_pinconfig(uint8_t num, uint8_t tx_selec, uint8_t rx_selec)
             GPIO_AF7_USART1, GPIO_AF7_USART2, GPIO_AF7_USART3, GPIO_AF8_UART4,
             GPIO_AF8_UART5, GPIO_AF8_USART6, 
 #if (BSP_CHIP_RESOURCE_LEVEL > 2)
-            GPIO_AF7_UART7, GPIO_AF8_UART8
+            GPIO_AF8_UART7, GPIO_AF8_UART8
 #endif
         };
         drv_gpio_init(tx_port[num-1], tx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL);
@@ -157,13 +157,18 @@ bool drv_uart_pinconfig(uint8_t num, uint8_t tx_selec, uint8_t rx_selec)
             GPIO_AF7_USART1, GPIO_AF7_USART2, GPIO_AF7_USART3, GPIO_AF8_UART4,
             GPIO_AF8_UART5, GPIO_AF8_USART6, 
 #if (BSP_CHIP_RESOURCE_LEVEL > 2)
-            GPIO_AF7_UART7, GPIO_AF8_UART8
+            GPIO_AF8_UART7, GPIO_AF8_UART8
 #endif
         };
 
         drv_gpio_init(tx_port[num-1], tx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL);
         drv_gpio_init(rx_port[num-1], rx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL); 
     }
+    return true;
+#endif
+
+#if defined (DRV_BSP_G0)
+
     return true;
 #endif
 }
