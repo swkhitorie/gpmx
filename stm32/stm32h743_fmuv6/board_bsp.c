@@ -1,5 +1,9 @@
 #include <board_config.h>
 #include <drv_uart.h>
+#include <drv_i2c.h>
+
+#include "ist8310_test.h"
+
 
 #ifdef BSP_COM_PRINTF
 #include <string.h>
@@ -15,6 +19,9 @@ uint8_t com1_dma_rxbuff[256];
 uint8_t com1_dma_txbuff[256];
 uint8_t com1_txbuff[512];
 uint8_t com1_rxbuff[512];
+
+struct drv_i2c_reg_cmd i2c_cmdlist_mem[8];
+struct drv_i2c_t i2c;
 
 void board_bsp_init()
 {
@@ -36,6 +43,20 @@ void board_bsp_init()
     drv_uart_buff_init(&com1, &com1_txbuff[0], 512, &com1_rxbuff[0], 512);
     drv_uart_init(1, &com1, 2, 1, &com1_attr, &com1_txdma_attr, &com1_rxdma_attr);
     //drv_uart_init(1, &com1, 2, 1, &com1_attr, NULL, NULL);
+
+    struct drv_i2c_attr_t i2c_attr;
+    struct drv_i2c_reg_cmdlist i2c_buff;
+    drv_i2c_attr_config(&i2c_attr, 400000, 0x01, 0x02);
+    drv_i2c_cmdlist_config(&i2c_buff, &i2c_cmdlist_mem[0], 8);
+    drv_i2c_config(4, 3, 3, &i2c, &i2c_attr, &i2c_buff);
+    drv_i2c_init(&i2c);
+
+    if (ist8310_init()) {
+        printf("ist8310 init success \r\n");
+    } else {
+        printf("ist8310 init failed \r\n");
+    }
+
 
 #ifdef BSP_MODULE_USB_CHERRY
     HAL_Delay(600);
@@ -123,9 +144,13 @@ void board_red_led_toggle()
 	HAL_GPIO_WritePin(GPIO_nLED_RED_PORT, GPIO_nLED_RED_PIN, !val);
 }
 
+int mag_data[3];
 void board_debug()
 {
-	printf("[v6c] usart test \r\n");
+	// printf("[v6c] usart test %d %d %d\r\n",
+    //     BOARD_ADC_HIPOWER_5V_OC, BOARD_ADC_PERIPH_5V_OC, i2c.i2c_error_cnt);
+	ist8310_mag(mag_data);
+	printf("[ist8310] %d %d %d \r\n", mag_data[0], mag_data[1], mag_data[2]);
     board_blue_led_toggle();
 }
 
@@ -142,3 +167,18 @@ int _write(int file, char *ptr, int len)
 }
 #endif
 
+void ist8310_write_register(uint8_t addr, uint8_t data)
+{
+    int ret = drv_i2c_reg_write(&i2c, 0x0c<<1, addr, I2CMEMADD_8BITS, &data, 1, RWPOLL);
+	printf("write ret: %d \r\n", ret);
+}
+
+void ist8310_read_register(uint8_t addr, uint8_t *buf, uint8_t len, int rwway)
+{
+    if (rwway == 0) {
+        drv_i2c_reg_read(&i2c, 0x0c<<1, addr, I2CMEMADD_8BITS, buf, len, RWPOLL);
+    } else {
+        drv_i2c_reg_read(&i2c, 0x0c<<1, addr, I2CMEMADD_8BITS, buf, len, RWIT);
+    }
+    return;
+}

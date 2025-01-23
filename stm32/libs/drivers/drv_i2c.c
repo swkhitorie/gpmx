@@ -4,10 +4,14 @@ struct drv_i2c_t *drv_i2c_list[4] = {0, 0, 0, 0};
 
 static void drv_i2c_gpio_init(struct drv_i2c_t *obj, uint32_t mode)
 {
-    uint32_t i2c_af[3]    = {
-        GPIO_AF4_I2C1, GPIO_AF4_I2C2, GPIO_AF4_I2C3
+    uint32_t i2c_af[4]    = {
+        GPIO_AF4_I2C1, GPIO_AF4_I2C2, GPIO_AF4_I2C3, 
+#if (BSP_CHIP_RESOURCE_LEVEL > 4)
+        GPIO_AF4_I2C4,
+#endif
     };
 
+    printf("%d %d %d\r\n", obj->scl_pin, obj->sda_pin, obj->num);
     drv_gpio_init(obj->scl_port, obj->scl_pin, mode, IO_NOPULL, IO_SPEEDHIGH, i2c_af[obj->num-1], NULL);
     drv_gpio_init(obj->sda_port, obj->sda_pin, mode, IO_NOPULL, IO_SPEEDHIGH, i2c_af[obj->num-1], NULL);
 }
@@ -21,8 +25,8 @@ static void drv_i2c_gpio_config(struct drv_i2c_t *obj, uint8_t scls, uint8_t sda
 
 	switch (obj->num) {
 	case 1:
-		if (reinterpret_cast<uint32_t>(I2C_PINCTRL_SOURCE(1, I2C_PIN_SCL, scls)) != NULL &&
-			reinterpret_cast<uint32_t>(I2C_PINCTRL_SOURCE(1, I2C_PIN_SDA, sdas)) != NULL) {
+		if (PINNODE(uint32_t)(I2C_PINCTRL_SOURCE(1, I2C_PIN_SCL, scls)) != NULL &&
+			PINNODE(uint32_t)(I2C_PINCTRL_SOURCE(1, I2C_PIN_SDA, sdas)) != NULL) {
 			scl_node = I2C_PINCTRL_SOURCE(1, I2C_PIN_SCL, scls);
 			sda_node = I2C_PINCTRL_SOURCE(1, I2C_PIN_SDA, sdas);
 			illegal = scl_node->port && sda_node->port;
@@ -31,8 +35,8 @@ static void drv_i2c_gpio_config(struct drv_i2c_t *obj, uint8_t scls, uint8_t sda
 		}
 		break;
 	case 2:
-		if (reinterpret_cast<uint32_t>(I2C_PINCTRL_SOURCE(2, I2C_PIN_SCL, scls)) != NULL &&
-			reinterpret_cast<uint32_t>(I2C_PINCTRL_SOURCE(2, I2C_PIN_SDA, sdas)) != NULL) {
+		if (PINNODE(uint32_t)(I2C_PINCTRL_SOURCE(2, I2C_PIN_SCL, scls)) != NULL &&
+			PINNODE(uint32_t)(I2C_PINCTRL_SOURCE(2, I2C_PIN_SDA, sdas)) != NULL) {
 			scl_node = I2C_PINCTRL_SOURCE(2, I2C_PIN_SCL, scls);
 			sda_node = I2C_PINCTRL_SOURCE(2, I2C_PIN_SDA, sdas);
 			illegal = scl_node->port && sda_node->port;
@@ -41,8 +45,8 @@ static void drv_i2c_gpio_config(struct drv_i2c_t *obj, uint8_t scls, uint8_t sda
 		}
 		break;
 	case 3:
-		if (reinterpret_cast<uint32_t>(I2C_PINCTRL_SOURCE(3, I2C_PIN_SCL, scls)) != NULL &&
-			reinterpret_cast<uint32_t>(I2C_PINCTRL_SOURCE(3, I2C_PIN_SDA, sdas)) != NULL) {
+		if (PINNODE(uint32_t)(I2C_PINCTRL_SOURCE(3, I2C_PIN_SCL, scls)) != NULL &&
+			PINNODE(uint32_t)(I2C_PINCTRL_SOURCE(3, I2C_PIN_SDA, sdas)) != NULL) {
 			scl_node = I2C_PINCTRL_SOURCE(3, I2C_PIN_SCL, scls);
 			sda_node = I2C_PINCTRL_SOURCE(3, I2C_PIN_SDA, sdas);
 			illegal = scl_node->port && sda_node->port;
@@ -51,8 +55,8 @@ static void drv_i2c_gpio_config(struct drv_i2c_t *obj, uint8_t scls, uint8_t sda
 		}
 		break;
 	case 4:
-		if (reinterpret_cast<uint32_t>(I2C_PINCTRL_SOURCE(4, I2C_PIN_SCL, scls)) != NULL &&
-			reinterpret_cast<uint32_t>(I2C_PINCTRL_SOURCE(4, I2C_PIN_SDA, sdas)) != NULL) {
+		if (PINNODE(uint32_t)(I2C_PINCTRL_SOURCE(4, I2C_PIN_SCL, scls)) != NULL &&
+			PINNODE(uint32_t)(I2C_PINCTRL_SOURCE(4, I2C_PIN_SDA, sdas)) != NULL) {
 			scl_node = I2C_PINCTRL_SOURCE(4, I2C_PIN_SCL, scls);
 			sda_node = I2C_PINCTRL_SOURCE(4, I2C_PIN_SDA, sdas);
 			illegal = scl_node->port && sda_node->port;
@@ -135,7 +139,12 @@ void drv_i2c_cmdlist_config(struct drv_i2c_reg_cmdlist *obj, struct drv_i2c_reg_
 void drv_i2c_config(uint8_t num, uint8_t scls, uint8_t sdas, struct drv_i2c_t *obj, 
             struct drv_i2c_attr_t *attr, struct drv_i2c_reg_cmdlist *list)
 {
-	I2C_TypeDef *i2cx[3] = {I2C1, I2C2, I2C3};
+	I2C_TypeDef *i2cx[4] = {
+        I2C1, I2C2, I2C3,
+#if (BSP_CHIP_RESOURCE_LEVEL > 4)
+        I2C4
+#endif
+    };
 
     obj->num = num;
     obj->attr = *attr;
@@ -160,6 +169,19 @@ void drv_i2c_config(uint8_t num, uint8_t scls, uint8_t sdas, struct drv_i2c_t *o
 
 void drv_i2c_init(struct drv_i2c_t *obj)
 {
+	IRQn_Type i2c_err_irq[4] = {
+        I2C1_ER_IRQn, I2C2_ER_IRQn, I2C3_ER_IRQn,
+#if (BSP_CHIP_RESOURCE_LEVEL > 4)
+        I2C4_ER_IRQn,
+#endif
+    };
+	IRQn_Type i2c_event_irq[4] = {
+        I2C1_EV_IRQn, I2C2_EV_IRQn, I2C3_EV_IRQn,
+#if (BSP_CHIP_RESOURCE_LEVEL > 4)
+        I2C4_EV_IRQn,
+#endif
+    };
+
     obj->i2c_error_cnt = 0;
     obj->state = 0;
 
@@ -169,6 +191,9 @@ void drv_i2c_init(struct drv_i2c_t *obj)
 	case 1: __HAL_RCC_I2C1_CLK_ENABLE(); break;
 	case 2: __HAL_RCC_I2C2_CLK_ENABLE(); break;
 	case 3: __HAL_RCC_I2C3_CLK_ENABLE(); break;
+#if (BSP_CHIP_RESOURCE_LEVEL > 4)
+	case 4: __HAL_RCC_I2C4_CLK_ENABLE(); break; 
+#endif
 	default: break;
 	}
 
@@ -176,9 +201,6 @@ void drv_i2c_init(struct drv_i2c_t *obj)
 #if defined (DRV_BSP_H7)
 	HAL_I2CEx_AnalogFilter_Config(&obj->hi2c, I2C_ANALOGFILTER_ENABLE); 
 #endif
-
-	IRQn_Type i2c_err_irq[3] = {I2C1_ER_IRQn, I2C2_ER_IRQn, I2C3_ER_IRQn};
-	IRQn_Type i2c_event_irq[3] = {I2C1_EV_IRQn, I2C2_EV_IRQn, I2C3_EV_IRQn};
 
 	HAL_NVIC_SetPriority(i2c_err_irq[obj->num-1], obj->attr.priority_error, 0);
 	HAL_NVIC_EnableIRQ(i2c_err_irq[obj->num-1]);
@@ -353,6 +375,7 @@ void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
     if (hi2c->Instance == I2C1)		    idx = 0;
     else if (hi2c->Instance == I2C2)    idx = 1;
     else if (hi2c->Instance == I2C3)	idx = 2;
+    else if (hi2c->Instance == I2C4)	idx = 3;
 
     drv_i2c_cmd_complete(drv_i2c_list[idx]);
 }
@@ -363,6 +386,7 @@ void HAL_I2C_MemTxCpltCallback(I2C_HandleTypeDef *hi2c)
     if (hi2c->Instance == I2C1)		    idx = 0;
     else if (hi2c->Instance == I2C2)    idx = 1;
     else if (hi2c->Instance == I2C3)	idx = 2;
+    else if (hi2c->Instance == I2C4)	idx = 3;
     
     drv_i2c_cmd_complete(drv_i2c_list[idx]);
 }
@@ -373,6 +397,7 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
     if (hi2c->Instance == I2C1)		    idx = 0;
     else if (hi2c->Instance == I2C2)    idx = 1;
     else if (hi2c->Instance == I2C3)	idx = 2;
+    else if (hi2c->Instance == I2C4)	idx = 3;
     
     drv_i2c_cmd_complete(drv_i2c_list[idx]);
 }
@@ -383,6 +408,8 @@ void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c)
     if (hi2c->Instance == I2C1)		    idx = 0;
     else if (hi2c->Instance == I2C2)    idx = 1;
     else if (hi2c->Instance == I2C3)	idx = 2;
+    else if (hi2c->Instance == I2C4)	idx = 3;
+
     drv_i2c_list[idx]->i2c_error_cnt++;
 }
 
@@ -394,6 +421,7 @@ void I2C1_EV_IRQHandler(void)
 void I2C1_ER_IRQHandler(void)
 {
     HAL_I2C_ER_IRQHandler(&drv_i2c_list[0]->hi2c);
+    drv_i2c_list[0]->i2c_error_cnt++;
 }
 
 void I2C2_EV_IRQHandler(void)
@@ -404,6 +432,7 @@ void I2C2_EV_IRQHandler(void)
 void I2C2_ER_IRQHandler(void)
 {
     HAL_I2C_ER_IRQHandler(&drv_i2c_list[1]->hi2c);
+    drv_i2c_list[1]->i2c_error_cnt++;
 }
 
 void I2C3_EV_IRQHandler(void)
@@ -414,6 +443,7 @@ void I2C3_EV_IRQHandler(void)
 void I2C3_ER_IRQHandler(void)
 {
     HAL_I2C_ER_IRQHandler(&drv_i2c_list[2]->hi2c);
+    drv_i2c_list[2]->i2c_error_cnt++;
 }
 
 void I2C4_EV_IRQHandler(void)
@@ -424,4 +454,5 @@ void I2C4_EV_IRQHandler(void)
 void I2C4_ER_IRQHandler(void)
 {
     HAL_I2C_ER_IRQHandler(&drv_i2c_list[3]->hi2c);
+    drv_i2c_list[3]->i2c_error_cnt++;
 }

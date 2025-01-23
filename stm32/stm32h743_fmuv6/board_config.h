@@ -4,7 +4,7 @@
 /**
  * PIXHAWK FMU V6C Board Config Header File (STM32H743VIT6)
  * HSE 16MHZ
- * verified stm32 driver: 
+ * verified stm32 driver: usart/i2c/spi
  * bug 1: v6c can not enter SysTick_Handler() irq
  *       -> fixed: call __set_BASEPRI(0); of set it priority higher, default 15
  * warning 1: v6c can not enter OTG_FS_IRQHandler() irq

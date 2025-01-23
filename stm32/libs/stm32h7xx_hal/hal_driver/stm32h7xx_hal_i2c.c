@@ -2521,7 +2521,7 @@ HAL_StatusTypeDef HAL_I2C_Mem_Write(I2C_HandleTypeDef *hi2c, uint16_t DevAddress
     if ((pData == NULL) || (Size == 0U))
     {
       hi2c->ErrorCode = HAL_I2C_ERROR_INVALID_PARAM;
-      return  HAL_ERROR;
+      return  HAL_ERROR + 1;
     }
 
     /* Process Locked */
@@ -2532,7 +2532,7 @@ HAL_StatusTypeDef HAL_I2C_Mem_Write(I2C_HandleTypeDef *hi2c, uint16_t DevAddress
 
     if (I2C_WaitOnFlagUntilTimeout(hi2c, I2C_FLAG_BUSY, SET, I2C_TIMEOUT_BUSY, tickstart) != HAL_OK)
     {
-      return HAL_ERROR;
+      return HAL_ERROR + 2;
     }
 
     hi2c->State     = HAL_I2C_STATE_BUSY_TX;
@@ -2549,7 +2549,7 @@ HAL_StatusTypeDef HAL_I2C_Mem_Write(I2C_HandleTypeDef *hi2c, uint16_t DevAddress
     {
       /* Process Unlocked */
       __HAL_UNLOCK(hi2c);
-      return HAL_ERROR;
+      return HAL_ERROR + 3;
     }
 
     /* Set NBYTES to write and reload if hi2c->XferCount > MAX_NBYTE_SIZE */
@@ -2569,7 +2569,7 @@ HAL_StatusTypeDef HAL_I2C_Mem_Write(I2C_HandleTypeDef *hi2c, uint16_t DevAddress
       /* Wait until TXIS flag is set */
       if (I2C_WaitOnTXISFlagUntilTimeout(hi2c, Timeout, tickstart) != HAL_OK)
       {
-        return HAL_ERROR;
+        return HAL_ERROR + 4;
       }
 
       /* Write data to TXDR */
@@ -2609,7 +2609,7 @@ HAL_StatusTypeDef HAL_I2C_Mem_Write(I2C_HandleTypeDef *hi2c, uint16_t DevAddress
     /* Wait until STOPF flag is reset */
     if (I2C_WaitOnSTOPFlagUntilTimeout(hi2c, Timeout, tickstart) != HAL_OK)
     {
-      return HAL_ERROR;
+      return HAL_ERROR + 5;
     }
 
     /* Clear STOP Flag */
@@ -2628,7 +2628,7 @@ HAL_StatusTypeDef HAL_I2C_Mem_Write(I2C_HandleTypeDef *hi2c, uint16_t DevAddress
   }
   else
   {
-    return HAL_BUSY;
+    return HAL_BUSY + 9;
   }
 }
 

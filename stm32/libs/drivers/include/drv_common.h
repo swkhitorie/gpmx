@@ -23,7 +23,7 @@
  * level range: [1 ~ 3(MAX)]
  * Max Default
  */
-#define BSP_CHIP_RESOURCE_MAX   (5)
+#define BSP_CHIP_RESOURCE_MAX   (6)
 
 #if defined (DRV_BSP_H7)
     #define BSP_CHIP_RESOURCE_LEVEL BSP_CHIP_RESOURCE_MAX
