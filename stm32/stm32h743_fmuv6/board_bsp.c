@@ -144,7 +144,7 @@ void board_red_led_toggle()
 	HAL_GPIO_WritePin(GPIO_nLED_RED_PORT, GPIO_nLED_RED_PIN, !val);
 }
 
-int mag_data[3];
+int16_t mag_data[3];
 void board_debug()
 {
 	// printf("[v6c] usart test %d %d %d\r\n",
@@ -169,16 +169,17 @@ int _write(int file, char *ptr, int len)
 
 void ist8310_write_register(uint8_t addr, uint8_t data)
 {
-    int ret = drv_i2c_reg_write(&i2c, 0x0c<<1, addr, I2CMEMADD_8BITS, &data, 1, RWPOLL);
-	printf("write ret: %d \r\n", ret);
+    int ret = 0;
+	ret = drv_i2c_reg_write(&i2c, 0x0c<<1, addr, I2CMEMADD_8BITS, &data, 1, RWPOLL);
 }
 
 void ist8310_read_register(uint8_t addr, uint8_t *buf, uint8_t len, int rwway)
 {
+	int ret = 0;
     if (rwway == 0) {
-        drv_i2c_reg_read(&i2c, 0x0c<<1, addr, I2CMEMADD_8BITS, buf, len, RWPOLL);
+        ret = drv_i2c_reg_read(&i2c, 0x0c<<1, addr, I2CMEMADD_8BITS, buf, len, RWPOLL);
     } else {
-        drv_i2c_reg_read(&i2c, 0x0c<<1, addr, I2CMEMADD_8BITS, buf, len, RWIT);
+        ret = drv_i2c_reg_read(&i2c, 0x0c<<1, addr, I2CMEMADD_8BITS, buf, len, RWIT);
     }
     return;
 }

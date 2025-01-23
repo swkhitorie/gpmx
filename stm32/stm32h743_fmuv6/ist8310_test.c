@@ -12,7 +12,7 @@ bool ist8310_init()
         ADDR_CTRL3, ADDR_CTRL4,
     };
     uint8_t reg_write_val[2] = {
-        CTRL3_SAMPLEAVG_16, CTRL4_SRPD, 
+        CTRL3_SAMPLEAVG_16, CTRL4_SRPD,
     };
     uint8_t reg_write_check_val[2] = {0x00};
 
@@ -27,10 +27,10 @@ bool ist8310_init()
 
     for (idx = 0; idx < 2; idx++) {
         ist8310_read_register(reg_write_list[idx], &reg_write_check_val[idx], 1, 0);
+        wait_block();
         if (reg_write_check_val[idx] != reg_write_val[idx]) {
             break;
         }
-        wait_block();
     }
     if (idx != 2) {
         printf("[ist8310] check false %d \r\n", idx);
@@ -43,20 +43,12 @@ bool ist8310_init()
     return (tmpid == WAI_EXPECTED_VALUE);
 }
 
-uint8_t rawmag[6];
+uint8_t rawmag[6] = {0};
 bool ist8310_mag(int16_t *mag)
 {
-	struct { /* status register and data as read back from the device */
-		uint8_t     x[2];
-		uint8_t     y[2];
-		uint8_t     z[2];
-	} report_buffer;
-
     ist8310_write_register(ADDR_CTRL1, CTRL1_MODE_SINGLE);
     ist8310_read_register(ADDR_DATA_OUT_X_LSB, &rawmag[0], 6, 0);
-	mag[0] = (((int16_t)rawmag[1]) << 8) | rawmag[0];
-	mag[1] = (((int16_t)rawmag[3]) << 8) | rawmag[2];
-	mag[2] = (((int16_t)rawmag[5]) << 8) | rawmag[4];
+	mag[0] = (int16_t)((rawmag[1] << 8) | rawmag[0]);
+	mag[1] = (int16_t)((rawmag[3] << 8) | rawmag[2]);
+	mag[2] = (int16_t)((rawmag[5] << 8) | rawmag[4]);
 }
-
-

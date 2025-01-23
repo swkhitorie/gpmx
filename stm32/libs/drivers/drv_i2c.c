@@ -4,6 +4,11 @@ struct drv_i2c_t *drv_i2c_list[4] = {0, 0, 0, 0};
 
 static void drv_i2c_gpio_init(struct drv_i2c_t *obj, uint32_t mode)
 {
+    uint8_t num = obj->num;
+    uint8_t scl_pin = obj->scl_pin;
+    uint8_t sda_pin = obj->sda_pin;
+    GPIO_TypeDef *scl_port = obj->scl_port;
+    GPIO_TypeDef *sda_port = obj->sda_port;
     uint32_t i2c_af[4]    = {
         GPIO_AF4_I2C1, GPIO_AF4_I2C2, GPIO_AF4_I2C3, 
 #if (BSP_CHIP_RESOURCE_LEVEL > 4)
@@ -11,9 +16,11 @@ static void drv_i2c_gpio_init(struct drv_i2c_t *obj, uint32_t mode)
 #endif
     };
 
-    printf("%d %d %d\r\n", obj->scl_pin, obj->sda_pin, obj->num);
-    drv_gpio_init(obj->scl_port, obj->scl_pin, mode, IO_NOPULL, IO_SPEEDHIGH, i2c_af[obj->num-1], NULL);
-    drv_gpio_init(obj->sda_port, obj->sda_pin, mode, IO_NOPULL, IO_SPEEDHIGH, i2c_af[obj->num-1], NULL);
+    // printf("%d %d %d\r\n", obj->scl_pin, obj->sda_pin, obj->num);
+    // why here must delay???
+    HAL_Delay(1);
+    drv_gpio_init(scl_port, scl_pin, mode, IO_NOPULL, IO_SPEEDHIGH, i2c_af[num-1], NULL);
+    drv_gpio_init(sda_port, sda_pin, mode, IO_NOPULL, IO_SPEEDHIGH, i2c_af[num-1], NULL);
 }
 
 static void drv_i2c_gpio_config(struct drv_i2c_t *obj, uint8_t scls, uint8_t sdas)
@@ -185,8 +192,6 @@ void drv_i2c_init(struct drv_i2c_t *obj)
     obj->i2c_error_cnt = 0;
     obj->state = 0;
 
-    drv_i2c_gpio_init(obj, IOMODE_AFOD);
-
 	switch (obj->num) {
 	case 1: __HAL_RCC_I2C1_CLK_ENABLE(); break;
 	case 2: __HAL_RCC_I2C2_CLK_ENABLE(); break;
@@ -196,6 +201,8 @@ void drv_i2c_init(struct drv_i2c_t *obj)
 #endif
 	default: break;
 	}
+
+    drv_i2c_gpio_init(obj, IOMODE_AFOD);
 
     HAL_I2C_Init(&obj->hi2c);
 #if defined (DRV_BSP_H7)
