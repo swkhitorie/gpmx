@@ -6,19 +6,19 @@ static void board_config_power_rcc();
 void board_irqreset()
 {
     /* clear RCC and all periphal interrupt */
-    HAL_RCC_DeInit();
+    // HAL_RCC_DeInit();
     for (int i = 0; i < 8; i++) {
         NVIC->ICER[i] = 0xFFFFFFFF;
         NVIC->ICPR[i] = 0xFFFFFFFF;
     }
 
-    /* set SP->MSP */
-    __set_CONTROL(0);
-    /* enable all interrupt and exception */        
-    __set_PRIMASK(0);
-    __set_FAULTMASK(0);
-    __set_BASEPRI(0);
-    __enable_irq();
+    // /* set SP->MSP */
+    // __set_CONTROL(0);
+    // /* enable all interrupt and exception */        
+    // __set_PRIMASK(0);
+    // __set_FAULTMASK(0);
+    // __set_BASEPRI(0);
+    // __enable_irq();
 }
 
 void board_reboot()
@@ -61,7 +61,6 @@ void board_config_power_rcc()
     }
 
     __HAL_RCC_SYSCFG_CLK_ENABLE();
-    __HAL_RCC_PWR_CLK_ENABLE();
 }
 
 void board_init()

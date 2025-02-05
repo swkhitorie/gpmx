@@ -95,7 +95,7 @@
 #define GPIO_OTGFS_VBUS_PORT           (GPIOA)
 #define GPIO_OTGFS_VBUS_PIN           (GPIO_PIN_9)
 
-#define VDD_5V_PERIPH_EN(on_true)          HAL_GPIO_WritePin(GPIO_VDD_5V_PERIPH_nOC_PORT, \
+#define VDD_5V_PERIPH_EN(on_true)          HAL_GPIO_WritePin(GPIO_VDD_5V_PERIPH_nEN_PORT, \
                                                     GPIO_VDD_5V_PERIPH_nEN_PIN, !(on_true))
 #define VDD_5V_HIPOWER_EN(on_true)         HAL_GPIO_WritePin(GPIO_VDD_5V_HIPOWER_nEN_PORT, \
                                                     GPIO_VDD_5V_HIPOWER_nEN_PIN, !(on_true))

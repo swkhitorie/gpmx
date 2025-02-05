@@ -2,7 +2,7 @@
 #
 # application configuration file
 #
-PROJ_NAME  :=  stm32h743_fmuv6
+PROJ_NAME  :=  test
 
 #
 # Toolchain used in this project
@@ -21,10 +21,10 @@ BSP_ABSROOTDIR     := ${SDK_ROOTDIR}/${BSP_ROOT}
 CONFIG_PX4_HRTIMER := y
 
 #include ${BSP_ABSROOTDIR}/stm32/stm32h743_eval/make.mk
-include ${BSP_ABSROOTDIR}/stm32/stm32h743_fmuv6/make.mk
+#include ${BSP_ABSROOTDIR}/stm32/stm32h743_fmuv6/make.mk
 #include ${BSP_ABSROOTDIR}/stm32/stm32f103_eval/make.mk
 #include ${BSP_ABSROOTDIR}/stm32/stm32f407_eval/make.mk
-#include ${BSP_ABSROOTDIR}/stm32/stm32f427_fmuv2/make.mk
+include ${BSP_ABSROOTDIR}/stm32/stm32f427_fmuv2/make.mk
 
 PROJ_CDEFS        += ${BSP_CDEFS}
 

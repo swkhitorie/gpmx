@@ -43,8 +43,14 @@
 #define GPIO_nLED_PORT   (GPIOE)
 #define GPIO_nLED_PIN    (GPIO_PIN_12)
 
+#define GPIO_VDD_5V_PERIPH_nEN_PORT  (GPIOA)
+#define GPIO_VDD_5V_PERIPH_nEN_PIN   (GPIO_PIN_8)
+
 #define BOARD_LED(on_true)   HAL_GPIO_WritePin(GPIO_nLED_PORT, \
                             GPIO_nLED_PIN, !(on_true))
+
+#define VDD_5V_PERIPH_EN(on_true)          HAL_GPIO_WritePin(GPIO_VDD_5V_PERIPH_nEN_PORT, \
+                                                    GPIO_VDD_5V_PERIPH_nEN_PIN, !(on_true))
 
 #ifdef __cplusplus
     extern "C" {

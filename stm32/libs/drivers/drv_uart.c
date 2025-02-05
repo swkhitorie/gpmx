@@ -352,7 +352,11 @@ void drv_uart_init(uint8_t num, struct drv_uart_t *obj,
         obj->txdma.Init.Mode = DMA_NORMAL;
         obj->txdma.Init.Priority = DMA_PRIORITY_MEDIUM;
 #elif defined (DRV_BSP_F4)
-        __HAL_RCC_DMA2_CLK_ENABLE();
+        if (num == 1 || num == 6) {
+            __HAL_RCC_DMA2_CLK_ENABLE();
+        } else {
+            __HAL_RCC_DMA1_CLK_ENABLE();
+        }
         obj->txdma.Instance = uart_txdma_stream[num-1];
         obj->txdma.Init.Channel = uart_txdma_channel[num-1];
         obj->txdma.Init.Direction = DMA_MEMORY_TO_PERIPH;
@@ -405,7 +409,11 @@ void drv_uart_init(uint8_t num, struct drv_uart_t *obj,
         obj->rxdma.Init.Mode = DMA_NORMAL;
         obj->rxdma.Init.Priority = DMA_PRIORITY_MEDIUM;
 #elif defined (DRV_BSP_F4)
-        __HAL_RCC_DMA1_CLK_ENABLE();
+        if (num == 1 || num == 6) {
+            __HAL_RCC_DMA2_CLK_ENABLE();
+        } else {
+            __HAL_RCC_DMA1_CLK_ENABLE();
+        }
         obj->rxdma.Instance = uart_rxdma_stream[num-1];
         obj->rxdma.Init.Channel = uart_rxdma_channel[num-1];
         obj->rxdma.Init.Direction = DMA_PERIPH_TO_MEMORY;
