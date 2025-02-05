@@ -4,7 +4,7 @@
 /** 
  * Pixhawk FMU v2 Board Config Header File
  * HSE 24MHZ
- * verified stm32 driver: 
+ * verified stm32 driver: uart/spi
  */
 #include "stm32f4xx_hal.h"
 #include <stdint.h>

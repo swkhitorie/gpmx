@@ -58,11 +58,11 @@ void drv_spi_attr_init(struct drv_spi_attr_t *obj, uint32_t mode, uint32_t datab
 void drv_spi_init(uint8_t num, struct drv_spi_t *obj, struct drv_spi_attr_t *attr,
     uint8_t nss, uint8_t sck, uint8_t miso, uint8_t mosi);
 
-void drv_spi_write(struct drv_spi_t *obj, const uint8_t *p, uint16_t len, enum __drv_rwway way);
+int drv_spi_write(struct drv_spi_t *obj, const uint8_t *p, uint16_t len, enum __drv_rwway way);
 
-void drv_spi_read(struct drv_spi_t *obj, uint8_t *p, uint16_t len);
+int drv_spi_read(struct drv_spi_t *obj, uint8_t *p, uint16_t len, enum __drv_rwway way);
 
-int drv_spi_readwrite(struct drv_spi_t *obj, uint8_t *ptx, uint8_t *prx, uint16_t size);
+int drv_spi_readwrite(struct drv_spi_t *obj, uint8_t *ptx, uint8_t *prx, uint16_t size, enum __drv_rwway way);
 
 #ifdef __cplusplus
 }

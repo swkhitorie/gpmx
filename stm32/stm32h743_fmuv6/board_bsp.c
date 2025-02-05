@@ -1,9 +1,10 @@
 #include <board_config.h>
 #include <drv_uart.h>
 #include <drv_i2c.h>
+#include <drv_spi.h>
 
 #include "ist8310_test.h"
-
+#include "icm42688_test.h"
 
 #ifdef BSP_COM_PRINTF
 #include <string.h>
@@ -22,6 +23,9 @@ uint8_t com1_rxbuff[512];
 
 struct drv_i2c_reg_cmd i2c_cmdlist_mem[8];
 struct drv_i2c_t i2c;
+
+struct drv_spi_t spi;
+struct drv_pin_t spi_cs;
 
 void board_bsp_init()
 {
@@ -51,12 +55,18 @@ void board_bsp_init()
     drv_i2c_config(4, 3, 3, &i2c, &i2c_attr, &i2c_buff);
     drv_i2c_init(&i2c);
 
+    struct drv_spi_attr_t spi_attr;
+    drv_spi_attr_init(&spi_attr, SPI_MODE0, SPI_8BITS, SPI_PRESCAL_32);
+    drv_spi_init(1, &spi, &spi_attr, 1, 1, 1, 1);
+    spi_cs = drv_gpio_init(GPIOC, 13, IOMODE_OUTPP, IO_SPEEDHIGH, IO_NOPULL, 0, NULL);
+
     if (ist8310_init()) {
         printf("ist8310 init success \r\n");
     } else {
         printf("ist8310 init failed \r\n");
     }
 
+    icm42688_init();
 
 #ifdef BSP_MODULE_USB_CHERRY
     HAL_Delay(600);
@@ -145,12 +155,16 @@ void board_red_led_toggle()
 }
 
 int16_t mag_data[3];
+int16_t accel_data[3];
+
 void board_debug()
 {
 	// printf("[v6c] usart test %d %d %d\r\n",
     //     BOARD_ADC_HIPOWER_5V_OC, BOARD_ADC_PERIPH_5V_OC, i2c.i2c_error_cnt);
-	ist8310_mag(mag_data);
-	printf("[ist8310] %d %d %d \r\n", mag_data[0], mag_data[1], mag_data[2]);
+	//ist8310_mag(mag_data);
+	//printf("[ist8310] %d %d %d \r\n", mag_data[0], mag_data[1], mag_data[2]);
+    int ret = icm42688_read(&accel_data[0]);
+    printf("[icm42688] %d %d %d \r\n", accel_data[0], accel_data[1], accel_data[2]);
     board_blue_led_toggle();
 }
 
@@ -183,3 +197,29 @@ void ist8310_read_register(uint8_t addr, uint8_t *buf, uint8_t len, int rwway)
     }
     return;
 }
+
+void icm42688_write_register(uint8_t addr, uint8_t data)
+{
+    int ret = 0;
+	static uint8_t dx[2];
+	dx[0] = addr & ~0x80;
+	dx[1] = data;
+
+    drv_gpio_write(&spi_cs, 0);
+	ret = drv_spi_write(&spi, &dx[0], 2, RWPOLL);
+	drv_gpio_write(&spi_cs, 1);
+}
+
+void icm42688_read_register(uint8_t addr, uint8_t *buf, uint8_t len, int rwway)
+{
+    int ret = 0;
+
+	uint8_t send_addr = addr | 0x80;
+
+    drv_gpio_write(&spi_cs, 0);
+	ret = drv_spi_write(&spi, &send_addr, 1, RWPOLL);
+    ret = drv_spi_read(&spi, buf, len, RWPOLL);
+
+	drv_gpio_write(&spi_cs, 1);
+}
+

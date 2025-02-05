@@ -281,17 +281,17 @@ void drv_spi_init(uint8_t num, struct drv_spi_t *obj, struct drv_spi_attr_t *att
 	drv_spi_list[num-1] = obj;
 }
 
-void drv_spi_write(struct drv_spi_t *obj, const uint8_t *p, uint16_t len, enum __drv_rwway way)
+int drv_spi_write(struct drv_spi_t *obj, const uint8_t *p, uint16_t len, enum __drv_rwway way)
 {
-	HAL_SPI_Transmit(&obj->hspi, p, len, 5000);
+	return HAL_SPI_Transmit(&obj->hspi, p, len, 5000);
 }
 
-void drv_spi_read(struct drv_spi_t *obj, uint8_t *p, uint16_t len)
+int drv_spi_read(struct drv_spi_t *obj, uint8_t *p, uint16_t len, enum __drv_rwway way)
 {
-	HAL_SPI_Receive(&obj->hspi, p, len, 5000);
+	return HAL_SPI_Receive(&obj->hspi, p, len, 5000);
 }
 
-int drv_spi_readwrite(struct drv_spi_t *obj, uint8_t *ptx, uint8_t *prx, uint16_t size)
+int drv_spi_readwrite(struct drv_spi_t *obj, uint8_t *ptx, uint8_t *prx, uint16_t size, enum __drv_rwway way)
 {
     int8_t res = HAL_SPI_TransmitReceive(&obj->hspi, ptx, prx, size, 5000);
 	return res;  
