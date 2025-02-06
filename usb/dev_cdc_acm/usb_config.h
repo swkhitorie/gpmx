@@ -7,8 +7,11 @@
 #define CHERRYUSB_CONFIG_H
 
 /* ================ USB common Configuration ================ */
-
-#define CONFIG_USB_PRINTF(...) //printf(__VA_ARGS__)
+#ifdef CRUSB_LOG_ENABLE
+#define CONFIG_USB_PRINTF(...) printf(__VA_ARGS__)
+#else
+#define CONFIG_USB_PRINTF(...)
+#endif
 
 #ifndef CONFIG_USB_DBG_LEVEL
 #define CONFIG_USB_DBG_LEVEL USB_DBG_INFO
