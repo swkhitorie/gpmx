@@ -161,7 +161,7 @@ void usbd_cdc_acm_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
     /* setup next out ep read transfer */
     if ((1024 - devbuf_rx.size) >= CDC_MAX_MPS) {
         for (int i = 0; i < CDC_MAX_MPS; i++) {
-            devbuf_rx.buf[devbuf_rx.in]; = read_buffer[i];
+            devbuf_rx.buf[devbuf_rx.in] = read_buffer[i];
             devbuf_rx.in++;
             if (devbuf_rx.in == 1024) {
                 devbuf_rx.in = 0;
