@@ -83,12 +83,12 @@ void board_debug()
     devbuf_t buf = drv_uart_devbuf(&com1);
     int size = devbuf_size(&buf);
     if (size > 0) {
-        fprintf(stdout, "[%d,%d] ", HAL_GetTick(),size);
+        printf("[%d,%d] ", HAL_GetTick(),size);
         devbuf_read(&com1.rx_buf, &buff_debug[0], size);
         for (int i = 0; i < size; i++) {
-            fprintf(stdout, "%d ", buff_debug[i]);
+            printf("%d ", buff_debug[i]);
         }
-        fprintf(stdout, "\r\n");
+        printf("\r\n");
     }
     board_blue_led_toggle();
 }
