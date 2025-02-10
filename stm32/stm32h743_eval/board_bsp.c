@@ -3,13 +3,6 @@
 #include <drv_qspi.h>
 #include <drv_sdmmc.h>
 
-#ifdef BSP_COM_PRINTF
-#include <string.h>
-#include <stdio.h>
-#include <stdarg.h>
-FILE __stdin, __stdout, __stderr;
-#endif
-
 struct drv_uart_t com1;
 uint8_t com1_dma_rxbuff[256];
 uint8_t com1_dma_txbuff[256];
@@ -93,6 +86,12 @@ void board_debug()
 }
 
 #ifdef BSP_COM_PRINTF
+
+#include <string.h>
+#include <stdio.h>
+#include <stdarg.h>
+FILE __stdin, __stdout, __stderr;
+
 int _write(int file, char *ptr, int len)
 {
     const int stdin_fileno = 0;
@@ -103,6 +102,12 @@ int _write(int file, char *ptr, int len)
     }
     return len;
 }
+
+size_t fread(void *ptr, size_t size, size_t n_items, FILE *stream)
+{
+    return _read(stream->_file, ptr, size*n_items);
+}
+
 // nonblock
 int _read(int file, char *ptr, int len)
 {
