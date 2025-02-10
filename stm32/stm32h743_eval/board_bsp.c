@@ -103,6 +103,21 @@ int _write(int file, char *ptr, int len)
     }
     return len;
 }
+// nonblock
+int _read(int file, char *ptr, int len)
+{
+    const int stdin_fileno = 0;
+    const int stdout_fileno = 1;
+    const int stderr_fileno = 2;
+    devbuf_t buf = drv_uart_devbuf(&com1);
+    size_t rcv_size = devbuf_size(&buf);
+    size_t sld_size = (len >= rcv_size) ? rcv_size: len;
+    size_t ret_size = 0;
+    if (file == stdin_fileno) {
+        ret_size = devbuf_read(&com1.rx_buf, ptr, sld_size);
+    }
+    return ret_size;
+}
 #endif
 
 bool sd_card_check(char* info_str)
