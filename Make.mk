@@ -54,3 +54,14 @@ ifeq (${CONFIG_FR_PX4_SUPPORT},y)
 FR_CSOURCES += px4/stm/hrt.c
 FR_CPPSOURCES += px4/ptasks.cpp
 endif
+
+ifeq (${CONFIG_FR_FATFS},y)
+FR_CINCDIRS += fatfs
+FR_CINCDIRS += fatfs/drivers
+FR_CSOURCES += fatfs/ff.c
+FR_CSOURCES += fatfs/diskio.c
+FR_CSOURCES += fatfs/option/syscall.c
+FR_CSOURCES += fatfs/option/unicode.c
+FR_CSOURCES += fatfs/drivers/ff_gen_drv.c
+
+endif
