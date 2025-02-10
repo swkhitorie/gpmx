@@ -143,7 +143,7 @@ static void usbd_event_handler(uint8_t busid, uint8_t event)
         case USBD_EVENT_CONFIGURED:
             ep_tx_busy_flag = false;
             /* setup first out ep read transfer */
-            usbd_ep_start_read(busid, CDC_OUT_EP, read_buffer, 2048);
+            usbd_ep_start_read(busid, CDC_OUT_EP, read_buffer, CDC_MAX_MPS);
             break;
         case USBD_EVENT_SET_REMOTE_WAKEUP:
             break;
@@ -159,8 +159,8 @@ void usbd_cdc_acm_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     // USB_LOG_RAW("actual out len:%d\r\n", nbytes);
     /* setup next out ep read transfer */
-    if ((1024 - devbuf_rx.size) >= CDC_MAX_MPS) {
-        for (int i = 0; i < CDC_MAX_MPS; i++) {
+    if ((1024 - devbuf_rx.size) >= nbytes) {
+        for (int i = 0; i < nbytes; i++) {
             devbuf_rx.buf[devbuf_rx.in] = read_buffer[i];
             devbuf_rx.in++;
             if (devbuf_rx.in == 1024) {
@@ -302,7 +302,7 @@ int _read(int file, char *ptr, int len)
     const int stdin_fileno = 0;
     const int stdout_fileno = 1;
     const int stderr_fileno = 2;
-    size_t rcv_size = dev_cdc_acm_rsize();
+    size_t rcv_size = dev_cdc_acm_rsize(0);
     size_t sld_size = (len >= rcv_size) ? rcv_size: len;
     size_t ret_size = 0;
     if (file == stdin_fileno) {
