@@ -66,7 +66,6 @@ void board_bsp_init()
     sd_card_check(sd_debug);
     printf("%s \r\n", sd_debug);
 #ifdef BSP_MODULE_USB_CHERRY
-    HAL_Delay(600);
     cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
 #endif
 }

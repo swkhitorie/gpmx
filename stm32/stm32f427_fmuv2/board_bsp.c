@@ -48,7 +48,6 @@ void board_bsp_init()
     l3gd20_init();
 
 #ifdef BSP_MODULE_USB_CHERRY
-    HAL_Delay(600);
     cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
 #endif
 }
