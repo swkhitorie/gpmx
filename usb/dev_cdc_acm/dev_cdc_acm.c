@@ -296,6 +296,12 @@ int _write(int file, char *ptr, int len)
     }
     return len;
 }
+
+size_t fread(void *ptr, size_t size, size_t n_items, FILE *stream)
+{
+    return _read(stream->_file, ptr, size*n_items);
+}
+
 // nonblock
 int _read(int file, char *ptr, int len)
 {
