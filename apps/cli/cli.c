@@ -1,6 +1,6 @@
 #include "cli.h"
 
-static const struct cmdmap_s g_cmdmap[CONFIG_CLI_MAX_COMMANDS];
+static struct cli_cmdmap_s g_cmdmap[CONFIG_CLI_MAX_COMMANDS];
 static char *g_argv_list[CONFIG_CLI_MAX_COMMAND_ARGS];
 static char g_clibuf[CONFIG_CLI_MAX_INPUT];
 static cli_reader_t g_cli_reader = NULL;

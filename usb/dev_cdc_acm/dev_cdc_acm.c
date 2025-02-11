@@ -286,7 +286,7 @@ int dev_cdc_acm_read(uint8_t busid, uint8_t *p, uint16_t len)
 #include <stdarg.h>
 FILE __stdin, __stdout, __stderr;
 
-size_t fwrite(void *ptr, size_t size, size_t n_items, FILE *stream)
+size_t fwrite(const void *ptr, size_t size, size_t n_items, FILE *stream)
 {
     return _write(stream->_file, ptr, size*n_items);
 }
