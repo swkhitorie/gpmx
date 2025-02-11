@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "dev_cdc_acm.h"
+#include <FreeRTOS.h>
+#include <semphr.h>
 
 /*!< endpoint address */
 #define CDC_IN_EP  0x81
@@ -112,23 +114,16 @@ static const uint8_t cdc_descriptor[] = {
 };
 
 /* 2048 is only for test speed , please use CDC_MAX_MPS for common*/
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t read_buffer[CDC_MAX_MPS];
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t write_buffer[CDC_MAX_MPS];
-
-struct devfifo_cdc {
-    uint8_t buf[1024];
-    uint16_t size;
-    uint16_t in;
-    uint16_t out;
-};
-struct devfifo_cdc devbuf_tx = {.in = 0, .out = 0, .size = 0};
-struct devfifo_cdc devbuf_rx = {.in = 0, .out = 0, .size = 0};
-
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t cdc_rbuf[CDC_MAX_MPS];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t cdc_wbuf[CDC_MAX_MPS];
+struct devfifo_cdc cdc_txfifo = {.in = 0, .out = 0, .size = 0};
+struct devfifo_cdc cdc_rxfifo = {.in = 0, .out = 0, .size = 0};
 
 volatile bool ep_tx_busy_flag = false;
 
 static void usbd_event_handler(uint8_t busid, uint8_t event)
 {
+    int fsize = 0;
     switch (event) {
         case USBD_EVENT_RESET:
             break;
@@ -141,10 +136,19 @@ static void usbd_event_handler(uint8_t busid, uint8_t event)
         case USBD_EVENT_SUSPEND:
             break;
         case USBD_EVENT_CONFIGURED:
-            ep_tx_busy_flag = false;
             /* setup first out ep read transfer */
-            usbd_ep_start_read(busid, CDC_OUT_EP, read_buffer, CDC_MAX_MPS);
+            usbd_ep_start_read(busid, CDC_OUT_EP, cdc_rbuf, CDC_MAX_MPS);
+#ifndef CONFIG_CRUSB_TX_FIFO_ENABLE
+            ep_tx_busy_flag = false;
+#else
+            if (dfifocdc_size(&cdc_txfifo) > 0) {
+                fsize = dfifocdc_read(&cdc_txfifo, &cdc_wbuf[0], CDC_MAX_MPS);
+                usbd_ep_start_write(0, CDC_IN_EP, cdc_wbuf, fsize);
+            } else {
+                ep_tx_busy_flag = false;
+            }
             break;
+#endif
         case USBD_EVENT_SET_REMOTE_WAKEUP:
             break;
         case USBD_EVENT_CLR_REMOTE_WAKEUP:
@@ -157,45 +161,29 @@ static void usbd_event_handler(uint8_t busid, uint8_t event)
 
 void usbd_cdc_acm_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
-    // USB_LOG_RAW("actual out len:%d\r\n", nbytes);
-    /* setup next out ep read transfer */
-    if ((1024 - devbuf_rx.size) >= nbytes) {
-        for (int i = 0; i < nbytes; i++) {
-            devbuf_rx.buf[devbuf_rx.in] = read_buffer[i];
-            devbuf_rx.in++;
-            if (devbuf_rx.in == 1024) {
-                devbuf_rx.in = 0;
-            }
-            devbuf_rx.size++;
-        }
-    }
-    usbd_ep_start_read(busid, CDC_OUT_EP, read_buffer, CDC_MAX_MPS);
+    dfifocdc_write(&cdc_rxfifo, &cdc_rbuf[0], nbytes);
+    usbd_ep_start_read(busid, CDC_OUT_EP, cdc_rbuf, CDC_MAX_MPS);
 }
 
 void usbd_cdc_acm_bulk_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     int fsize = 0;
-    // USB_LOG_RAW("actual in len:%d\r\n", nbytes);
 
     if ((nbytes % usbd_get_ep_mps(busid, ep)) == 0 && nbytes) {
         /* send zlp */
         usbd_ep_start_write(busid, CDC_IN_EP, NULL, 0);
     } else {
-        if (devbuf_tx.size <= 0) {
+#ifndef CONFIG_CRUSB_TX_FIFO_ENABLE
+        ep_tx_busy_flag = false;
+#else
+        if (dfifocdc_size(&cdc_txfifo) <= 0) {
             ep_tx_busy_flag = false;
             return;
         } else {
-            fsize = (devbuf_tx.size > CDC_MAX_MPS) ? CDC_MAX_MPS : devbuf_tx.size;
-            for (int i = 0; i < fsize; i++) {
-                write_buffer[i] = devbuf_tx.buf[devbuf_tx.out];
-                devbuf_tx.out++;
-                if (devbuf_tx.out == 1024) {
-                    devbuf_tx.out = 0;
-                }
-                devbuf_tx.size--;
-            }
-            usbd_ep_start_write(0, CDC_IN_EP, write_buffer, fsize);
+            fsize = dfifocdc_read(&cdc_txfifo, &cdc_wbuf[0], CDC_MAX_MPS);
+            usbd_ep_start_write(0, CDC_IN_EP, cdc_wbuf, fsize);
         }
+#endif
     }
 }
 
@@ -231,60 +219,66 @@ void dev_cdc_acm_init(uint8_t busid, uintptr_t reg_base)
 int dev_cdc_acm_rsize(uint8_t busid)
 {
     (void)busid;
-    return devbuf_rx.size;
+    return dfifocdc_size(&cdc_rxfifo);
 }
 
-int dev_cdc_acm_send(uint8_t busid, const uint8_t *p, uint16_t len)
+int dev_cdc_acm_send(uint8_t busid, const uint8_t *p, uint16_t len, uint8_t isbuffer)
 {
     uint16_t fsize = 0;
+    uint16_t rsize = 0;
+    int pidx = 0;
     (void)busid;
-    if ((1024 - devbuf_tx.size) < len) return 0;
-    for (int i = 0; i < len; i++) {
-        devbuf_tx.buf[devbuf_tx.in] = p[i];
-        devbuf_tx.in++;
-        if (devbuf_tx.in == 1024) {
-            devbuf_tx.in = 0;
+
+    if (isbuffer == 0) {
+        for (fsize = len; fsize > 0;) {
+            while (ep_tx_busy_flag);
+            ep_tx_busy_flag = true;
+
+            if (fsize > CDC_MAX_MPS) {
+                for (int i = 0; i < CDC_MAX_MPS; i++) {
+                    cdc_wbuf[i] = p[pidx];
+                    pidx++;
+                }
+                usbd_ep_start_write(0, CDC_IN_EP, cdc_wbuf, CDC_MAX_MPS);
+                fsize -= CDC_MAX_MPS;
+            } else {
+                for (int i = 0; i < fsize; i++) {
+                    cdc_wbuf[i] = p[i];
+                }
+                usbd_ep_start_write(0, CDC_IN_EP, cdc_wbuf, fsize);
+                fsize = 0;
+            }
+            while (ep_tx_busy_flag);
         }
-        devbuf_tx.size++;
+    } else if (isbuffer == 1) {
+#ifdef CONFIG_CRUSB_TX_FIFO_ENABLE
+        rsize = dfifocdc_write(&cdc_txfifo, &p[0], len);
+        if (rsize == 0) return 0;
+        if (ep_tx_busy_flag) return 0;
+        ep_tx_busy_flag = true;
+
+        fsize = dfifocdc_read(&cdc_txfifo, &cdc_wbuf[0], CDC_MAX_MPS);
+        usbd_ep_start_write(0, CDC_IN_EP, cdc_wbuf, fsize);
+#endif
     }
-
-    if (ep_tx_busy_flag) return 0;
-    ep_tx_busy_flag = true;
-
-    fsize = (devbuf_tx.size > CDC_MAX_MPS) ? CDC_MAX_MPS : devbuf_tx.size;
-    for (int i = 0; i < fsize; i++) {
-        write_buffer[i] = devbuf_tx.buf[devbuf_tx.out];
-        devbuf_tx.out++;
-        if (devbuf_tx.out == 1024) {
-            devbuf_tx.out = 0;
-        }
-        devbuf_tx.size--;
-    }
-
-    usbd_ep_start_write(0, CDC_IN_EP, write_buffer, fsize);
     return fsize;
 }
 
 int dev_cdc_acm_read(uint8_t busid, uint8_t *p, uint16_t len)
 {
-    int fsize = (devbuf_rx.size > len) ? len : devbuf_rx.size;
-
-    for (int i = 0; i < fsize; i++) {
-        p[i] = devbuf_rx.buf[devbuf_rx.out];
-        devbuf_rx.out++;
-        if (devbuf_rx.out == 1024) {
-            devbuf_rx.out = 0;
-        }
-        devbuf_rx.size--;
-    }
-    return fsize;
+    return dfifocdc_read(&cdc_rxfifo, p, len);
 }
 
-#ifdef CRUSB_PRINTF_ENABLE
+#ifdef CRUSB_STD_INOUT_ENABLE
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
 FILE __stdin, __stdout, __stderr;
+
+size_t fread(void *ptr, size_t size, size_t n_items, FILE *stream)
+{
+    return _read(stream->_file, ptr, size*n_items);
+}
 
 size_t fwrite(const void *ptr, size_t size, size_t n_items, FILE *stream)
 {
@@ -293,33 +287,22 @@ size_t fwrite(const void *ptr, size_t size, size_t n_items, FILE *stream)
 
 int _write(int file, char *ptr, int len)
 {
-    const int stdin_fileno = 0;
-    const int stdout_fileno = 1;
-    const int stderr_fileno = 2;
-    if (file == stdout_fileno) {
-        dev_cdc_acm_send(0, ptr, len);
+    if (file == 1) {
+        // file -> 0:stdin 1:stdout 2: stderr
+        dev_cdc_acm_send(0, ptr, len, 0);
+        return len;
     }
-    return len;
+    return 0;
 }
 
-size_t fread(void *ptr, size_t size, size_t n_items, FILE *stream)
-{
-    return _read(stream->_file, ptr, size*n_items);
-}
-
-// nonblock
 int _read(int file, char *ptr, int len)
 {
-    const int stdin_fileno = 0;
-    const int stdout_fileno = 1;
-    const int stderr_fileno = 2;
-    size_t rcv_size = dev_cdc_acm_rsize(0);
-    size_t sld_size = (len >= rcv_size) ? rcv_size: len;
-    size_t ret_size = 0;
-    if (file == stdin_fileno) {
-        ret_size = dev_cdc_acm_read(0, ptr, sld_size);
+    int ret = 0;
+    if (file == 0) {
+        // 0:stdin 1:stdout 2: stderr
+        ret = dev_cdc_acm_read(0, ptr, len);
     }
-    return ret_size;
+    return ret;
 }
 
 #endif

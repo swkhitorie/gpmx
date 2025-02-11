@@ -55,6 +55,8 @@ bool cli_init(cli_reader_t reader, cli_writer_t writer, char *msg)
     g_cli_writer = writer;
     g_cli_initialized = true;
 
+    cli_print("\r\n");
+	cli_print("\r\n");
     cli_print((const char *) "FRTOS Client library Ver. ");
     cli_println((const char *) CLI_VERSION_STRING);
 

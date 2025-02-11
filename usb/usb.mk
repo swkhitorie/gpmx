@@ -14,4 +14,4 @@ USB_CSOURCES += CherryUSB/port/dwc2/usb_glue_st.c
 
 USB_CINCDIRS += dev_cdc_acm
 USB_CSOURCES += dev_cdc_acm/dev_cdc_acm.c
-
+USB_CSOURCES += dev_cdc_acm/dev_cdc_fifo.c
