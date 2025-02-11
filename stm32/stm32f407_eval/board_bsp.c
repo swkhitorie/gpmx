@@ -66,7 +66,7 @@ void board_debug()
 #include <stdarg.h>
 FILE __stdin, __stdout, __stderr;
 
-size_t fwrite(void *ptr, size_t size, size_t n_items, FILE *stream)
+size_t fwrite(const void *ptr, size_t size, size_t n_items, FILE *stream)
 {
     return _write(stream->_file, ptr, size*n_items);
 }
