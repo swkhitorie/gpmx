@@ -41,23 +41,23 @@ void board_bsp_init()
     int ret1 = w25qxx_init();
     int id = w25qxx_readid();
     int addr = 0x100;
-    printf("[Flash] qspi flash init: %d, id: %X\r\n", ret1, id);
-    printf("[Flash] qspi flash simple rw test, addr: %X\r\n", addr);
+    //printf("[Flash] qspi flash init: %d, id: %X\r\n", ret1, id);
+    //printf("[Flash] qspi flash simple rw test, addr: %X\r\n", addr);
     w25qxx_sector_erase(addr);
     uint8_t write_buf[128];
     uint8_t read_buf[128];
     sprintf((char *)&write_buf[0], "W25QXX TEST String \r");
     int res = w25qxx_writebuffer(&write_buf[0], addr, 60);
     res = w25qxx_readbuffer(&read_buf[0], addr, 60);
-    printf("[Flash] qspi flash read : %s \r\n", read_buf);
+    //printf("[Flash] qspi flash read : %s \r\n", read_buf);
 
     drv_sdmmc_attr_init(&sd_attr, 1, 8, /* io select */1, 1, 1, 1, 1, 1, /* priority */ 4);
     int sdret = drv_sdmmc_init(&sd, &sd_attr);
-    printf("sdmmc init: %d \r\n", sdret);
+    //printf("sdmmc init: %d \r\n", sdret);
 
     char sd_debug[300];
     sd_card_check(sd_debug);
-    printf("%s \r\n", sd_debug);
+    //printf("%s \r\n", sd_debug);
 #ifdef BSP_MODULE_USB_CHERRY
     cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
 #endif
