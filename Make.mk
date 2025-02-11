@@ -63,5 +63,10 @@ FR_CSOURCES += fatfs/diskio.c
 FR_CSOURCES += fatfs/option/syscall.c
 FR_CSOURCES += fatfs/option/unicode.c
 FR_CSOURCES += fatfs/drivers/ff_gen_drv.c
+endif
 
+ifeq (${CONFIG_FR_APPS_CLI},y)
+FR_CINCDIRS += apps/cli
+FR_CSOURCES += apps/cli/app_cli.c
+FR_CSOURCES += apps/cli/cli.c
 endif
