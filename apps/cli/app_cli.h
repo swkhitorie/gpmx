@@ -4,11 +4,15 @@
 #include "cli.h"
 #include <FreeRTOS.h>
 
+#ifdef CONFIG_FRCLI_EXCMD_NUM
+extern const struct cli_cmdmap_s ex_cmdmap[CONFIG_FRCLI_EXCMD_NUM];
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void app_fr_cli_init();
+void fcli_init();
 
 #ifdef __cplusplus
 }
