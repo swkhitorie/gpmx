@@ -1,10 +1,6 @@
 #ifndef FF_GEN_DRV_H
 #define FF_GEN_DRV_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "diskio.h"
 #include "ff.h"
 #include "stdint.h"
@@ -27,6 +23,10 @@ typedef struct {
   uint8_t                 lun[_VOLUMES];
   volatile uint8_t        nbr;
 } diskio_drv_t;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 uint8_t fatfs_link_drv(const diskio_drv_t *drv, char *path);
 uint8_t fatfs_link_drvex(const diskio_drv_t *drv, char *path, BYTE lun);
