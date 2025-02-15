@@ -2,7 +2,8 @@
 #include <drv_qspi.h>
 
 #ifdef BOARD_MTD_QSPIFLASH_FATFS_SUPPORT
-const Diskio_drvTypeDef mtd_driver;
+#include "ff_gen_drv.h"
+const diskio_drv_ops_t mtd_driver;
 static char mnt_mnt_path[20];
 #endif
 
@@ -118,7 +119,6 @@ void board_mtd_rw_test()
 #endif
 
 #ifdef BOARD_MTD_QSPIFLASH_FATFS_SUPPORT
-#include "ff_gen_drv.h"
 
 DSTATUS mtd_init(BYTE);
 DSTATUS mtd_status(BYTE);
@@ -131,7 +131,7 @@ DRESULT mtd_ioctl(BYTE, BYTE, void*);
 #endif
 
 static volatile DSTATUS mtd_stat = STA_NOINIT;
-const Diskio_drvTypeDef mtd_driver =
+const diskio_drv_ops_t mtd_driver =
 {
 	mtd_init,
     mtd_status,

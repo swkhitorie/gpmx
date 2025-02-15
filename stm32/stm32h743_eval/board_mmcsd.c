@@ -2,7 +2,8 @@
 #include <drv_sdmmc.h>
 
 #ifdef BOARD_MMCSD_FATFS_SUPPORT
-const Diskio_drvTypeDef mmcsd_driver;
+#include "ff_gen_drv.h"
+const diskio_drv_ops_t mmcsd_driver;
 static char mmcsd_mnt_path[20];
 #endif
 
@@ -157,7 +158,6 @@ void board_mmcsd_rw_test()
 #endif
 
 #ifdef BOARD_MMCSD_FATFS_SUPPORT
-#include "ff_gen_drv.h"
 
 #define SD_DEFAULT_BLOCK_SIZE 512
 
@@ -176,7 +176,7 @@ DRESULT mmcsd_ioctl(BYTE, BYTE, void*);
 
 static volatile DSTATUS mmcsd_stat;
 static volatile UINT write_stat = 0, read_stat = 0;
-const Diskio_drvTypeDef mmcsd_driver =
+const diskio_drv_ops_t mmcsd_driver =
 {
     mmcsd_init,
     mmcsd_status,
