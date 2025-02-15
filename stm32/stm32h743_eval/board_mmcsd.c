@@ -1,6 +1,11 @@
 #include "board_config.h"
 #include <drv_sdmmc.h>
 
+#ifdef BOARD_MMCSD_FATFS_SUPPORT
+const Diskio_drvTypeDef mmcsd_driver;
+static char mmcsd_mnt_path[20];
+#endif
+
 /**
   bug:
   macro USE_SD_TRANSCEIVER in stm32xxx_hal_conf.h
@@ -60,6 +65,10 @@ void board_mmcsd_init()
         break;
     }
 #endif
+
+    if (sdret == 0) {
+        fatfs_link_drv(&mmcsd_driver, &mmcsd_mnt_path[0]);
+    }
 }
 
 #ifdef BOARD_MMCSD_RW_TEST
@@ -147,88 +156,127 @@ void board_mmcsd_rw_test()
 
 #endif
 
-// bool sd_card_check(char* info_str)
-// {
-//     char str[300] = {0}, strtmp[100] = {0};
-//     uint8_t tmp;
+#ifdef BOARD_MMCSD_FATFS_SUPPORT
+#include "ff_gen_drv.h"
 
-//     tmp = drv_sdmmc_wait_ready(&sd);
-//     if (tmp != HAL_OK) {
-//         sprintf(info_str,"not ready\r\n");
-//         return false;
-//     }
-//     drv_sdmmc_getinfo(&sd);
+#define SD_DEFAULT_BLOCK_SIZE 512
 
-//     switch (sd.initret) {
-//     case HAL_ERROR:
-//         sprintf(info_str,"sd init error\r\n");
-//         return false;
-//     case HAL_BUSY:
-//         sprintf(info_str,"sd init error\r\n");
-//         return false;
-//     case HAL_TIMEOUT:
-//         sprintf(info_str,"sd init timeout\r\n");
-//         return false;
-//     }
+#define ENABLE_SD_DMA_CACHE_MAINTENANCE_WRITE  0 
+#define ENABLE_SD_DMA_CACHE_MAINTENANCE_READ   1                                                         
 
-//     switch (tmp) {
-//     case HAL_ERROR:
-//         sprintf(info_str,"wait error\r\n");
-//         return false;
-//     case HAL_BUSY:
-//         sprintf(info_str,"wait busy\r\n");
-//         return false;
-//     case HAL_TIMEOUT:
-//         sprintf(info_str,"wait timeout\r\n");
-//         return false;
-//     }
-    
-//     sprintf(strtmp,"sd card ready\r\n");
-//     strcat(str, strtmp);
-//     float total_capacity = 0;
-//     total_capacity = (float)(sd.info.LogBlockNbr) / 1024.0f / 1024.0f / 1024.0f;
+DSTATUS mmcsd_init(BYTE);
+DSTATUS mmcsd_status(BYTE);
+DRESULT mmcsd_read(BYTE, BYTE*, DWORD, UINT);
+#if _USE_WRITE == 1
+DRESULT mmcsd_write(BYTE, const BYTE*, DWORD, UINT);
+#endif
+#if _USE_IOCTL == 1
+DRESULT mmcsd_ioctl(BYTE, BYTE, void*);
+#endif
 
-//     sprintf(strtmp,"total capacity : %.2f GB\r\n",(total_capacity * sd.info.BlockSize));
-//     strcat(str, strtmp);
-//     sprintf(strtmp,"card block size : %d bytes\r\n",(sd.info.BlockSize));
-//     strcat(str, strtmp);
-    
-//     switch (sd.info.CardSpeed) {
-//     case CARD_NORMAL_SPEED:
-//         sprintf(strtmp,"Normal Speed Card <12.5Mo/s , Spec Version 1.01 \r\n");
-//         break;
-//     case CARD_HIGH_SPEED:
-//         sprintf(strtmp,"High Speed Card <25Mo/s , Spec version 2.00 \r\n");
-//         break;
-//     case CARD_ULTRA_HIGH_SPEED:
-//         sprintf(strtmp,"UHS-I SD Card <50Mo/s for SDR50, DDR5 Cards and <104Mo/s for SDR104, Spec version 3.01 \r\n");
-//         break;	
-//     }
-//     strcat(str, strtmp);
-    
-//     switch (sd.info.CardType) {
-//     case CARD_SDSC:
-//         sprintf(strtmp,"SD Standard Capacity <2Go \r\n");
-//         break;
-//     case CARD_SDHC_SDXC:
-//         sprintf(strtmp,"SD High Capacity <32Go, SD Extended Capacity <2To \r\n");
-//         break;
-//     case CARD_SECURED:
-//         sprintf(strtmp,"SD Extended Capacity >2To \r\n");
-//         break;
-//     }
-//     strcat(str, strtmp);
-    
-//     switch (sd.info.CardVersion) {
-//     case CARD_V1_X:
-//         sprintf(strtmp,"card v1.x \r\n");
-//         break;
-//     case CARD_V2_X:
-//         sprintf(strtmp,"card v2.x \r\n");
-//         break;
-//     }
-//     strcat(str, strtmp);
-    
-//     strcpy(info_str,str);
-//     return true;
-// }
+static volatile DSTATUS mmcsd_stat;
+static volatile UINT write_stat = 0, read_stat = 0;
+const Diskio_drvTypeDef mmcsd_driver =
+{
+    mmcsd_init,
+    mmcsd_status,
+    mmcsd_read,
+    #if _USE_WRITE == 1
+    mmcsd_write,
+    #endif
+    #if _USE_IOCTL == 1
+    mmcsd_ioctl,
+    #endif
+};
+
+DSTATUS mmcsd_init(BYTE lun)
+{
+    uint8_t tmp;
+    mmcsd_stat = STA_NOINIT;
+    tmp = drv_sdmmc_wait_ready(&sd);
+    if (tmp == HAL_OK) {
+        mmcsd_stat &= ~STA_NOINIT;
+    }
+    return mmcsd_stat;
+}
+
+DSTATUS mmcsd_status(BYTE lun)
+{
+    uint8_t tmp;
+    mmcsd_stat = STA_NOINIT;
+    tmp = drv_sdmmc_wait_ready(&sd);
+    if (tmp == HAL_OK) {
+        mmcsd_stat &= ~STA_NOINIT;
+    }
+    return mmcsd_stat;
+}
+
+DRESULT mmcsd_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
+{
+	DRESULT res = RES_ERROR;
+	int read_status;
+
+    read_status = drv_sdmmc_read_blocks(&sd, buff, sector, count, RWPOLL);
+    if (read_status == MSD_OK) {
+        read_status = drv_sdmmc_wait_ready(&sd); 
+    }
+
+    return (read_status == MSD_OK) ? RES_OK : RES_ERROR;
+}
+
+#if _USE_WRITE == 1
+DRESULT mmcsd_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
+{
+	DRESULT res = RES_ERROR;
+	int write_status;
+
+    write_status = drv_sdmmc_write_blocks(&sd, buff, sector, count, RWPOLL);
+    if (write_status == MSD_OK) {
+        write_status = drv_sdmmc_wait_ready(&sd); 
+    }
+
+    return (write_status == MSD_OK) ? RES_OK : RES_ERROR;
+}
+#endif
+
+#if _USE_IOCTL == 1
+DRESULT mmcsd_ioctl(BYTE lun, BYTE cmd, void *buff)
+{
+	DRESULT res = RES_ERROR;
+	drv_sdmmc_getinfo(&sd);
+
+	if (mmcsd_stat & STA_NOINIT) 
+		return RES_NOTRDY;
+
+	switch (cmd) {
+	/* Make sure that no pending write process */
+	case CTRL_SYNC :
+		res = RES_OK;
+		break;
+
+	/* Get number of sectors on the disk (DWORD) */
+	case GET_SECTOR_COUNT :
+		*(DWORD*)buff = sd.info.LogBlockNbr;
+		res = RES_OK;
+		break;
+
+	/* Get R/W sector size (WORD) */
+	case GET_SECTOR_SIZE :
+		*(WORD*)buff = sd.info.LogBlockSize;
+		res = RES_OK;
+		break;
+
+	/* Get erase block size in unit of sector (DWORD) */
+	case GET_BLOCK_SIZE :
+		*(DWORD*)buff = sd.info.LogBlockSize / SD_DEFAULT_BLOCK_SIZE;
+		res = RES_OK;
+		break;
+
+	default:
+		res = RES_PARERR;
+	}
+
+	return res;
+}
+#endif
+#endif
