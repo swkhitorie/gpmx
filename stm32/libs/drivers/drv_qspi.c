@@ -144,7 +144,6 @@ void drv_qspi_init(uint8_t flashNum, uint8_t prescaler, uint32_t flashsize,
     if (flashNum != 1 && flashNum != 2) flashNum = 1;
 
     uint32_t flash_id[2] = { QSPI_FLASH_ID_1, QSPI_FLASH_ID_2 };
-    flashsize *= 1024*1024;
 
     drv_qspi_pin_source_init(flashNum, clks, io0s, io1s, io2s, io3s, ncss);
 
@@ -158,7 +157,7 @@ void drv_qspi_init(uint8_t flashNum, uint8_t prescaler, uint32_t flashsize,
     qspi_obj.hqspi.Init.SampleShifting = QSPI_SAMPLE_SHIFTING_HALFCYCLE;
     qspi_obj.hqspi.Init.ChipSelectHighTime = QSPI_CS_HIGH_TIME_1_CYCLE;
     qspi_obj.hqspi.Init.ClockPrescaler = (prescaler - 1);
-    qspi_obj.hqspi.Init.FlashSize = POSITION_VAL(flashsize) - 1;
+    qspi_obj.hqspi.Init.FlashSize = flashsize;
     qspi_obj.hqspi.Init.ClockMode = QSPI_CLOCK_MODE_3;
     qspi_obj.hqspi.Init.FlashID = flash_id[flashNum - 1];
     qspi_obj.hqspi.Init.DualFlash = QSPI_DUALFLASH_DISABLE;

@@ -27,7 +27,7 @@ extern "C" {
 #define  VDD_VALUE              3300UL           /*!< Value of VDD in mv */
 #define  TICK_INT_PRIORITY      ((uint32_t)0x0F) /*!< tick interrupt priority */
 #define  USE_RTOS               0
-#define  USE_SD_TRANSCEIVER     1U               /*!< use uSD Transceiver */
+#define  USE_SD_TRANSCEIVER     0U               /*!< use uSD Transceiver */
 #define  USE_SPI_CRC            1U               /*!< use CRC in SPI */
 
 /* ########################### Ethernet Configuration ######################### */

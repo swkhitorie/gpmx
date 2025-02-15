@@ -12,7 +12,7 @@ bool drv_sdmmc_pin_source_init(uint8_t num, uint8_t d0s, uint8_t d1s,
 	const struct pin_node *cmd_pin_node;
 	const struct pin_node *clk_pin_node;
 	uint32_t illegal;
-	
+
 	switch (num) {
 	case 1:
 		d0_pin_node = SDMMC1_PINCTRL_SOURCE(SDMMC_D0);
@@ -63,18 +63,18 @@ bool drv_sdmmc_pin_source_init(uint8_t num, uint8_t d0s, uint8_t d1s,
 
         drv_gpio_init(clk_pin_node->port, clk_pin_node->pin, IOMODE_AFPP,
 							GPIO_NOPULL, IO_SPEEDMAX, clk_pin_node->alternate, NULL);
-	}else {
+	} else {
 		return false;
 	}
 	return true;
 }
 
-void drv_sdmmc_attr_init(struct drv_sdmmc_attr_t *obj, uint8_t num, uint8_t prescaler,
+void drv_sdmmc_attr_init(struct drv_sdmmc_attr_t *obj, uint8_t num, uint8_t speed,
                     uint8_t d0s, uint8_t d1s, uint8_t d2s, uint8_t d3s,
                     uint8_t cmds, uint8_t clks, uint8_t priority)
 {
     obj->num = num;
-    obj->prescaler = prescaler;
+    obj->speed = speed * 1000 * 1000;//MHZ
     obj->d0s = d0s;
     obj->d1s = d1s;
     obj->d2s = d2s;
@@ -86,30 +86,48 @@ void drv_sdmmc_attr_init(struct drv_sdmmc_attr_t *obj, uint8_t num, uint8_t pres
 int drv_sdmmc_init(struct drv_sdmmc_t *obj, struct drv_sdmmc_attr_t *attr)
 {
     int ret = 0;
-    obj->attr = *attr;
+    uint32_t clk_freq;
+    RCC_OscInitTypeDef rcc_init;
+    RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
+    PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SDMMC;
+    PeriphClkInitStruct.SdmmcClockSelection = RCC_SDMMCCLKSOURCE_PLL;
+    HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct);
 
+    obj->attr = *attr;
     SDMMC_TypeDef *sdmmc_array[2] = {SDMMC1, SDMMC2};
     uint32_t sdmmc_irq[2] = {SDMMC1_IRQn, SDMMC2_IRQn};
+    obj->handle.Instance = sdmmc_array[obj->attr.num-1];
+
+    switch (obj->attr.num) {
+    case 1:
+        __HAL_RCC_SDMMC1_CLK_ENABLE();
+        break;
+    case 2:
+        __HAL_RCC_SDMMC2_CLK_ENABLE(); 
+        break;
+    }
 
     drv_sdmmc_pin_source_init(attr->num, attr->d0s, attr->d1s, attr->d2s, attr->d3s,
         attr->cmds, attr->clks);
 
     switch (obj->attr.num) {
     case 1:
-        __HAL_RCC_SDMMC1_CLK_ENABLE();
         __HAL_RCC_SDMMC1_FORCE_RESET();
         __HAL_RCC_SDMMC1_RELEASE_RESET();
         break;
-    case 2:
-        __HAL_RCC_SDMMC2_CLK_ENABLE(); 
+    case 2: 
         __HAL_RCC_SDMMC2_FORCE_RESET();
         __HAL_RCC_SDMMC2_RELEASE_RESET();
         break;
     }
 
-    obj->handle.Instance = sdmmc_array[obj->attr.num-1];
-    HAL_SD_DeInit(&obj->handle);
-    obj->handle.Init.ClockDiv            = obj->attr.prescaler;
+    HAL_NVIC_SetPriority(sdmmc_irq[obj->attr.num-1], obj->attr.priority, 0);
+    HAL_NVIC_EnableIRQ(sdmmc_irq[obj->attr.num-1]);
+
+    // HAL_SD_DeInit(&obj->handle);
+    // sdmmc clock = Periph clock / 2 * CLOCKDIV
+    // printf("CLOCKDIV: %d \r\n", (200*1000*1000 / obj->attr.speed) / 2 );
+    obj->handle.Init.ClockDiv            = 6; // 6 
     obj->handle.Init.ClockPowerSave      = SDMMC_CLOCK_POWER_SAVE_DISABLE;
     obj->handle.Init.ClockEdge           = SDMMC_CLOCK_EDGE_RISING;
     obj->handle.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
@@ -117,9 +135,6 @@ int drv_sdmmc_init(struct drv_sdmmc_t *obj, struct drv_sdmmc_attr_t *attr)
     ret = obj->initret = HAL_SD_Init(&obj->handle);
     if (ret != HAL_OK)
         return 0x01;
-
-    HAL_NVIC_SetPriority(sdmmc_irq[obj->attr.num-1], obj->attr.priority, 0);
-    HAL_NVIC_EnableIRQ(sdmmc_irq[obj->attr.num-1]);
 
     drv_sdmmc_list[obj->attr.num-1] = obj;
     return ret;
@@ -134,9 +149,9 @@ uint8_t drv_sdmmc_wait_ready(struct drv_sdmmc_t *obj)
 	while (loop > 0) {
 		loop--;
 		if (HAL_SD_GetCardState(&obj->handle) == HAL_SD_CARD_TRANSFER)
-			return HAL_OK;
+			return MSD_OK;
 	}
-	return HAL_ERROR;
+	return MSD_ERROR;
 }
 
 void drv_sdmmc_getinfo(struct drv_sdmmc_t *obj)
@@ -162,7 +177,7 @@ uint8_t drv_sdmmc_read_blocks(struct drv_sdmmc_t *obj,
     int ret;
     switch (way) {
     case RWPOLL:
-        ret = (HAL_SD_ReadBlocks(&obj->handle, (uint8_t *)p, addr, num, 5000) == HAL_OK) ? MSD_OK : MSD_ERROR;
+        ret = (HAL_SD_ReadBlocks(&obj->handle, (uint8_t *)p, addr, num, 100U*num) == HAL_OK) ? MSD_OK : MSD_ERROR;
         break;
     case RWIT:
     case RWDMA:
@@ -178,7 +193,7 @@ uint8_t drv_sdmmc_write_blocks(struct drv_sdmmc_t *obj,
     int ret;
     switch (way) {
     case RWPOLL:
-        ret = (HAL_SD_WriteBlocks(&obj->handle, (uint8_t *)p, addr, num, 5000) == HAL_OK) ? MSD_OK : MSD_ERROR;
+        ret = (HAL_SD_WriteBlocks(&obj->handle, (uint8_t *)p, addr, num, 100U*num) == HAL_OK) ? MSD_OK : MSD_ERROR;
         break;
     case RWIT:
     case RWDMA:
@@ -188,55 +203,55 @@ uint8_t drv_sdmmc_write_blocks(struct drv_sdmmc_t *obj,
     return ret;
 }
 
-// __weak void BSP_SD_AbortCallback(void)
-// {
+__weak void BSP_SD_AbortCallback(void)
+{
 
-// }
+}
 
-// __weak void BSP_SD_WriteCpltCallback(void)
-// {
+__weak void BSP_SD_WriteCpltCallback(void)
+{
 
-// }
+}
 
-// __weak void BSP_SD_ReadCpltCallback(void)
-// {
+__weak void BSP_SD_ReadCpltCallback(void)
+{
 
-// }
+}
 
-// __weak void BSP_SD_ErrorCallback(void)
-// {
+__weak void BSP_SD_ErrorCallback(void)
+{
 
-// }
+}
 
-// __weak void BSP_SD_DriveTransciver_1_8V_Callback(FlagStatus status)
-// {
+__weak void BSP_SD_DriveTransciver_1_8V_Callback(FlagStatus status)
+{
 
-// }
+}
 
-// void HAL_SD_AbortCallback(SD_HandleTypeDef *hsd)
-// {
-//     BSP_SD_AbortCallback();
-// }
+void HAL_SD_AbortCallback(SD_HandleTypeDef *hsd)
+{
+    BSP_SD_AbortCallback();
+}
 
-// void HAL_SD_TxCpltCallback(SD_HandleTypeDef *hsd)
-// {
-//     BSP_SD_WriteCpltCallback();
-// }
+void HAL_SD_TxCpltCallback(SD_HandleTypeDef *hsd)
+{
+    BSP_SD_WriteCpltCallback();
+}
 
-// void HAL_SD_RxCpltCallback(SD_HandleTypeDef *hsd)
-// {
-//     BSP_SD_ReadCpltCallback();
-// }
+void HAL_SD_RxCpltCallback(SD_HandleTypeDef *hsd)
+{
+    BSP_SD_ReadCpltCallback();
+}
 
-// void HAL_SD_ErrorCallback(SD_HandleTypeDef *hsd)
-// {
-//     BSP_SD_ErrorCallback();
-// }
+void HAL_SD_ErrorCallback(SD_HandleTypeDef *hsd)
+{
+    BSP_SD_ErrorCallback();
+}
 
-// void HAL_SD_DriveTransciver_1_8V_Callback(FlagStatus status)
-// {
-//     BSP_SD_DriveTransciver_1_8V_Callback(status);
-// }
+void HAL_SD_DriveTransciver_1_8V_Callback(FlagStatus status)
+{
+    BSP_SD_DriveTransciver_1_8V_Callback(status);
+}
 
 void SDMMC1_IRQHandler(void)
 {

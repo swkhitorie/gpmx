@@ -19,11 +19,16 @@
 #define GPIO_nLED_BLUE_PORT   (GPIOH)
 #define GPIO_nLED_BLUE_PIN    (7)
 
+#define BOARD_MTD_RW_TEST
+#define BOARD_MTD_QSPIFLASH_FATFS_SUPPORT
+#define BOARD_MMCSD_RW_TEST
+#define BOARD_MMCSD_FATFS_SUPPORT
+
 #define BOARD_BLUE_LED(on_true)  HAL_GPIO_WritePin(GPIO_nLED_BLUE_PORT, \
                                     (0x01<<GPIO_nLED_BLUE_PIN), !(on_true))
 
 #define STM32_PLLCFG_PLL1M       (5)
-#define STM32_PLLCFG_PLL1N       (160)
+#define STM32_PLLCFG_PLL1N       (192) //160
 #define STM32_PLLCFG_PLL1P       (2)
 #define STM32_PLLCFG_PLL1Q       (4)
 
@@ -62,6 +67,16 @@ void board_bsp_init();
 void board_blue_led_toggle();
 
 void board_debug();
+
+void board_mtd_init();
+#ifdef BOARD_MTD_RW_TEST
+void board_mtd_rw_test();
+#endif
+
+void board_mmcsd_init();
+#ifdef BOARD_MMCSD_RW_TEST
+void board_mmcsd_rw_test();
+#endif
 
 #ifdef __cplusplus
 }

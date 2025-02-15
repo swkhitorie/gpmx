@@ -41,7 +41,7 @@ QSPI_CommandTypeDef drv_qspi_cmd(struct drv_qspi_msg *message);
  * W25Qxx QSPI Flash Driver
  */
 #define W25QXX_PAGESIZE                256
-#define W25QXX_FLASHSIZE               0x800000
+#define W25QXX_FLASHSIZE               0x800000  // size of W25Q64, 8M bytes
 #define W25QXX_FLASHID                 0xEF4017
 #define W25QXX_CHIPERASE_TIMEOUT_MAX   100000U
 #define W25QXX_MEM_ADDR                0x90000000

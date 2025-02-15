@@ -19,7 +19,7 @@
 
 struct drv_sdmmc_attr_t {
     uint8_t num;
-    uint32_t prescaler;
+    uint32_t speed;  //50Mhz, 100Mhz ....
     uint8_t d0s;
     uint8_t d1s;
     uint8_t d2s;
@@ -45,7 +45,7 @@ extern struct drv_sdmmc_t *drv_sdmmc_list[2];
 extern "C" {
 #endif
 
-void drv_sdmmc_attr_init(struct drv_sdmmc_attr_t *obj, uint8_t num, uint8_t prescaler,
+void drv_sdmmc_attr_init(struct drv_sdmmc_attr_t *obj, uint8_t num, uint8_t speed,
                     uint8_t d0s, uint8_t d1s, uint8_t d2s, uint8_t d3s,
                     uint8_t cmds, uint8_t clks, uint8_t priority);
 int drv_sdmmc_init(struct drv_sdmmc_t *obj, struct drv_sdmmc_attr_t *attr);
