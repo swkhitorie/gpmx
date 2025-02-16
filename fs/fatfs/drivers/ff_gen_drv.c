@@ -12,7 +12,7 @@ diskio_drv_t disk = {{0},{0},{0},0};
             else the parameter must be equal to 0
   * @retval Returns 0 in case of success, otherwise 1.
   */
-uint8_t fatfs_link_drvex(const diskio_drv_t *drv, char *path, uint8_t lun)
+uint8_t fatfs_link_drvex(const diskio_drv_ops_t *drv, char *path, uint8_t lun)
 {
   uint8_t ret = 1;
   uint8_t num = 0;
@@ -31,7 +31,7 @@ uint8_t fatfs_link_drvex(const diskio_drv_t *drv, char *path, uint8_t lun)
   return ret;
 }
 
-uint8_t fatfs_link_drv(const Diskio_drvTypeDef *drv, char *path)
+uint8_t fatfs_link_drv(const diskio_drv_ops_t *drv, char *path)
 {
   return fatfs_link_drvex(drv, path, 0);
 }

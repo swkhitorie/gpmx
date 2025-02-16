@@ -28,8 +28,8 @@ typedef struct {
 extern "C" {
 #endif
 
-uint8_t fatfs_link_drv(const diskio_drv_t *drv, char *path);
-uint8_t fatfs_link_drvex(const diskio_drv_t *drv, char *path, BYTE lun);
+uint8_t fatfs_link_drv(const diskio_drv_ops_t *drv, char *path);
+uint8_t fatfs_link_drvex(const diskio_drv_ops_t *drv, char *path, BYTE lun);
 uint8_t fatfs_unlink_drv(char *path);
 uint8_t fatfs_unlink_drvex(char *path, BYTE lun);
 uint8_t fatfs_get_drv_nbr(void);
