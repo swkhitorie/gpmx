@@ -3,7 +3,7 @@
 
 #ifdef BOARD_MMCSD_FATFS_SUPPORT
 #include "ff.h"
-#include "ff_gen_drv.h"
+#include "ff_drv.h"
 const diskio_drv_ops_t mmcsd_driver;
 static FATFS mmcsd_fatfs;
 static char mmcsd_mnt_path[20];

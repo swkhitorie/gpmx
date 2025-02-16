@@ -29,15 +29,15 @@ void board_bsp_init()
     drv_gpio_irq_init(&io1_irq, 6, io1_trigger);
     io1 = drv_gpio_init(GPIOB, 8, IOMODE_IT_RISING, IO_SPEEDHIGH, IO_PULLDOWN, 0, &io1_irq);
 
-    // board_mtd_init();
-    // #ifdef BOARD_MTD_RW_TEST
-    // board_mtd_rw_test();
-    // #endif
+//     board_mtd_init();
+// #ifdef BOARD_MTD_RW_TEST
+//     board_mtd_rw_test();
+// #endif
 
     board_mmcsd_init();
-    #ifdef BOARD_MTD_RW_TEST
+#ifdef BOARD_MMCSD_RW_TEST
     board_mmcsd_rw_test();
-    #endif
+#endif
 
 #ifdef BSP_MODULE_USB_CHERRY
     cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
