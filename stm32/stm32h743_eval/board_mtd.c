@@ -2,9 +2,11 @@
 #include <drv_qspi.h>
 
 #ifdef BOARD_MTD_QSPIFLASH_FATFS_SUPPORT
+#include "ff.h"
 #include "ff_gen_drv.h"
 const diskio_drv_ops_t mtd_driver;
-static char mnt_mnt_path[20];
+static FATFS mnt_fatfs;
+static char mtd_mnt_path[20];
 #endif
 
 void board_mtd_init()
@@ -19,7 +21,13 @@ void board_mtd_init()
 #endif
 #ifdef BOARD_MTD_QSPIFLASH_FATFS_SUPPORT
 	if (ret1 == 1) {
-		fatfs_link_drv(&mtd_driver, &mnt_mnt_path[0]);
+		fatfs_link_drv(&mtd_driver, &mtd_mnt_path[0]);
+		FRESULT ret_ff = f_mount(&mnt_fatfs, &mtd_mnt_path[0], 0);
+        if (ret_ff != FR_OK) {
+#ifdef BOARD_MTD_RW_TEST
+            printf("[fat] mtd mount failed %d\r\n", ret_ff);
+#endif
+        }
 	}
 #endif
 }
