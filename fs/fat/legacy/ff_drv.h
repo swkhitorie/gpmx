@@ -1,5 +1,5 @@
-#ifndef FF_GEN_DRV_H
-#define FF_GEN_DRV_H
+#ifndef FF_DRV_H
+#define FF_DRV_H
 
 #include "diskio.h"
 #include "ff.h"

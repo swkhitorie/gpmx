@@ -56,13 +56,21 @@ FR_CPPSOURCES += px4/ptasks.cpp
 endif
 
 ifeq (${CONFIG_FR_FATFS},y)
-FR_CINCDIRS += fs/fatfs
-FR_CINCDIRS += fs/fatfs/drivers
-FR_CSOURCES += fs/fatfs/ff.c
-FR_CSOURCES += fs/fatfs/diskio.c
-FR_CSOURCES += fs/fatfs/option/syscall.c
-FR_CSOURCES += fs/fatfs/option/unicode.c
-FR_CSOURCES += fs/fatfs/drivers/ff_gen_drv.c
+FR_CINCDIRS += fs/fat
+FR_CSOURCES += fs/fat/ff.c
+FR_CSOURCES += fs/fat/diskio.c
+FR_CSOURCES += fs/fat/ff_drv.c
+FR_CSOURCES += fs/fat/ffsystem.c
+FR_CSOURCES += fs/fat/ffunicode.c
+endif
+
+ifeq (${CONFIG_FR_FATFS},l)
+FR_CINCDIRS += fs/fat/legacy
+FR_CSOURCES += fs/fat/legacy/ff.c
+FR_CSOURCES += fs/fat/legacy/diskio.c
+FR_CSOURCES += fs/fat/legacy/ff_drv.c
+FR_CSOURCES += fs/fat/legacy/option/syscall.c
+FR_CSOURCES += fs/fat/legacy/option/unicode.c
 endif
 
 ifeq (${CONFIG_FR_APPS_CLI},y)

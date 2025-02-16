@@ -1,4 +1,5 @@
-#include "ff_gen_drv.h"
+#include "ff.h"
+#include "ff_drv.h"
 
 diskio_drv_t disk = {{0},{0},{0},0};
 
@@ -17,7 +18,7 @@ uint8_t fatfs_link_drvex(const diskio_drv_ops_t *drv, char *path, uint8_t lun)
   uint8_t ret = 1;
   uint8_t num = 0;
 
-  if(disk.nbr < _VOLUMES) {
+  if(disk.nbr < FF_VOLUMES) {
     disk.is_initialized[disk.nbr] = 0;
     disk.drv[disk.nbr] = drv;
     disk.lun[disk.nbr] = lun;
