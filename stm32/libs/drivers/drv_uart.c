@@ -179,6 +179,7 @@ void drv_uart_dma_attr_init(struct drv_uart_dma_attr_t *obj,
 {
     obj->mem_buff = p;
     obj->mem_capacity = len;
+    obj->mem_halfcapacity = len / 2;
     obj->priority = priority;
 }
 
@@ -429,7 +430,9 @@ void drv_uart_init(uint8_t num, struct drv_uart_t *obj,
         HAL_NVIC_SetPriority(uart_rxdma_irq[num-1], rxdma_attr->priority, 0);
         HAL_NVIC_EnableIRQ(uart_rxdma_irq[num-1]);
 
-        HAL_UART_Receive_DMA(&obj->com, obj->attr_rxdma.mem_buff, obj->attr_rxdma.mem_capacity);
+        obj->attr_rxdma.mem_halflag = 0;
+        HAL_UART_Receive_DMA(&obj->com, obj->attr_rxdma.mem_buff, obj->attr_rxdma.mem_halfcapacity);
+        // HAL_UART_Receive_DMA(&obj->com, obj->attr_rxdma.mem_buff, obj->attr_rxdma.mem_capacity);
     } else {
         obj->attr_rxdma.mem_capacity = 0;
     }
@@ -500,16 +503,29 @@ void drv_uart_irq(struct drv_uart_t *obj)
         if (obj->attr_rxdma.mem_capacity != 0) {
             HAL_UART_AbortReceive(&obj->com);
 
-            uint16_t rxlen = obj->attr_rxdma.mem_capacity - __HAL_DMA_GET_COUNTER(obj->com.hdmarx);
+            uint16_t rxlen = obj->attr_rxdma.mem_halfcapacity - __HAL_DMA_GET_COUNTER(obj->com.hdmarx);
+            // uint16_t rxlen = obj->attr_rxdma.mem_capacity - __HAL_DMA_GET_COUNTER(obj->com.hdmarx);
 
     #if defined (DRV_BSP_H7)
             /* save SRAM(DMA) data to D-Cache data */
             SCB_InvalidateDCache_by_Addr((uint32_t *)&obj->attr_rxdma.mem_buff[0], 
                                     obj->attr_rxdma.mem_capacity);
     #endif  // End With Define DRV_BSP_H7
-            devbuf_write(&obj->rx_buf, &obj->attr_rxdma.mem_buff[0], rxlen);
-            HAL_UART_Receive_DMA(&obj->com, &obj->attr_rxdma.mem_buff[0], 
-                                    obj->attr_rxdma.mem_capacity);
+
+            if (obj->attr_rxdma.mem_halflag == 0) {
+                HAL_UART_Receive_DMA(&obj->com, obj->attr_rxdma.mem_buff + obj->attr_rxdma.mem_halfcapacity, 
+                    obj->attr_rxdma.mem_halfcapacity);
+                obj->attr_rxdma.mem_halflag = 1;
+                devbuf_write(&obj->rx_buf, &obj->attr_rxdma.mem_buff[0], rxlen);
+            } else if (obj->attr_rxdma.mem_halflag == 1) {
+                HAL_UART_Receive_DMA(&obj->com, obj->attr_rxdma.mem_buff, 
+                    obj->attr_rxdma.mem_halfcapacity);
+                obj->attr_rxdma.mem_halflag = 0;
+                devbuf_write(&obj->rx_buf, obj->attr_rxdma.mem_buff + obj->attr_rxdma.mem_halfcapacity, rxlen);
+            }
+            // devbuf_write(&obj->rx_buf, &obj->attr_rxdma.mem_buff[0], rxlen);
+            // HAL_UART_Receive_DMA(&obj->com, &obj->attr_rxdma.mem_buff[0], 
+            //                         obj->attr_rxdma.mem_capacity);
         }
 	}
 	
@@ -551,8 +567,19 @@ void drv_uart_rxdma_irq(struct drv_uart_t *obj)
                                 obj->attr_rxdma.mem_capacity);
 #endif  // End With Define DRV_BSP_H7
 
-    devbuf_write(&obj->rx_buf, &obj->attr_rxdma.mem_buff[0], obj->attr_rxdma.mem_capacity);
-	HAL_UART_Receive_DMA(&obj->com, &obj->attr_rxdma.mem_buff[0], obj->attr_rxdma.mem_capacity);
+    if (obj->attr_rxdma.mem_halflag == 0) {
+        HAL_UART_Receive_DMA(&obj->com, obj->attr_rxdma.mem_buff + obj->attr_rxdma.mem_halfcapacity, 
+            obj->attr_rxdma.mem_halfcapacity);
+        obj->attr_rxdma.mem_halflag = 1;
+        devbuf_write(&obj->rx_buf, &obj->attr_rxdma.mem_buff[0], obj->attr_rxdma.mem_halfcapacity);
+    } else if (obj->attr_rxdma.mem_halflag == 1) {
+        HAL_UART_Receive_DMA(&obj->com, obj->attr_rxdma.mem_buff, 
+            obj->attr_rxdma.mem_halfcapacity);
+        obj->attr_rxdma.mem_halflag = 0;
+        devbuf_write(&obj->rx_buf, obj->attr_rxdma.mem_buff + obj->attr_rxdma.mem_halfcapacity, obj->attr_rxdma.mem_halfcapacity);
+    }
+    // devbuf_write(&obj->rx_buf, &obj->attr_rxdma.mem_buff[0], obj->attr_rxdma.mem_capacity);
+    // HAL_UART_Receive_DMA(&obj->com, &obj->attr_rxdma.mem_buff[0], obj->attr_rxdma.mem_capacity);
 }
 
 

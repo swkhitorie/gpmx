@@ -46,6 +46,8 @@ struct drv_uart_attr_t {
 
 struct drv_uart_dma_attr_t {
     uint16_t mem_capacity;
+    uint16_t mem_halfcapacity;
+    uint8_t mem_halflag;
     uint8_t *mem_buff;
     uint8_t priority;
 };
