@@ -1,0 +1,62 @@
+
+LIBHAL_CINCDIRS += device
+
+LIBHAL_CINCDIRS += hal_driver
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal.c
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_cortex.c
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_pwr.c
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_pwr_ex.c
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_rcc.c
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_rcc_ex.c
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_gpio.c
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_exti.c
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_dma.c
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_dma_ex.c
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_FLASH),y)
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_flash.c
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_flash_ex.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_IWDG),y)
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_iwdg.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_RTC),y)
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_rtc.c
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_rtc_ex.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_I2C),y)
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_i2c.c
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_i2c_ex.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_USART),y)
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_uart.c
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_uart_ex.c
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_usart.c
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_usart_ex.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_SPI),y)
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_spi.c
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_spi_ex.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_BASTIM),y)
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_tim.c
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_tim_ex.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_QSPI),y)
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_qspi.c
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_mdma.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_SDMMC),y)
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_sd.c
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_sd_ex.c
+LIBHAL_CSRCS += hal_driver/stm32h7xx_ll_sdmmc.c
+LIBHAL_CSRCS += hal_driver/stm32h7xx_ll_delayblock.c
+endif

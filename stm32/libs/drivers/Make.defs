@@ -1,0 +1,29 @@
+
+LIBDRV_CINCDIRS += include
+
+LIBDRV_CSRCS += drv_buffer.c
+LIBDRV_CSRCS += drv_gpio.c
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_USART),y)
+LIBDRV_CSRCS += drv_uart.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_FLASH),y)
+LIBDRV_CSRCS += drv_flash_h7.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_I2C),y)
+LIBDRV_CSRCS += drv_i2c.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_SPI),y)
+LIBDRV_CSRCS += drv_spi.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_QSPI),y)
+LIBDRV_CSRCS += drv_qspi.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_SDMMC),y)
+LIBDRV_CSRCS += drv_sdmmc.c
+endif
