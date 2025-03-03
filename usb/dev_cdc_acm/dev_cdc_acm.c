@@ -138,7 +138,7 @@ static void usbd_event_handler(uint8_t busid, uint8_t event)
         case USBD_EVENT_CONFIGURED:
             /* setup first out ep read transfer */
             usbd_ep_start_read(busid, CDC_OUT_EP, cdc_rbuf, CDC_MAX_MPS);
-#ifndef CONFIG_CRUSB_TX_FIFO_ENABLE
+#ifndef CONFIG_CRUSB_CDC_TX_FIFO_ENABLE
             ep_tx_busy_flag = false;
 #else
             if (dfifocdc_size(&cdc_txfifo) > 0) {
@@ -173,7 +173,7 @@ void usbd_cdc_acm_bulk_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
         /* send zlp */
         usbd_ep_start_write(busid, CDC_IN_EP, NULL, 0);
     } else {
-#ifndef CONFIG_CRUSB_TX_FIFO_ENABLE
+#ifndef CONFIG_CRUSB_CDC_TX_FIFO_ENABLE
         ep_tx_busy_flag = false;
 #else
         if (dfifocdc_size(&cdc_txfifo) <= 0) {
@@ -251,7 +251,7 @@ int dev_cdc_acm_send(uint8_t busid, const uint8_t *p, uint16_t len, uint8_t isbu
             while (ep_tx_busy_flag);
         }
     } else if (isbuffer == 1) {
-#ifdef CONFIG_CRUSB_TX_FIFO_ENABLE
+#ifdef CONFIG_CRUSB_CDC_TX_FIFO_ENABLE
         rsize = dfifocdc_write(&cdc_txfifo, &p[0], len);
         if (rsize == 0) return 0;
         if (ep_tx_busy_flag) return 0;
@@ -269,7 +269,7 @@ int dev_cdc_acm_read(uint8_t busid, uint8_t *p, uint16_t len)
     return dfifocdc_read(&cdc_rxfifo, p, len);
 }
 
-#ifdef CRUSB_STD_INOUT_ENABLE
+#ifdef CONFIG_CRUSB_CDC_STD_INOUT_ENABLE
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>

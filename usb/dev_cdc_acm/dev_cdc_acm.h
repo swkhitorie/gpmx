@@ -8,8 +8,6 @@
 
 #include "dev_cdc_fifo.h"
 
-#define CONFIG_CRUSB_TX_FIFO_ENABLE
-
 #ifdef __cplusplus
 extern "C" {
 #endif

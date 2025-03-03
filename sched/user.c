@@ -1,6 +1,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+#ifdef CONFIG_FR_IDLE_TIMER_TASKCREATE_HANDLE
 StackType_t xTaskIdle_stack[configMINIMAL_STACK_SIZE];
 StaticTask_t xTaskIdle;
 
@@ -22,8 +23,11 @@ void vApplicationGetTimerTaskMemory( StaticTask_t **ppxTimerTaskTCBBuffer,
     *ppxTimerTaskStackBuffer = xTasktimer_stack;
     *pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
 }
+#endif
 
+#ifdef CONFIG_FR_MALLOC_FAILED_HANDLE
 void vApplicationMallocFailedHook( void )
 {
     printf("[ERROR] memory allocate failed, free: %d bytes\r\n", xPortGetFreeHeapSize());
 }
+#endif
