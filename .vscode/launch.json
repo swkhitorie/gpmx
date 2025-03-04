@@ -1,0 +1,27 @@
+{
+    "env" : {
+        "arm_cc_path" : "D:/__dev_envir/__env/mdk5/CORE/ARM/ARMCC",
+        "arm_clang_path" : "D:/__dev_envir/__env/mdk5/CORE/ARM/ARMCLANG",
+        "gcc_arm_path" : "D:/__dev_envir/__env/arm_gcc/gcc-arm-none-eabi/bin"
+    },
+    
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Microcontroller",
+            "cwd": "${workspaceRoot}",
+            "executable": "./build/output/comb_nav/comb_nav.elf",
+            "request": "launch",
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            "device": "STM32F407VE",
+            "configFiles": [
+                "./openocd.cfg",
+            ],
+            "showDevDebugOutput": "none",
+            "preLaunchTask": "build",
+            "armToolchainPath": "D:/__dev_envir/__env/arm_gcc/gcc-arm-none-eabi/bin",
+            "svdPath" : "./platforms/startup/gcc/STM32F40x.svd"
+        }
+    ]
+}

@@ -1,0 +1,48 @@
+{
+    "env" : {
+        "arm_cc_path" : "C:/Keil_v5/ARM/ARMCC",
+        "arm_clang_path" : "C:/Keil_v5/ARM/ARMCLANG",
+        "gcc_arm_path" : "D:/envir/gcc-arm-none-eabi/bin"
+    },
+
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${arm_cc_path}/include",
+                "${arm_clang_path}/include",
+
+                "${gcc_arm_path}/../lib/gcc/arm-none-eabi/10.3.1/include",
+                "${gcc_arm_path}/../lib/gcc/arm-none-eabi/10.3.1/include-fixed",
+                "${gcc_arm_path}/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/include",
+
+                "${workspaceFolder}/bsp/stm32/libs/cmsis",
+                "${workspaceFolder}/bsp/stm32/libs/drivers/include",
+                "${workspaceFolder}/bsp/stm32/libs/stm32f1xx_hal/device",
+                "${workspaceFolder}/bsp/stm32/libs/stm32f1xx_hal/hal_driver",
+                "${workspaceFolder}/bsp/stm32/libs/stm32f4xx_hal/device",
+                "${workspaceFolder}/bsp/stm32/libs/stm32f4xx_hal/hal_driver",
+                "${workspaceFolder}/bsp/stm32/libs/stm32h7xx_hal/device",
+                "${workspaceFolder}/bsp/stm32/libs/stm32h7xx_hal/hal_driver",
+                "${workspaceFolder}/bsp/stm32/libs/stm32g0xx_hal/device",
+                "${workspaceFolder}/bsp/stm32/libs/stm32g0xx_hal/hal_driver",
+
+                "${workspaceFolder}/bsp/gd32/libs/drivers/include",
+                "${workspaceFolder}/bsp/gd32/libs/gd32c10x_lib/device",
+                "${workspaceFolder}/bsp/gd32/libs/gd32c10x_lib/std_periph_driver"
+            ],
+            "intelliSenseMode": "gcc-x64",
+            "cStandard": "c17",
+            "cppStandard": "gnu++14",
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": "",
+                "path": [
+                    "${workspaceFolder}"
+                ]
+            }
+        }
+    ],
+    "version": 4
+}
