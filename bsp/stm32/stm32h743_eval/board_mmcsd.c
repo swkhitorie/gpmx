@@ -21,7 +21,7 @@ void board_mmcsd_init()
     drv_sdmmc_attr_init(&sd_attr, 1, 25, /* io select */1, 1, 1, 1, 1, 1, /* priority */ 4);
     int sdret = drv_sdmmc_init(&sd, &sd_attr);
 
-#ifdef BOARD_MMCSD_RW_TEST
+#ifdef BOARD_MMCSD_INFO_CHECK
     uint8_t tmp;
     tmp = drv_sdmmc_wait_ready(&sd);
     if (tmp != HAL_OK) {
@@ -69,15 +69,16 @@ void board_mmcsd_init()
     }
 #endif
 
+#ifdef BOARD_MMCSD_FATFS_SUPPORT
     if (sdret == 0) {
         fatfs_link_drv(&mmcsd_driver, &mmcsd_mnt_path[0]);
         FRESULT ret_ff = f_mount(&mmcsd_fatfs, &mmcsd_mnt_path[0], 0);
         if (ret_ff != FR_OK) {
-#ifdef BOARD_MMCSD_RW_TEST
-            printf("[fat] mmcsd mount failed %d\r\n", ret_ff);
-#endif
+            // printf("[fat] mmcsd mount failed %d\r\n", ret_ff);
         }
     }
+#endif
+
 }
 
 #ifdef BOARD_MMCSD_RW_TEST

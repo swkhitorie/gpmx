@@ -36,7 +36,7 @@ void board_bsp_init()
 
     board_mmcsd_init();
 #ifdef BOARD_MMCSD_RW_TEST
-    board_mmcsd_rw_test();
+    // board_mmcsd_rw_test();
 #endif
 
 #ifdef BSP_MODULE_USB_CHERRY

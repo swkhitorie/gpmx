@@ -24,9 +24,7 @@ void board_mtd_init()
 		fatfs_link_drv(&mtd_driver, &mtd_mnt_path[0]);
 		FRESULT ret_ff = f_mount(&mnt_fatfs, &mtd_mnt_path[0], 0);
         if (ret_ff != FR_OK) {
-#ifdef BOARD_MTD_RW_TEST
-            printf("[fat] mtd mount failed %d\r\n", ret_ff);
-#endif
+            // printf("[fat] mtd mount failed %d\r\n", ret_ff);
         }
 	}
 #endif

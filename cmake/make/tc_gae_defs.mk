@@ -12,12 +12,20 @@ TC_GCC_PREFIX = arm-none-eabi-
 #
 # GCC ARM Compiler related section
 #
+ifneq ($(OS), Linux)
 TC_PATH_BIN:=$(call MK_SHORTNAME,"${TC_PATH_INST_GCC}/bin")
 TC_PATH_INC:=$(call MK_SHORTNAME,"${TC_PATH_INST_GCC}/arm-none-eabi/include")
 TC_PATH_LIB:=$(call MK_SHORTNAME,"${TC_PATH_INST_GCC}/arm-none-eabi/lib")
+else
+TC_PATH_BIN:=${TC_PATH_INST_GCC}/bin
+TC_PATH_INC:=${TC_PATH_INST_GCC}/arm-none-eabi/include
+TC_PATH_LIB:=${TC_PATH_INST_GCC}/arm-none-eabi/lib
+endif
+
 #
 # toolchain executables
 #
+ifneq ($(OS), Linux)
 TC_MAKEDEP:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/$(TC_GCC_PREFIX)gcc.exe -MM)
 TC_CC:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/$(TC_GCC_PREFIX)gcc.exe)
 TC_CPP:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/$(TC_GCC_PREFIX)g++.exe)
@@ -26,6 +34,16 @@ TC_LINK:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/$(TC_GCC_PREFIX)gcc.exe)
 TC_AR:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/$(TC_GCC_PREFIX)ar.exe)
 TC_GENBIN:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/$(TC_GCC_PREFIX)objcopy.exe)
 TC_SIZE:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/$(TC_GCC_PREFIX)size.exe)
+else
+TC_MAKEDEP:=${TC_PATH_BIN}/$(TC_GCC_PREFIX)gcc -MM
+TC_CC:=${TC_PATH_BIN}/$(TC_GCC_PREFIX)gcc
+TC_CPP:=${TC_PATH_BIN}/$(TC_GCC_PREFIX)g++
+TC_ASM:=${TC_PATH_BIN}/$(TC_GCC_PREFIX)as
+TC_LINK:=${TC_PATH_BIN}/$(TC_GCC_PREFIX)gcc
+TC_AR:=${TC_PATH_BIN}/$(TC_GCC_PREFIX)ar
+TC_GENBIN:=${TC_PATH_BIN}/$(TC_GCC_PREFIX)objcopy
+TC_SIZE:=${TC_PATH_BIN}/$(TC_GCC_PREFIX)size
+endif
 
 #
 # toolchain switches macros

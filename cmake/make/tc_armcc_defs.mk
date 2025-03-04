@@ -11,12 +11,20 @@ include ${MAKEFILES_ROOTDIR}/make/macros.mk
 #
 # ARM Compiler related section
 #
+ifneq ($(OS), Linux)
 TC_PATH_BIN:=$(call MK_SHORTNAME,"${TC_PATH_INST_ARMCC}\bin")
 TC_PATH_INC:=$(call MK_SHORTNAME,"${TC_PATH_INST_ARMCC}\include")
 TC_PATH_LIB:=$(call MK_SHORTNAME,"${TC_PATH_INST_ARMCC}\lib")
+else
+TC_PATH_BIN:=${TC_PATH_INST_ARMCC}/bin
+TC_PATH_INC:=${TC_PATH_INST_ARMCC}/include
+TC_PATH_LIB:=${TC_PATH_INST_ARMCC}/lib
+endif
+
 #
 # toolchain executables
 #
+ifneq ($(OS), Linux)
 TC_MAKEDEP:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/armcc.exe -M --no_depend_system_headers)
 TC_CC:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/armcc.exe)
 TC_CPP:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/armcc.exe)
@@ -24,6 +32,15 @@ TC_ASM:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/armasm.exe)
 TC_LINK:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/armlink.exe)
 TC_AR:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/armar.exe)
 TC_GENBIN:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/fromelf.exe)
+else
+TC_MAKEDEP:=${TC_PATH_BIN}/armcc -M --no_depend_system_headers
+TC_CC:=${TC_PATH_BIN}/armcc
+TC_CPP:=${TC_PATH_BIN}/armcc
+TC_ASM:=${TC_PATH_BIN}/armasm
+TC_LINK:=${TC_PATH_BIN}/armlink
+TC_AR:=${TC_PATH_BIN}/armar
+TC_GENBIN:=${TC_PATH_BIN}/fromelf
+endif
 
 #
 # toolchain switches macros
@@ -110,7 +127,11 @@ TC_SCFEXT:=sct
 #
 
 # convert PATH to toolchain friendly path
+ifneq ($(OS), Linux)
 MK_TC_PATH=$(call MK_PATHTOWIN,${1})
+else
+MK_TC_PATH=$(call MK_PATHTOUNX,${1})
+endif
 
 # command to generate list of linker directory search paths
 MK_TC_LIBDIRS=$(if ${1},--userlibpath $(call MK_SPCTOCOM,${1}))
