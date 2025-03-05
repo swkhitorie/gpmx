@@ -1,13 +1,9 @@
 
-OS := $(shell uname)
 ifneq ($(OS), Linux)
 TC_PATH_INST_GCC := $(shell where arm-none-eabi-gcc)/../../
 TC_PATH_INST_ARMCC := $(shell where armcc)/../../
 TC_PATH_INST_ARMCLANG := $(shell where armclang)/../../
 TC_OPENOCD_PATH := $(shell where openocd)/../../
-else
-TC_PATH_INST_GCC := /opt/gcc-arm-none-eabi-9-2020-q2-update
-TC_OPENOCD_PATH := /usr/local/openocd
 endif
 
 # Path to root dir
@@ -24,6 +20,3 @@ include ${CONFIG_FILE}
 # including common build makefile
 include $(MAKEFILES_ROOTDIR)/make/build.mk
 all: prebuild build postbuild
-
-# program example:
-# make program PROJ_OPENOCD_DEBUG=stlink PROJ_OPENOCD_CHIP=stm32h7x -j4

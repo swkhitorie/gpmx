@@ -50,8 +50,6 @@ PROJ_CINCDIRS += ${FR_CINCDIRS}
 #####################################
 # app configuration
 #####################################
-PROJ_OPENOCD_LOAD_ADDR := 0x08000000
-
 PROJ_CDEFS += BSP_COM_PRINTF
 PROJ_CDEFS += BSP_MODULE_FR
 # PROJ_CDEFS += BSP_MODULE_USB_CHERRY
