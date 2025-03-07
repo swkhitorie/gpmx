@@ -1,7 +1,7 @@
 
 
 ifeq (${CONFIG_FR_LIB_CXX},y)
-FR_INCDIRS    +=  libs/cxx
+FR_CINCDIRS    +=  libs/cxx
 FR_CPPSOURCES +=  libs/cxx/libxx_delete.cxx
 FR_CPPSOURCES +=  libs/cxx/libxx_delete_sized.cxx
 FR_CPPSOURCES +=  libs/cxx/libxx_deletea.cxx
@@ -11,8 +11,13 @@ FR_CPPSOURCES +=  libs/cxx/libxx_newa.cxx
 endif
 
 ifeq (${CONFIG_FR_LIB_PX4_SUPPORT},y)
-FR_CSOURCES   +=  libs/px4/stm/hrt.c
+FR_CSOURCES   +=  libs/px4/hrt/hrt.c
 FR_CPPSOURCES +=  libs/px4/ptasks.cpp
+else
+ifeq (${CONFIG_USE_DRV_HRT_INTERNAL},y)
+FR_CSOURCES   +=  libs/px4/hrt/hrt.c
+FR_CINCDIRS   +=  libs/px4
+endif
 endif
 
 ifeq (${CONFIG_FR_LIB_POSIX},y)
