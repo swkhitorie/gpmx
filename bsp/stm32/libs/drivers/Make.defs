@@ -1,7 +1,6 @@
 
 LIBDRV_CINCDIRS += include
 
-LIBDRV_CSRCS += drv_buffer.c
 LIBDRV_CSRCS += drv_gpio.c
 
 ifeq ($(BSP_LIBCONFIG_STM32_HAL_USART),y)
@@ -9,7 +8,7 @@ LIBDRV_CSRCS += drv_uart.c
 endif
 
 ifeq ($(BSP_LIBCONFIG_STM32_HAL_FLASH),y)
-LIBDRV_CSRCS += drv_flash_h7.c
+LIBDRV_CSRCS += drv_flash.c
 endif
 
 ifeq ($(BSP_LIBCONFIG_STM32_HAL_I2C),y)

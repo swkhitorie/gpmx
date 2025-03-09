@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include "drv_buffer.h"
 #if defined (DRV_BSP_G0)
 #include "stm32g0xx.h"
 #include "core_cm0plus.h"
@@ -49,11 +48,6 @@
     #define CONFIG_UART_PERIPHAL_NUM (4)
     #define CONFIG_DRV_GPIO_EXTERNAL_IRQ_LINE_NUM (16)
 #endif
-
-/*
- * memory link areas for h7 ram d1
- */
-#define RAM_D1      __attribute__((section(".RAM_D1")))
 
 enum __drv_rwway {
     RWPOLL,

@@ -3,12 +3,11 @@
 
 #include "drv_common.h"
 
+#if defined(DRV_BSP_H7)
 #define STM32_FLASH_BASE_ADDR       (0x08000000)
 #define STM32_FLASH_END_ADDR        (0x081FFFFF)
-
 #define STM32_FLASH_WAIT_TIME       (50000)
 #define STM32_FLASH_PROGRAMM_WORD   (8)
-
 /**
  *        H7xx Flash Features -->
  *		  max memory capacity is 2MB
@@ -40,14 +39,15 @@
 	|				 |	System memory 		|			0x1FF4 0000 -- 0x1FF5 FFFF		|	  128K   |	
 	|================================================================================================|
 */
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-uint8_t drv_flash_write(uint32_t addr, const uint32_t *p, uint32_t len);
+uint8_t low_progflash_write(uint32_t addr, const uint32_t *p, uint32_t len);
 
-void drv_flash_read(uint32_t addr, uint32_t *p, uint32_t len);
+void low_progflash_read(uint32_t addr, uint32_t *p, uint32_t len);
 
 #ifdef __cplusplus
 }

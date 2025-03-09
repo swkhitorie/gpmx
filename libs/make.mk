@@ -1,7 +1,8 @@
 
+FR_CSOURCES   +=  libs/dev/serial.c
 
 ifeq (${CONFIG_FR_LIB_CXX},y)
-FR_CINCDIRS    +=  libs/cxx
+FR_CINCDIRS   +=  libs/cxx
 FR_CPPSOURCES +=  libs/cxx/libxx_delete.cxx
 FR_CPPSOURCES +=  libs/cxx/libxx_delete_sized.cxx
 FR_CPPSOURCES +=  libs/cxx/libxx_deletea.cxx

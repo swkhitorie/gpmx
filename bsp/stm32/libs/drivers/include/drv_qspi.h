@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include "drv_common.h"
 #include "drv_gpio.h"
-#include "drv_globalpin_h7.h"
+#include "drv_pin_h7.h"
 
 // #define QSPI_W25QXX_ENABLE_RW_TEST
 

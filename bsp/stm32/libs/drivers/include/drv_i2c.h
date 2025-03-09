@@ -6,7 +6,7 @@
 #include "drv_gpio.h"
 
 #if defined (DRV_BSP_H7)
-#include "drv_globalpin_h7.h"
+#include "drv_pin_h7.h"
 #endif
 
 #define DRV_I2C_REG_CMD_DATA_OUT_LEN     (8)

@@ -4,22 +4,6 @@
 #include <stdint.h>
 #include "drv_common.h"
 
-#define DRV_GPIO_EXTERNAL_IRQ_LINE_NUM CONFIG_DRV_GPIO_EXTERNAL_IRQ_LINE_NUM
-
-struct drv_pin_irq_t {
-    uint32_t priority;
-    void (*entry)();
-};
-
-struct drv_pin_t {
-    struct drv_pin_irq_t pin_irq_attr;
-    GPIO_TypeDef *port;   
-    uint16_t pin;
-#if !defined (DRV_BSP_F1)
-    uint32_t alternate;
-#endif
-};
-
 enum pullstate {
     IO_NOPULL = GPIO_NOPULL,
     IO_PULLUP = GPIO_PULLUP,
@@ -47,25 +31,27 @@ enum iomode {
     IOMODE_IT_BOTH = GPIO_MODE_IT_RISING_FALLING,
 };
 
-extern struct drv_pin_irq_t *drv_external_irq_pin_list[CONFIG_DRV_GPIO_EXTERNAL_IRQ_LINE_NUM];
+struct gpio_pin_t {
+    GPIO_TypeDef *port;   
+    uint16_t pin;
+    uint32_t alternate;
+
+    void (*entry)();
+    uint32_t priority;
+};
 
 #ifdef cplusplus
 extern "C" {
 #endif
 
-void drv_gpio_irq_init(struct drv_pin_irq_t *obj, uint32_t priority, void (*entry)());
+struct gpio_pin_t low_gpio_setup(
+    GPIO_TypeDef *port, uint32_t pin, uint32_t mode, 
+    uint32_t pull, uint32_t speed, uint32_t alternate, 
+    void (*entry)(), uint32_t priority);
 
-#if !defined (DRV_BSP_F1)
-struct drv_pin_t drv_gpio_init(GPIO_TypeDef *port, uint32_t pin, uint32_t mode, 
-                    uint32_t pull, uint32_t speed, uint32_t alternate, struct drv_pin_irq_t *irq);
-#else
-struct drv_pin_t drv_gpio_init(GPIO_TypeDef *port, uint32_t pin, uint32_t mode, 
-                    uint32_t pull, uint32_t speed, struct drv_pin_irq_t *irq);
-#endif
+void low_gpio_write(struct gpio_pin_t *obj, uint8_t val);
 
-void drv_gpio_deinit(struct drv_pin_t *obj);
-void drv_gpio_write(struct drv_pin_t *obj, uint8_t val);
-uint8_t drv_gpio_read(struct drv_pin_t *obj);
+uint8_t low_gpio_read(struct gpio_pin_t *obj);
 
 
 #ifdef cplusplus

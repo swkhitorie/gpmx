@@ -3,9 +3,8 @@
 
 #include "drv_common.h"
 #include "drv_gpio.h"
-
 #if defined (DRV_BSP_H7)
-#include "drv_globalpin_h7.h"
+#include "drv_pin_h7.h"
 #endif
 
 struct drv_canframe {
