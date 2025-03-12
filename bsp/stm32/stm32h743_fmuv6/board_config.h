@@ -62,6 +62,16 @@
 #define STM32_APB2_TIM1_CLKIN   (2*STM32_PCLK2_FREQUENCY)
 #define STM32_APB2_TIM8_CLKIN   (2*STM32_PCLK2_FREQUENCY)
 
+#define BOARD_INIT_IOPORT(_num, port, pin, mode, pull, speed) \
+        { \
+            GPIO_InitTypeDef obj##_num; \
+            obj##_num.Pin = pin; \
+            obj##_num.Mode = mode; \
+            obj##_num.Pull = pull; \
+            obj##_num.Speed = speed; \
+            HAL_GPIO_Init(port, &obj##_num); \
+        }
+
 #define GPIO_nLED_RED_PORT   (GPIOD)
 #define GPIO_nLED_RED_PIN    (GPIO_PIN_10)
 

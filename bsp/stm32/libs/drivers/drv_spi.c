@@ -1,11 +1,46 @@
 #include "drv_spi.h"
 
-struct drv_spi_t *drv_spi_list[DRV_SPI_PERIPHAL_NUM];
+// #define DRV_SPI_PERIPHAL_NUM   CONFIG_SPI_PERIPHAL_NUM
+// static struct spi_dev_s *spi_list[DRV_SPI_PERIPHAL_NUM];
 
-static bool drv_spi_pin_source_init(uint8_t num, 
-    uint8_t nss_selec, uint8_t sck_selec, 
-	uint8_t miso_selec, uint8_t mosi_selec)
+static bool low_pinconfig(struct spi_dev_s *dev);
+static void low_setup(struct spi_dev_s *dev);
+
+static int up_setup(struct spi_dev_s *dev);
+static uint32_t up_setfrequency(struct spi_dev_s *dev, uint32_t frequency);
+static void up_setmode(struct spi_dev_s *dev, enum spi_mode_e mode);
+static void up_setbits(struct spi_dev_s *dev, int nbits);
+static int up_lock(struct spi_dev_s *dev, bool lock);
+static int up_select(struct spi_dev_s *dev, uint32_t devid, bool selected);
+static int up_exchange(struct spi_dev_s *dev,
+	const void *txbuffer, void *rxbuffer, size_t nwords);
+static int up_sndblock(struct spi_dev_s *dev, const void *buffer, size_t nwords);
+static int up_recvblock(struct spi_dev_s *dev, void *buffer, size_t nwords);
+const struct spi_ops_s g_spi_ops = 
 {
+    .setup = up_setup,
+    .setfrequency = up_setfrequency,
+	.setmode = up_setmode,
+	.setbits = up_setbits,
+	.lock = up_lock,
+	.select = up_select,
+	.exchange = up_exchange,
+	.sndblock = up_sndblock,
+	.recvblock = up_recvblock,
+};
+
+/****************************************************************************
+ * Private Function
+ ****************************************************************************/
+bool low_pinconfig(struct spi_dev_s *dev)
+{
+    struct up_spi_dev_s *priv = dev->priv;
+    uint8_t num = priv->id;
+    uint8_t pin_ncs = priv->pin_ncs;
+    uint8_t pin_sck = priv->pin_sck;
+    uint8_t pin_miso = priv->pin_miso;
+    uint8_t pin_mosi = priv->pin_mosi;
+
 #if defined (DRV_BSP_H7)
 	const struct pin_node *nss_node;
 	const struct pin_node *sck_node;
@@ -15,14 +50,14 @@ static bool drv_spi_pin_source_init(uint8_t num,
 
 	switch (num) {
 	case 1:
-		if (PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(1, SPI_PIN_NSS, nss_selec)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(1, SPI_PIN_SCK, sck_selec)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(1, SPI_PIN_MISO, miso_selec)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(1, SPI_PIN_MOSI, mosi_selec)) != NULL) {
-			nss_node = SPI_PINCTRL_SOURCE(1, SPI_PIN_NSS, nss_selec);
-			sck_node = SPI_PINCTRL_SOURCE(1, SPI_PIN_SCK, sck_selec);
-			miso_node = SPI_PINCTRL_SOURCE(1, SPI_PIN_MISO, miso_selec);
-			mosi_node = SPI_PINCTRL_SOURCE(1, SPI_PIN_MOSI, mosi_selec);
+		if (PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(1, SPI_PIN_NSS, pin_ncs)) != NULL &&
+			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(1, SPI_PIN_SCK, pin_sck)) != NULL &&
+			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(1, SPI_PIN_MISO, pin_miso)) != NULL &&
+			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(1, SPI_PIN_MOSI, pin_mosi)) != NULL) {
+			nss_node = SPI_PINCTRL_SOURCE(1, SPI_PIN_NSS, pin_ncs);
+			sck_node = SPI_PINCTRL_SOURCE(1, SPI_PIN_SCK, pin_sck);
+			miso_node = SPI_PINCTRL_SOURCE(1, SPI_PIN_MISO, pin_miso);
+			mosi_node = SPI_PINCTRL_SOURCE(1, SPI_PIN_MOSI, pin_mosi);
 			illegal = nss_node->port && nss_node->port
 						&& nss_node->port && nss_node->port;
 		}else {
@@ -30,14 +65,14 @@ static bool drv_spi_pin_source_init(uint8_t num,
 		}
 		break;
 	case 2:
-		if (PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(2, SPI_PIN_NSS, nss_selec)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(2, SPI_PIN_SCK, sck_selec)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(2, SPI_PIN_MISO, miso_selec)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(2, SPI_PIN_MOSI, mosi_selec)) != NULL) {
-			nss_node = SPI_PINCTRL_SOURCE(2, SPI_PIN_NSS, nss_selec);
-			sck_node = SPI_PINCTRL_SOURCE(2, SPI_PIN_SCK, sck_selec);
-			miso_node = SPI_PINCTRL_SOURCE(2, SPI_PIN_MISO, miso_selec);
-			mosi_node = SPI_PINCTRL_SOURCE(2, SPI_PIN_MOSI, mosi_selec);
+		if (PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(2, SPI_PIN_NSS, pin_ncs)) != NULL &&
+			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(2, SPI_PIN_SCK, pin_sck)) != NULL &&
+			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(2, SPI_PIN_MISO, pin_miso)) != NULL &&
+			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(2, SPI_PIN_MOSI, pin_mosi)) != NULL) {
+			nss_node = SPI_PINCTRL_SOURCE(2, SPI_PIN_NSS, pin_ncs);
+			sck_node = SPI_PINCTRL_SOURCE(2, SPI_PIN_SCK, pin_sck);
+			miso_node = SPI_PINCTRL_SOURCE(2, SPI_PIN_MISO, pin_miso);
+			mosi_node = SPI_PINCTRL_SOURCE(2, SPI_PIN_MOSI, pin_mosi);
 			illegal = nss_node->port && nss_node->port
 						&& nss_node->port && nss_node->port;
 		}else {
@@ -45,14 +80,14 @@ static bool drv_spi_pin_source_init(uint8_t num,
 		}
 		break;
 	case 3:
-		if (PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(3, SPI_PIN_NSS, nss_selec)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(3, SPI_PIN_SCK, sck_selec)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(3, SPI_PIN_MISO, miso_selec)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(3, SPI_PIN_MOSI, mosi_selec)) != NULL) {
-			nss_node = SPI_PINCTRL_SOURCE(3, SPI_PIN_NSS, nss_selec);
-			sck_node = SPI_PINCTRL_SOURCE(3, SPI_PIN_SCK, sck_selec);
-			miso_node = SPI_PINCTRL_SOURCE(3, SPI_PIN_MISO, miso_selec);
-			mosi_node = SPI_PINCTRL_SOURCE(3, SPI_PIN_MOSI, mosi_selec);
+		if (PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(3, SPI_PIN_NSS, pin_ncs)) != NULL &&
+			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(3, SPI_PIN_SCK, pin_sck)) != NULL &&
+			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(3, SPI_PIN_MISO, pin_miso)) != NULL &&
+			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(3, SPI_PIN_MOSI, pin_mosi)) != NULL) {
+			nss_node = SPI_PINCTRL_SOURCE(3, SPI_PIN_NSS, pin_ncs);
+			sck_node = SPI_PINCTRL_SOURCE(3, SPI_PIN_SCK, pin_sck);
+			miso_node = SPI_PINCTRL_SOURCE(3, SPI_PIN_MISO, pin_miso);
+			mosi_node = SPI_PINCTRL_SOURCE(3, SPI_PIN_MOSI, pin_mosi);
 			illegal = nss_node->port && nss_node->port
 						&& nss_node->port && nss_node->port;
 		}else {
@@ -60,14 +95,14 @@ static bool drv_spi_pin_source_init(uint8_t num,
 		}
 		break;
 	case 4:
-		if (PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(4, SPI_PIN_NSS, nss_selec)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(4, SPI_PIN_SCK, sck_selec)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(4, SPI_PIN_MISO, miso_selec)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(4, SPI_PIN_MOSI, mosi_selec)) != NULL) {
-			nss_node = SPI_PINCTRL_SOURCE(4, SPI_PIN_NSS, nss_selec);
-			sck_node = SPI_PINCTRL_SOURCE(4, SPI_PIN_SCK, sck_selec);
-			miso_node = SPI_PINCTRL_SOURCE(4, SPI_PIN_MISO, miso_selec);
-			mosi_node = SPI_PINCTRL_SOURCE(4, SPI_PIN_MOSI, mosi_selec);
+		if (PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(4, SPI_PIN_NSS, pin_ncs)) != NULL &&
+			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(4, SPI_PIN_SCK, pin_sck)) != NULL &&
+			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(4, SPI_PIN_MISO, pin_miso)) != NULL &&
+			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(4, SPI_PIN_MOSI, pin_mosi)) != NULL) {
+			nss_node = SPI_PINCTRL_SOURCE(4, SPI_PIN_NSS, pin_ncs);
+			sck_node = SPI_PINCTRL_SOURCE(4, SPI_PIN_SCK, pin_sck);
+			miso_node = SPI_PINCTRL_SOURCE(4, SPI_PIN_MISO, pin_miso);
+			mosi_node = SPI_PINCTRL_SOURCE(4, SPI_PIN_MOSI, pin_mosi);
 			illegal = nss_node->port && nss_node->port
 						&& nss_node->port && nss_node->port;
 		}else {
@@ -75,14 +110,14 @@ static bool drv_spi_pin_source_init(uint8_t num,
 		}
 		break;
 	case 5:
-		if (PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(5, SPI_PIN_NSS, nss_selec)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(5, SPI_PIN_SCK, sck_selec)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(5, SPI_PIN_MISO, miso_selec)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(5, SPI_PIN_MOSI, mosi_selec)) != NULL) {
-			nss_node = SPI_PINCTRL_SOURCE(5, SPI_PIN_NSS, nss_selec);
-			sck_node = SPI_PINCTRL_SOURCE(5, SPI_PIN_SCK, sck_selec);
-			miso_node = SPI_PINCTRL_SOURCE(5, SPI_PIN_MISO, miso_selec);
-			mosi_node = SPI_PINCTRL_SOURCE(5, SPI_PIN_MOSI, mosi_selec);
+		if (PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(5, SPI_PIN_NSS, pin_ncs)) != NULL &&
+			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(5, SPI_PIN_SCK, pin_sck)) != NULL &&
+			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(5, SPI_PIN_MISO, pin_miso)) != NULL &&
+			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(5, SPI_PIN_MOSI, pin_mosi)) != NULL) {
+			nss_node = SPI_PINCTRL_SOURCE(5, SPI_PIN_NSS, pin_ncs);
+			sck_node = SPI_PINCTRL_SOURCE(5, SPI_PIN_SCK, pin_sck);
+			miso_node = SPI_PINCTRL_SOURCE(5, SPI_PIN_MISO, pin_miso);
+			mosi_node = SPI_PINCTRL_SOURCE(5, SPI_PIN_MOSI, pin_mosi);
 			illegal = nss_node->port && nss_node->port
 						&& nss_node->port && nss_node->port;
 		}else {
@@ -90,14 +125,14 @@ static bool drv_spi_pin_source_init(uint8_t num,
 		}
 		break;
 	case 6:
-		if (PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(6, SPI_PIN_NSS, nss_selec)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(6, SPI_PIN_SCK, sck_selec)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(6, SPI_PIN_MISO, miso_selec)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(6, SPI_PIN_MOSI, mosi_selec)) != NULL) {
-			nss_node = SPI_PINCTRL_SOURCE(6, SPI_PIN_NSS, nss_selec);
-			sck_node = SPI_PINCTRL_SOURCE(6, SPI_PIN_SCK, sck_selec);
-			miso_node = SPI_PINCTRL_SOURCE(6, SPI_PIN_MISO, miso_selec);
-			mosi_node = SPI_PINCTRL_SOURCE(6, SPI_PIN_MOSI, mosi_selec);
+		if (PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(6, SPI_PIN_NSS, pin_ncs)) != NULL &&
+			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(6, SPI_PIN_SCK, pin_sck)) != NULL &&
+			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(6, SPI_PIN_MISO, pin_miso)) != NULL &&
+			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(6, SPI_PIN_MOSI, pin_mosi)) != NULL) {
+			nss_node = SPI_PINCTRL_SOURCE(6, SPI_PIN_NSS, pin_ncs);
+			sck_node = SPI_PINCTRL_SOURCE(6, SPI_PIN_SCK, pin_sck);
+			miso_node = SPI_PINCTRL_SOURCE(6, SPI_PIN_MISO, pin_miso);
+			mosi_node = SPI_PINCTRL_SOURCE(6, SPI_PIN_MOSI, pin_mosi);
 			illegal = nss_node->port && nss_node->port
 						&& nss_node->port && nss_node->port;
 		}else {
@@ -108,14 +143,10 @@ static bool drv_spi_pin_source_init(uint8_t num,
 	}
 	
 	if (illegal != 0) {
-        // drv_gpio_init(nss_node->port, nss_node->pin_num, IOMODE_AFPP,
-		// 					IO_PULLUP, IO_SPEEDMAX, nss_node->alternate, NULL);
-        drv_gpio_init(sck_node->port, sck_node->pin, IOMODE_AFPP,
-							IO_PULLUP, IO_SPEEDMAX, sck_node->alternate, NULL);
-        drv_gpio_init(miso_node->port, miso_node->pin, IOMODE_AFPP,
-							IO_PULLUP, IO_SPEEDMAX, miso_node->alternate, NULL);
-        drv_gpio_init(mosi_node->port, mosi_node->pin, IOMODE_AFPP,
-							IO_PULLUP, IO_SPEEDMAX, mosi_node->alternate, NULL);
+        // low_gpio_setup(nss_node->port, nss_node->pin_num, IOMODE_AFPP, IO_PULLUP, IO_SPEEDMAX, nss_node->alternate, NULL, 0);
+		low_gpio_setup(sck_node->port, sck_node->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDMAX, sck_node->alternate, NULL, 0);
+		low_gpio_setup(miso_node->port, miso_node->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDMAX, miso_node->alternate, NULL, 0);
+		low_gpio_setup(mosi_node->port, mosi_node->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDMAX, mosi_node->alternate, NULL, 0);
 	}else {
 		return false;
 	}
@@ -123,62 +154,58 @@ static bool drv_spi_pin_source_init(uint8_t num,
 #endif
 
 #if defined (DRV_BSP_F1)
-    if (nss_selec == 0) {
+    if (pin_ncs == 0) {
         GPIO_TypeDef *spi_port[3] =  { GPIOA,		GPIOB,      GPIOB };
         uint16_t       sck_pin[3] =  {   5,         13,          3    };
         uint16_t       miso_pin[3] = {   6,         14,          4    };
 		uint16_t       mosi_pin[3] = {   7,         15,          5    };
-
-        drv_gpio_init(spi_port[num-1], sck_pin[num-1], IOMODE_AFPP,   IO_NOPULL, IO_SPEEDHIGH, NULL);
-        drv_gpio_init(spi_port[num-1], mosi_pin[num-1], IOMODE_AFPP,  IO_NOPULL, IO_SPEEDHIGH, NULL);
-        drv_gpio_init(spi_port[num-1], miso_pin[num-1], IOMODE_INPUT, IO_NOPULL, IO_SPEEDHIGH, NULL);
-    } else if (nss_selec == 1 && num == 1) {
-        drv_gpio_init(GPIOB, 3, IOMODE_AFPP,   IO_NOPULL, IO_SPEEDHIGH, NULL);  //sck
-        drv_gpio_init(GPIOB, 4, IOMODE_AFPP,  IO_NOPULL, IO_SPEEDHIGH, NULL);   //miso
-        drv_gpio_init(GPIOB, 5, IOMODE_INPUT, IO_NOPULL, IO_SPEEDHIGH, NULL);   //mosi
+		low_gpio_setup(spi_port[num-1], sck_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, 0);
+		low_gpio_setup(spi_port[num-1], mosi_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, 0);
+		low_gpio_setup(spi_port[num-1], miso_pin[num-1], IOMODE_INPUT, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, 0);
+    } else if (pin_ncs == 1 && num == 1) {
+		low_gpio_setup(GPIOB, 3, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, 0);  //sck
+		low_gpio_setup(GPIOB, 4, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, 0);  //miso
+		low_gpio_setup(GPIOB, 5, IOMODE_INPUT, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, 0);  //mosi  
     }
 	return true;
 #endif
 
 #if defined (DRV_BSP_F4)
-    if (nss_selec == 0) {
+    if (pin_ncs == 0) {
         GPIO_TypeDef *spi_port[3] =  { GPIOA,		GPIOB,      GPIOB };
         uint16_t       sck_pin[3] =  {   5,         13,          3    };
         uint16_t       miso_pin[3] = {   6,         14,          4    };
 		uint16_t       mosi_pin[3] = {   7,         15,          5    };
         uint32_t       alternate[3] = {GPIO_AF5_SPI1, GPIO_AF5_SPI2, GPIO_AF6_SPI3};
 
-        drv_gpio_init(spi_port[num-1], sck_pin[num-1], IOMODE_AFPP,   IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL);
-        drv_gpio_init(spi_port[num-1], mosi_pin[num-1], IOMODE_AFPP,  IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL);
-        drv_gpio_init(spi_port[num-1], miso_pin[num-1], IOMODE_INPUT, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL);
-    } else if (nss_selec == 1) {
+		low_gpio_setup(spi_port[num-1], sck_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL, 0);
+		low_gpio_setup(spi_port[num-1], mosi_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL, 0);
+		low_gpio_setup(spi_port[num-1], miso_pin[num-1], IOMODE_INPUT, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL, 0);
+    } else if (pin_ncs == 1) {
         GPIO_TypeDef *spi_port[3] =  { GPIOB,		GPIOB,      GPIOC };
         uint16_t       sck_pin[3] =  {   3,         10,          10   };
         uint16_t       miso_pin[3] = {   4,         2,          11    };
 		uint16_t       mosi_pin[3] = {   5,         3,          12    };
         uint32_t       alternate[3] = {GPIO_AF5_SPI1, GPIO_AF5_SPI2, GPIO_AF6_SPI3};
 
-        drv_gpio_init(spi_port[num-1], sck_pin[num-1], IOMODE_AFPP,   IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL);
+		low_gpio_setup(spi_port[num-1], sck_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL, 0);
 		if (num == 2) {
 			spi_port[num-1] = GPIOC;
 		}
-        drv_gpio_init(spi_port[num-1], mosi_pin[num-1], IOMODE_AFPP,  IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL);
-        drv_gpio_init(spi_port[num-1], miso_pin[num-1], IOMODE_INPUT, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL);
+		low_gpio_setup(spi_port[num-1], mosi_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL, 0);
+		low_gpio_setup(spi_port[num-1], miso_pin[num-1], IOMODE_INPUT, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL, 0);
     }
 	return true;
 #endif
 }
 
-void drv_spi_attr_init(struct drv_spi_attr_t *obj, uint32_t mode, uint32_t databits, uint32_t speed)
+/****************************************************************************
+ * Public Function Interface 
+ ****************************************************************************/
+int up_setup(struct spi_dev_s *dev)
 {
-    obj->mode = mode;
-	obj->databits = databits;
-	obj->speed = speed;
-}
-
-void drv_spi_init(uint8_t num, struct drv_spi_t *obj, struct drv_spi_attr_t *attr,
-    uint8_t nss, uint8_t sck, uint8_t miso, uint8_t mosi)
-{
+    struct up_spi_dev_s *priv = dev->priv;
+    uint8_t num = priv->id;
 #if defined (DRV_BSP_H7)
     uint32_t spi_clk[6] = {
 		RCC_PERIPHCLK_SPI1, RCC_PERIPHCLK_SPI2, RCC_PERIPHCLK_SPI3,
@@ -196,7 +223,6 @@ void drv_spi_init(uint8_t num, struct drv_spi_t *obj, struct drv_spi_attr_t *att
 	HAL_RCCEx_PeriphCLKConfig(&spi_clk_init_obj);
 #endif
 
-    obj->attr = *attr;
 	switch (num) {
 	case 1:	__HAL_RCC_SPI1_CLK_ENABLE();	break;
 	case 2:	__HAL_RCC_SPI2_CLK_ENABLE();	break;
@@ -208,7 +234,7 @@ void drv_spi_init(uint8_t num, struct drv_spi_t *obj, struct drv_spi_attr_t *att
 #endif
 	}
 
-	drv_spi_pin_source_init(num, nss, sck, miso, mosi);	
+	low_pinconfig(dev);	
 
 	SPI_TypeDef *spi_instance[6] = {
 		SPI1, SPI2, 
@@ -218,81 +244,101 @@ void drv_spi_init(uint8_t num, struct drv_spi_t *obj, struct drv_spi_attr_t *att
 #endif
 	};
 
-//   hspi2.Instance = SPI2;
-//   hspi2.Init.Mode = SPI_MODE_MASTER;
-//   hspi2.Init.Direction = SPI_DIRECTION_2LINES;
-//   hspi2.Init.DataSize = SPI_DATASIZE_16BIT;
-//   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
-//   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
-//   hspi2.Init.NSS = SPI_NSS_SOFT;
-//   hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
-//   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
-//   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
-//   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
-//   hspi2.Init.CRCPolynomial = 10;
-//   if (HAL_SPI_Init(&hspi2) != HAL_OK)
-//   {
-//     //Error_Handler();
-//   }
-
-	obj->hspi.Instance               = spi_instance[num-1];
-    obj->hspi.Init.BaudRatePrescaler = obj->attr.speed;
-	obj->hspi.Init.Mode              = SPI_MODE_MASTER;
-	obj->hspi.Init.Direction         = SPI_DIRECTION_2LINES;
-	obj->hspi.Init.DataSize          = obj->attr.databits;
-	switch (obj->attr.mode) {
-	case SPI_MODE0:
-		obj->hspi.Init.CLKPolarity       = SPI_POLARITY_LOW;
-		obj->hspi.Init.CLKPhase          = SPI_PHASE_1EDGE;
+	priv->hspi.Instance               = spi_instance[num-1];
+    priv->hspi.Init.BaudRatePrescaler = dev->frequency;
+	priv->hspi.Init.Mode              = SPI_MODE_MASTER;
+	priv->hspi.Init.Direction         = SPI_DIRECTION_2LINES;
+	switch (dev->nbits) {
+	case 8:
+        priv->hspi.Init.DataSize = SPI_DATASIZE_8BIT;
+        break;
+	case 16:
+        priv->hspi.Init.DataSize = SPI_DATASIZE_16BIT;
+        break;
+	}
+	switch (dev->mode) {
+	case SPIDEV_MODE0:
+        priv->hspi.Init.CLKPolarity       = SPI_POLARITY_LOW;
+		priv->hspi.Init.CLKPhase          = SPI_PHASE_1EDGE;
 		break;
-	case SPI_MODE1:
-		obj->hspi.Init.CLKPolarity       = SPI_POLARITY_LOW;
-		obj->hspi.Init.CLKPhase          = SPI_PHASE_2EDGE;
+	case SPIDEV_MODE1:
+        priv->hspi.Init.CLKPolarity       = SPI_POLARITY_LOW;
+        priv->hspi.Init.CLKPhase          = SPI_PHASE_2EDGE;
 		break;
-	case SPI_MODE2:
-		obj->hspi.Init.CLKPolarity       = SPI_POLARITY_HIGH;
-		obj->hspi.Init.CLKPhase          = SPI_PHASE_1EDGE;
+	case SPIDEV_MODE2:
+        priv->hspi.Init.CLKPolarity       = SPI_POLARITY_HIGH;
+        priv->hspi.Init.CLKPhase          = SPI_PHASE_1EDGE;
 		break;
-	case SPI_MODE3:
-		obj->hspi.Init.CLKPolarity       = SPI_POLARITY_HIGH;
-		obj->hspi.Init.CLKPhase          = SPI_PHASE_2EDGE;
+	case SPIDEV_MODE3:
+        priv->hspi.Init.CLKPolarity       = SPI_POLARITY_HIGH;
+        priv->hspi.Init.CLKPhase          = SPI_PHASE_2EDGE;
 		break;	
 	default :break;
 	}
-	obj->hspi.Init.NSS               = SPI_NSS_SOFT;
+	priv->hspi.Init.NSS               = SPI_NSS_SOFT;
 #if defined (DRV_BSP_H7)
-	obj->hspi.Init.NSSPMode          = SPI_NSS_PULSE_DISABLE;
-	// SPI_MASTER_KEEP_IO_STATE_DISABLE SPI_MASTER_KEEP_IO_STATE_ENABLE
-	obj->hspi.Init.MasterKeepIOState = SPI_MASTER_KEEP_IO_STATE_ENABLE;
+    priv->hspi.Init.NSSPMode          = SPI_NSS_PULSE_DISABLE;
+    priv->hspi.Init.MasterKeepIOState = SPI_MASTER_KEEP_IO_STATE_ENABLE;
 #endif
-	obj->hspi.Init.FirstBit          = SPI_FIRSTBIT_MSB;
-	obj->hspi.Init.TIMode            = SPI_TIMODE_DISABLE;
-	obj->hspi.Init.CRCCalculation    = SPI_CRCCALCULATION_DISABLE;
-    obj->hspi.Init.CRCPolynomial     = 10;
+    priv->hspi.Init.FirstBit          = SPI_FIRSTBIT_MSB;
+    priv->hspi.Init.TIMode            = SPI_TIMODE_DISABLE;
+    priv->hspi.Init.CRCCalculation    = SPI_CRCCALCULATION_DISABLE;
+    priv->hspi.Init.CRCPolynomial     = 10;
 #if defined (DRV_BSP_H7)
-    obj->hspi.Init.FifoThreshold     = SPI_FIFO_THRESHOLD_01DATA;
+    priv->hspi.Init.FifoThreshold     = SPI_FIFO_THRESHOLD_01DATA;
 #endif
 
-    __HAL_SPI_DISABLE(&obj->hspi);	
-	HAL_SPI_DeInit(&obj->hspi);
-	HAL_SPI_Init(&obj->hspi);
-	__HAL_SPI_ENABLE(&obj->hspi);
-
-	drv_spi_list[num-1] = obj;
+    __HAL_SPI_DISABLE(&priv->hspi);	
+	HAL_SPI_DeInit(&priv->hspi);
+	HAL_SPI_Init(&priv->hspi);
+	__HAL_SPI_ENABLE(&priv->hspi);
 }
 
-int drv_spi_write(struct drv_spi_t *obj, const uint8_t *p, uint16_t len, enum __drv_rwway way)
+uint32_t up_setfrequency(struct spi_dev_s *dev, uint32_t frequency)
 {
-	return HAL_SPI_Transmit(&obj->hspi, p, len, 5000);
+	return 0;
 }
 
-int drv_spi_read(struct drv_spi_t *obj, uint8_t *p, uint16_t len, enum __drv_rwway way)
+void up_setmode(struct spi_dev_s *dev, enum spi_mode_e mode)
 {
-	return HAL_SPI_Receive(&obj->hspi, p, len, 5000);
+
 }
 
-int drv_spi_readwrite(struct drv_spi_t *obj, uint8_t *ptx, uint8_t *prx, uint16_t size, enum __drv_rwway way)
+void up_setbits(struct spi_dev_s *dev, int nbits)
 {
-    int8_t res = HAL_SPI_TransmitReceive(&obj->hspi, ptx, prx, size, 5000);
-	return res;  
+    
+}
+
+int up_lock(struct spi_dev_s *dev, bool lock)
+{
+	return 0;
+}
+
+int up_select(struct spi_dev_s *dev, uint32_t devid, bool selected)
+{
+    struct up_spi_dev_s *priv = dev->priv;
+	int i = 0;
+	for (; i < CONFIG_SPI_ATTACH_CS_NUM; i++) {
+        if (devid == priv->devid[i] && priv->devcs[i].port != NULL) {
+			HAL_GPIO_WritePin(priv->devcs[i].port, (0x01 << priv->devcs[i].pin), !selected);
+		}
+	}
+}
+
+int up_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbuffer, size_t nwords)
+{
+    struct up_spi_dev_s *priv = dev->priv;
+	return HAL_SPI_TransmitReceive(&priv->hspi, txbuffer, rxbuffer, nwords, 5000);
+}
+
+int up_sndblock(struct spi_dev_s *dev, const void *buffer, size_t nwords)
+{
+	struct up_spi_dev_s *priv = dev->priv;
+	return HAL_SPI_Transmit(&priv->hspi, buffer, nwords, 5000);
+}
+
+int up_recvblock(struct spi_dev_s *dev, void *buffer, size_t nwords)
+{
+	struct up_spi_dev_s *priv = dev->priv;
+	return HAL_SPI_Receive(&priv->hspi, buffer, nwords, 5000);
 }

@@ -11,8 +11,8 @@ TARGET_POSTBUILD := ${TARGET_DEST_FILENAME_BIN}
 # bsp configuration
 #####################################
 MOD_ARCH  =  m7
-include ${SDK_ROOTDIR}/bsp/stm32/stm32h743_eval/make.mk
-#include ${SDK_ROOTDIR}/bsp/stm32/stm32h743_fmuv6/make.mk
+#include ${SDK_ROOTDIR}/bsp/stm32/stm32h743_eval/make.mk
+include ${SDK_ROOTDIR}/bsp/stm32/stm32h743_fmuv6/make.mk
 #include ${SDK_ROOTDIR}/bsp/stm32/stm32f103_eval/make.mk
 #include ${SDK_ROOTDIR}/bsp/stm32/stm32f407_eval/make.mk
 #include ${SDK_ROOTDIR}/bsp/stm32/stm32f427_fmuv2/make.mk
