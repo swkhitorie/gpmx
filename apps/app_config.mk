@@ -41,7 +41,6 @@ include ${SDK_ROOTDIR}/sched/make.mk
 include ${SDK_ROOTDIR}/mm/make.mk
 include ${SDK_ROOTDIR}/libs/make.mk
 include ${SDK_ROOTDIR}/include/make.mk
-include ${SDK_ROOTDIR}/fs/make.mk
 include ${SDK_ROOTDIR}/usb/make.mk
 
 CSOURCES += ${FR_CSOURCES}

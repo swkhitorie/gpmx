@@ -21,6 +21,25 @@ FR_CINCDIRS   +=  libs/px4
 endif
 endif
 
+ifeq (${CONFIG_FR_FAT_FATFS},y)
+FR_CINCDIRS += libs/fs/fat/
+FR_CSOURCES += libs/fs/fat/ff.c
+FR_CSOURCES += libs/fs/fat/diskio.c
+FR_CSOURCES += libs/fs/fat/ff_drv.c
+FR_CSOURCES += libs/fs/fat/ffsystem.c
+FR_CSOURCES += libs/fs/fat/ffunicode.c
+endif
+
+ifeq (${CONFIG_FR_FAT_FATFS},l)
+FR_CINCDIRS += libs/fs/fat/legacy
+FR_CSOURCES += libs/fs/fat/legacy/ff.c
+FR_CSOURCES += libs/fs/fat/legacy/diskio.c
+FR_CSOURCES += libs/fs/fat/legacy/ff_drv.c
+FR_CSOURCES += libs/fs/fat/legacy/option/syscall.c
+FR_CSOURCES += libs/fs/fat/legacy/option/unicode.c
+endif
+
+
 ifeq (${CONFIG_FR_LIB_POSIX},y)
 FR_CSOURCES += libs/queue/dq_addafter.c
 FR_CSOURCES += libs/queue/dq_addbefore.c
