@@ -4,6 +4,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define SERIAL_DMASEND(d,m,c) ((d)->ops->dmasend(d,m,c))
+
+#define SERIAL_SEND(d,m,c) ((d)->ops->send(d,m,c))
+
+#define SERIAL_RDBUF(d,m,c) ((d)->ops->readbuf(d,m,c))
+
 struct uart_buffer_s {
     volatile uint16_t in;   /* Index to the head [IN] index in the buffer */
     volatile uint16_t out;   /* Index to the tail [OUT] index in the buffer */

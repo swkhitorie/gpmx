@@ -23,6 +23,7 @@
 // #define BOARD_MTD_QSPIFLASH_FATFS_SUPPORT
 // #define BOARD_MMCSD_RW_TEST
 // #define BOARD_MMCSD_INFO_CHECK
+
 #define BOARD_MMCSD_FATFS_SUPPORT
 
 #define BOARD_BLUE_LED(on_true)  HAL_GPIO_WritePin(GPIO_nLED_BLUE_PORT, \
@@ -51,6 +52,18 @@
 
 #define STM32_APB2_TIM1_CLKIN   (2*STM32_PCLK2_FREQUENCY)
 #define STM32_APB2_TIM8_CLKIN   (2*STM32_PCLK2_FREQUENCY)
+
+#define BOARD_IO_GET(port, pin)  HAL_GPIO_ReadPin(port, 1<<pin)
+#define BOARD_IO_SET(port, pin, val)  HAL_GPIO_WritePin(port, 1<<pin, val)
+#define BOARD_INIT_IOPORT(_num, port, pin, mode, pull, speed) \
+        { \
+            GPIO_InitTypeDef obj##_num; \
+            obj##_num.Pin = 1<<pin; \
+            obj##_num.Mode = mode; \
+            obj##_num.Pull = pull; \
+            obj##_num.Speed = speed; \
+            HAL_GPIO_Init(port, &obj##_num); \
+        }
 
 #ifdef __cplusplus
 extern "C" {

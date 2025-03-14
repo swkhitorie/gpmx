@@ -113,6 +113,9 @@ struct up_spi_dev_s fram_spi_dev =
 	.devcs = { [0] = {GPIOD, 4}, },
 };
 
+uart_dev_t *dstdout = &com1_dev.dev;
+uart_dev_t *dstdin = &com1_dev.dev;
+
 void board_bsp_init()
 {
     board_config_io();
@@ -180,14 +183,14 @@ void board_config_io()
 
 void board_blue_led_toggle()
 {
-	int val = HAL_GPIO_ReadPin(GPIO_nLED_BLUE_PORT, GPIO_nLED_BLUE_PIN);
-	HAL_GPIO_WritePin(GPIO_nLED_BLUE_PORT, GPIO_nLED_BLUE_PIN, !val);
+    int val = BOARD_IO_GET(GPIO_nLED_BLUE_PORT, GPIO_nLED_BLUE_PIN);
+    BOARD_IO_SET(GPIO_nLED_BLUE_PORT, GPIO_nLED_BLUE_PIN, !val);
 }
 
 void board_red_led_toggle()
 {
-	int val = HAL_GPIO_ReadPin(GPIO_nLED_RED_PORT, GPIO_nLED_RED_PIN);
-	HAL_GPIO_WritePin(GPIO_nLED_RED_PORT, GPIO_nLED_RED_PIN, !val);
+    int val = BOARD_IO_GET(GPIO_nLED_RED_PORT, GPIO_nLED_RED_PIN);
+    BOARD_IO_SET(GPIO_nLED_RED_PORT, GPIO_nLED_RED_PIN, !val);
 }
 
 int16_t mag_data[3];

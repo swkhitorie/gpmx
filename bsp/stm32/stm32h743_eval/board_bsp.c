@@ -1,5 +1,7 @@
 #include "board_config.h"
 #include <drv_uart.h>
+#include <dev/dnode.h>
+#include <dev/serial.h>
 
 /* COM1 */
 uint8_t com1_dma_rxbuff[256];
@@ -41,13 +43,19 @@ struct up_uart_dev_s com1_dev = {
     .enable_dmatx = true,
 };
 
-
-struct gpio_pin_t led;
+uart_dev_t *dstdout = &com1_dev.dev;
+uart_dev_t *dstdin = &com1_dev.dev;
 
 void board_bsp_init()
 {
+	BOARD_INIT_IOPORT(0, GPIO_nLED_BLUE_PORT, GPIO_nLED_BLUE_PIN, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_VERY_HIGH);
+
+    dregister("/com1", &com1_dev.dev);
+
     com1_dev.dev.ops->setup(&com1_dev.dev);
-    led = low_gpio_setup(GPIO_nLED_BLUE_PORT, GPIO_nLED_BLUE_PIN, IOMODE_OUTPP, IO_SPEEDHIGH, IO_NOPULL, 0, NULL, 0);
+
+    dstdout = dbind("/com1");
+    dstdin = dbind("/com1");
 
 // //     board_mtd_init();
 // // #ifdef BOARD_MTD_RW_TEST
@@ -66,14 +74,14 @@ void board_bsp_init()
 
 void board_blue_led_toggle()
 {
-    int val = low_gpio_read(&led);
-    low_gpio_write(&led, !val);
+    int val = BOARD_IO_GET(GPIO_nLED_BLUE_PORT, GPIO_nLED_BLUE_PIN);
+    BOARD_IO_SET(GPIO_nLED_BLUE_PORT, GPIO_nLED_BLUE_PIN, !val);
 }
 
 uint8_t buff_debug[256];
 void board_debug()
 {
-    int size = com1_dev.dev.ops->readbuf(&com1_dev.dev, &buff_debug[0], 256);
+    int size = SERIAL_RDBUF(dstdin, buff_debug, 256);
     if (size > 0) {
         for (int i = 0; i < size; i++) {
             printf("%c", buff_debug[i]);
@@ -84,49 +92,38 @@ void board_debug()
 }
 
 #ifdef BSP_COM_PRINTF
-
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
 FILE __stdin, __stdout, __stderr;
-
 size_t fwrite(const void *ptr, size_t size, size_t n_items, FILE *stream)
 {
     return _write(stream->_file, ptr, size*n_items);
 }
-
 int _write(int file, char *ptr, int len)
 {
     const int stdin_fileno = 0;
     const int stdout_fileno = 1;
     const int stderr_fileno = 2;
     if (file == stdout_fileno) {
-        com1_dev.dev.ops->send(&com1_dev.dev, ptr, len);
-        //drv_uart_send(&com1, ptr, len, RWPOLL);
+        SERIAL_SEND(dstdout, ptr, len);
     }
     return len;
 }
-
 size_t fread(void *ptr, size_t size, size_t n_items, FILE *stream)
 {
     return _read(stream->_file, ptr, size*n_items);
 }
-
 // nonblock
 int _read(int file, char *ptr, int len)
 {
-    // const int stdin_fileno = 0;
-    // const int stdout_fileno = 1;
-    // const int stderr_fileno = 2;
-    // devbuf_t buf = drv_uart_devbuf(&com1);
-    // size_t rcv_size = devbuf_size(&buf);
-    // size_t sld_size = (len >= rcv_size) ? rcv_size: len;
-    // size_t ret_size = 0;
-    // if (file == stdin_fileno) {
-    //     ret_size = devbuf_read(&com1.rx_buf, ptr, sld_size);
-    // }
-    // return ret_size;
+    const int stdin_fileno = 0;
+    const int stdout_fileno = 1;
+    const int stderr_fileno = 2;
+    int rsize = 0;
+    if (file == stdin_fileno) {
+        rsize = SERIAL_RDBUF(dstdin, ptr, len);
+    }
+    return rsize;
 }
 #endif
-
-

@@ -1,5 +1,8 @@
 
+FR_CSOURCES   +=  libs/dev/dnode.c
 FR_CSOURCES   +=  libs/dev/serial.c
+FR_CSOURCES   +=  libs/dev/i2c_master.c
+FR_CSOURCES   +=  libs/dev/spi.c
 
 ifeq (${CONFIG_FR_LIB_CXX},y)
 FR_CINCDIRS   +=  libs/cxx

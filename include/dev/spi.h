@@ -3,6 +3,35 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
+
+#define SPI_LOCK(d,l) (d)->ops->lock(d,l)
+
+#define SPI_SELECT(d,id,s) ((d)->ops->select(d,id,s))
+
+#define SPI_SETFREQUENCY(d,f) ((d)->ops->setfrequency(d,f))
+
+#define SPI_SETMODE(d,m) \
+    do { if ((d)->ops->setmode) (d)->ops->setmode(d,m); } while (0)
+
+#define SPI_SETBITS(d,b) \
+    do { if ((d)->ops->setbits) (d)->ops->setbits(d,b); } while (0)
+
+#ifdef CONFIG_SPI_EXCHANGE
+#define SPI_SNDBLOCK(d,b,l) ((d)->ops->exchange(d,b,0,l))
+#else
+#define SPI_SNDBLOCK(d,b,l) ((d)->ops->sndblock(d,b,l))
+#endif
+
+#ifdef CONFIG_SPI_EXCHANGE
+#define SPI_RECVBLOCK(d,b,l) ((d)->ops->exchange(d,0,b,l))
+#else
+#define SPI_RECVBLOCK(d,b,l) ((d)->ops->recvblock(d,b,l))
+#endif
+
+#ifdef CONFIG_SPI_EXCHANGE
+#define SPI_EXCHANGE(d,t,r,l) ((d)->ops->exchange(d,t,r,l))
+#endif
 
 enum spi_mode_e
 {

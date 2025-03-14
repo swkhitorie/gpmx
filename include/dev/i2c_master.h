@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 #define I2C_M_WRITE          0x0001
 #define I2C_M_READ           0x0002
@@ -16,6 +17,12 @@
 #define I2C_SPEED_FAST       400000  /* Fast speed     (400Khz) */
 #define I2C_SPEED_FAST_PLUS  1000000 /* Fast+ speed    (  1Mhz) */
 #define I2C_SPEED_HIGH       3400000 /* High speed     (3.4Mhz) */
+
+#define I2C_TRANSFER(d,m,c) ((d)->ops->transfer(d,m,c))
+
+#define I2C_TRANSFERIT(d,m,c) ((d)->ops->transferit(d,m,c))
+
+#define I2C_RESET(d) ((d)->ops->reset(d))
 
 struct i2c_msg_s
 {

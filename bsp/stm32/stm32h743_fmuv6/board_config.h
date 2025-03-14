@@ -62,10 +62,12 @@
 #define STM32_APB2_TIM1_CLKIN   (2*STM32_PCLK2_FREQUENCY)
 #define STM32_APB2_TIM8_CLKIN   (2*STM32_PCLK2_FREQUENCY)
 
+#define BOARD_IO_GET(port, pin)  HAL_GPIO_ReadPin(port, 1<<pin)
+#define BOARD_IO_SET(port, pin, val)  HAL_GPIO_WritePin(port, 1<<pin, val)
 #define BOARD_INIT_IOPORT(_num, port, pin, mode, pull, speed) \
         { \
             GPIO_InitTypeDef obj##_num; \
-            obj##_num.Pin = pin; \
+            obj##_num.Pin = 1<<pin; \
             obj##_num.Mode = mode; \
             obj##_num.Pull = pull; \
             obj##_num.Speed = speed; \
@@ -73,37 +75,37 @@
         }
 
 #define GPIO_nLED_RED_PORT   (GPIOD)
-#define GPIO_nLED_RED_PIN    (GPIO_PIN_10)
+#define GPIO_nLED_RED_PIN    (10)
 
 #define GPIO_nLED_BLUE_PORT   (GPIOD)
-#define GPIO_nLED_BLUE_PIN    (GPIO_PIN_11)
+#define GPIO_nLED_BLUE_PIN    (11)
 
 #define GPIO_nPOWER_IN_A_PORT   (GPIOA)
-#define GPIO_nPOWER_IN_A_PIN    (GPIO_PIN_15)
+#define GPIO_nPOWER_IN_A_PIN    (15)
 
 #define GPIO_nPOWER_IN_B_PORT   (GPIOB)
-#define GPIO_nPOWER_IN_B_PIN    (GPIO_PIN_12)
+#define GPIO_nPOWER_IN_B_PIN    (12)
 
 #define GPIO_nPOWER_IN_C_PORT   (GPIOE)
-#define GPIO_nPOWER_IN_C_PIN    (GPIO_PIN_15)
+#define GPIO_nPOWER_IN_C_PIN    (15)
 
 #define GPIO_VDD_5V_PERIPH_nEN_PORT  (GPIOE)
-#define GPIO_VDD_5V_PERIPH_nEN_PIN  (GPIO_PIN_2)
+#define GPIO_VDD_5V_PERIPH_nEN_PIN  (2)
 
 #define GPIO_VDD_5V_PERIPH_nOC_PORT  (GPIOE)
-#define GPIO_VDD_5V_PERIPH_nOC_PIN  (GPIO_PIN_3)
+#define GPIO_VDD_5V_PERIPH_nOC_PIN  (3)
 
 #define GPIO_VDD_5V_HIPOWER_nEN_PORT  (GPIOC)
-#define GPIO_VDD_5V_HIPOWER_nEN_PIN  (GPIO_PIN_10)
+#define GPIO_VDD_5V_HIPOWER_nEN_PIN  (10)
 
 #define GPIO_VDD_5V_HIPOWER_nOC_PORT  (GPIOC)
-#define GPIO_VDD_5V_HIPOWER_nOC_PIN  (GPIO_PIN_11)
+#define GPIO_VDD_5V_HIPOWER_nOC_PIN  (11)
 
 #define GPIO_VDD_3V3_SENSORS_EN_PORT  (GPIOB)
-#define GPIO_VDD_3V3_SENSORS_EN_PIN  (GPIO_PIN_2)
+#define GPIO_VDD_3V3_SENSORS_EN_PIN  (2)
 
 #define GPIO_OTGFS_VBUS_PORT           (GPIOA)
-#define GPIO_OTGFS_VBUS_PIN           (GPIO_PIN_9)
+#define GPIO_OTGFS_VBUS_PIN           (9)
 
 #define VDD_5V_PERIPH_EN(on_true)          HAL_GPIO_WritePin(GPIO_VDD_5V_PERIPH_nEN_PORT, \
                                                     GPIO_VDD_5V_PERIPH_nEN_PIN, !(on_true))
