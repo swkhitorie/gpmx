@@ -122,8 +122,6 @@ bool low_pinsetup(struct i2c_master_s *dev, uint32_t mode)
 #endif
     };
 
-    // why here must delay???
-    HAL_Delay(1);
     low_gpio_setup(scl_port, scl_pin, mode, IO_NOPULL, IO_SPEEDHIGH, i2c_af[num-1], NULL, 0);
     low_gpio_setup(sda_port, sda_pin, mode, IO_NOPULL, IO_SPEEDHIGH, i2c_af[num-1], NULL, 0);
 }
@@ -144,7 +142,7 @@ void low_config(struct i2c_master_s *dev)
     priv->hi2c.Instance 			    = i2cx[num-1];
 #if defined (DRV_BSP_F1) || defined (DRV_BSP_F4)
     priv->hi2c.Init.DutyCycle = I2C_DUTYCYCLE_2;
-    priv->hi2c.Init.ClockSpeed = attr->speed;    //100k, 400k
+    priv->hi2c.Init.ClockSpeed = dev->clk_speed;    //100k, 400k
 #endif
 #if defined (DRV_BSP_H7)
     priv->hi2c.Init.Timing  = 0x00901954;
@@ -161,6 +159,7 @@ void low_setup(struct i2c_master_s *dev)
 {
     struct up_i2c_master_s *priv = dev->priv;
     uint8_t num = priv->id;
+
 	IRQn_Type i2c_err_irq[4] = {
         I2C1_ER_IRQn, I2C2_ER_IRQn, I2C3_ER_IRQn,
 #if (BSP_CHIP_RESOURCE_LEVEL > 4)
@@ -185,7 +184,6 @@ void low_setup(struct i2c_master_s *dev)
 	}
 
     low_config(dev);
-    low_pinconfig(dev);
     low_pinsetup(dev, IOMODE_AFOD);
 
     HAL_I2C_Init(&priv->hi2c);
@@ -207,11 +205,6 @@ int low_transfer(struct i2c_master_s *dev)
 
     for (; dev->msgi < dev->msgc; dev->msgi++) {
         struct i2c_msg_s *msg = &dev->msgv[dev->msgi];
-
-        while (HAL_I2C_GetState(&priv->hi2c) != HAL_I2C_STATE_READY);
-        while (HAL_I2C_IsDeviceReady(&priv->hi2c, msg->addr, 1000, 1000) == HAL_TIMEOUT);
-        while (HAL_I2C_GetState(&priv->hi2c) != HAL_I2C_STATE_READY);
-
         switch (msg->flags) {
         case I2C_M_WRITE:
             ret = HAL_I2C_Master_Transmit(&priv->hi2c, msg->addr, &msg->xbuffer[0], msg->xlength, 1000);
@@ -300,10 +293,7 @@ int up_setup(struct i2c_master_s *dev)
 
 int up_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
 {
-    int i = 0;
-    for (; i < count; i++) {
-        dev->msgv[i] = msgs[i];
-    }
+    dev->msgv = msgs;
     dev->msgc = count;
     dev->msgi = 0;
 
@@ -330,9 +320,7 @@ int up_transferit(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
         return -1;
     }
 
-    for (; i < count; i++) {
-        dev->msgv[i] = msgs[i];
-    }
+    dev->msgv = msgs;
     dev->msgc = count;
     dev->msgi = 0;
     return low_transfer_it(dev);
@@ -352,8 +340,9 @@ void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
     if (hi2c->Instance == I2C1)		    idx = 0;
     else if (hi2c->Instance == I2C2)    idx = 1;
     else if (hi2c->Instance == I2C3)	idx = 2;
+#if (BSP_CHIP_RESOURCE_LEVEL > 4)
     else if (hi2c->Instance == I2C4)	idx = 3;
-
+#endif
     low_completed_irq(i2c_mlist[idx]);
 }
 
@@ -363,8 +352,9 @@ void HAL_I2C_MemTxCpltCallback(I2C_HandleTypeDef *hi2c)
     if (hi2c->Instance == I2C1)		    idx = 0;
     else if (hi2c->Instance == I2C2)    idx = 1;
     else if (hi2c->Instance == I2C3)	idx = 2;
+#if (BSP_CHIP_RESOURCE_LEVEL > 4)
     else if (hi2c->Instance == I2C4)	idx = 3;
-
+#endif
     low_completed_irq(i2c_mlist[idx]);
 }
 
@@ -374,7 +364,9 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
     if (hi2c->Instance == I2C1)		    idx = 0;
     else if (hi2c->Instance == I2C2)    idx = 1;
     else if (hi2c->Instance == I2C3)	idx = 2;
+#if (BSP_CHIP_RESOURCE_LEVEL > 4)
     else if (hi2c->Instance == I2C4)	idx = 3;
+#endif
 
     low_completed_irq(i2c_mlist[idx]);
 }
@@ -386,7 +378,9 @@ void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c)
     if (hi2c->Instance == I2C1)		    idx = 0;
     else if (hi2c->Instance == I2C2)    idx = 1;
     else if (hi2c->Instance == I2C3)	idx = 2;
+#if (BSP_CHIP_RESOURCE_LEVEL > 4)
     else if (hi2c->Instance == I2C4)	idx = 3;
+#endif
 
     priv = i2c_mlist[idx];
     priv->ecnt++;

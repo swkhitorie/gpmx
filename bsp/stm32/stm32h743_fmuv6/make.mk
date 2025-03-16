@@ -33,9 +33,6 @@ BOARD_CSRCS += board_usb.c
 BOARD_CSRCS += board_init.c
 BOARD_CSRCS += board_bsp.c
 
-BOARD_CSRCS += ist8310_test.c
-BOARD_CSRCS += icm42688_test.c
-
 BOARD_ASMSOURCES += fmuv6_startup.s
 BOARD_LNK_FILE   += fmuv6_lnk_script.ld
 

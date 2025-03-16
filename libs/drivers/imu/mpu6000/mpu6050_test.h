@@ -82,7 +82,9 @@
 #define MPU_ID_VALUE_3					0x73
 #define MPU_ID_VALUE_4					0x70
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 __attribute__((weak)) void write_register(uint8_t addr, uint8_t data);
 
 __attribute__((weak)) void read_register(uint8_t addr, uint8_t *buf, uint8_t len, int rwway);
@@ -93,6 +95,9 @@ bool mpu6050_init();
 bool mpu6050_accel(int16_t *accel);
 
 bool mpu6050_gyro(int16_t *gyro);
+#ifdef __cplusplus
+}
+#endif
 
 
 

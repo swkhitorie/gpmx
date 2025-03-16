@@ -1,4 +1,7 @@
 #include "mpu6050_test.h"
+#include <dev/i2c_master.h>
+
+struct i2c_master_s *semi;
 
 void wait_block()
 {
@@ -12,6 +15,42 @@ uint8_t checkid()
 	read_register(MPU_DEVICE_ID_REG, &aaid, 1, 0);
     return aaid;
 }
+
+struct i2c_msg_s smsg;
+struct i2c_msg_s rmsg;
+uint8_t datat[2];
+uint8_t datatr;
+void write_register(uint8_t addr, uint8_t data)
+{
+    int ret = 0;
+    datat[0] = addr;
+    datat[1] = data;
+
+    smsg.flags = I2C_REG_WRITE;
+    smsg.addr = 0xD0;
+    smsg.reg_sz = 1;
+    smsg.xbuffer = datat;
+    smsg.xlength = 2;
+
+	ret = I2C_TRANSFER(semi,&smsg,1);
+}
+
+void read_register(uint8_t addr, uint8_t *buf, uint8_t len, int rwway)
+{
+	int ret = 0;
+    datatr = addr;
+    rmsg.flags = I2C_REG_READ;
+    rmsg.addr = 0xD0;
+    rmsg.reg_sz = 1;
+    rmsg.xbuffer = &datatr;
+    rmsg.xlength = 1;
+    rmsg.rbuffer = buf;
+    rmsg.rlength = len;
+
+    ret = I2C_TRANSFER(semi,&rmsg,1);
+    return;
+}
+
 
 bool mpu6050_init()
 {
@@ -27,6 +66,12 @@ bool mpu6050_init()
         0x18, 0x18,
     };
     uint8_t reg_write_check_val[6] = {0x00};
+
+    semi = dbind("/sensor_i2c");
+    if (semi == NULL) {
+        printf("not get i2c handle");
+        return false;
+    }
 
     write_register(MPU_PWR_MGMT1_REG, 0x80); //0x80
     wait_block();

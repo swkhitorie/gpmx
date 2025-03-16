@@ -849,8 +849,9 @@ void DMA1_Channel7_IRQHandler()
 
 void DMA1_Stream0_IRQHandler(void)
 {
+    struct up_uart_dev_s *priv = uart_list[4]->priv;
     //DMA1_Stream0 -> UART5_RX+UART8_TX, prefer to UART5_RX
-    HAL_DMA_IRQHandler(uart_list[4]->priv->com.hdmarx);
+    HAL_DMA_IRQHandler(priv->com.hdmarx);
 }
 
 void DMA1_Stream1_IRQHandler(void)

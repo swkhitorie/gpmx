@@ -1,7 +1,9 @@
 #include "board_config.h"
 #include <drv_sdmmc.h>
 
-#ifdef BOARD_MMCSD_FATFS_SUPPORT
+#ifdef CONFIG_BOARD_MMCSD_ENABLE
+
+#ifdef CONFIG_BOARD_MMCSD_FATFS_SUPPORT
 #include "ff.h"
 #include "ff_drv.h"
 const diskio_drv_ops_t mmcsd_driver;
@@ -21,7 +23,7 @@ void board_mmcsd_init()
     drv_sdmmc_attr_init(&sd_attr, 1, 25, /* io select */1, 1, 1, 1, 1, 1, /* priority */ 4);
     int sdret = drv_sdmmc_init(&sd, &sd_attr);
 
-#ifdef BOARD_MMCSD_INFO_CHECK
+#ifdef CONFIG_BOARD_MMCSD_INFO_CHECK
     uint8_t tmp;
     tmp = drv_sdmmc_wait_ready(&sd);
     if (tmp != HAL_OK) {
@@ -69,7 +71,7 @@ void board_mmcsd_init()
     }
 #endif
 
-#ifdef BOARD_MMCSD_FATFS_SUPPORT
+#ifdef CONFIG_BOARD_MMCSD_FATFS_SUPPORT
     if (sdret == 0) {
         fatfs_link_drv(&mmcsd_driver, &mmcsd_mnt_path[0]);
         FRESULT ret_ff = f_mount(&mmcsd_fatfs, &mmcsd_mnt_path[0], 0);
@@ -81,7 +83,7 @@ void board_mmcsd_init()
 
 }
 
-#ifdef BOARD_MMCSD_RW_TEST
+#ifdef CONFIG_BOARD_MMCSD_RAW_RW_TEST
 
 #define NumOf_Blocks        64
 #define Test_BlockSize     ((BLOCKSIZE * NumOf_Blocks) >> 2)
@@ -164,9 +166,9 @@ void board_mmcsd_rw_test()
     printf("\r\n[MMCSD] rwtest+datacheck pass, mmcsd works\r\n");	
 }
 
-#endif
+#endif // end with CONFIG_BOARD_MMCSD_RAW_RW_TEST
 
-#ifdef BOARD_MMCSD_FATFS_SUPPORT
+#ifdef CONFIG_BOARD_MMCSD_FATFS_SUPPORT
 
 #define SD_DEFAULT_BLOCK_SIZE 512
 
@@ -288,4 +290,6 @@ DRESULT mmcsd_ioctl(BYTE lun, BYTE cmd, void *buff)
 	return res;
 }
 #endif
-#endif
+#endif // end with CONFIG_BOARD_MMCSD_FATFS_SUPPORT
+
+#endif // end with CONFIG_BOARD_MMCSD_ENABLE

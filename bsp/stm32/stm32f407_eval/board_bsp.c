@@ -1,121 +1,126 @@
 #include <board_config.h>
 #include <drv_uart.h>
 #include <drv_i2c.h>
+#include <dev/dnode.h>
+#include <dev/serial.h>
+#include <dev/i2c_master.h>
 
-#include "mpu6050_test.h"
-
-struct drv_uart_t com1;
+/* COM1 */
 uint8_t com1_dma_rxbuff[256];
 uint8_t com1_dma_txbuff[256];
 uint8_t com1_txbuff[512];
 uint8_t com1_rxbuff[512];
+struct up_uart_dev_s com1_dev = {
+    .dev = {
+        .baudrate = 115200,
+        .wordlen = 8,
+        .stopbitlen = 1,
+        .parity = 'n',
+        .recv = {
+            .capacity = 512,
+            .buffer = com1_rxbuff,
+        },
+        .xmit = {
+            .capacity = 512,
+            .buffer = com1_txbuff,
+        },
+        .dmarx = {
+            .capacity = 256,
+            .buffer = com1_dma_rxbuff,
+        },
+        .dmatx = {
+            .capacity = 256,
+            .buffer = com1_dma_txbuff,
+        },
+        .ops       = &g_uart_ops,
+        .priv      = &com1_dev,
+    },
+    .id = 1, //usart1
+    .pin_tx = 0, //PA9
+    .pin_rx = 0, //PA10
+    .priority = 1,
+    .priority_dmarx = 2,
+    .priority_dmatx = 3,
+    .enable_dmarx = true,
+    .enable_dmatx = true,
+};
 
-struct drv_i2c_reg_cmd i2c_cmdlist_mem[8];
-struct drv_i2c_t i2c;
+/**************
+ * Sensor I2C --- MPU6050
+ **************/
+struct up_i2c_master_s sensor_i2c_dev = 
+{
+    .dev = {
+		.clk_speed = 100000,
+		.addr_mode = I2C_ADDR_7BIT,
+        .ops       = &g_i2c_master_ops,
+        .priv      = &sensor_i2c_dev,
+    },
+	.id = 2, //i2c2
+	.pin_scl = 0, //PB10
+    .pin_sda = 0, //PB11
+    .priority_event = 4,
+    .priority_error = 5,
+};
+
+uart_dev_t *dstdout;
+uart_dev_t *dstdin;
 
 void board_bsp_init()
 {
     // wait all peripheral power on
-    HAL_Delay(500);
-    struct drv_uart_attr_t com1_attr;
-    struct drv_uart_dma_attr_t com1_rxdma_attr;
-    struct drv_uart_dma_attr_t com1_txdma_attr;
-    drv_uart_dma_attr_init(&com1_rxdma_attr, &com1_dma_rxbuff[0], 256, 2);
-    drv_uart_dma_attr_init(&com1_txdma_attr, &com1_dma_txbuff[0], 256, 2);
-    drv_uart_attr_init(&com1_attr, 115200, WL_8BIT, STB_1BIT, PARITY_NONE, 1);
-    drv_uart_buff_init(&com1, &com1_txbuff[0], 512, &com1_rxbuff[0], 512);
-    drv_uart_init(1, &com1, 0, 0, &com1_attr, &com1_txdma_attr, &com1_rxdma_attr);
+    HAL_Delay(200);
 
-    struct drv_i2c_attr_t i2c_attr;
-    struct drv_i2c_reg_cmdlist i2c_buff;
-    drv_i2c_attr_config(&i2c_attr, 100000, 0x01, 0x02);
-    drv_i2c_cmdlist_config(&i2c_buff, &i2c_cmdlist_mem[0], 8);
-    drv_i2c_config(2, 0, 0, &i2c, &i2c_attr, &i2c_buff);
-    drv_i2c_init(&i2c);
+    dregister("/com1", &com1_dev.dev);
+    dregister("/sensor_i2c", &sensor_i2c_dev.dev);
 
-    if (mpu6050_init()) {
-        printf("mpu6050 init success \r\n");
-    } else {
-        printf("mpu6050 init failed \r\n");
-    }
+    com1_dev.dev.ops->setup(&com1_dev.dev);
+    sensor_i2c_dev.dev.ops->setup(&sensor_i2c_dev.dev);
+
+    dstdout = dbind("/com1");
+    dstdin = dbind("/com1");
 }
 
-//uint8_t buff_debug[256];
 void board_debug()
 {
-    // devbuf_t buf = drv_uart_devbuf(&com1);
-    // int size = devbuf_size(&buf);
-    // if (size > 0) {
-    //     fprintf(stdout, "[%d,%d] ", HAL_GetTick(),size);
-    //     devbuf_read(&com1.rx_buf, &buff_debug[0], size);
-    //     for (int i = 0; i < size; i++) {
-    //         fprintf(stdout, "%d ", buff_debug[i]);
-    //     }
-    //     fprintf(stdout, "\r\n");
-    // }
-    //printf("hello world f407\r\n");
-    int16_t accel[3];
-    mpu6050_accel(&accel[0]);
-    printf("mpu accel: %d, %d, %d \r\n", accel[0], accel[1], accel[2]);
+    // printf("hello world f407\r\n");
 }
 
-#ifdef BSP_COM_PRINTF
-
+#ifdef CONFIG_BOARD_COM_STDINOUT
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
 FILE __stdin, __stdout, __stderr;
-
 size_t fwrite(const void *ptr, size_t size, size_t n_items, FILE *stream)
 {
     return _write(stream->_file, ptr, size*n_items);
 }
-
 int _write(int file, char *ptr, int len)
 {
     const int stdin_fileno = 0;
     const int stdout_fileno = 1;
     const int stderr_fileno = 2;
     if (file == stdout_fileno) {
-        drv_uart_send(&com1, ptr, len, RWDMA);
+        SERIAL_SEND(dstdout, ptr, len);
     }
     return len;
 }
-
 size_t fread(void *ptr, size_t size, size_t n_items, FILE *stream)
 {
     return _read(stream->_file, ptr, size*n_items);
 }
-
 // nonblock
 int _read(int file, char *ptr, int len)
 {
     const int stdin_fileno = 0;
     const int stdout_fileno = 1;
     const int stderr_fileno = 2;
-    devbuf_t buf = drv_uart_devbuf(&com1);
-    size_t rcv_size = devbuf_size(&buf);
-    size_t sld_size = (len >= rcv_size) ? rcv_size: len;
-    size_t ret_size = 0;
+    int rsize = 0;
     if (file == stdin_fileno) {
-        ret_size = devbuf_read(&com1.rx_buf, ptr, sld_size);
+        rsize = SERIAL_RDBUF(dstdin, ptr, len);
     }
-    return ret_size;
+    return rsize;
 }
 #endif
 
-void write_register(uint8_t addr, uint8_t data)
-{
-    drv_i2c_reg_write(&i2c, 0xD0, addr, I2CMEMADD_8BITS, &data, 1, RWPOLL);
-}
-
-void read_register(uint8_t addr, uint8_t *buf, uint8_t len, int rwway)
-{
-    if (rwway == 0) {
-        drv_i2c_reg_read(&i2c, 0xD0, addr, I2CMEMADD_8BITS, buf, len, RWPOLL);
-    } else {
-        drv_i2c_reg_read(&i2c, 0xD0, addr, I2CMEMADD_8BITS, buf, len, RWIT);
-    }
-    return;
-}
 

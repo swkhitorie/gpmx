@@ -43,8 +43,8 @@ struct up_uart_dev_s com1_dev = {
     .enable_dmatx = true,
 };
 
-uart_dev_t *dstdout = &com1_dev.dev;
-uart_dev_t *dstdin = &com1_dev.dev;
+uart_dev_t *dstdout;
+uart_dev_t *dstdin;
 
 void board_bsp_init()
 {
@@ -57,19 +57,23 @@ void board_bsp_init()
     dstdout = dbind("/com1");
     dstdin = dbind("/com1");
 
-// //     board_mtd_init();
-// // #ifdef BOARD_MTD_RW_TEST
-// //     board_mtd_rw_test();
-// // #endif
+#ifdef CONFIG_BOARD_MTD_QSPIFLASH_ENABLE
+    board_mtd_init();
+#ifdef CONFIG_BOARD_MTD_QSPIFLASH_RAW_RW_TEST
+    board_mtd_rw_test();
+#endif
+#endif
 
-//     board_mmcsd_init();
-// #ifdef BOARD_MMCSD_RW_TEST
-//     // board_mmcsd_rw_test();
-// #endif
+#ifdef CONFIG_BOARD_MMCSD_ENABLE
+    board_mmcsd_init();
+#ifdef CONFIG_BOARD_MMCSD_RAW_RW_TEST
+    board_mmcsd_rw_test();
+#endif
+#endif
 
-// #ifdef BSP_MODULE_USB_CHERRY
-//     cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
-// #endif
+#ifdef CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
+    cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
+#endif
 }
 
 void board_blue_led_toggle()
@@ -91,7 +95,7 @@ void board_debug()
     board_blue_led_toggle();
 }
 
-#ifdef BSP_COM_PRINTF
+#ifdef CONFIG_BOARD_COM_STDINOUT
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>

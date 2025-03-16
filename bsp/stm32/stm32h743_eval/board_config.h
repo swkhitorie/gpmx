@@ -19,10 +19,28 @@
 #define GPIO_nLED_BLUE_PORT   (GPIOH)
 #define GPIO_nLED_BLUE_PIN    (7)
 
-// #define BOARD_MTD_RW_TEST
-// #define BOARD_MTD_QSPIFLASH_FATFS_SUPPORT
-// #define BOARD_MMCSD_RW_TEST
-// #define BOARD_MMCSD_INFO_CHECK
+/** 
+ * std stream macro:
+ * CONFIG_BOARD_COM_STDINOUT
+ * 
+ * os macro:
+ * CONFIG_BOARD_FREERTOS_ENABLE
+ * 
+ * mtd macro: 
+ * CONFIG_BOARD_MTD_QSPIFLASH_ENABLE
+ * CONFIG_BOARD_MTD_QSPIFLASH_FATFS_SUPPORT
+ * CONFIG_BOARD_MTD_QSPIFLASH_RAW_RW_TEST
+ * 
+ * mmcsd macro:
+ * CONFIG_BOARD_MMCSD_ENABLE
+ * CONFIG_BOARD_MMCSD_FATFS_SUPPORT
+ * CONFIG_BOARD_MMCSD_RAW_RW_TEST
+ * CONFIG_BOARD_MMCSD_INFO_CHECK
+ * 
+ * usb macro:
+ * CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
+ * 
+ */
 
 #define BOARD_MMCSD_FATFS_SUPPORT
 
@@ -55,6 +73,7 @@
 
 #define BOARD_IO_GET(port, pin)  HAL_GPIO_ReadPin(port, 1<<pin)
 #define BOARD_IO_SET(port, pin, val)  HAL_GPIO_WritePin(port, 1<<pin, val)
+/* macro BOARD_INIT_IOPORT need user enable gpio clk */
 #define BOARD_INIT_IOPORT(_num, port, pin, mode, pull, speed) \
         { \
             GPIO_InitTypeDef obj##_num; \
@@ -82,14 +101,18 @@ void board_blue_led_toggle();
 
 void board_debug();
 
+#ifdef CONFIG_BOARD_MTD_QSPIFLASH_ENABLE
 void board_mtd_init();
-#ifdef BOARD_MTD_RW_TEST
+#ifdef CONFIG_BOARD_MTD_QSPIFLASH_RAW_RW_TEST
 void board_mtd_rw_test();
 #endif
+#endif
 
+#ifdef CONFIG_BOARD_MMCSD_ENABLE
 void board_mmcsd_init();
-#ifdef BOARD_MMCSD_RW_TEST
+#ifdef CONFIG_BOARD_MMCSD_RAW_RW_TEST
 void board_mmcsd_rw_test();
+#endif
 #endif
 
 #ifdef __cplusplus

@@ -74,7 +74,9 @@
 #define ADDR_TEMPL              0x1c
 #define ADDR_TEMPH              0x1d
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 __attribute__((weak)) void ist8310_write_register(uint8_t addr, uint8_t data);
 
 __attribute__((weak)) void ist8310_read_register(uint8_t addr, uint8_t *buf, uint8_t len, int rwway);
@@ -82,5 +84,9 @@ __attribute__((weak)) void ist8310_read_register(uint8_t addr, uint8_t *buf, uin
 bool ist8310_init();
 
 bool ist8310_mag(int16_t *mag);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

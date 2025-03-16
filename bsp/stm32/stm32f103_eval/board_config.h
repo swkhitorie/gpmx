@@ -16,6 +16,15 @@
 
 #define STM32_PLLCFG_PLLMUL       (9)        /* RCC_PLL_MUL9 */
 
+/** 
+ * std stream macro:
+ * CONFIG_BOARD_COM_STDINOUT
+ * 
+ * os macro:
+ * CONFIG_BOARD_FREERTOS_ENABLE
+ * 
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif

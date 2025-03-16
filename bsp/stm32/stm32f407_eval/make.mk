@@ -31,7 +31,6 @@ BOARD_CSRCS += board_irq.c
 BOARD_CSRCS += board_rcc_init.c
 BOARD_CSRCS += board_init.c
 BOARD_CSRCS += board_bsp.c
-BOARD_CSRCS += mpu6050_test.c
 
 BOARD_ASMSOURCES += stm32f407_eval_startup_gcc.s
 BOARD_LNK_FILE   += stm32f407_eval_lnk_gcc.ld

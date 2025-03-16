@@ -99,6 +99,10 @@
 #define L3GD20_MAX_OFFSET			0.45f /**< max offset: 25 degrees/s */
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void l3gd20_init();
 
 int l3gd20_read(int16_t *data);
@@ -106,5 +110,9 @@ int l3gd20_read(int16_t *data);
 __attribute__((weak)) void l3gd20_write_register(uint8_t addr, uint8_t data);
 
 __attribute__((weak)) void l3gd20_read_register(uint8_t addr, uint8_t *buf, uint8_t len, int rwway);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

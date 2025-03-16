@@ -1,5 +1,5 @@
-#ifndef IST8310_TEST_H_
-#define IST8310_TEST_H_
+#ifndef ICM42688P_TEST_H_
+#define ICM42688P_TEST_H_
 
 #include <board_config.h>
 
@@ -81,6 +81,9 @@ typedef enum __range_gyro__ {
     ICM_426XX_GYRO_125S,
 } E_ICM_GYRO_RANGE;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 void icm42688_init();
 
 int icm42688_read(int16_t *data);
@@ -88,5 +91,9 @@ int icm42688_read(int16_t *data);
 __attribute__((weak)) void icm42688_write_register(uint8_t addr, uint8_t data);
 
 __attribute__((weak)) void icm42688_read_register(uint8_t addr, uint8_t *buf, uint8_t len, int rwway);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

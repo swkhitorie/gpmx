@@ -33,8 +33,6 @@ BOARD_CSRCS += board_usb.c
 BOARD_CSRCS += board_init.c
 BOARD_CSRCS += board_bsp.c
 
-BOARD_CSRCS += l3gd20_test.c
-
 BOARD_ASMSOURCES += fmuv2_startup.s
 BOARD_LNK_FILE   += fmuv2_lnk_script.ld
 

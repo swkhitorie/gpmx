@@ -1,7 +1,9 @@
 #include "board_config.h"
 #include <drv_qspi.h>
 
-#ifdef BOARD_MTD_QSPIFLASH_FATFS_SUPPORT
+#ifdef CONFIG_BOARD_MTD_QSPIFLASH_ENABLE
+
+#ifdef CONFIG_BOARD_MTD_QSPIFLASH_FATFS_SUPPORT
 #include "ff.h"
 #include "ff_gen_drv.h"
 const diskio_drv_ops_t mtd_driver;
@@ -15,11 +17,11 @@ void board_mtd_init()
     drv_qspi_init(1, 2, 22, /* io select */ 1, 2, 2, 1, 2, 2);
     int ret1 = w25qxx_init();
     int id = w25qxx_readid();
-#ifdef BOARD_MTD_RW_TEST
+#ifdef CONFIG_BOARD_MTD_QSPIFLASH_RAW_RW_TEST
     printf("\r\n[Flash] qspi flash init: %s, id: %X\r\n", 
 		(ret1 == 1) ? "success" : "failed", id);
 #endif
-#ifdef BOARD_MTD_QSPIFLASH_FATFS_SUPPORT
+#ifdef CONFIG_BOARD_MTD_QSPIFLASH_FATFS_SUPPORT
 	if (ret1 == 1) {
 		fatfs_link_drv(&mtd_driver, &mtd_mnt_path[0]);
 		FRESULT ret_ff = f_mount(&mnt_fatfs, &mtd_mnt_path[0], 0);
@@ -30,7 +32,7 @@ void board_mtd_init()
 #endif
 }
 
-#ifdef BOARD_MTD_RW_TEST
+#ifdef CONFIG_BOARD_MTD_QSPIFLASH_RAW_RW_TEST
 #define W25Qxx_NumByteToTest (32*1024)	
 static uint32_t w25qxx_test_addr = 0;
 static uint8_t  w25qxx_wbuffer[W25Qxx_NumByteToTest];
@@ -122,9 +124,9 @@ void board_mtd_rw_test()
 
     printf("\r\n[Flash] w25qxx rwtest pass\r\n");
 }
-#endif
+#endif // end with CONFIG_BOARD_MTD_QSPIFLASH_RAW_RW_TEST
 
-#ifdef BOARD_MTD_QSPIFLASH_FATFS_SUPPORT
+#ifdef CONFIG_BOARD_MTD_QSPIFLASH_FATFS_SUPPORT
 
 DSTATUS mtd_init(BYTE);
 DSTATUS mtd_status(BYTE);
@@ -237,4 +239,6 @@ DRESULT mtd_ioctl(BYTE lun, BYTE cmd, void *buff)
 	return res;
 }
 #endif
-#endif
+#endif // end with CONFIG_BOARD_MTD_QSPIFLASH_FATFS_SUPPORT
+
+#endif // end with CONFIG_BOARD_MTD_QSPIFLASH_ENABLE

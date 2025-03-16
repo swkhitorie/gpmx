@@ -4,7 +4,7 @@
 /** 
  * Pixhawk FMU v2 Board Config Header File
  * HSE 24MHZ
- * verified stm32 driver: uart/spi
+ * verified stm32 driver: uart
  */
 #include "stm32f4xx_hal.h"
 #include <stdint.h>
@@ -15,6 +15,18 @@
 #define LSE_VALUE             (32768UL)
 #define __FPU_PRESENT         1
 #define __FPU_USED            1
+
+/** 
+ * std stream macro:
+ * CONFIG_BOARD_COM_STDINOUT
+ * 
+ * os macro:
+ * CONFIG_BOARD_FREERTOS_ENABLE
+ * 
+ * usb macro:
+ * CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
+ * 
+ */
 
 #define STM32_PLLCFG_PLL1M       (24)
 #define STM32_PLLCFG_PLL1N       (336)
@@ -40,17 +52,50 @@
 #define STM32_APB2_TIM1_CLKIN   (2*STM32_PCLK2_FREQUENCY)
 #define STM32_APB2_TIM8_CLKIN   (2*STM32_PCLK2_FREQUENCY)
 
+#define BOARD_IO_GET(port, pin)  HAL_GPIO_ReadPin(port, (uint16_t)(0x01<<pin))
+#define BOARD_IO_SET(port, pin, val)  HAL_GPIO_WritePin(port, (uint16_t)(0x01<<pin), val)
+/* macro BOARD_INIT_IOPORT need user enable gpio clk */
+#define BOARD_INIT_IOPORT(_num, port, pin, mode, pull, speed) \
+        { \
+            GPIO_InitTypeDef obj##_num; \
+            obj##_num.Pin = (uint16_t)(0x01<<pin); \
+            obj##_num.Mode = mode; \
+            obj##_num.Pull = pull; \
+            obj##_num.Speed = speed; \
+            HAL_GPIO_Init(port, &obj##_num); \
+        }
+
 #define GPIO_nLED_PORT   (GPIOE)
-#define GPIO_nLED_PIN    (GPIO_PIN_12)
+#define GPIO_nLED_PIN    (12)
 
 #define GPIO_VDD_5V_PERIPH_nEN_PORT  (GPIOA)
-#define GPIO_VDD_5V_PERIPH_nEN_PIN   (GPIO_PIN_8)
+#define GPIO_VDD_5V_PERIPH_nEN_PIN   (8)
 
-#define BOARD_LED(on_true)   HAL_GPIO_WritePin(GPIO_nLED_PORT, \
-                            GPIO_nLED_PIN, !(on_true))
+#define GPIO_VDD_3V3_SENSORS_nEN_PORT  (GPIOE)
+#define GPIO_VDD_3V3_SENSORS_nEN_PIN   (3)
 
-#define VDD_5V_PERIPH_EN(on_true)          HAL_GPIO_WritePin(GPIO_VDD_5V_PERIPH_nEN_PORT, \
-                                                    GPIO_VDD_5V_PERIPH_nEN_PIN, !(on_true))
+#define GPIO_VDD_5V_SENS_OC_PORT  (GPIOA)
+#define GPIO_VDD_5V_SENS_OC_PIN   (4)
+
+#define GPIO_VDD_5V_HIPOWER_OC_PORT  (GPIOE)
+#define GPIO_VDD_5V_HIPOWER_OC_PIN   (10)
+
+#define GPIO_VDD_5V_PERIPH_OC_PORT  (GPIOE)
+#define GPIO_VDD_5V_PERIPH_OC_PIN   (15)
+
+#define BOARD_LED(on_true)   BOARD_IO_SET(GPIO_nLED_PORT,GPIO_nLED_PIN,!(on_true))
+
+#define VDD_5V_PERIPH_EN(on_true)  BOARD_IO_SET(GPIO_VDD_5V_PERIPH_nEN_PORT, \
+                                    GPIO_VDD_5V_PERIPH_nEN_PIN, !(on_true))
+
+#define VDD_3V3_SENSOR_EN(on_true)  BOARD_IO_SET(GPIO_VDD_3V3_SENSORS_nEN_PORT, \
+                                    GPIO_VDD_3V3_SENSORS_nEN_PIN, (on_true))
+
+#define VDD_5V_SENS_OC_VALID       (!BOARD_IO_GET(GPIO_VDD_5V_SENS_OC_PORT, \
+                                    GPIO_VDD_5V_SENS_OC_PIN))
+
+#define BOARD_ADC_PERIPH_5V_OC  (!BOARD_IO_GET(GPIO_VDD_5V_HIPOWER_OC_PORT, GPIO_VDD_5V_HIPOWER_OC_PIN))
+#define BOARD_ADC_HIPOWER_5V_OC (!BOARD_IO_GET(GPIO_VDD_5V_PERIPH_OC_PORT, GPIO_VDD_5V_PERIPH_OC_PIN))
 
 #ifdef __cplusplus
     extern "C" {

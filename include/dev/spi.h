@@ -29,9 +29,7 @@
 #define SPI_RECVBLOCK(d,b,l) ((d)->ops->recvblock(d,b,l))
 #endif
 
-#ifdef CONFIG_SPI_EXCHANGE
 #define SPI_EXCHANGE(d,t,r,l) ((d)->ops->exchange(d,t,r,l))
-#endif
 
 enum spi_mode_e
 {

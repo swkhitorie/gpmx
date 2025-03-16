@@ -16,6 +16,15 @@
 #define __FPU_PRESENT         1
 #define __FPU_USED            1
 
+/** 
+ * std stream macro:
+ * CONFIG_BOARD_COM_STDINOUT
+ * 
+ * os macro:
+ * CONFIG_BOARD_FREERTOS_ENABLE
+ * 
+ */
+
 #define STM32_PLLCFG_PLL1M       (8)
 #define STM32_PLLCFG_PLL1N       (336)
 #define STM32_PLLCFG_PLL1P       (2)

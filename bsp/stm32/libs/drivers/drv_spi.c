@@ -178,9 +178,9 @@ bool low_pinconfig(struct spi_dev_s *dev)
 		uint16_t       mosi_pin[3] = {   7,         15,          5    };
         uint32_t       alternate[3] = {GPIO_AF5_SPI1, GPIO_AF5_SPI2, GPIO_AF6_SPI3};
 
-		low_gpio_setup(spi_port[num-1], sck_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL, 0);
-		low_gpio_setup(spi_port[num-1], mosi_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL, 0);
-		low_gpio_setup(spi_port[num-1], miso_pin[num-1], IOMODE_INPUT, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL, 0);
+		low_gpio_setup(spi_port[num-1], sck_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1], NULL, 0);
+		low_gpio_setup(spi_port[num-1], mosi_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1], NULL, 0);
+		low_gpio_setup(spi_port[num-1], miso_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1], NULL, 0);
     } else if (pin_ncs == 1) {
         GPIO_TypeDef *spi_port[3] =  { GPIOB,		GPIOB,      GPIOC };
         uint16_t       sck_pin[3] =  {   3,         10,          10   };
@@ -188,12 +188,12 @@ bool low_pinconfig(struct spi_dev_s *dev)
 		uint16_t       mosi_pin[3] = {   5,         3,          12    };
         uint32_t       alternate[3] = {GPIO_AF5_SPI1, GPIO_AF5_SPI2, GPIO_AF6_SPI3};
 
-		low_gpio_setup(spi_port[num-1], sck_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL, 0);
+		low_gpio_setup(spi_port[num-1], sck_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1], NULL, 0);
 		if (num == 2) {
 			spi_port[num-1] = GPIOC;
 		}
-		low_gpio_setup(spi_port[num-1], mosi_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL, 0);
-		low_gpio_setup(spi_port[num-1], miso_pin[num-1], IOMODE_INPUT, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL, 0);
+		low_gpio_setup(spi_port[num-1], mosi_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1], NULL, 0);
+		low_gpio_setup(spi_port[num-1], miso_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1], NULL, 0);
     }
 	return true;
 #endif
@@ -296,17 +296,87 @@ int up_setup(struct spi_dev_s *dev)
 
 uint32_t up_setfrequency(struct spi_dev_s *dev, uint32_t frequency)
 {
+    struct up_spi_dev_s *priv = dev->priv;
+#if defined (DRV_BSP_H7)
+	priv->hspi.Instance->CFG1 |= (frequency << 28);
+#endif
+
+#if defined (DRV_BSP_F4) || defined (DRV_BSP_F1)
+    priv->hspi.Instance->CR1 |= (frequency << 3);
+#endif
+
 	return 0;
 }
 
 void up_setmode(struct spi_dev_s *dev, enum spi_mode_e mode)
 {
+    struct up_spi_dev_s *priv = dev->priv;
+#if defined (DRV_BSP_H7)
+    switch (dev->mode) {
+	case SPIDEV_MODE0:
+	    priv->hspi.Instance->CFG2 |= SPI_POLARITY_LOW | SPI_PHASE_1EDGE;
+		break;
+	case SPIDEV_MODE1:
+	    priv->hspi.Instance->CFG2 |= SPI_POLARITY_LOW | SPI_PHASE_2EDGE;
+		break;
+	case SPIDEV_MODE2:
+	    priv->hspi.Instance->CFG2 |= SPI_POLARITY_HIGH | SPI_PHASE_1EDGE;
+		break;
+	case SPIDEV_MODE3:
+	    priv->hspi.Instance->CFG2 |= SPI_POLARITY_HIGH | SPI_PHASE_2EDGE;
+		break;	
+	default :break;
+	}
+#endif
+
+#if defined (DRV_BSP_F4) || defined (DRV_BSP_F1)
+    switch (dev->mode) {
+	case SPIDEV_MODE0:
+	    priv->hspi.Instance->CR1 |= SPI_POLARITY_LOW | SPI_PHASE_1EDGE;
+		break;
+	case SPIDEV_MODE1:
+	    priv->hspi.Instance->CR1 |= SPI_POLARITY_LOW | SPI_PHASE_2EDGE;
+		break;
+	case SPIDEV_MODE2:
+	    priv->hspi.Instance->CR1 |= SPI_POLARITY_HIGH | SPI_PHASE_1EDGE;
+		break;
+	case SPIDEV_MODE3:
+	    priv->hspi.Instance->CR1 |= SPI_POLARITY_HIGH | SPI_PHASE_2EDGE;
+		break;	
+	default :break;
+	}
+#endif
 
 }
 
 void up_setbits(struct spi_dev_s *dev, int nbits)
 {
-    
+    struct up_spi_dev_s *priv = dev->priv;
+#if defined (DRV_BSP_H7)
+    switch (nbits) {
+	case 8:
+	    priv->hspi.Instance->CFG1 |= SPI_DATASIZE_8BIT;
+		break;
+	case 16:
+	    priv->hspi.Instance->CFG1 |= SPI_DATASIZE_16BIT;
+		break;
+	default :break;
+	}
+#endif
+
+#if defined (DRV_BSP_F4) || defined (DRV_BSP_F1)
+	priv->hspi.Instance->CR1 &= ~SPI_CR1_SPE;  // disable spi
+    switch (nbits) {
+	case 8:
+	    priv->hspi.Instance->CR1 |= (0x0UL) << 11;
+		break;
+	case 16:
+	    priv->hspi.Instance->CR1 |= (0x1UL) << 11;
+		break;
+	default :break;
+	}
+	priv->hspi.Instance->CR1 |= SPI_CR1_SPE;  // enable spi
+#endif
 }
 
 int up_lock(struct spi_dev_s *dev, bool lock)
@@ -334,11 +404,15 @@ int up_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbuffer, siz
 int up_sndblock(struct spi_dev_s *dev, const void *buffer, size_t nwords)
 {
 	struct up_spi_dev_s *priv = dev->priv;
-	return HAL_SPI_Transmit(&priv->hspi, buffer, nwords, 5000);
+	int ret = 0xff;
+	ret = HAL_SPI_Transmit(&priv->hspi, buffer, nwords, 5000);
+	return ret;
 }
 
 int up_recvblock(struct spi_dev_s *dev, void *buffer, size_t nwords)
 {
 	struct up_spi_dev_s *priv = dev->priv;
-	return HAL_SPI_Receive(&priv->hspi, buffer, nwords, 5000);
+	int ret = 0xff;
+	ret = HAL_SPI_Receive(&priv->hspi, buffer, nwords, 5000);
+	return ret;
 }

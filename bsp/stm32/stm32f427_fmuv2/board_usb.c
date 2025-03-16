@@ -1,6 +1,6 @@
 #include "board_config.h"
 
-#ifdef BSP_MODULE_USB_CHERRY
+#ifdef CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
 void usb_dc_low_level_init(uint8_t busid)
 {
     GPIO_InitTypeDef GPIO_InitStruct = {0};

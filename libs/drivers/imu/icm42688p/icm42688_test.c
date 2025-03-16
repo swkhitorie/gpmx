@@ -1,13 +1,45 @@
 #include "icm42688_test.h"
+#include <dev/spi.h>
 
+struct spi_dev_s *senpi;
 void wait_block_1(uint8_t t)
 {
     HAL_Delay(t);
 }
 
+void icm42688_write_register(uint8_t addr, uint8_t data)
+{
+    int ret = 0;
+	static uint8_t dx[2];
+	dx[0] = addr & ~0x80;
+	dx[1] = data;
+
+    ret = SPI_SELECT(senpi,0x13,true);
+	ret = SPI_SNDBLOCK(senpi,&dx[0],2);
+    ret = SPI_SELECT(senpi,0x13,false);
+}
+
+void icm42688_read_register(uint8_t addr, uint8_t *buf, uint8_t len, int rwway)
+{
+    int ret = 0;
+
+	uint8_t send_addr = addr | 0x80;
+
+    ret = SPI_SELECT(senpi,0x13,true);
+	ret = SPI_SNDBLOCK(senpi,&send_addr,1);
+	ret = SPI_RECVBLOCK(senpi,buf,len);
+    ret = SPI_SELECT(senpi,0x13,false);
+}
+
 void icm42688_init()
 {
 	uint8_t data;
+
+    senpi = dbind("/sensor_spi");
+    if (senpi == NULL) {
+        printf("not get spi handle");
+        return false;
+    }
 
 	icm42688_write_register(ICM_426XX_REG_BANK_SEL, 0x00);
 	wait_block_1(10);

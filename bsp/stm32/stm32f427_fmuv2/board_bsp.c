@@ -1,152 +1,174 @@
 #include <board_config.h>
 #include <drv_uart.h>
+#include <drv_i2c.h>
 #include <drv_spi.h>
+#include <dev/dnode.h>
+#include <dev/serial.h>
+#include <dev/i2c_master.h>
+#include <dev/spi.h>
 
-#include "l3gd20_test.h"
+/**************
+ * TELEM1 Serial port
+ **************/
+uint8_t telem1_serial_dma_rxbuff[256];
+uint8_t telem1_serial_dma_txbuff[256];
+uint8_t telem1_serial_txbuff[512];
+uint8_t telem1_serial_rxbuff[512];
+struct up_uart_dev_s telem1_serial_dev = 
+{
+    .dev = {
+        .baudrate = 460800,
+        .wordlen = 8,
+        .stopbitlen = 1,
+        .parity = 'n',
+        .recv = {
+            .capacity = 512,
+            .buffer = telem1_serial_rxbuff,
+        },
+        .xmit = {
+            .capacity = 512,
+            .buffer = telem1_serial_txbuff,
+        },
+        .dmarx = {
+            .capacity = 256,
+            .buffer = telem1_serial_dma_rxbuff,
+        },
+        .dmatx = {
+            .capacity = 256,
+            .buffer = telem1_serial_dma_txbuff,
+        },
+        .ops       = &g_uart_ops,
+        .priv      = &telem1_serial_dev,
+    },
+    .id = 2,  //usart2
+    .pin_tx = 1, // PD5 PD6 (1 for remap)
+    .pin_rx = 0,
+    .priority = 1,
+    .priority_dmarx = 2,
+    .priority_dmatx = 3,
+    .enable_dmarx = true,
+    .enable_dmatx = true,
+};
 
-static void board_config_io();
+/**************
+ * Sensor SPI1 --- L3GD20 GYRO + LSM303D ACCEL+MAG + MPU6000 + MS5611-01A
+ **************/
+struct up_spi_dev_s sensor_spi_dev = 
+{
+    .dev = {
+		.frequency = SPI_BAUDRATEPRESCALER_64,
+		.mode = SPIDEV_MODE0,
+		.nbits = 8,
+        .ops       = &g_spi_ops,
+        .priv      = &sensor_spi_dev,
+    },
+    .id = 1, //SPI1
+	.pin_ncs = 0, //soft
+	.pin_sck = 1, //PA5
+	.pin_miso = 1, //PA6
+	.pin_mosi = 1, //PA7
+	/*            L3GD20 GYRO    LSM303D ACCEL+MAG         MPU6000      MS5611-01A      */
+    .devid = { [0] = 0x11,        [1] = 0x12,        [2] = 0x13,       [3] = 0x14,      },
+	.devcs = { [0] = {GPIOC, 13}, [1] = {GPIOC, 15}, [2] = {GPIOC, 2}, [3] = {GPIOD, 7},},
+};
 
-struct drv_uart_t com2;
-uint8_t com2_dma_rxbuff[256];
-uint8_t com2_dma_txbuff[256];
-uint8_t com2_txbuff[512];
-uint8_t com2_rxbuff[512];
-
-struct drv_spi_t spi;
-struct drv_pin_t spi_cs;
+uart_dev_t *dstdout;
+uart_dev_t *dstdin;
 
 void board_bsp_init()
 {
-    // wait all peripheral power on
-    HAL_Delay(500);
-    board_config_io();
+	GPIO_InitTypeDef obj;
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOC_CLK_ENABLE();
+    __HAL_RCC_GPIOE_CLK_ENABLE();
+
+	BOARD_INIT_IOPORT(0, GPIO_nLED_PORT, GPIO_nLED_PIN, GPIO_MODE_OUTPUT_PP, 
+		GPIO_NOPULL, GPIO_SPEED_FREQ_VERY_HIGH);
+
+    BOARD_INIT_IOPORT(1, GPIO_VDD_5V_PERIPH_nEN_PORT, GPIO_VDD_5V_PERIPH_nEN_PIN, GPIO_MODE_OUTPUT_PP, 
+        GPIO_PULLUP, GPIO_SPEED_FREQ_VERY_HIGH);
+    BOARD_INIT_IOPORT(2, GPIO_VDD_3V3_SENSORS_nEN_PORT, GPIO_VDD_3V3_SENSORS_nEN_PIN, GPIO_MODE_OUTPUT_PP, 
+        GPIO_PULLDOWN, GPIO_SPEED_FREQ_VERY_HIGH);
+
+    BOARD_INIT_IOPORT(3, GPIO_VDD_5V_SENS_OC_PORT, GPIO_VDD_5V_SENS_OC_PIN, GPIO_MODE_INPUT, 
+        GPIO_NOPULL, GPIO_SPEED_FREQ_VERY_HIGH);
+    BOARD_INIT_IOPORT(4, GPIO_VDD_5V_HIPOWER_OC_PORT, GPIO_VDD_5V_HIPOWER_OC_PIN, GPIO_MODE_INPUT, 
+        GPIO_PULLUP, GPIO_SPEED_FREQ_VERY_HIGH);
+    BOARD_INIT_IOPORT(5, GPIO_VDD_5V_PERIPH_OC_PORT, GPIO_VDD_5V_PERIPH_OC_PIN, GPIO_MODE_INPUT, 
+        GPIO_PULLUP, GPIO_SPEED_FREQ_VERY_HIGH);
+
     BOARD_LED(false);
     VDD_5V_PERIPH_EN(true);
+    VDD_3V3_SENSOR_EN(true);
+    /* delay after sensor power enable */
+    HAL_Delay(300); 
 
-    struct drv_uart_attr_t com2_attr;
-    struct drv_uart_dma_attr_t com2_rxdma_attr;
-    struct drv_uart_dma_attr_t com2_txdma_attr;
-    drv_uart_dma_attr_init(&com2_rxdma_attr, &com2_dma_rxbuff[0], 256, 2);
-    drv_uart_dma_attr_init(&com2_txdma_attr, &com2_dma_txbuff[0], 256, 2);
-    drv_uart_attr_init(&com2_attr, 115200, WL_8BIT, STB_1BIT, PARITY_NONE, 1);
-    drv_uart_buff_init(&com2, &com2_txbuff[0], 512, &com2_rxbuff[0], 512);
-    drv_uart_init(2, &com2, 1, 0, &com2_attr, &com2_txdma_attr, &com2_rxdma_attr);
+    // init spi soft cs pin
+    BOARD_INIT_IOPORT(2, GPIOC, 2, GPIO_MODE_OUTPUT_PP, GPIO_PULLUP, GPIO_SPEED_FREQ_VERY_HIGH);
+    BOARD_INIT_IOPORT(3, GPIOC, 13, GPIO_MODE_OUTPUT_PP, GPIO_PULLUP, GPIO_SPEED_FREQ_VERY_HIGH);
+    BOARD_INIT_IOPORT(4, GPIOC, 15, GPIO_MODE_OUTPUT_PP, GPIO_PULLUP, GPIO_SPEED_FREQ_VERY_HIGH);
+    BOARD_INIT_IOPORT(5, GPIOD, 7, GPIO_MODE_OUTPUT_PP, GPIO_PULLUP, GPIO_SPEED_FREQ_VERY_HIGH);
+    BOARD_IO_SET(GPIOC, 13, 1);
+    BOARD_IO_SET(GPIOC, 15, 1);
+    BOARD_IO_SET(GPIOC, 2, 1);
+    BOARD_IO_SET(GPIOD, 7, 1);
 
-    struct drv_spi_attr_t spi_attr;
-    drv_spi_attr_init(&spi_attr, SPI_MODE0, SPI_8BITS, SPI_PRESCAL_32);
-    drv_spi_init(1, &spi, &spi_attr, 0, 0, 0, 0);
-    spi_cs = drv_gpio_init(GPIOC, 13, IOMODE_OUTPP, IO_SPEEDHIGH, IO_PULLUP, 0, NULL);
+    dregister("/telem1", &telem1_serial_dev.dev);
+    dregister("/sensor_spi", &sensor_spi_dev.dev);
+    dstdout = dbind("/telem1");
+    dstdin = dbind("/telem1");
+	telem1_serial_dev.dev.ops->setup(&telem1_serial_dev.dev);
+	sensor_spi_dev.dev.ops->setup(&sensor_spi_dev.dev);
 
-    // spi not available
-    l3gd20_init();
-
-#ifdef BSP_MODULE_USB_CHERRY
+#ifdef CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
     cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
 #endif
 }
 
-int16_t gyro_data[3];
 void board_debug()
 {
-    // printf("[fmuv2] usart2 printf debug dma \r\n");
-    //int ret = l3gd20_read(&gyro_data[0]);
-    //printf("[l3gd20] %d %d %d \r\n", gyro_data[0], gyro_data[1], gyro_data[2]);
-    l3gd20_init();
     board_led_toggle();
 }
 
 void board_led_toggle()
 {
-	int val = HAL_GPIO_ReadPin(GPIO_nLED_PORT, GPIO_nLED_PIN);
-	HAL_GPIO_WritePin(GPIO_nLED_PORT, GPIO_nLED_PIN, !val);
+    int val = BOARD_IO_GET(GPIO_nLED_PORT, GPIO_nLED_PIN);
+    BOARD_IO_SET(GPIO_nLED_PORT, GPIO_nLED_PIN, !val);
 }
 
-void board_config_io()
-{
-	GPIO_InitTypeDef obj;
-    __HAL_RCC_GPIOE_CLK_ENABLE();
-    __HAL_RCC_GPIOA_CLK_ENABLE();
-
-    obj.Pin = GPIO_nLED_PIN;
-    obj.Mode = GPIO_MODE_OUTPUT_PP;
-    obj.Pull = GPIO_NOPULL;
-    obj.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-    HAL_GPIO_Init(GPIO_nLED_PORT, &obj);
-
-    obj.Pin = GPIO_VDD_5V_PERIPH_nEN_PIN;
-    obj.Mode = GPIO_MODE_OUTPUT_PP;
-    obj.Pull = GPIO_NOPULL;
-    obj.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-    HAL_GPIO_Init(GPIO_VDD_5V_PERIPH_nEN_PORT, &obj);
-}
-
-#ifdef BSP_COM_PRINTF
-
+#ifdef CONFIG_BOARD_COM_STDINOUT
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
 FILE __stdin, __stdout, __stderr;
-
 size_t fwrite(const void *ptr, size_t size, size_t n_items, FILE *stream)
 {
     return _write(stream->_file, ptr, size*n_items);
 }
-
 int _write(int file, char *ptr, int len)
 {
     const int stdin_fileno = 0;
     const int stdout_fileno = 1;
     const int stderr_fileno = 2;
     if (file == stdout_fileno) {
-        drv_uart_send(&com2, ptr, len, RWDMA);
+        SERIAL_SEND(dstdout, ptr, len);
     }
     return len;
 }
-
 size_t fread(void *ptr, size_t size, size_t n_items, FILE *stream)
 {
     return _read(stream->_file, ptr, size*n_items);
 }
-
 // nonblock
 int _read(int file, char *ptr, int len)
 {
     const int stdin_fileno = 0;
     const int stdout_fileno = 1;
     const int stderr_fileno = 2;
-    devbuf_t buf = drv_uart_devbuf(&com2);
-    size_t rcv_size = devbuf_size(&buf);
-    size_t sld_size = (len >= rcv_size) ? rcv_size: len;
-    size_t ret_size = 0;
+    int rsize = 0;
     if (file == stdin_fileno) {
-        ret_size = devbuf_read(&com2.rx_buf, ptr, sld_size);
+        rsize = SERIAL_RDBUF(dstdin, ptr, len);
     }
-    return ret_size;
+    return rsize;
 }
 #endif
-
-void l3gd20_write_register(uint8_t addr, uint8_t data)
-{
-    int ret = 0;
-	static uint8_t dx[2];
-	dx[0] = addr & ~0x80;
-	dx[1] = data;
-
-    drv_gpio_write(&spi_cs, 0);
-	ret = drv_spi_write(&spi, &dx[0], 2, RWPOLL);
-	drv_gpio_write(&spi_cs, 1);
-}
-
-void l3gd20_read_register(uint8_t addr, uint8_t *buf, uint8_t len, int rwway)
-{
-    int ret = 0;
-
-	uint8_t send_addr = addr | 0x80;
-
-    drv_gpio_write(&spi_cs, 0);
-    // ret = drv_spi_readwrite(&spi, &send_addr, buf, 1, RWPOLL);
-	ret = drv_spi_write(&spi, &send_addr, 1, RWPOLL);
-    ret = drv_spi_read(&spi, buf, len, RWPOLL);
-	drv_gpio_write(&spi_cs, 1);
-}
-

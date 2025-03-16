@@ -2,11 +2,10 @@
 #include <drv_uart.h>
 #include <drv_i2c.h>
 #include <drv_spi.h>
-
-#include "ist8310_test.h"
-#include "icm42688_test.h"
-
-static void board_config_io();
+#include <dev/dnode.h>
+#include <dev/serial.h>
+#include <dev/i2c_master.h>
+#include <dev/spi.h>
 
 /**************
  * GPS1 Serial port
@@ -75,7 +74,7 @@ struct up_i2c_master_s sensor_i2c_dev =
 struct up_spi_dev_s sensor_spi_dev = 
 {
     .dev = {
-		.frequency = 40000000,
+		.frequency = SPI_BAUDRATEPRESCALER_32,
 		.mode = SPIDEV_MODE0,
 		.nbits = 8,
         .ops       = &g_spi_ops,
@@ -86,7 +85,7 @@ struct up_spi_dev_s sensor_spi_dev =
 	.pin_sck = 1, //PA5
 	.pin_miso = 1, //PA6
 	.pin_mosi = 1, //PA7
-	/*           BMI055-ACC   BMI-055 GYRO ICM-42688 */
+	/*           BMI055-ACC   BMI-055 GYRO            ICM-42688 */
     .devid = { [0] = 0x11,        [1] = 0x12,        [2] = 0x13,        },
 	.devcs = { [0] = {GPIOC, 15}, [1] = {GPIOC, 14}, [2] = {GPIOC, 13}, },
 };
@@ -97,7 +96,7 @@ struct up_spi_dev_s sensor_spi_dev =
 struct up_spi_dev_s fram_spi_dev = 
 {
     .dev = {
-		.frequency = 40000000,
+		.frequency = SPI_BAUDRATEPRESCALER_32,
 		.mode = SPIDEV_MODE0,
 		.nbits = 8,
         .ops       = &g_spi_ops,
@@ -113,31 +112,10 @@ struct up_spi_dev_s fram_spi_dev =
 	.devcs = { [0] = {GPIOD, 4}, },
 };
 
-uart_dev_t *dstdout = &com1_dev.dev;
-uart_dev_t *dstdin = &com1_dev.dev;
+uart_dev_t *dstdout;
+uart_dev_t *dstdin;
 
 void board_bsp_init()
-{
-    board_config_io();
-
-	VDD_5V_PERIPH_EN(true);
-	VDD_5V_HIPOWER_EN(true);
-    VDD_3V3_SENSORS_EN(true);
-
-	BOARD_BLUE_LED(false);
-	BOARD_RED_LED(false);
-
-	gps1_serial_dev.dev.ops->setup(&gps1_serial_dev.dev);
-    sensor_i2c_dev.dev.ops->setup(&sensor_i2c_dev.dev);
-    sensor_spi_dev.dev.ops->setup(&sensor_spi_dev.dev);
-	fram_spi_dev.dev.ops->setup(&fram_spi_dev.dev);
-
-#ifdef BSP_MODULE_USB_CHERRY
-    cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
-#endif
-}
-
-void board_config_io()
 {
 	GPIO_InitTypeDef obj;
     __HAL_RCC_GPIOA_CLK_ENABLE();
@@ -179,6 +157,39 @@ void board_config_io()
 
 	BOARD_INIT_IOPORT(10, GPIO_OTGFS_VBUS_PORT, GPIO_OTGFS_VBUS_PIN, GPIO_MODE_INPUT, 
 		GPIO_PULLDOWN, GPIO_SPEED_FREQ_VERY_HIGH);
+
+	VDD_5V_PERIPH_EN(true);
+	VDD_5V_HIPOWER_EN(true);
+    VDD_3V3_SENSORS_EN(true);
+
+    /* delay after sensor power enable */
+    HAL_Delay(200); 
+
+	BOARD_BLUE_LED(false);
+	BOARD_RED_LED(false);
+
+    // spi soft cs pin
+    BOARD_INIT_IOPORT(11, GPIOC, 13, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_VERY_HIGH);
+    BOARD_INIT_IOPORT(12, GPIOC, 14, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_VERY_HIGH);
+    BOARD_INIT_IOPORT(13, GPIOC, 15, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_VERY_HIGH);
+    BOARD_INIT_IOPORT(14, GPIOD, 4, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_VERY_HIGH);
+
+    dregister("/gps_serial", &gps1_serial_dev.dev);
+    dregister("/sensor_i2c", &sensor_i2c_dev.dev);
+    dregister("/sensor_spi", &sensor_spi_dev.dev);
+    dregister("/fram_spi", &fram_spi_dev.dev);
+
+	gps1_serial_dev.dev.ops->setup(&gps1_serial_dev.dev);
+    sensor_i2c_dev.dev.ops->setup(&sensor_i2c_dev.dev);
+    sensor_spi_dev.dev.ops->setup(&sensor_spi_dev.dev);
+	fram_spi_dev.dev.ops->setup(&fram_spi_dev.dev);
+
+    dstdout = dbind("/gps_serial");
+    dstdin = dbind("/gps_serial");
+
+#ifdef CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
+    cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
+#endif
 }
 
 void board_blue_led_toggle()
@@ -193,111 +204,44 @@ void board_red_led_toggle()
     BOARD_IO_SET(GPIO_nLED_RED_PORT, GPIO_nLED_RED_PIN, !val);
 }
 
-int16_t mag_data[3];
-int16_t accel_data[3];
-uint8_t buff_debug[256];
 void board_debug()
 {
-	// printf("[v6c] usart test %d %d %d\r\n",
-    //     BOARD_ADC_HIPOWER_5V_OC, BOARD_ADC_PERIPH_5V_OC, i2c.i2c_error_cnt);
-	//ist8310_mag(mag_data);
-	//printf("[ist8310] %d %d %d \r\n", mag_data[0], mag_data[1], mag_data[2]);
-    //int ret = icm42688_read(&accel_data[0]);
-    //printf("[icm42688] %d %d %d \r\n", accel_data[0], accel_data[1], accel_data[2]);
-    int size = gps1_serial_dev.dev.ops->readbuf(&gps1_serial_dev.dev, &buff_debug[0], 256);
-    if (size > 0) {
-        for (int i = 0; i < size; i++) {
-            printf("%c", buff_debug[i]);
-        }
-        printf("\r\n");
-    }
     board_blue_led_toggle();
 }
 
-#ifdef BSP_COM_PRINTF
-
+#ifdef CONFIG_BOARD_COM_STDINOUT
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
 FILE __stdin, __stdout, __stderr;
-
 size_t fwrite(const void *ptr, size_t size, size_t n_items, FILE *stream)
 {
     return _write(stream->_file, ptr, size*n_items);
 }
-
 int _write(int file, char *ptr, int len)
 {
     const int stdin_fileno = 0;
     const int stdout_fileno = 1;
     const int stderr_fileno = 2;
     if (file == stdout_fileno) {
-        gps1_serial_dev.dev.ops->send(&gps1_serial_dev.dev, ptr, len);
+        SERIAL_SEND(dstdout, ptr, len);
     }
     return len;
 }
-
 size_t fread(void *ptr, size_t size, size_t n_items, FILE *stream)
 {
     return _read(stream->_file, ptr, size*n_items);
 }
-
 // nonblock
 int _read(int file, char *ptr, int len)
 {
-    // const int stdin_fileno = 0;
-    // const int stdout_fileno = 1;
-    // const int stderr_fileno = 2;
-    // devbuf_t buf = drv_uart_devbuf(&com1);
-    // size_t rcv_size = devbuf_size(&buf);
-    // size_t sld_size = (len >= rcv_size) ? rcv_size: len;
-    // size_t ret_size = 0;
-    // if (file == stdin_fileno) {
-    //     ret_size = devbuf_read(&com1.rx_buf, ptr, sld_size);
-    // }
-    // return ret_size;
+    const int stdin_fileno = 0;
+    const int stdout_fileno = 1;
+    const int stderr_fileno = 2;
+    int rsize = 0;
+    if (file == stdin_fileno) {
+        rsize = SERIAL_RDBUF(dstdin, ptr, len);
+    }
+    return rsize;
 }
 #endif
-
-// void ist8310_write_register(uint8_t addr, uint8_t data)
-// {
-//     int ret = 0;
-// 	ret = drv_i2c_reg_write(&i2c, 0x0c<<1, addr, I2CMEMADD_8BITS, &data, 1, RWPOLL);
-// }
-
-// void ist8310_read_register(uint8_t addr, uint8_t *buf, uint8_t len, int rwway)
-// {
-// 	int ret = 0;
-//     if (rwway == 0) {
-//         ret = drv_i2c_reg_read(&i2c, 0x0c<<1, addr, I2CMEMADD_8BITS, buf, len, RWPOLL);
-//     } else {
-//         ret = drv_i2c_reg_read(&i2c, 0x0c<<1, addr, I2CMEMADD_8BITS, buf, len, RWIT);
-//     }
-//     return;
-// }
-
-// void icm42688_write_register(uint8_t addr, uint8_t data)
-// {
-//     int ret = 0;
-// 	static uint8_t dx[2];
-// 	dx[0] = addr & ~0x80;
-// 	dx[1] = data;
-
-//     drv_gpio_write(&spi_cs, 0);
-// 	ret = drv_spi_write(&spi, &dx[0], 2, RWPOLL);
-// 	drv_gpio_write(&spi_cs, 1);
-// }
-
-// void icm42688_read_register(uint8_t addr, uint8_t *buf, uint8_t len, int rwway)
-// {
-//     int ret = 0;
-
-// 	uint8_t send_addr = addr | 0x80;
-
-//     drv_gpio_write(&spi_cs, 0);
-// 	ret = drv_spi_write(&spi, &send_addr, 1, RWPOLL);
-//     ret = drv_spi_read(&spi, buf, len, RWPOLL);
-
-// 	drv_gpio_write(&spi_cs, 1);
-// }
-
