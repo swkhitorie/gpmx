@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#define APP_BSP_EVAL_EXAMPLE  6
+#define APP_BSP_EVAL_EXAMPLE  0
 
 #if (APP_BSP_EVAL_EXAMPLE == 2)
 #include "ist8310_test.h"

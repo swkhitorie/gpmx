@@ -29,6 +29,13 @@ else ifeq (${BSP_LIBCONFIG_STM32_SERIES},BSP_STM32_H7)
 include ${SDK_ROOTDIR}/bsp/stm32/libs/stm32h7xx_hal/Make.defs
 TMPHAL_CINCDIRS = ${addprefix bsp/stm32/libs/stm32h7xx_hal/,${LIBHAL_CINCDIRS}}
 TMPHAL_CSRCS = ${addprefix bsp/stm32/libs/stm32h7xx_hal/,${LIBHAL_CSRCS}}
+
+else ifeq (${BSP_LIBCONFIG_STM32_SERIES},BSP_STM32_WL)
+
+include ${SDK_ROOTDIR}/bsp/stm32/libs/stm32wlxx_hal/Make.defs
+TMPHAL_CINCDIRS = ${addprefix bsp/stm32/libs/stm32wlxx_hal/,${LIBHAL_CINCDIRS}}
+TMPHAL_CSRCS = ${addprefix bsp/stm32/libs/stm32wlxx_hal/,${LIBHAL_CSRCS}}
+
 endif
 
 LIB_CINCDIRS += bsp/stm32/libs/cmsis

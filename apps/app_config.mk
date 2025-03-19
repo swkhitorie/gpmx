@@ -10,12 +10,14 @@ TARGET_POSTBUILD := ${TARGET_DEST_FILENAME_BIN}
 #####################################
 # bsp configuration
 #####################################
-MOD_ARCH  =  m4
+MOD_ARCH = m4
 #include ${SDK_ROOTDIR}/bsp/stm32/stm32h743_eval/make.mk
 #include ${SDK_ROOTDIR}/bsp/stm32/stm32h743_fmuv6/make.mk
 #include ${SDK_ROOTDIR}/bsp/stm32/stm32f103_eval/make.mk
-include ${SDK_ROOTDIR}/bsp/stm32/stm32f407_eval/make.mk
+#include ${SDK_ROOTDIR}/bsp/stm32/stm32f407_eval/make.mk
 #include ${SDK_ROOTDIR}/bsp/stm32/stm32f427_fmuv2/make.mk
+#include ${SDK_ROOTDIR}/bsp/stm32/stm32wl55_eval/make.mk
+include ${SDK_ROOTDIR}/bsp/stm32/stm32wle5_eval/make.mk
 
 PROJ_CDEFS += ${BSP_CDEFS}
 CSOURCES += ${BSP_CSRCS}
@@ -32,9 +34,9 @@ CONFIG_FR_TOOLCHAIN=gcc
 CONFIG_FR_MEM_METHOD=4
 CONFIG_FR_LIB_CXX=n
 CONFIG_FR_LIB_PX4_SUPPORT=n
-CONFIG_FR_LIB_POSIX=y
-CONFIG_FR_FAT_FATFS=y
-CONFIG_CRUSB=y
+CONFIG_FR_LIB_POSIX=n
+CONFIG_FR_FAT_FATFS=n
+CONFIG_CRUSB=n
 CONFIG_USE_DRV_HRT_INTERNAL=n
 
 include ${SDK_ROOTDIR}/sched/make.mk
@@ -65,13 +67,11 @@ endif
 # PROJ_CINCDIRS += libs/drivers/imu/l3gd20
 # CSOURCES += libs/drivers/imu/l3gd20/l3gd20_test.c
 
-PROJ_CINCDIRS += libs/drivers/imu/mpu6000
-CSOURCES += libs/drivers/imu/mpu6000/mpu6050_test.c
-
-PROJ_CINCDIRS += apps
-CPPSOURCES += apps/app_bsp_eval/app_main.cpp
+# PROJ_CINCDIRS += libs/drivers/imu/mpu6000
+# CSOURCES += libs/drivers/imu/mpu6000/mpu6050_test.c
 
 # PROJ_CINCDIRS += libs/drivers/magnetometers/ist8310
 # CSOURCES += libs/drivers/magnetometers/ist8310/ist8310_test.c
 
-
+PROJ_CINCDIRS += apps
+CPPSOURCES += apps/app_bsp_eval/app_main.cpp

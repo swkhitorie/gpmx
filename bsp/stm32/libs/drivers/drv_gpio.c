@@ -26,6 +26,7 @@ struct gpio_pin_t low_gpio_setup(
     if (port == GPIOA)			__HAL_RCC_GPIOA_CLK_ENABLE();
     else if (port == GPIOB)		__HAL_RCC_GPIOB_CLK_ENABLE();
     else if (port == GPIOC)		__HAL_RCC_GPIOC_CLK_ENABLE();
+#if (BSP_CHIP_RESOURCE_LEVEL > 0)
     else if (port == GPIOD)		__HAL_RCC_GPIOD_CLK_ENABLE();
 #if (BSP_CHIP_RESOURCE_LEVEL > 1)
     else if (port == GPIOE)		__HAL_RCC_GPIOE_CLK_ENABLE();
@@ -36,6 +37,7 @@ struct gpio_pin_t low_gpio_setup(
 #if (BSP_CHIP_RESOURCE_LEVEL > 2)
     else if (port == GPIOJ)		__HAL_RCC_GPIOJ_CLK_ENABLE();
     else if (port == GPIOK)		__HAL_RCC_GPIOK_CLK_ENABLE();
+#endif
 #endif
 #endif // End With Define BSP_CHIP_RESOURCE_LEVEL
 

@@ -16,6 +16,13 @@
 #elif defined (DRV_BSP_H7)
 #include "stm32h7xx.h"
 #include "core_cm7.h"
+#elif defined (DRV_BSP_WL)
+#include "stm32wlxx.h"
+#if defined (CORE_M4)
+#include "core_cm4.h"
+#elif defined (CORE_M0)
+#include "core_cm0.h"
+#endif
 #endif
 
 /**
@@ -46,6 +53,10 @@
 #elif defined (DRV_BSP_G0)
     #define BSP_CHIP_RESOURCE_LEVEL 1
     #define CONFIG_UART_PERIPHAL_NUM (4)
+    #define CONFIG_DRV_GPIO_EXTERNAL_IRQ_LINE_NUM (16)
+#elif defined (DRV_BSP_WL)
+    #define BSP_CHIP_RESOURCE_LEVEL 0
+    #define CONFIG_UART_PERIPHAL_NUM (2)
     #define CONFIG_DRV_GPIO_EXTERNAL_IRQ_LINE_NUM (16)
 #endif
 

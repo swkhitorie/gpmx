@@ -20,6 +20,19 @@ typedef FAR void* timer_t;        /* Represents one POSIX timer */
 #define CLOCKS_PER_SEC     ((clock_t)configTICK_RATE_HZ)
 #define TIMER_ABSTIME      0x01
 
+struct tm {
+    int tm_sec;     /* Seconds (0-61, allows for leap seconds) */
+    int tm_min;     /* Minutes (0-59) */
+    int tm_hour;    /* Hours (0-23) */
+    int tm_mday;    /* Day of the month (1-31) */
+    int tm_mon;     /* Month (0-11) */
+    int tm_year;    /* Years since 1900 */
+    /* extended */
+    int tm_wday;    /* Day of the week (0-6) */
+    int tm_yday;    /* Day of the year (0-365) */
+    int tm_isdst;   /* Non-0 if daylight savings time is in effect */
+};
+
 struct timespec
 {
     time_t tv_sec;               /* Seconds */
