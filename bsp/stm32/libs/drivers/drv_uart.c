@@ -313,6 +313,8 @@ void low_dmatx_setup(struct uart_dev_s *dev)
     priv->txdma.Init.Priority = DMA_PRIORITY_MEDIUM;
     priv->txdma.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
 #elif defined (DRV_BSP_WL)
+    __HAL_RCC_DMAMUX1_CLK_ENABLE();
+    __HAL_RCC_DMA1_CLK_ENABLE();
     priv->txdma.Instance = uart_txdma_channel[num-1];
     priv->txdma.Init.Request = uart_txdma_request[num-1];
     priv->txdma.Init.Direction = DMA_MEMORY_TO_PERIPH;
@@ -426,6 +428,7 @@ void low_dmarx_setup(struct uart_dev_s *dev)
     priv->rxdma.Init.Priority = DMA_PRIORITY_MEDIUM;
     priv->rxdma.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
 #elif defined (DRV_BSP_WL)
+    __HAL_RCC_DMA2_CLK_ENABLE();
     priv->rxdma.Instance = uart_rxdma_channel[num-1];;
     priv->rxdma.Init.Request = uart_rxdma_request[num-1];;
     priv->rxdma.Init.Direction = DMA_PERIPH_TO_MEMORY;

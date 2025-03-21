@@ -22,14 +22,9 @@
  * 
  */
 
-/** 
- * subghz need components:
- * mw_log_conf.h : define code debug interface in radio low layer
- * 
- * os macro:
- * CONFIG_BOARD_FREERTOS_ENABLE
- * 
- */
+#define RADIO_TRANSMITTER  1
+#define RADIO_RECEIVER     2
+#define RADIO_ROLE         RADIO_RECEIVER
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,17 +43,17 @@ void board_debug();
 
 void board_led_toggle(int i);
 
+bool board_radio_sync();
+
+int board_radio_rxbuf_write(uint8_t *p, uint16_t size);
+
+void board_radio_txflag_clr();
+
+bool board_radio_sync_already();
+
 #ifdef __cplusplus
 }
 #endif
-
-
-
-
-
-
-
-
 
 
 #endif

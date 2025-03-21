@@ -34,6 +34,7 @@ BOARD_CSRCS += board_init.c
 BOARD_CSRCS += board_bsp.c
 
 BOARD_CSRCS += app_subghz.c
+BOARD_CSRCS += ringbuffer.c
 
 BOARD_SUBGHZ_IF_INCDIRS += bsp/stm32/stm32wle5_eval/subghz_utilities_if
 BOARD_SUBGHZ_IF_CSRCS += subghz_utilities_if/timer_if.c

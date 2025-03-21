@@ -7,7 +7,7 @@
 #define USE_MODEM_LORA  1
 #define USE_MODEM_FSK   0
 
-#define REGION_CN470
+#define REGION_EU868
 
 #if defined( REGION_AS923 )
 
@@ -56,7 +56,7 @@
 
 #if (( USE_MODEM_LORA == 1 ) && ( USE_MODEM_FSK == 0 ))
 #define LORA_BANDWIDTH                              2         /* [0: 125 kHz, 1: 250 kHz, 2: 500 kHz, 3: Reserved] */
-#define LORA_SPREADING_FACTOR                       9         /* [SF7..SF12] */
+#define LORA_SPREADING_FACTOR                       5         /* [SF7..SF12] */
 #define LORA_CODINGRATE                             1         /* [1: 4/5, 2: 4/6, 3: 4/7, 4: 4/8] */
 #define LORA_PREAMBLE_LENGTH                        5         /* Same for Tx and Rx */
 #define LORA_SYMBOL_TIMEOUT                         5         /* Symbols */
@@ -80,6 +80,8 @@
 #ifdef __cplusplus
 extern "C"{
 #endif
+
+extern uint8_t MaxUserPayloadSize;
 
 void MX_SUBGHZ_Init();
 

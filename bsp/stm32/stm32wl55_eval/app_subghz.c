@@ -1,8 +1,11 @@
 #include "app_subghz.h"
 #include "radio.h"
+#include <string.h>
 
 SUBGHZ_HandleTypeDef hsubghz;
 static RadioEvents_t RadioEvents;
+
+uint8_t MaxUserPayloadSize = 255;
 
 static void OnTxDone(void);
 static void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t LoraSnr_FskCfo);
@@ -13,6 +16,9 @@ static void OnRxError(void);
 void MX_SUBGHZ_Init(void)
 {
     int ret;
+    __HAL_RCC_WAKEUPSTOP_CLK_CONFIG(RCC_STOP_WAKEUPCLOCK_MSI);
+    UTIL_TIMER_Init();
+
     hsubghz.Init.BaudratePrescaler = SUBGHZSPI_BAUDRATEPRESCALER_4;
     ret = HAL_SUBGHZ_Init(&hsubghz);
     if (ret != HAL_OK) {
@@ -47,31 +53,65 @@ void app_subghz_init()
                         LORA_SYMBOL_TIMEOUT, LORA_FIX_LENGTH_PAYLOAD_ON,
                         0, true, 0, 0, LORA_IQ_INVERSION_ON, true);
 
-    Radio.SetMaxPayloadLength(MODEM_LORA, 255);
+
+
+  /* [0: 125 kHz, 1: 250 kHz, 2: 500 kHz, 3: Reserved] [SF7..SF12] */
+
+    if((LORA_BANDWIDTH == 2) && (LORA_SPREADING_FACTOR == 5))         MaxUserPayloadSize = 255;//242
+    else if ((LORA_BANDWIDTH == 1) && (LORA_SPREADING_FACTOR == 5))   MaxUserPayloadSize = 242;
+    else if ( (LORA_BANDWIDTH == 0) && (LORA_SPREADING_FACTOR == 5) ) MaxUserPayloadSize = 242;
+
+    if( (LORA_BANDWIDTH == 2) && (LORA_SPREADING_FACTOR == 6) )       MaxUserPayloadSize = 255;//242
+    else if ( (LORA_BANDWIDTH == 1) && (LORA_SPREADING_FACTOR == 6) ) MaxUserPayloadSize = 242;
+    else if ( (LORA_BANDWIDTH == 0) && (LORA_SPREADING_FACTOR == 6) ) MaxUserPayloadSize = 242;
+    
+    if( (LORA_BANDWIDTH == 2) && (LORA_SPREADING_FACTOR == 7) )       MaxUserPayloadSize = 53;//242
+    else if ( (LORA_BANDWIDTH == 1) && (LORA_SPREADING_FACTOR == 7) ) MaxUserPayloadSize = 242;
+    else if ( (LORA_BANDWIDTH == 0) && (LORA_SPREADING_FACTOR == 7) ) MaxUserPayloadSize = 242;
+    else if ( (LORA_BANDWIDTH == 2) && (LORA_SPREADING_FACTOR == 8) ) MaxUserPayloadSize = 255;//???
+    else if ( (LORA_BANDWIDTH == 1) && (LORA_SPREADING_FACTOR == 8) ) MaxUserPayloadSize = 242;//???
+    else if ( (LORA_BANDWIDTH == 0) && (LORA_SPREADING_FACTOR == 8) ) MaxUserPayloadSize = 125;
+    else if ( (LORA_BANDWIDTH == 2) && (LORA_SPREADING_FACTOR == 9) ) MaxUserPayloadSize = 242;//???
+    else if ( (LORA_BANDWIDTH == 1) && (LORA_SPREADING_FACTOR == 9) ) MaxUserPayloadSize = 242;//???
+    else if ( (LORA_BANDWIDTH == 0) && (LORA_SPREADING_FACTOR == 9) ) MaxUserPayloadSize = 53;
+
+    Radio.SetMaxPayloadLength(MODEM_LORA, MaxUserPayloadSize);
 
     /*starts reception*/
-    Radio.Rx(30);
+    Radio.Rx(100);
 }
 
 static void OnTxDone(void)
 {
+    // printf("onTxDone\r\n");
+    if (!board_radio_sync_already()) {
+        Radio.Rx(100);
+    } else {
+        board_radio_txflag_clr();
+    }
 }
 
 static void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t LoraSnr_FskCfo)
 {
-    board_led_toggle(2);
+    // printf("onRXDone : %s %d\r\n", payload, size);
+    if (size > 0) {
+        board_radio_rxbuf_write(payload, size);
+    }
 }
 
 static void OnTxTimeout(void)
 {
+    // printf("onTxTimeout \r\n");
 }
 
 static void OnRxTimeout(void)
 {
+    // printf("OnRxTimeout \r\n");
 }
 
 static void OnRxError(void)
 {
+    // printf("OnRxError \r\n");
 }
 
 void app_subghz_process()
@@ -86,3 +126,24 @@ void SUBGHZ_Radio_IRQHandler(void)
 {
     HAL_SUBGHZ_IRQHandler(&hsubghz);
 }
+
+// HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
+// {
+//     return HAL_OK;
+// }
+
+// uint32_t HAL_GetTick(void)
+// {
+//     uint32_t ret = 0;
+//     if (SYS_TimerInitialisedFlag == 0) {
+//     } else {
+//         ret = TIMER_IF_GetTimerValue();
+//     }
+//     return ret;
+// }
+
+// void HAL_Delay(__IO uint32_t Delay)
+// {
+//     TIMER_IF_DelayMs(Delay);
+// }
+
