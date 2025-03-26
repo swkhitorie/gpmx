@@ -8,6 +8,10 @@
 #include "app_subghz.h"
 #include "radio.h"
 
+#define DEBUG_COM                  (2)
+#define TRANS_COM                  (1)
+#define TRANS_BAUDRATE             (460800)
+
 #if RADIO_ROLE == RADIO_TRANSMITTER
 #define COM_RXSIZE     (1024*2)
 #define COM_RXDMASIZE  (1024*4)
@@ -24,39 +28,39 @@
 #define RADIO_RXSIZE   (1024)
 #endif
 
-/* COM1 */
-uint8_t com1_dma_rxbuff[64];
-uint8_t com1_dma_txbuff[64];
-uint8_t com1_txbuff[128];
-uint8_t com1_rxbuff[128];
-struct up_uart_dev_s com1_dev = {
+/* debug com */
+uint8_t debug_dma_rxbuff[64];
+uint8_t debug_dma_txbuff[64];
+uint8_t debug_txbuff[128];
+uint8_t debug_rxbuff[128];
+struct up_uart_dev_s debug_dev = {
     .dev = {
-        .baudrate = 115200,
+        .baudrate = 460800,
         .wordlen = 8,
         .stopbitlen = 1,
         .parity = 'n',
         .recv = {
             .capacity = 128,
-            .buffer = com1_rxbuff,
+            .buffer = debug_rxbuff,
         },
         .xmit = {
             .capacity = 128,
-            .buffer = com1_txbuff,
+            .buffer = debug_txbuff,
         },
         .dmarx = {
             .capacity = 64,
-            .buffer = com1_dma_rxbuff,
+            .buffer = debug_dma_rxbuff,
         },
         .dmatx = {
             .capacity = 64,
-            .buffer = com1_dma_txbuff,
+            .buffer = debug_dma_txbuff,
         },
         .ops       = &g_uart_ops,
-        .priv      = &com1_dev,
+        .priv      = &debug_dev,
     },
-    .id = 1, //usart1
-    .pin_tx = 0, //PA9
-    .pin_rx = 0, //PA10
+    .id = DEBUG_COM,
+    .pin_tx = 0, //PA9/PA2 
+    .pin_rx = 0, //PA10/PA3
     .priority = 1,
     .priority_dmarx = 2,
     .priority_dmatx = 3,
@@ -65,38 +69,38 @@ struct up_uart_dev_s com1_dev = {
 };
 
 /* COM2 */
-uint8_t com2_dma_rxbuff[COM_RXDMASIZE];
-uint8_t com2_dma_txbuff[COM_TXDMASIZE];
-uint8_t com2_txbuff[COM_TXSIZE];
-uint8_t com2_rxbuff[COM_RXSIZE];
-struct up_uart_dev_s com2_dev = {
+uint8_t trans_dma_rxbuff[COM_RXDMASIZE];
+uint8_t trans_dma_txbuff[COM_TXDMASIZE];
+uint8_t trans_txbuff[COM_TXSIZE];
+uint8_t trans_rxbuff[COM_RXSIZE];
+struct up_uart_dev_s trans_dev = {
     .dev = {
-        .baudrate = 115200,
+        .baudrate = TRANS_BAUDRATE,
         .wordlen = 8,
         .stopbitlen = 1,
         .parity = 'n',
         .recv = {
             .capacity = COM_RXSIZE,
-            .buffer = com2_rxbuff,
+            .buffer = trans_rxbuff,
         },
         .xmit = {
             .capacity = COM_TXSIZE,
-            .buffer = com2_txbuff,
+            .buffer = trans_txbuff,
         },
         .dmarx = {
             .capacity = COM_RXDMASIZE,
-            .buffer = com2_dma_rxbuff,
+            .buffer = trans_dma_rxbuff,
         },
         .dmatx = {
             .capacity = COM_TXDMASIZE,
-            .buffer = com2_dma_txbuff,
+            .buffer = trans_dma_txbuff,
         },
         .ops       = &g_uart_ops,
-        .priv      = &com2_dev,
+        .priv      = &trans_dev,
     },
-    .id = 2, //usart2
-    .pin_tx = 0, //PA2
-    .pin_rx = 0, //PA3
+    .id = TRANS_COM,
+    .pin_tx = 0, //PA9/PA2 
+    .pin_rx = 0, //PA10/PA3 
     .priority = 1,
     .priority_dmarx = 0,
     .priority_dmatx = 1,
@@ -106,6 +110,9 @@ struct up_uart_dev_s com2_dev = {
 
 uart_dev_t *dstdout;
 uart_dev_t *dstdin;
+
+uart_dev_t *dtransout;
+uart_dev_t *dtransin;
 
 uint8_t radio_rxmem[RADIO_RXSIZE];
 ringbuffer_t radio_rxbuf = {
@@ -117,14 +124,8 @@ ringbuffer_t radio_rxbuf = {
 };
 
 char radio_sync_buf[16];
-
-/**
- * radio connection establish process:
- * sender send "SEND_SYNC1"
- * receiver send "RECV_SYNC1"
- */
-char sendbuff1[] = "SEND_SYNC1";
-char rcvsbuff1[] = "RECV_SYNC1";
+char send_head[] = "SEND";
+char rcvs_head[] = "RECV";
 uint8_t sync_step = 0;
 uint8_t tx_sync = 0;
 
@@ -135,7 +136,6 @@ bool board_radio_sync_already()
 
 void board_radio_txflag_clr()
 {
-    // printf("tx cleared \r\n");
     tx_sync = 0;
 }
 
@@ -149,15 +149,14 @@ bool board_radio_sync()
     bool ret = false;
 
     int sz = rb_read(&radio_rxbuf, &radio_sync_buf[0], 128);
-    printf("rcv: %s  %d \r\n", radio_sync_buf, sz);
+
     #if RADIO_ROLE == RADIO_TRANSMITTER
         switch (sync_step) {
         case 0:
-            if (sz > 0 && !strcmp(radio_sync_buf, "RECV_SYNC1")) {
+            if (sz > 0 && !strcmp(radio_sync_buf, "RECV")) {
                 sync_step++;
-                printf("trans: send SEND_TACK1 \r\n");
             } else {
-                Radio.Send(sendbuff1, strlen(sendbuff1));
+                Radio.Send(send_head, strlen(send_head));
                 HAL_Delay(100);
             }
             break;
@@ -170,11 +169,10 @@ bool board_radio_sync()
     #if RADIO_ROLE == RADIO_RECEIVER
         switch (sync_step) {
         case 0:
-            if (sz > 0 && !strcmp(radio_sync_buf, "SEND_SYNC1")) {
-                Radio.Send(rcvsbuff1, strlen(rcvsbuff1));
+            if (sz > 0 && !strcmp(radio_sync_buf, "SEND")) {
+                Radio.Send(rcvs_head, strlen(rcvs_head));
                 HAL_Delay(100);
                 sync_step++;
-                printf("recv: recv SEND_SYNC1  \r\n");
             }
             break;
         case 1:
@@ -199,14 +197,16 @@ void board_bsp_init()
     /* LED3 */
     low_gpio_setup(GPIOB, 11, IOMODE_OUTPP, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, 0);
 
-    dregister("/com1", &com1_dev.dev);
-    dregister("/com2", &com2_dev.dev);
+    dregister("/com_debug", &debug_dev.dev);
+    dregister("/com_trans", &trans_dev.dev);
 
-    com1_dev.dev.ops->setup(&com1_dev.dev);
-    com2_dev.dev.ops->setup(&com2_dev.dev);
+    debug_dev.dev.ops->setup(&debug_dev.dev);
+    trans_dev.dev.ops->setup(&trans_dev.dev);
 
-    dstdout = dbind("/com2");
-    dstdin = dbind("/com2");
+    dstdout = dbind("/com_debug");
+    dstdin = dbind("/com_debug");
+    dtransout = dbind("/com_trans");
+    dtransin = dbind("/com_trans");
 
     app_subghz_init();
 
@@ -218,27 +218,22 @@ void board_bsp_init()
     printf("sync completed \r\n");
 }
 
-int buff_trans[300];
-int buff_reads[256];
+static int buff_trans[300];
+static int buff_reads[256];
 static int timer_led = 0;
 void board_debug()
 {
-// int sz = SERIAL_RDBUF(dstdin, buff_trans, 256);
-// if (sz > 0) {
-//     SERIAL_SEND(dstdout, buff_trans, sz);
-// }
 
 #if RADIO_ROLE == RADIO_TRANSMITTER
-
-    if (tx_sync == 0 /*&& READ_BIT(SUBGHZSPI->SR, SPI_SR_TXE) == (SPI_SR_TXE)*/) {
-        int sz = SERIAL_RDBUF(dstdin, buff_trans, MaxUserPayloadSize);
+    if (tx_sync == 0 && READ_BIT(SUBGHZSPI->SR, SPI_SR_TXE) == (SPI_SR_TXE)) {
+        int sz = SERIAL_RDBUF(dtransin, buff_trans, MaxUserPayloadSize);
         if (sz > 0) {
             tx_sync = 1;
             Radio.Send(buff_trans, sz);
             if (sz >= MaxUserPayloadSize) {
-                HAL_Delay(10);
+                HAL_Delay(40);
             }
-            SERIAL_SEND(dstdout, buff_trans, sz);
+            SERIAL_SEND(dtransout, buff_trans, sz);
         }
     }
 #endif
@@ -247,7 +242,7 @@ void board_debug()
     int rsize = rb_size(&radio_rxbuf);
     if (rsize > 0) {
         int sz = rb_read(&radio_rxbuf, &buff_reads[0], 256);
-        SERIAL_SEND(dstdout, buff_reads, sz);
+        SERIAL_SEND(dtransout, buff_reads, sz);
     }
 #endif
 

@@ -7,7 +7,7 @@
 #define USE_MODEM_LORA  1
 #define USE_MODEM_FSK   0
 
-#define REGION_EU868
+#define REGION_US915
 
 #if defined( REGION_AS923 )
 
@@ -55,10 +55,10 @@
 #define TX_OUTPUT_POWER                             22        /* dBm */
 
 #if (( USE_MODEM_LORA == 1 ) && ( USE_MODEM_FSK == 0 ))
-#define LORA_BANDWIDTH                              2         /* [0: 125 kHz, 1: 250 kHz, 2: 500 kHz, 3: Reserved] */
+#define LORA_BANDWIDTH                              1         /* [0: 125 kHz, 1: 250 kHz, 2: 500 kHz, 3: Reserved] */
 #define LORA_SPREADING_FACTOR                       5         /* [SF7..SF12] */
 #define LORA_CODINGRATE                             1         /* [1: 4/5, 2: 4/6, 3: 4/7, 4: 4/8] */
-#define LORA_PREAMBLE_LENGTH                        5         /* Same for Tx and Rx */
+#define LORA_PREAMBLE_LENGTH                        8         /* Same for Tx and Rx */
 #define LORA_SYMBOL_TIMEOUT                         5         /* Symbols */
 #define LORA_FIX_LENGTH_PAYLOAD_ON                  false
 #define LORA_IQ_INVERSION_ON                        false
@@ -75,8 +75,6 @@
 #error "Please define a modem in the compiler subghz_phy_app.h."
 #endif /* USE_MODEM_LORA | USE_MODEM_FSK */
 
-#define PAYLOAD_LEN                                 255
-
 #ifdef __cplusplus
 extern "C"{
 #endif
@@ -86,9 +84,6 @@ extern uint8_t MaxUserPayloadSize;
 void MX_SUBGHZ_Init();
 
 void app_subghz_init();
-
-void app_subghz_process();
-
 
 #ifdef __cplusplus
 }

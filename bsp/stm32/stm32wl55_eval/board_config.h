@@ -24,7 +24,7 @@
 
 #define RADIO_TRANSMITTER  1
 #define RADIO_RECEIVER     2
-#define RADIO_ROLE         RADIO_RECEIVER
+#define RADIO_ROLE         RADIO_TRANSMITTER
 
 #ifdef __cplusplus
 extern "C" {

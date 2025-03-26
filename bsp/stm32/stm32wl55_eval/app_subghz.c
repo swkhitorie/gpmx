@@ -83,7 +83,6 @@ void app_subghz_init()
 
 static void OnTxDone(void)
 {
-    // printf("onTxDone\r\n");
     if (!board_radio_sync_already()) {
         Radio.Rx(100);
     } else {
@@ -93,7 +92,6 @@ static void OnTxDone(void)
 
 static void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t LoraSnr_FskCfo)
 {
-    // printf("onRXDone : %s %d\r\n", payload, size);
     if (size > 0) {
         board_radio_rxbuf_write(payload, size);
     }
@@ -101,22 +99,14 @@ static void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t LoraS
 
 static void OnTxTimeout(void)
 {
-    // printf("onTxTimeout \r\n");
 }
 
 static void OnRxTimeout(void)
 {
-    // printf("OnRxTimeout \r\n");
 }
 
 static void OnRxError(void)
 {
-    // printf("OnRxError \r\n");
-}
-
-void app_subghz_process()
-{
-
 }
 
 /****************************************************************************
@@ -126,24 +116,3 @@ void SUBGHZ_Radio_IRQHandler(void)
 {
     HAL_SUBGHZ_IRQHandler(&hsubghz);
 }
-
-// HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
-// {
-//     return HAL_OK;
-// }
-
-// uint32_t HAL_GetTick(void)
-// {
-//     uint32_t ret = 0;
-//     if (SYS_TimerInitialisedFlag == 0) {
-//     } else {
-//         ret = TIMER_IF_GetTimerValue();
-//     }
-//     return ret;
-// }
-
-// void HAL_Delay(__IO uint32_t Delay)
-// {
-//     TIMER_IF_DelayMs(Delay);
-// }
-
