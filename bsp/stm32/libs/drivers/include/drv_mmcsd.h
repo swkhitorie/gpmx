@@ -1,5 +1,5 @@
-#ifndef DRV_SDMMC_H_
-#define DRV_SDMMC_H_
+#ifndef DRV_MMCSD_H_
+#define DRV_MMCSD_H_
 
 #include <stdint.h>
 #include "drv_common.h"

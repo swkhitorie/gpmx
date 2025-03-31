@@ -4,6 +4,8 @@ FR_CSOURCES   +=  libs/dev/serial.c
 FR_CSOURCES   +=  libs/dev/i2c_master.c
 FR_CSOURCES   +=  libs/dev/spi.c
 
+include ${SDK_ROOTDIR}/libs/gcl/make.mk
+
 ifeq (${CONFIG_FR_LIB_CXX},y)
 FR_CINCDIRS   +=  libs/cxx
 FR_CPPSOURCES +=  libs/cxx/libxx_delete.cxx
@@ -12,16 +14,6 @@ FR_CPPSOURCES +=  libs/cxx/libxx_deletea.cxx
 FR_CPPSOURCES +=  libs/cxx/libxx_deletea_sized.cxx
 FR_CPPSOURCES +=  libs/cxx/libxx_new.cxx
 FR_CPPSOURCES +=  libs/cxx/libxx_newa.cxx
-endif
-
-ifeq (${CONFIG_FR_LIB_PX4_SUPPORT},y)
-FR_CSOURCES   +=  libs/px4/hrt/hrt.c
-FR_CPPSOURCES +=  libs/px4/ptasks.cpp
-else
-ifeq (${CONFIG_USE_DRV_HRT_INTERNAL},y)
-FR_CSOURCES   +=  libs/px4/hrt/hrt.c
-FR_CINCDIRS   +=  libs/px4
-endif
 endif
 
 ifeq (${CONFIG_FR_FAT_FATFS},y)

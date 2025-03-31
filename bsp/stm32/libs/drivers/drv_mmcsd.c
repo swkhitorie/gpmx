@@ -1,4 +1,4 @@
-#include "drv_sdmmc.h"
+#include "drv_mmcsd.h"
 
 struct drv_sdmmc_t *drv_sdmmc_list[2] = {0, 0};
 

@@ -39,12 +39,7 @@
 #include <sdqueue.h>
 #include <errno.h>
 #include <string.h>
-
-#ifndef CONFIG_USE_DRV_HRT_INTERNAL
 #include <drivers/drv_hrt.h>
-#else
-#include "drv_hrt.h"
-#endif
 
 #include "./hrt_stm32h7xx.h"
 

@@ -11,3 +11,7 @@ FR_CSOURCES += mm/heap_4.c
 else ifeq (${CONFIG_FR_MEM_METHOD},5)
 FR_CSOURCES += mm/heap_5.c
 endif
+
+ifeq (${CONFIG_FR_MEM_STL_METHOD},y)
+FR_CINCDIRS += mm/
+endif

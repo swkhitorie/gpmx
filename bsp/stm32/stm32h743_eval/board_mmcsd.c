@@ -1,5 +1,5 @@
 #include "board_config.h"
-#include <drv_sdmmc.h>
+#include <drv_mmcsd.h>
 
 #ifdef CONFIG_BOARD_MMCSD_ENABLE
 
