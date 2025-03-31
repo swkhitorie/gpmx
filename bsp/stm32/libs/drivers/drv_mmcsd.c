@@ -46,23 +46,12 @@ bool drv_sdmmc_pin_source_init(uint8_t num, uint8_t d0s, uint8_t d1s,
 	}
 
 	if (illegal != 0) {
-        drv_gpio_init(d0_pin_node->port, d0_pin_node->pin, IOMODE_AFPP,
-							GPIO_NOPULL, IO_SPEEDMAX, d0_pin_node->alternate, NULL);
-
-        drv_gpio_init(d1_pin_node->port, d1_pin_node->pin, IOMODE_AFPP,
-							GPIO_NOPULL, IO_SPEEDMAX, d1_pin_node->alternate, NULL);
-
-        drv_gpio_init(d2_pin_node->port, d2_pin_node->pin, IOMODE_AFPP,
-							GPIO_NOPULL, IO_SPEEDMAX, d2_pin_node->alternate, NULL);
-
-        drv_gpio_init(d3_pin_node->port, d3_pin_node->pin, IOMODE_AFPP,
-							GPIO_NOPULL, IO_SPEEDMAX, d3_pin_node->alternate, NULL);
-
-        drv_gpio_init(cmd_pin_node->port, cmd_pin_node->pin, IOMODE_AFPP,
-							GPIO_NOPULL, IO_SPEEDMAX, cmd_pin_node->alternate, NULL);
-
-        drv_gpio_init(clk_pin_node->port, clk_pin_node->pin, IOMODE_AFPP,
-							GPIO_NOPULL, IO_SPEEDMAX, clk_pin_node->alternate, NULL);
+        low_gpio_setup(d0_pin_node->port, d0_pin_node->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, d0_pin_node->alternate, NULL, 0);
+        low_gpio_setup(d1_pin_node->port, d1_pin_node->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, d1_pin_node->alternate, NULL, 0);
+        low_gpio_setup(d2_pin_node->port, d2_pin_node->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, d2_pin_node->alternate, NULL, 0);
+        low_gpio_setup(d3_pin_node->port, d3_pin_node->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, d3_pin_node->alternate, NULL, 0);
+        low_gpio_setup(cmd_pin_node->port, cmd_pin_node->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, cmd_pin_node->alternate, NULL, 0);
+        low_gpio_setup(clk_pin_node->port, clk_pin_node->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, clk_pin_node->alternate, NULL, 0);
 	} else {
 		return false;
 	}

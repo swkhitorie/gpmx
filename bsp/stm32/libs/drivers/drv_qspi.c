@@ -26,12 +26,12 @@ static bool drv_qspi_pin_source_init(uint8_t bank_num, uint8_t clks,
 	const struct pin_node *io3_pin_node;
 	const struct pin_node *ncs_pin_node;
 	uint32_t illegal;
-	
+
 	if (QSPI_PINCTRL_SOURCE_CLK(clks) != NULL)
 		clk_pin_node = QSPI_PINCTRL_SOURCE_CLK(clks);
 	else
 		return false;
-	
+
 	switch (bank_num) {
 	case 1:
 		if (QSPI_PINCTRL_SOURCE(1, QSPI_PIN_IO_0, io0s) != NULL &&
@@ -71,23 +71,12 @@ static bool drv_qspi_pin_source_init(uint8_t bank_num, uint8_t clks,
 	}
 
 	if (illegal != 0) {
-        drv_gpio_init(clk_pin_node->port, clk_pin_node->pin, IOMODE_AFPP,
-							GPIO_NOPULL, IO_SPEEDMAX, clk_pin_node->alternate, NULL);
-
-        drv_gpio_init(io0_pin_node->port, io0_pin_node->pin, IOMODE_AFPP,
-							GPIO_NOPULL, IO_SPEEDMAX, io0_pin_node->alternate, NULL);
-
-        drv_gpio_init(io1_pin_node->port, io1_pin_node->pin, IOMODE_AFPP,
-							GPIO_NOPULL, IO_SPEEDMAX, io1_pin_node->alternate, NULL);
-
-        drv_gpio_init(io2_pin_node->port, io2_pin_node->pin, IOMODE_AFPP,
-							GPIO_NOPULL, IO_SPEEDMAX, io2_pin_node->alternate, NULL);
-
-        drv_gpio_init(io3_pin_node->port, io3_pin_node->pin, IOMODE_AFPP,
-							GPIO_NOPULL, IO_SPEEDMAX, io3_pin_node->alternate, NULL);
-
-        drv_gpio_init(ncs_pin_node->port, ncs_pin_node->pin, IOMODE_AFPP,
-							GPIO_NOPULL, IO_SPEEDMAX, ncs_pin_node->alternate, NULL);
+        low_gpio_setup(clk_pin_node->port, clk_pin_node->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, clk_pin_node->alternate, NULL, 0);
+        low_gpio_setup(io0_pin_node->port, io0_pin_node->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, io0_pin_node->alternate, NULL, 0);
+        low_gpio_setup(io1_pin_node->port, io1_pin_node->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, io1_pin_node->alternate, NULL, 0);
+        low_gpio_setup(io2_pin_node->port, io2_pin_node->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, io2_pin_node->alternate, NULL, 0);
+        low_gpio_setup(io3_pin_node->port, io3_pin_node->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, io3_pin_node->alternate, NULL, 0);
+        low_gpio_setup(ncs_pin_node->port, ncs_pin_node->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, ncs_pin_node->alternate, NULL, 0);
 	} else {
 		return false;
 	}

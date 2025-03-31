@@ -7,6 +7,10 @@
 #include "drv_pin_h7.h"
 #endif
 
+/**
+ * this can driver not used, waiting for future rewrites
+ */
+
 struct low_canframe;
 struct low_canfifo;
 struct up_can_dev_s

@@ -1,3 +1,6 @@
+/**
+ * this can driver not used, waiting for future rewrites
+ */
 #include "drv_can.h"
 
 static struct up_can_dev_s *can_list[2] = {0, 0};
