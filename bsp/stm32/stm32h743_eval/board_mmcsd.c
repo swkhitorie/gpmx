@@ -16,30 +16,40 @@ static char mmcsd_mnt_path[20];
   macro USE_SD_TRANSCEIVER in stm32xxx_hal_conf.h
   set USE_SD_TRANSCEIVER to 0, if it is 1, sd card initialization will start 1.8v process
  */
-struct drv_sdmmc_attr_t sd_attr;
-struct drv_sdmmc_t sd;
+struct up_mmcsd_dev_s sd_dev = 
+{
+    .id = 1,
+    .speed = 25 * 1000 * 1000, //25M
+    .pin_clks = 1, //PC12
+    .pin_d0 = 1, //PC8
+    .pin_d1 = 1, //PC9
+    .pin_d2 = 1, //PC10
+    .pin_d3 = 1, //PC11
+    .pin_cmd = 1, //PD2
+    .priority = 4,
+};
+
 void board_mmcsd_init()
 {
-    drv_sdmmc_attr_init(&sd_attr, 1, 25, /* io select */1, 1, 1, 1, 1, 1, /* priority */ 4);
-    int sdret = drv_sdmmc_init(&sd, &sd_attr);
+    int sdret = low_mmcsd_init(&sd_dev);
 
 #ifdef CONFIG_BOARD_MMCSD_INFO_CHECK
     uint8_t tmp;
-    tmp = drv_sdmmc_wait_ready(&sd);
+    tmp = low_mmcsd_waitrdy(&sd_dev);
     if (tmp != HAL_OK) {
         printf("\r\n[MMCSD] not ready\r\n");
     }
-    drv_sdmmc_getinfo(&sd);
+    low_mmcsd_getinfo(&sd_dev);
 
     printf("\r\n[MMCSD] init: %s \r\n", (sdret == 0) ? "success" : "failed");
     if (sdret != 0) {
-        printf("[MMCSD] errorcode : %d \r\n", sd.initret);
+        printf("[MMCSD] errorcode : %d \r\n", sd_dev.initret);
     }
     float total_capacity = 0;
-    total_capacity = (float)(sd.info.LogBlockNbr) / 1024.0f / 1024.0f / 1024.0f;
-    printf("[MMCSD] total capacity : %.2f GB\r\n",(total_capacity * sd.info.BlockSize));
-    printf("[MMCSD] card block size : %d bytes\r\n",(sd.info.BlockSize));
-    switch (sd.info.CardSpeed) {
+    total_capacity = (float)(sd_dev.info.LogBlockNbr) / 1024.0f / 1024.0f / 1024.0f;
+    printf("[MMCSD] total capacity : %.2f GB\r\n",(total_capacity * sd_dev.info.BlockSize));
+    printf("[MMCSD] card block size : %d bytes\r\n",(sd_dev.info.BlockSize));
+    switch (sd_dev.info.CardSpeed) {
     case CARD_NORMAL_SPEED:
         printf("[MMCSD] Normal Speed Card <12.5Mo/s , Spec Version 1.01 \r\n");
         break;
@@ -50,7 +60,7 @@ void board_mmcsd_init()
         printf("[MMCSD] UHS-I SD Card <50Mo/s for SDR50, DDR5 Cards and <104Mo/s for SDR104, Spec version 3.01 \r\n");
         break;	
     }
-    switch (sd.info.CardType) {
+    switch (sd_dev.info.CardType) {
     case CARD_SDSC:
         printf("[MMCSD] SD Standard Capacity <2Go \r\n");
         break;
@@ -61,7 +71,7 @@ void board_mmcsd_init()
         printf("[MMCSD] SD Extended Capacity >2To \r\n");
         break;
     }
-    switch (sd.info.CardVersion) {
+    switch (sd_dev.info.CardVersion) {
     case CARD_V1_X:
         printf("[MMCSD] card v1.x \r\n");
         break;
@@ -102,9 +112,9 @@ void board_mmcsd_rw_test()
 	float    ExecutionSpeed;
 
 	ExecutionTime_Begin 	= HAL_GetTick();
-	SD_Status = drv_sdmmc_erase(&sd, Test_Addr, Test_Addr+NumOf_Blocks);
+	SD_Status = low_mmcsd_erase(&sd_dev, Test_Addr, Test_Addr+NumOf_Blocks);
     if (SD_Status == MSD_OK) {
-        SD_Status = drv_sdmmc_wait_ready(&sd); 
+        SD_Status = low_mmcsd_waitrdy(&sd_dev);
     } else {
         SD_Status += 100;
     }
@@ -121,9 +131,9 @@ void board_mmcsd_rw_test()
 		SD_WriteBuffer[i] = i;
 	}
 	ExecutionTime_Begin 	= HAL_GetTick();
-    SD_Status = drv_sdmmc_write_blocks(&sd, SD_WriteBuffer, Test_Addr, NumOf_Blocks, RWPOLL);
+    SD_Status = low_mmcsd_writes(&sd_dev, SD_WriteBuffer, Test_Addr, NumOf_Blocks, RWPOLL);
     if (SD_Status == MSD_OK) {
-        SD_Status = drv_sdmmc_wait_ready(&sd); 
+        SD_Status = low_mmcsd_waitrdy(&sd_dev);
     } else {
         SD_Status += 100;
     }
@@ -139,9 +149,9 @@ void board_mmcsd_rw_test()
 	}		
 
 	ExecutionTime_Begin 	= HAL_GetTick();
-    SD_Status = drv_sdmmc_read_blocks(&sd, SD_ReadBuffer, Test_Addr, NumOf_Blocks, RWPOLL);
+    SD_Status = low_mmcsd_reads(&sd_dev, SD_ReadBuffer, Test_Addr, NumOf_Blocks, RWPOLL);
     if (SD_Status == MSD_OK) {
-        SD_Status = drv_sdmmc_wait_ready(&sd); 
+        SD_Status = low_mmcsd_waitrdy(&sd_dev);
     } else {
         SD_Status += 100;
     }
@@ -159,7 +169,7 @@ void board_mmcsd_rw_test()
 
 	for (i = 0; i < Test_BlockSize; i++) {
 		if (SD_WriteBuffer[i] != SD_ReadBuffer[i]) {
-			printf("\r\n[MMCSD] data check failed\r\n");	
+			printf("\r\n[MMCSD] data check failed\r\n");
 			while(1);
 		}
 	}		
@@ -204,7 +214,7 @@ DSTATUS mmcsd_init(BYTE lun)
 {
     uint8_t tmp;
     mmcsd_stat = STA_NOINIT;
-    tmp = drv_sdmmc_wait_ready(&sd);
+    tmp = low_mmcsd_waitrdy(&sd_dev);
     if (tmp == HAL_OK) {
         mmcsd_stat &= ~STA_NOINIT;
     }
@@ -215,7 +225,7 @@ DSTATUS mmcsd_status(BYTE lun)
 {
     uint8_t tmp;
     mmcsd_stat = STA_NOINIT;
-    tmp = drv_sdmmc_wait_ready(&sd);
+    tmp = low_mmcsd_waitrdy(&sd_dev);
     if (tmp == HAL_OK) {
         mmcsd_stat &= ~STA_NOINIT;
     }
@@ -227,9 +237,9 @@ DRESULT mmcsd_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
 	DRESULT res = RES_ERROR;
 	int read_status;
 
-    read_status = drv_sdmmc_read_blocks(&sd, buff, sector, count, RWPOLL);
+    read_status = low_mmcsd_reads(&sd_dev, buff, sector, count, RWPOLL);
     if (read_status == MSD_OK) {
-        read_status = drv_sdmmc_wait_ready(&sd); 
+        read_status = low_mmcsd_waitrdy(&sd_dev);
     }
 
     return (read_status == MSD_OK) ? RES_OK : RES_ERROR;
@@ -241,9 +251,9 @@ DRESULT mmcsd_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
 	DRESULT res = RES_ERROR;
 	int write_status;
 
-    write_status = drv_sdmmc_write_blocks(&sd, buff, sector, count, RWPOLL);
+    write_status = low_mmcsd_writes(&sd_dev, buff, sector, count, RWPOLL);
     if (write_status == MSD_OK) {
-        write_status = drv_sdmmc_wait_ready(&sd); 
+        write_status = low_mmcsd_waitrdy(&sd_dev);
     }
 
     return (write_status == MSD_OK) ? RES_OK : RES_ERROR;
@@ -254,7 +264,7 @@ DRESULT mmcsd_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
 DRESULT mmcsd_ioctl(BYTE lun, BYTE cmd, void *buff)
 {
 	DRESULT res = RES_ERROR;
-	drv_sdmmc_getinfo(&sd);
+	low_mmcsd_getinfo(&sd_dev);
 
 	if (mmcsd_stat & STA_NOINIT) 
 		return RES_NOTRDY;

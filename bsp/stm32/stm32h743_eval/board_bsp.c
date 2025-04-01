@@ -48,6 +48,7 @@ uart_dev_t *dstdin;
 
 void board_bsp_init()
 {
+    __HAL_RCC_GPIOH_CLK_ENABLE();
 	BOARD_INIT_IOPORT(0, GPIO_nLED_BLUE_PORT, GPIO_nLED_BLUE_PIN, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_VERY_HIGH);
 
     dregister("/com1", &com1_dev.dev);

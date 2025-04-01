@@ -11,10 +11,22 @@ static FATFS mnt_fatfs;
 static char mtd_mnt_path[20];
 #endif
 
+struct up_qspi_dev_s dev_qspi = 
+{
+    .flashNum = 1,
+    .prescaler = 2,
+    .flashsize = 22,  //control size: 2^(22 + 1)
+    .pin_clk = 1,   //PB2
+    .pin_io0 = 2,   //PD11
+    .pin_io1 = 2,   //PD12
+    .pin_io2 = 1,   //PE2
+    .pin_io3 = 2,   //PD13
+    .pin_ncs = 2,   //PB6
+};
+
 void board_mtd_init()
 {
-    //qspi control size: 2^(22 + 1)
-    drv_qspi_init(1, 2, 22, /* io select */ 1, 2, 2, 1, 2, 2);
+	low_qspi_init(&dev_qspi);
     int ret1 = w25qxx_init();
     int id = w25qxx_readid();
 #ifdef CONFIG_BOARD_MTD_QSPIFLASH_RAW_RW_TEST

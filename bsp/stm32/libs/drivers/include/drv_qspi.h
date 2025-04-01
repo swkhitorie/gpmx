@@ -7,33 +7,37 @@
 #include "drv_gpio.h"
 #include "drv_pin_h7.h"
 
-// #define QSPI_W25QXX_ENABLE_RW_TEST
+struct up_qspi_dev_s
+{
+    uint8_t flashNum;
+    uint8_t prescaler;
+    uint32_t flashsize;
 
-struct drv_qspi_msg {
-    const void *send_buf;
-    void *recv_buf;
-    size_t length;
-    struct {
-        uint8_t content;
-        uint8_t qspi_lines;
-    } instruction;
-    struct {
-        uint32_t content;
-        uint8_t size;
-        uint8_t qspi_lines;
-    } address;
-    struct {
-        uint32_t content;
-        uint8_t size;
-        uint8_t qspi_lines;
-    } alternate_bytes;
-    uint32_t dummy_cycles;
-    uint8_t qspi_data_lines;
+    uint8_t pin_clk;
+    uint8_t pin_io0;
+    uint8_t pin_io1;
+    uint8_t pin_io2;
+    uint8_t pin_io3;
+    uint8_t pin_ncs;
+
+    QSPI_HandleTypeDef hqspi;
+    MDMA_HandleTypeDef hmdma;
+    volatile uint8_t rx_status;
+    volatile uint8_t cmd_cplt;
+    volatile uint8_t rx_cplt;
+    volatile uint8_t tx_cplt;
+    volatile uint8_t status_match;
 };
 
-void drv_qspi_init(uint8_t flashNum, uint8_t prescaler, uint32_t flashsize,
-                uint8_t clks, uint8_t io0s, uint8_t io1s, uint8_t io2s,
-                uint8_t io3s, uint8_t ncss);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void low_qspi_init(struct up_qspi_dev_s *dev);
+
+#ifdef __cplusplus
+}
+#endif
 
 /****************************************************************************
  * W25Qxx QSPI Flash Driver
@@ -73,6 +77,10 @@ enum w25qxx_status_reg_bits {
 	W25QXX_STATUS_REG1_WEL = 0x02,
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int8_t    w25qxx_reset();
 uint32_t  w25qxx_readid();
 bool      w25qxx_init();
@@ -87,8 +95,8 @@ uint8_t   w25qxx_writepage(uint8_t *p, uint32_t addr, uint16_t size);	// page wr
 uint8_t   w25qxx_writebuffer(uint8_t *p, uint32_t addr, uint32_t size);
 uint8_t   w25qxx_readbuffer(uint8_t *p, uint32_t addr, uint32_t size);
 
-#ifdef QSPI_W25QXX_ENABLE_RW_TEST
-void     w25qxx_rwtest(uint32_t testaddr, char *debug);
+#ifdef __cplusplus
+}
 #endif
 
 #endif  // end with DRV_BSP_H7

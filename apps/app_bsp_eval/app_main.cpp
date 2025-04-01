@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 
     uint32_t m = HAL_GetTick();
     for (;;) {
-        if (HAL_GetTick() - m >= 1) {
+        if (HAL_GetTick() - m >= 100) {
             m = HAL_GetTick();
 
         #if (APP_BSP_EVAL_EXAMPLE == 2)
