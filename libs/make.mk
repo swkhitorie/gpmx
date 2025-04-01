@@ -6,14 +6,14 @@ FR_CSOURCES   +=  libs/dev/spi.c
 
 include ${SDK_ROOTDIR}/libs/gcl/make.mk
 
-ifeq (${CONFIG_FR_LIB_CXX},y)
-FR_CINCDIRS   +=  libs/cxx
-FR_CPPSOURCES +=  libs/cxx/libxx_delete.cxx
-FR_CPPSOURCES +=  libs/cxx/libxx_delete_sized.cxx
-FR_CPPSOURCES +=  libs/cxx/libxx_deletea.cxx
-FR_CPPSOURCES +=  libs/cxx/libxx_deletea_sized.cxx
-FR_CPPSOURCES +=  libs/cxx/libxx_new.cxx
-FR_CPPSOURCES +=  libs/cxx/libxx_newa.cxx
+ifeq (${CONFIG_FR_LIB_CPP},y)
+FR_CINCDIRS   +=  libs/cpp
+FR_CPPSOURCES +=  libs/cpp/libxx_delete.cpp
+FR_CPPSOURCES +=  libs/cpp/libxx_delete_sized.cpp
+FR_CPPSOURCES +=  libs/cpp/libxx_deletea.cpp
+FR_CPPSOURCES +=  libs/cpp/libxx_deletea_sized.cpp
+FR_CPPSOURCES +=  libs/cpp/libxx_new.cpp
+FR_CPPSOURCES +=  libs/cpp/libxx_newa.cpp
 endif
 
 ifeq (${CONFIG_FR_FAT_FATFS},y)

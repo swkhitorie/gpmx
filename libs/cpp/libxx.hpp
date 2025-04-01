@@ -2,7 +2,7 @@
 #define __LIBXX_LIBXX_HXX
 
 #include <FreeRTOS.h>
-#include <tasks.h>
+#include <portable.h>
 
 #include <new>
 

@@ -3,7 +3,7 @@
 
 static struct dnode d_list[CONFIG_DRIVER_DEVICE_NODE_NUM];
 
-bool dregister(char *name, void *dev)
+bool dregister(const char *name, void *dev)
 {
     int i = 0;
     int j = 0;
@@ -26,7 +26,7 @@ bool dregister(char *name, void *dev)
     return (i != CONFIG_DRIVER_DEVICE_NODE_NUM);
 }
 
-void *dbind(char *name)
+void *dbind(const char *name)
 {
     int i = 0;
     for (; i < CONFIG_DRIVER_DEVICE_NODE_NUM; i++) {

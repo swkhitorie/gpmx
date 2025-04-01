@@ -1,5 +1,5 @@
 
-#include "libxx.hxx"
+#include "libxx.hpp"
 
 void *operator new(unsigned int nbytes)
 {

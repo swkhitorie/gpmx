@@ -18,11 +18,9 @@ then
     fi
 fi
 
+# make/build.sh -j2 -r
+
 make all ${make_thread} \
         OS=${makefile_os}
 
 exit 0
-
-
-# program example:
-# make program PROJ_OPENOCD_DEBUG=stlink PROJ_OPENOCD_CHIP=stm32h7x -j4

@@ -15,9 +15,9 @@ struct dnode {
 extern "C" {
 #endif
 
-bool dregister(char *name, void *dev);
+bool dregister(const char *name, void *dev);
 
-void *dbind(char *name);
+void *dbind(const char *name);
 
 #ifdef cplusplus
 }
