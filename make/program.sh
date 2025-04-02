@@ -4,10 +4,11 @@
 script_dir="$(cd "$(dirname "$0")" && pwd)"
 
 source ${script_dir}/toolchain.sh
-make_thread=$1
-make_rebuild=$2
-prog_interface=$3
-prog_target=$4
+board_selection=$1
+make_thread=$2
+make_rebuild=$3
+prog_interface=$4
+prog_target=$5
 target_addr=0x08000000
 
 target_type1=$(echo stm32 | grep "${prog_target}")
@@ -23,15 +24,15 @@ if [ ${make_rebuild} ]
 then
     if [ ${make_rebuild} == "-r" ]
     then
-        make distclean
-        make clean
+        make BOARD_SELECTION=${board_selection} distclean
+        make BOARD_SELECTION=${board_selection} clean
     fi
 fi
 
-# make/program.sh -j2 -r stlink stm32f4x
-# make/program.sh -j2 -r stlink stm32h7x
+# make/program.sh f407_eval -j2 -r stlink stm32f4x
+# make/program.sh f407_eval -j2 -r stlink stm32h7x
 
-make program ${make_thread} \
+make program BOARD_SELECTION=${board_selection} ${make_thread} \
         OS=${makefile_os} \
         PROJ_OPENOCD_DEBUG=${prog_interface} \
         PROJ_OPENOCD_CHIP=${prog_target} \

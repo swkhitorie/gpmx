@@ -41,7 +41,7 @@
 #include <string.h>
 #include <drivers/drv_hrt.h>
 
-#include "./hrt_stm32h7xx.h"
+#include "./hrt_stm32.h"
 
 #ifdef CONFIG_DEBUG_HRT
 #define hrtinfo _info

@@ -28,6 +28,13 @@
 #define GTIM_SR_CC3IF       (TIM_SR_CC3IF)
 #define GTIM_SR_CC4IF       (TIM_SR_CC4IF)
 
+#define STM32_IRQ_TIM1CC           (TIM1_CC_IRQn)
+#define STM32_IRQ_TIM2             (TIM2_IRQn)
+#define STM32_IRQ_TIM3             (TIM3_IRQn)
+#define STM32_IRQ_TIM4             (TIM4_IRQn)
+#define STM32_IRQ_TIM5             (TIM5_IRQn)
+#define STM32_IRQ_TIM8CC           (TIM8_CC_IRQn)
+
 #define STM32_TIM1_BASE     (TIM1_BASE)
 #define STM32_TIM2_BASE     (TIM2_BASE)
 #define STM32_TIM3_BASE     (TIM3_BASE)
@@ -55,20 +62,23 @@
 #define STM32_GTIM_DMAR_OFFSET     0x004c  /* DMA address for burst mode (16-bit, TIM2-5 only) */
 
 #define STM32_RCC_APB2ENR          (RCC->APB2ENR)
+#if defined (DRV_BSP_H7)
 #define STM32_RCC_APB1ENR          (RCC_C1->APB1LENR)
-
 // #define RCC_APB2ENR_TIM1EN         (RCC_APB2ENR_TIM1EN)
 #define RCC_APB1ENR_TIM2EN         (RCC_APB1LENR_TIM2EN)
 #define RCC_APB1ENR_TIM3EN         (RCC_APB1LENR_TIM3EN)
 #define RCC_APB1ENR_TIM4EN         (RCC_APB1LENR_TIM4EN)
 #define RCC_APB1ENR_TIM5EN         (RCC_APB1LENR_TIM5EN)
 // #define RCC_APB2ENR_TIM8EN         (RCC_APB2ENR_TIM8EN)
+#elif defined (DRV_BSP_F4) 
+#define STM32_RCC_APB1ENR          (RCC->APB1ENR)
+// #define RCC_APB2ENR_TIM1EN         (RCC_APB2ENR_TIM1EN)
+// #define RCC_APB1ENR_TIM2EN         (RCC_APB1LENR_TIM2EN)
+// #define RCC_APB1ENR_TIM3EN         (RCC_APB1LENR_TIM3EN)
+// #define RCC_APB1ENR_TIM4EN         (RCC_APB1LENR_TIM4EN)
+// #define RCC_APB1ENR_TIM5EN         (RCC_APB1LENR_TIM5EN)
+// #define RCC_APB2ENR_TIM8EN         (RCC_APB2ENR_TIM8EN)
+#endif
 
-#define STM32_IRQ_TIM1CC           (TIM1_CC_IRQn)
-#define STM32_IRQ_TIM2             (TIM2_IRQn)
-#define STM32_IRQ_TIM3             (TIM3_IRQn)
-#define STM32_IRQ_TIM4             (TIM4_IRQn)
-#define STM32_IRQ_TIM5             (TIM5_IRQn)
-#define STM32_IRQ_TIM8CC           (TIM8_CC_IRQn)
 
 #endif
