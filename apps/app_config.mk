@@ -50,8 +50,9 @@ CSOURCES += libs/gcl/drivers/imu/mpu6000/mpu6050_test.c
 # PROJ_CINCDIRS += libs/drivers/magnetometers/ist8310
 # CSOURCES += libs/drivers/magnetometers/ist8310/ist8310_test.c
 
-PROJ_CINCDIRS += libs/gcl/drivers/imu/mpu6050/
+
 CPPSOURCES += libs/gcl/drivers/imu/mpu6050/mpu6050.cpp
+CPPSOURCES += libs/gcl/drivers/magnetometers/hmc5883/hmc5883l.cpp
 
 PROJ_CINCDIRS += apps
 CPPSOURCES += apps/app_bsp_eval/app_main.cpp

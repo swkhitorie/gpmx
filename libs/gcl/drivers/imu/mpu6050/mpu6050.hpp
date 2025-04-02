@@ -1,10 +1,9 @@
 #ifndef MPU6050_I2C_H_
 #define MPU6050_I2C_H_
 
-extern "C" {
 #include <dev/dnode.h>
 #include <dev/i2c_master.h>
-}
+#include <drivers/drv_hrt.h>
 #include <cstdint>
 
 enum Mpu6050_register {

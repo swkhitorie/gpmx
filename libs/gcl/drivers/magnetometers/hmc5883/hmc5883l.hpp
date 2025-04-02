@@ -1,36 +1,34 @@
 #pragma once
 
+#include <dev/dnode.h>
 #include <dev/i2c_master.h>
-
-#define HMC5883L_ADDRESS		0x1E
-
-#define ADDR_ID_A			0x0a
-#define ADDR_ID_B			0x0b
-#define ADDR_ID_C			0x0c
-
-#define ID_A_WHO_AM_I			'H'
-#define ID_B_WHO_AM_I			'4'
-#define ID_C_WHO_AM_I			'3'
-
-/* HMC5883 internal constants and data structures. */
+#include <drivers/drv_hrt.h>
+#include <cstdint>
 
 /* Max measurement rate is 160Hz, however with 160 it will be set to 166 Hz, therefore workaround using 150 */
 #define HMC5883_CONVERSION_INTERVAL   (1e6f / 150)  /* microseconds */
 
-#define ADDR_CONF_A             0x00
-#define ADDR_CONF_B             0x01
-#define ADDR_MODE               0x02
-#define ADDR_DATA_OUT_X_MSB     0x03
-#define ADDR_DATA_OUT_X_LSB     0x04
-#define ADDR_DATA_OUT_Z_MSB     0x05
-#define ADDR_DATA_OUT_Z_LSB     0x06
-#define ADDR_DATA_OUT_Y_MSB     0x07
-#define ADDR_DATA_OUT_Y_LSB     0x08
-#define ADDR_STATUS             0x09
+enum HMC5883_register {
+	CONF_A = 0x00,
+	CONF_B = 0x01,
+	MODE = 0x02,
+	DATA_OUT_X_MSB = 0x03,
+	DATA_OUT_X_LSB = 0x04,
+	DATA_OUT_Z_MSB = 0x05,
+	DATA_OUT_Z_LSB = 0x06,
+	DATA_OUT_Y_MSB = 0x07,
+	DATA_OUT_Y_LSB = 0x08,
+	STATUS = 0x09,
+	ID_A = 0x0a,
+	ID_B = 0x0b,
+	ID_C = 0x0c,
+};
 
-/* temperature on hmc5983 only */
-#define ADDR_TEMP_OUT_MSB       0x31
-#define ADDR_TEMP_OUT_LSB       0x32
+enum HMC5883_id {
+	ID_A_WHO_AM_I = 'H',
+	ID_B_WHO_AM_I = '4',
+	ID_C_WHO_AM_I = '3',
+};
 
 /* modes not changeable outside of driver */
 #define HMC5883L_MODE_NORMAL		(0 << 0)  /* default */
@@ -50,63 +48,64 @@
 
 #define HMC5983_TEMP_SENSOR_ENABLE	(1 << 7)
 
-class HMC5883
-{
+class HMC5883 {
+
 public:
-	HMC5883(device::Device *interface, const I2CSPIDriverConfig &config);
-	~HMC5883();
+    HMC5883(const char* i2c_ops_name);
+    ~HMC5883();
 
-	static I2CSPIDriverBase *instantiate(const I2CSPIDriverConfig &config, int runtime_instance);
-	static void print_usage();
+    float mag_gaus[3];
 
-	void			RunImpl();
+    void run();
 
-	int		init();
-
-protected:
-	void print_status() override;
+    int init();
 
 private:
-	PX4Magnetometer		_px4_mag;
-	device::Device		*_interface;
-	unsigned		_measure_interval{0};
 
-	float 			_range_ga;
-	bool			_collect_phase;
+    bool ops_valid;
+    char ops_name[16];
+    struct i2c_master_s *ops;
 
-	perf_counter_t		_sample_perf;
-	perf_counter_t		_comms_errors;
-	perf_counter_t		_range_errors;
-	perf_counter_t		_conf_errors;
+    static constexpr uint8_t IIC_ADDR = 0x1E;
+    static constexpr uint16_t HMC5883L_GA_LSB0 = 1370;				//0x00    ±0.88Ga
+    static constexpr uint16_t HMC5883L_GA_LSB1 = 1090;				//0x20    ±1.30Ga
+    static constexpr uint16_t HMC5883L_GA_LSB2 = 820;					//0x40    ±1.90Ga
+    static constexpr uint16_t HMC5883L_GA_LSB3 = 660;					//0x60    ±2.50Ga
+    static constexpr uint16_t HMC5883L_GA_LSB4 = 440;					//0x80    ±4.00Ga
+    static constexpr uint16_t HMC5883L_GA_LSB5 = 390;					//0xA0    ±4.70Ga
+    static constexpr uint16_t HMC5883L_GA_LSB6 = 330;					//0xC0    ±5.66Ga
+    static constexpr uint16_t HMC5883L_GA_LSB7 = 230;					//0xE0    ±8.10Ga
 
-	uint8_t			_range_bits;
-	uint8_t			_conf_reg;
-	uint8_t			_temperature_counter;
-	uint8_t			_temperature_error_count;
+    struct register_config_t {
+        HMC5883_register reg;
+        uint8_t set_bits{0};
+        uint8_t clear_bits{0};
+    };
 
-	/**
-	 * Initialise the automatic measurement state machine and start it.
-	 *
-	 * @note This function is called at open and error time.  It might make sense
-	 *       to make it more aggressive about resetting the bus in case of errors.
-	 */
-	void			start();
+    bool register_check(const register_config_t &reg_cfg);
+    uint8_t register_read(HMC5883_register reg);
+    void register_reads(HMC5883_register reg, uint8_t *buf, uint16_t sz);
+    void register_write(HMC5883_register reg, uint8_t value);
+    void register_modify(HMC5883_register reg, uint8_t setbits, uint8_t clearbits);
 
-	int			reset();
+    uint8_t rawmag[6];
+    uint8_t id_check[3];
+    int16_t mag[3];
 
-	int			set_temperature_compensation(unsigned enable);
+	bool _updated;
+    hrt_abstime _lst_update_time;
 
-	int 			set_range(unsigned range);
+    bool reset();
 
-	void 			check_range();
+    bool config();
 
-	void 			check_conf();
+    void process_data();
 
-	int			write_reg(uint8_t reg, uint8_t val);
-
-	int			read_reg(uint8_t reg, uint8_t &val);
-
-	int			measure();
-
-	int			collect();
+	static constexpr uint8_t size_register_cfg{3};
+    register_config_t _register_cfg[size_register_cfg] {
+        // Register                         | Set bits, Clear bits
+        { HMC5883_register::CONF_A,         0x78,      0x00 },   /* sample average num: 8, data output rate: 75HZ */
+        { HMC5883_register::CONF_B,         0x02<<5,   0x1F },   /* ±1.9Ga, gain:820 */
+        { HMC5883_register::MODE,           0x00,      0xFC },   /*  continuous mode*/
+    };
 };

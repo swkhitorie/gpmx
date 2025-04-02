@@ -1,5 +1,4 @@
 #include "mpu6050.hpp"
-#include <board_config.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -10,8 +9,8 @@ static constexpr int16_t combine(uint8_t msb, uint8_t lsb)
 
 static void delayforworks(uint64_t time_us)
 {
-    // for (uint64_t i = 0; i < time_us; i++);
-    HAL_Delay(2);
+    hrt_abstime now = hrt_absolute_time();
+    while ((hrt_absolute_time() - now) < time_us);
 }
 
 MPU6050::MPU6050(const char* i2c_ops_name)
