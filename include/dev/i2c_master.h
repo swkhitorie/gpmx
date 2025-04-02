@@ -67,13 +67,13 @@ struct i2c_master_s
     void                    *priv; /* Used by the arch-specific logic */
 };
 
-#ifdef cplusplus
-extern "C" {
+#if defined(__cplusplus)
+extern "C"{
 #endif
 
 int i2c_register(struct i2c_master_s *i2c, int bus);
 
-#ifdef cplusplus
+#if defined(__cplusplus)
 }
 #endif
 

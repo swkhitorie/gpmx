@@ -73,8 +73,8 @@ struct uart_dev_s {
 
 typedef struct uart_dev_s uart_dev_t;
 
-#ifdef cplusplus
-extern "C" {
+#if defined(__cplusplus)
+extern "C"{
 #endif
 
 int uart_register(const char *path, uart_dev_t *dev);
@@ -83,7 +83,7 @@ uint16_t uart_buf_write(struct uart_buffer_s *obj, const uint8_t *p, uint16_t le
 
 uint16_t uart_buf_read(struct uart_buffer_s *obj, uint8_t *p, uint16_t len);
 
-#ifdef cplusplus
+#if defined(__cplusplus)
 }
 #endif
 

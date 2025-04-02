@@ -1,9 +1,9 @@
 
-# application configuration file
 PROJ_NAME  :=  test
 
-# Toolchain used in this project
-PROJ_TC  :=  gae
+PROJ_TC    :=  gae
+
+TARGET_POSTBUILD := ${TARGET_DEST_FILENAME_BIN}
 
 # bsp configuration
 include ${SDK_ROOTDIR}/bsp/make.mk
@@ -14,10 +14,10 @@ CONFIG_FR_TOOLCHAIN=gcc
 CONFIG_FR_MEM_METHOD=4
 CONFIG_FR_LIB_CPP=n
 CONFIG_FR_LIB_PX4_SUPPORT=n
-CONFIG_FR_LIB_POSIX=n
+CONFIG_FR_LIB_POSIX=y
 CONFIG_FR_FAT_FATFS=n
 CONFIG_CRUSB=n
-CONFIG_USE_DRV_HRT_INTERNAL=n
+CONFIG_USE_DRV_HRT_INTERNAL=y
 
 include ${SDK_ROOTDIR}/sched/make.mk
 include ${SDK_ROOTDIR}/mm/make.mk
@@ -63,4 +63,4 @@ CONFIG_LINK_SCANF_FLOAT:=n
 
 CONFIG_COMPILE_OPTIMIZE:=O1
 
-TARGET_POSTBUILD := ${TARGET_DEST_FILENAME_BIN}
+

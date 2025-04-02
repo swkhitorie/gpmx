@@ -11,15 +11,15 @@ struct dnode {
     char  name[16];
 };
 
-#ifdef cplusplus
-extern "C" {
+#if defined(__cplusplus)
+extern "C"{
 #endif
 
 bool dregister(const char *name, void *dev);
 
 void *dbind(const char *name);
 
-#ifdef cplusplus
+#if defined(__cplusplus)
 }
 #endif
 

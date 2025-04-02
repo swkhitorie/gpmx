@@ -15,8 +15,8 @@
 #define __EXPORT __attribute__ ((visibility ("default")))
 #endif
 
-#ifdef cplusplus
-extern "C" {
+#if defined(__cplusplus)
+extern "C"{
 #endif
 
 /**
@@ -150,7 +150,7 @@ __EXPORT extern void	hrt_call_delay(struct hrt_call *entry, hrt_abstime delay);
 */
 __EXPORT extern void	hrt_init(void);
 
-#ifdef cplusplus
+#if defined(__cplusplus)
 }
 #endif
 

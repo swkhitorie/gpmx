@@ -132,3 +132,34 @@ int _read(int file, char *ptr, int len)
     return rsize;
 }
 #endif
+
+#ifdef CONFIG_BOARD_HRT_TIMEBASE
+#include <drivers/drv_hrt.h>
+hrt_abstime hrt_absolute_time(void)
+{
+    // uint64_t m0 = HAL_GetTick();
+    // volatile uint64_t u0 = SysTick->VAL;
+    // const uint64_t tms = SysTick->LOAD + 1;
+    // volatile uint64_t abs_time = (m0 * 1000 + ((tms - u0) * 1000) / tms);
+    // return abs_time;
+
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+
+    uint32_t m = HAL_GetTick();
+    volatile uint32_t v = SysTick->VAL;
+    // If an overflow happened since we disabled irqs, it cannot have been
+    // processed yet, so increment m and reload VAL to ensure we get the
+    // post-overflow value.
+    if (SCB->ICSR & SCB_ICSR_PENDSTSET_Msk) {
+        ++m;
+        v = SysTick->VAL;
+    }
+
+    // Restore irq status
+    __set_PRIMASK(primask);
+
+    const uint32_t tms = SysTick->LOAD + 1;
+    return (m * 1000 + ((tms - v) * 1000) / tms);
+}
+#endif

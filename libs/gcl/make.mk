@@ -6,7 +6,7 @@ else
 
 FR_CINCDIRS   +=  libs/gcl
 ifeq (${CONFIG_USE_DRV_HRT_INTERNAL},y)
-FR_CSOURCES   +=  libs/px4/hrt/hrt.c
+FR_CSOURCES   +=  libs/gcl/hrt/hrt.c
 endif
 
 endif

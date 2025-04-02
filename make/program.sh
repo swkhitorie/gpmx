@@ -32,8 +32,9 @@ fi
 # make/program.sh f407_eval -j2 -r stlink stm32f4x
 # make/program.sh f407_eval -j2 -r stlink stm32h7x
 
-make program BOARD_SELECTION=${board_selection} ${make_thread} \
+make program ${make_thread} \
         OS=${makefile_os} \
+        BOARD_SELECTION=${board_selection} \
         PROJ_OPENOCD_DEBUG=${prog_interface} \
         PROJ_OPENOCD_CHIP=${prog_target} \
         PROJ_OPENOCD_LOAD_ADDR=${target_addr}

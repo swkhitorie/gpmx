@@ -73,13 +73,13 @@ struct spi_dev_s
     void                   *priv; /* Used by the arch-specific logic */
 };
 
-#ifdef cplusplus
-extern "C" {
+#if defined(__cplusplus)
+extern "C"{
 #endif
 
 int spi_register(const char *path, struct spi_dev_s *dev);
 
-#ifdef cplusplus
+#if defined(__cplusplus)
 }
 #endif
 

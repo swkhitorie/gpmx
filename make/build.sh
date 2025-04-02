@@ -21,6 +21,8 @@ fi
 
 # make/build.sh f407_eval -j2 -r
 
-make all BOARD_SELECTION=${board_selection} ${make_thread} OS=${makefile_os}
+make all ${make_thread} \
+        OS=${makefile_os} \
+        BOARD_SELECTION=${board_selection} \
 
 exit 0

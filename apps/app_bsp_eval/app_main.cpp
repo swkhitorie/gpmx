@@ -1,7 +1,8 @@
 #include <board_config.h>
 #include <stdio.h>
 #include <stdint.h>
-#include "mpu6050.hpp"
+// #include "mpu6050.hpp"
+#include <drivers/drv_hrt.h>
 
 #define APP_BSP_EVAL_EXAMPLE  0
 
@@ -21,11 +22,11 @@
 #include "mpu6050_test.h"
 #endif
 
-MPU6050 imua("/sensor_i2c");
+// MPU6050 imua("/sensor_i2c");
 int main(int argc, char *argv[])
 {
     board_init();
-
+    hrt_init();
 #if (APP_BSP_EVAL_EXAMPLE == 2)
     int16_t mag_data[3];
     if (ist8310_init()) {
@@ -54,16 +55,17 @@ int main(int argc, char *argv[])
     }
 #endif
 
-    int ret = imua.init();
-    printf("imu init ret: %d \r\n", ret);
+    // int ret = imua.init();
+    // printf("imu init ret: %d \r\n", ret);
 
     uint32_t m = HAL_GetTick();
     for (;;) {
         if (HAL_GetTick() - m >= 100) {
             m = HAL_GetTick();
-            imua.run();
-            printf("%.3f, %.3f, %.3f, %.3f, %.3f, %.3f\r\n", imua.accel_g[0], imua.accel_g[1], imua.accel_g[2]
-            , imua.gyro_deg[0], imua.gyro_deg[1], imua.gyro_deg[2]);
+            printf("%.6f, %.3f \r\n", hrt_absolute_time()/1e6f, HAL_GetTick()/1e3f);
+            // imua.run();
+            // printf("%.3f, %.3f, %.3f, %.3f, %.3f, %.3f\r\n", imua.accel_g[0], imua.accel_g[1], imua.accel_g[2]
+            // , imua.gyro_deg[0], imua.gyro_deg[1], imua.gyro_deg[2]);
         #if (APP_BSP_EVAL_EXAMPLE == 2)
             ist8310_mag(mag_data);
             printf("[ist8310] %d %d %d \r\n", mag_data[0], mag_data[1], mag_data[2]);
