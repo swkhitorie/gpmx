@@ -100,7 +100,16 @@ FR_CSOURCES += libs/unistd/lib_usleep.c
 FR_CSOURCES += libs/utils.c
 endif
 
+ifeq (${CONFIG_FR_LIB_UORB},y)
+FR_CINCDIRS   +=  libs/uorb/include
+FR_CINCDIRS   +=  libs/uorb/src
+FR_CPPSOURCES +=  libs/uorb/src/device_master.cpp
+FR_CPPSOURCES +=  libs/uorb/src/device_node.cpp
+FR_CPPSOURCES +=  libs/uorb/src/uorb.cpp
 
+include ${SDK_ROOTDIR}/libs/uorb_msgs/make.mk
+
+endif
 
 
 

@@ -26,7 +26,7 @@
  * 5. semaphore test
  * 6. pthread_mutex_t test
  */
-#define POSIX_TEST_ITEM      (6)
+#define POSIX_TEST_ITEM      (7)
 
 // 1:Delay 2:Delay Until
 #define POSIX_DELAY_METHOD   (2)

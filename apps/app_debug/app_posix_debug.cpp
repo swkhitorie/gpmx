@@ -1,5 +1,11 @@
 #include "./app_posix_debug.h"
 
+#include <uorb/topics/sensor_accel.h>
+#include "uorb/abs_time.h"
+#include "uorb/publication.h"
+#include "uorb/publication_multi.h"
+#include "uorb/subscription.h"
+
 typedef struct __pthread_test{
     pthread_attr_t attr;
     pthread_t id;
@@ -22,6 +28,9 @@ pthread_test_t p6;
 pthread_test_t p7;
 pthread_test_t p8;
 pthread_test_t p9;
+
+pthread_test_t pa1;
+pthread_test_t pa2;
 mqd_t msg_1;
 
 
@@ -118,7 +127,7 @@ void* p3_entry(void *p)
     rqtp.tv_nsec = 0;
 #endif
     for (;;) {
-        debug_led_toggle();
+        // debug_led_toggle();
         vTaskList(&debug_str1[0]);
         printf("%s\r\n", debug_str1);
         //utils_fr_posix_debug();
@@ -296,6 +305,54 @@ void tr1_entry(union sigval value)
 }
 
 
+void *thread_publisher(void *arg) {
+
+uorb::PublicationData<uorb::msg::sensor_accel> pub_accel;
+
+for (int i = 0; i < 10; i++) {
+    auto &data = pub_accel.get();
+
+    data.x = 1.5f;
+    data.y = 1.6f;
+    data.z = 3.14f;
+
+    if (!pub_accel.Publish()) {
+    printf("Publish error");
+    }
+
+    sleep(1000);
+}
+printf("Publication over.");
+
+return nullptr;
+}
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(array) \
+    ((int)((sizeof(array) / sizeof((array)[0]))))
+#endif
+void *thread_subscriber(void *unused) {
+    uorb::SubscriptionData<uorb::msg::sensor_accel> sub_accel;
+
+int timeout_ms = 2000;
+
+struct orb_pollfd poll_fds[] = {
+    {.fd = sub_accel.handle(), .events = POLLIN}};
+
+    while (true) {
+        if (0 < orb_poll(poll_fds, ARRAY_SIZE(poll_fds), timeout_ms)) {
+            if (sub_accel.Update()) {
+                auto data = sub_accel.get();
+                printf("%.3f, %.3f, %.3f", data.x, data.y, data.z);
+            }
+        } else {
+            printf("Got no data within %d milliseconds", 2000);
+            break;
+        }
+    }
+
+printf("subscription over");
+return nullptr;
+}
 
 void app_posix_freertos_debug_init()
 {
@@ -474,6 +531,31 @@ void app_posix_freertos_debug_init()
         }
     }
 #endif
+
+{
+    int rv;
+    p3.param.sched_priority = 6;
+    p3.arg = 0.123f;
+    pthread_attr_init(&p3.attr);
+    // PTHREAD_CREATE_DETACHED PTHREAD_CREATE_JOINABLE
+    pthread_attr_setdetachstate(&p3.attr, PTHREAD_CREATE_JOINABLE);
+    pthread_attr_setschedparam(&p3.attr, &p3.param);
+    pthread_attr_setstacksize(&p3.attr, 512*sizeof(StackType_t));
+    rv = pthread_create(&p3.id, &p3.attr, &p3_entry, &p3.arg);
+    if (rv != 0) {
+        fprintf(stdout, "[p3] %.6f create pthread failed\r\n",hrt_absolute_time()/1e6f);
+    }
+}
+
+    int rv = pthread_create(&pa1.id, nullptr, thread_publisher, nullptr);
+    if (rv != 0) {
+        fprintf(stdout, "[] create pthread failed\r\n");
+    }
+
+    rv = pthread_create(&pa2.id, nullptr, thread_subscriber, nullptr);
+    if (rv != 0) {
+        fprintf(stdout, "[] create pthread failed\r\n");
+    }
 
 }
 
