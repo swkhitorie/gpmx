@@ -4,7 +4,7 @@
 
 // #include <drivers/imu/mpu6050/mpu6050.hpp>
 // #include <drivers/magnetometers/hmc5883/hmc5883l.hpp>
-// #include <drivers/drv_hrt.h>
+#include <drivers/drv_hrt.h>
 
 #define APP_BSP_EVAL_EXAMPLE  0
 
@@ -29,7 +29,7 @@
 int main(int argc, char *argv[])
 {
     board_init();
-    // hrt_init();
+    hrt_init();
 
 #if (APP_BSP_EVAL_EXAMPLE == 2)
     int16_t mag_data[3];
@@ -76,6 +76,8 @@ int main(int argc, char *argv[])
 
             // compassa.run();
             // printf("%.3f, %.3f, %.3f\r\n", compassa.mag_gaus[0], compassa.mag_gaus[1], compassa.mag_gaus[2]);
+
+            printf("%.6f %.3f\r\n", hrt_absolute_time()/1e6f, HAL_GetTick()/1e3f);
         #if (APP_BSP_EVAL_EXAMPLE == 2)
             ist8310_mag(mag_data);
             printf("[ist8310] %d %d %d \r\n", mag_data[0], mag_data[1], mag_data[2]);

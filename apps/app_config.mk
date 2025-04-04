@@ -58,7 +58,7 @@ CPPSOURCES += libs/gcl/drivers/magnetometers/hmc5883/hmc5883l.cpp
 PROJ_CINCDIRS += apps
 CPPSOURCES += apps/app_debug/app_main.cpp
 CPPSOURCES += apps/app_debug/app_posix_debug.cpp
-#CPPSOURCES += apps/app_bsp_eval/app_main.cpp
+# CPPSOURCES += apps/app_bsp_eval/app_main.cpp
 
 CONFIG_LINK_PRINTF_FLOAT:=y
 

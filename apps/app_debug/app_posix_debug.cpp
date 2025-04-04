@@ -128,8 +128,11 @@ void* p3_entry(void *p)
 #endif
     for (;;) {
         // debug_led_toggle();
-        vTaskList(&debug_str1[0]);
+        // vTaskList(&debug_str1[0]);
+        // printf("%s\r\n", debug_str1);
+        vTaskGetRunTimeStats(&debug_str1[0]);
         printf("%s\r\n", debug_str1);
+        printf("%.6f %.6f %.3f\r\n", portGET_RUN_TIME_COUNTER_VALUE()/1e6f, hrt_absolute_time()/1e6f, HAL_GetTick()/1e3f);
         //utils_fr_posix_debug();
         clock_gettime(0, &x1);
         fprintf(stdout, "clock gettime: %d %d\r\n", x1.tv_sec, x1.tv_nsec);
@@ -547,15 +550,15 @@ void app_posix_freertos_debug_init()
     }
 }
 
-    int rv = pthread_create(&pa1.id, nullptr, thread_publisher, nullptr);
-    if (rv != 0) {
-        fprintf(stdout, "[] create pthread failed\r\n");
-    }
+    // int rv = pthread_create(&pa1.id, nullptr, thread_publisher, nullptr);
+    // if (rv != 0) {
+    //     fprintf(stdout, "[] create pthread failed\r\n");
+    // }
 
-    rv = pthread_create(&pa2.id, nullptr, thread_subscriber, nullptr);
-    if (rv != 0) {
-        fprintf(stdout, "[] create pthread failed\r\n");
-    }
+    // rv = pthread_create(&pa2.id, nullptr, thread_subscriber, nullptr);
+    // if (rv != 0) {
+    //     fprintf(stdout, "[] create pthread failed\r\n");
+    // }
 
 }
 
