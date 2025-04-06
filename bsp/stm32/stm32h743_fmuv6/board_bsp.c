@@ -42,7 +42,7 @@ struct up_uart_dev_s gps1_serial_dev =
     },
     .id = 1,  //usart1
     .pin_tx = 2, // PB6
-    .pin_rx = 1, // PE7
+    .pin_rx = 1, // PA10
     .priority = 1,
     .priority_dmarx = 2,
     .priority_dmatx = 3,
