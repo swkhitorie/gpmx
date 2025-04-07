@@ -14,8 +14,12 @@ void icm42688_write_register(uint8_t addr, uint8_t data)
 	dx[0] = addr & ~0x80;
 	dx[1] = data;
 
+    uint8_t tx_buf[2] = {addr & ~0x80, data};
+    uint8_t rx_buf[2] = {0xff, 0xff};
+
     ret = SPI_SELECT(senpi,0x13,true);
-	ret = SPI_SNDBLOCK(senpi,&dx[0],2);
+	ret = SPI_EXCHANGE(senpi, &dx[0], NULL, 2);
+	//ret = SPI_SNDBLOCK(senpi,&dx[0],2);
     ret = SPI_SELECT(senpi,0x13,false);
 }
 
@@ -23,12 +27,16 @@ void icm42688_read_register(uint8_t addr, uint8_t *buf, uint8_t len, int rwway)
 {
     int ret = 0;
 
-	uint8_t send_addr = addr | 0x80;
+    if (len != 1) return;
+
+    uint8_t tx_buf[2] = {addr | 0x80, 0x00};
+    uint8_t rx_buf[2] = {0};
 
     ret = SPI_SELECT(senpi,0x13,true);
-	ret = SPI_SNDBLOCK(senpi,&send_addr,1);
-	ret = SPI_RECVBLOCK(senpi,buf,len);
+	ret = SPI_EXCHANGE(senpi, tx_buf, rx_buf, 2);
     ret = SPI_SELECT(senpi,0x13,false);
+
+	buf[0] = rx_buf[1];
 }
 
 void icm42688_init()
@@ -42,13 +50,13 @@ void icm42688_init()
     }
 
 	icm42688_write_register(ICM_426XX_REG_BANK_SEL, 0x00);
-	wait_block_1(10);
+	wait_block_1(100);
 
 	icm42688_write_register(ICM_426XX_REG_CHIP_CONFIG, 0x01);
-	wait_block_1(10);
+	wait_block_1(100);
 
 	icm42688_write_register(ICM_426XX_REG_BANK_SEL, 0x00);
-	wait_block_1(10);
+	wait_block_1(100);
 
 	icm42688_read_register(ICM_426XX_REG_WHO_AM_I, &data, 1, 0);
 

@@ -85,6 +85,11 @@ struct up_spi_dev_s sensor_spi_dev =
 	.pin_sck = 1, //PA5
 	.pin_miso = 1, //PA6
 	.pin_mosi = 1, //PA7
+    .priority = 4,
+    .priority_dmarx = 5,
+    .priority_dmatx = 5,
+    .enable_dmarx = true,
+    .enable_dmatx = true,
 	/*           BMI055-ACC   BMI-055 GYRO            ICM-42688 */
     .devid = { [0] = 0x11,        [1] = 0x12,        [2] = 0x13,        },
 	.devcs = { [0] = {GPIOC, 15}, [1] = {GPIOC, 14}, [2] = {GPIOC, 13}, },
@@ -107,6 +112,11 @@ struct up_spi_dev_s fram_spi_dev =
 	.pin_sck = 6, //PD3
 	.pin_miso = 1, //PC2
 	.pin_mosi = 2, //PC3
+    .priority = 4,
+    .priority_dmarx = 5,
+    .priority_dmatx = 5,
+    .enable_dmarx = true,
+    .enable_dmatx = true,
 	/*           FM25V02A-G */
     .devid = { [0] = 0x21,        },
 	.devcs = { [0] = {GPIOD, 4}, },

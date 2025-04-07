@@ -1,10 +1,15 @@
 #include "drv_spi.h"
 
-// #define DRV_SPI_PERIPHAL_NUM   CONFIG_SPI_PERIPHAL_NUM
-// static struct spi_dev_s *spi_list[DRV_SPI_PERIPHAL_NUM];
+struct spi_dev_s *g_spi_list[DRV_SPI_PERIPHAL_NUM];
 
 static bool low_pinconfig(struct spi_dev_s *dev);
+static void low_dmatx_setup(struct spi_dev_s *dev);
+static void low_dmarx_setup(struct spi_dev_s *dev);
 static void low_setup(struct spi_dev_s *dev);
+static void low_irq(struct spi_dev_s *dev);
+static void low_irq_dmatx(struct spi_dev_s *dev);
+static void low_irq_dmarx(struct spi_dev_s *dev);
+static void low_irq_dmartx(struct spi_dev_s *dev);
 
 static int up_setup(struct spi_dev_s *dev);
 static uint32_t up_setfrequency(struct spi_dev_s *dev, uint32_t frequency);
@@ -199,10 +204,161 @@ bool low_pinconfig(struct spi_dev_s *dev)
 #endif
 }
 
-/****************************************************************************
- * Public Function Interface 
- ****************************************************************************/
-int up_setup(struct spi_dev_s *dev)
+void low_dmatx_setup(struct spi_dev_s *dev)
+{
+    struct up_spi_dev_s *priv = dev->priv;
+    uint8_t num = priv->id;
+
+#if defined (DRV_BSP_H7)
+	DMA_Stream_TypeDef *spi_txdma_stream[DRV_SPI_PERIPHAL_NUM] = {
+        DMA1_Stream2, DMA1_Stream3, DMA1_Stream4,
+        DMA1_Stream5, DMA1_Stream6, BDMA_Channel0
+    };
+	uint8_t spi_txdma_request[DRV_SPI_PERIPHAL_NUM] = {
+        DMA_REQUEST_SPI1_TX, DMA_REQUEST_SPI2_TX, 
+		DMA_REQUEST_SPI3_TX, DMA_REQUEST_SPI4_TX, 
+        DMA_REQUEST_SPI5_TX, BDMA_REQUEST_SPI6_TX
+    };
+    IRQn_Type spi_txdma_irq[DRV_SPI_PERIPHAL_NUM] = {
+        DMA1_Stream2_IRQn, DMA1_Stream3_IRQn, DMA1_Stream4_IRQn,
+        DMA1_Stream5_IRQn, DMA1_Stream6_IRQn, BDMA_Channel0_IRQn
+    };
+#elif defined(DRV_BSP_F4)
+	DMA_Stream_TypeDef *spi_txdma_stream[DRV_SPI_PERIPHAL_NUM] = {
+        DMA2_Stream3, DMA1_Stream4, DMA1_Stream5,
+        DMA2_Stream1, DMA2_Stream4, DMA2_Stream5
+    };
+    uint32_t spi_txdma_channel[DRV_SPI_PERIPHAL_NUM] = {
+        DMA_CHANNEL_3, DMA_CHANNEL_0, DMA_CHANNEL_0,
+        DMA_CHANNEL_4, DMA_CHANNEL_2, DMA_CHANNEL_1
+    };
+    IRQn_Type spi_txdma_irq[DRV_SPI_PERIPHAL_NUM] = {
+        DMA2_Stream3_IRQn, DMA1_Stream4_IRQn, DMA1_Stream5_IRQn,
+        DMA2_Stream1_IRQn, DMA2_Stream4_IRQn, DMA2_Stream5_IRQn
+    };
+#endif  // End With Define DRV_BSP_F4, DRV_BSP_H7
+
+    __HAL_LINKDMA(&priv->hspi, hdmatx, priv->txdma);
+#if defined (DRV_BSP_H7)
+	if (num != 6) {
+		__HAL_RCC_DMA1_CLK_ENABLE();
+	} else {
+		__HAL_RCC_BDMA_CLK_ENABLE();
+	}
+	//HAL_DMA_DeInit(&obj->txdma);
+	priv->txdma.Instance = spi_txdma_stream[num-1];
+	priv->txdma.Init.Request = spi_txdma_request[num-1];
+	priv->txdma.Init.Direction = DMA_MEMORY_TO_PERIPH;
+	priv->txdma.Init.PeriphInc = DMA_PINC_DISABLE;
+	priv->txdma.Init.MemInc = DMA_MINC_ENABLE;
+	priv->txdma.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+	priv->txdma.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+	priv->txdma.Init.Mode = DMA_NORMAL;
+	priv->txdma.Init.Priority = DMA_PRIORITY_HIGH;
+	priv->txdma.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+	priv->txdma.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+	priv->txdma.Init.MemBurst = DMA_MBURST_SINGLE;
+	priv->txdma.Init.PeriphBurst = DMA_PBURST_SINGLE;
+#elif defined(DRV_BSP_F4)
+	if (num == 2 || num == 3) {
+		__HAL_RCC_DMA1_CLK_ENABLE();
+	} else if (num == 1 || num == 4 || num == 5 || num ==6) {
+		__HAL_RCC_DMA2_CLK_ENABLE();
+	}
+	priv->txdma.Instance = spi_txdma_stream[num-1];
+	priv->txdma.Init.Channel = spi_txdma_channel[num-1];
+	priv->txdma.Init.Direction = DMA_MEMORY_TO_PERIPH;
+	priv->txdma.Init.PeriphInc = DMA_PINC_DISABLE;
+	priv->txdma.Init.MemInc = DMA_MINC_ENABLE;
+	priv->txdma.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+	priv->txdma.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+	priv->txdma.Init.Mode = DMA_NORMAL;
+	priv->txdma.Init.Priority = DMA_PRIORITY_HIGH;
+	priv->txdma.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+#endif
+	HAL_DMA_Init(&priv->txdma);
+	HAL_NVIC_SetPriority(spi_txdma_irq[num-1], priv->priority_dmatx, 0);
+	HAL_NVIC_EnableIRQ(spi_txdma_irq[num-1]);
+}
+
+void low_dmarx_setup(struct spi_dev_s *dev)
+{
+    struct up_spi_dev_s *priv = dev->priv;
+    uint8_t num = priv->id;
+
+#if defined (DRV_BSP_H7)
+	DMA_Stream_TypeDef *spi_rxdma_stream[DRV_SPI_PERIPHAL_NUM] = {
+        DMA2_Stream2, DMA2_Stream3, DMA2_Stream4,
+        DMA2_Stream5, DMA2_Stream6, BDMA_Channel1
+    };
+	uint8_t spi_rxdma_request[DRV_SPI_PERIPHAL_NUM] = {
+        DMA_REQUEST_SPI1_RX, DMA_REQUEST_SPI2_RX, 
+		DMA_REQUEST_SPI3_RX, DMA_REQUEST_SPI4_RX, 
+        DMA_REQUEST_SPI5_RX, BDMA_REQUEST_SPI6_RX
+    };
+    IRQn_Type spi_rxdma_irq[DRV_SPI_PERIPHAL_NUM] = {
+        DMA2_Stream2_IRQn, DMA2_Stream3_IRQn, DMA2_Stream4_IRQn,
+        DMA2_Stream5_IRQn, DMA2_Stream6_IRQn, BDMA_Channel1_IRQn
+    };
+#elif defined(DRV_BSP_F4)
+	DMA_Stream_TypeDef *spi_rxdma_stream[DRV_SPI_PERIPHAL_NUM] = {
+        DMA2_Stream2, DMA1_Stream3, DMA1_Stream0,
+        DMA2_Stream0, DMA2_Stream5, DMA2_Stream6
+    };
+    uint32_t spi_rxdma_channel[DRV_SPI_PERIPHAL_NUM] = {
+        DMA_CHANNEL_3, DMA_CHANNEL_0, DMA_CHANNEL_0,
+        DMA_CHANNEL_4, DMA_CHANNEL_7, DMA_CHANNEL_1
+    };
+    IRQn_Type spi_rxdma_irq[DRV_SPI_PERIPHAL_NUM] = {
+        DMA2_Stream2_IRQn, DMA1_Stream3_IRQn, DMA1_Stream0_IRQn,
+        DMA2_Stream0_IRQn, DMA2_Stream5_IRQn, DMA2_Stream6_IRQn
+    };
+#endif  // End With Define DRV_BSP_F4, DRV_BSP_H7
+
+    __HAL_LINKDMA(&priv->hspi, hdmarx, priv->rxdma);
+#if defined (DRV_BSP_H7)
+    if (num != 6) {
+		__HAL_RCC_DMA2_CLK_ENABLE();
+	} else {
+		__HAL_RCC_BDMA_CLK_ENABLE();
+	}
+    //HAL_DMA_DeInit(&obj->rxdma);
+    priv->rxdma.Instance = spi_rxdma_stream[num-1];
+    priv->rxdma.Init.Request = spi_rxdma_request[num-1];
+    priv->rxdma.Init.Direction = DMA_PERIPH_TO_MEMORY;
+    priv->rxdma.Init.PeriphInc = DMA_PINC_DISABLE;
+    priv->rxdma.Init.MemInc = DMA_MINC_ENABLE;
+    priv->rxdma.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+    priv->rxdma.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+    priv->rxdma.Init.Mode = DMA_NORMAL;
+    priv->rxdma.Init.Priority = DMA_PRIORITY_HIGH;
+    priv->rxdma.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+    priv->rxdma.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+    priv->rxdma.Init.MemBurst = DMA_MBURST_SINGLE;
+    priv->rxdma.Init.PeriphBurst = DMA_PBURST_SINGLE;
+#elif defined(DRV_BSP_F4)
+	if (num == 2 || num == 3) {
+		__HAL_RCC_DMA1_CLK_ENABLE();
+	} else if (num == 1 || num == 4 || num == 5 || num ==6) {
+		__HAL_RCC_DMA2_CLK_ENABLE();
+	}
+	priv->rxdma.Instance = spi_rxdma_stream[num-1];
+	priv->rxdma.Init.Channel = spi_rxdma_channel[num-1];
+	priv->rxdma.Init.Direction = DMA_PERIPH_TO_MEMORY;
+	priv->rxdma.Init.PeriphInc = DMA_PINC_DISABLE;
+	priv->rxdma.Init.MemInc = DMA_MINC_ENABLE;
+	priv->rxdma.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+	priv->rxdma.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
+	priv->rxdma.Init.Mode = DMA_NORMAL;
+	priv->rxdma.Init.Priority = DMA_PRIORITY_HIGH;
+	priv->rxdma.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+#endif
+	HAL_DMA_Init(&priv->rxdma);
+	HAL_NVIC_SetPriority(spi_rxdma_irq[num-1], priv->priority_dmarx, 0);
+	HAL_NVIC_EnableIRQ(spi_rxdma_irq[num-1]);
+}
+
+void low_setup(struct spi_dev_s *dev)
 {
     struct up_spi_dev_s *priv = dev->priv;
     uint8_t num = priv->id;
@@ -244,6 +400,14 @@ int up_setup(struct spi_dev_s *dev)
 #endif
 	};
 
+	IRQn_Type spi_irq_array[6] = {
+		SPI1_IRQn, SPI2_IRQn, 
+#if (BSP_CHIP_RESOURCE_LEVEL > 1)
+		SPI3_IRQn, 
+		SPI4_IRQn, SPI5_IRQn, SPI6_IRQn
+#endif
+    };
+
 	priv->hspi.Instance               = spi_instance[num-1];
     priv->hspi.Init.BaudRatePrescaler = dev->frequency;
 	priv->hspi.Init.Mode              = SPI_MODE_MASTER;
@@ -279,6 +443,8 @@ int up_setup(struct spi_dev_s *dev)
 #if defined (DRV_BSP_H7)
     priv->hspi.Init.NSSPMode          = SPI_NSS_PULSE_DISABLE;
     priv->hspi.Init.MasterKeepIOState = SPI_MASTER_KEEP_IO_STATE_ENABLE;
+	priv->hspi.Init.MasterSSIdleness  = SPI_MASTER_SS_IDLENESS_00CYCLE;
+	priv->hspi.Init.MasterInterDataIdleness = SPI_MASTER_INTERDATA_IDLENESS_10CYCLE;
 #endif
     priv->hspi.Init.FirstBit          = SPI_FIRSTBIT_MSB;
     priv->hspi.Init.TIMode            = SPI_TIMODE_DISABLE;
@@ -287,11 +453,53 @@ int up_setup(struct spi_dev_s *dev)
 #if defined (DRV_BSP_H7)
     priv->hspi.Init.FifoThreshold     = SPI_FIFO_THRESHOLD_01DATA;
 #endif
-
     __HAL_SPI_DISABLE(&priv->hspi);	
 	HAL_SPI_DeInit(&priv->hspi);
 	HAL_SPI_Init(&priv->hspi);
 	__HAL_SPI_ENABLE(&priv->hspi);
+
+    if (priv->enable_dmarx) {
+        low_dmarx_setup(dev);
+    }
+    if (priv->enable_dmatx) {
+        low_dmatx_setup(dev);
+    }
+	HAL_NVIC_SetPriority(spi_irq_array[num-1], priv->priority, 0);
+	HAL_NVIC_EnableIRQ(spi_irq_array[num-1]);
+
+	g_spi_list[num-1] = dev;
+}
+
+void low_irq(struct spi_dev_s *dev)
+{
+	struct up_spi_dev_s *priv = dev->priv;
+	HAL_SPI_IRQHandler(&priv->hspi);
+}
+
+void low_irq_dmatx(struct spi_dev_s *dev)
+{
+	struct up_spi_dev_s *priv = dev->priv;
+    priv->dmatx_ready = true;
+}
+
+void low_irq_dmarx(struct spi_dev_s *dev)
+{
+	struct up_spi_dev_s *priv = dev->priv;
+    priv->dmarx_ready = true;
+}
+
+void low_irq_dmartx(struct spi_dev_s *dev)
+{
+	struct up_spi_dev_s *priv = dev->priv;
+    priv->dmartx_ready = true;
+}
+
+/****************************************************************************
+ * Public Function Interface 
+ ****************************************************************************/
+int up_setup(struct spi_dev_s *dev)
+{
+    low_setup(dev);
 }
 
 uint32_t up_setfrequency(struct spi_dev_s *dev, uint32_t frequency)
@@ -314,16 +522,16 @@ void up_setmode(struct spi_dev_s *dev, enum spi_mode_e mode)
 #if defined (DRV_BSP_H7)
     switch (dev->mode) {
 	case SPIDEV_MODE0:
-	    priv->hspi.Instance->CFG2 |= SPI_POLARITY_LOW | SPI_PHASE_1EDGE;
+        priv->hspi.Instance->CFG2 |= SPI_POLARITY_LOW | SPI_PHASE_1EDGE;
 		break;
 	case SPIDEV_MODE1:
-	    priv->hspi.Instance->CFG2 |= SPI_POLARITY_LOW | SPI_PHASE_2EDGE;
+        priv->hspi.Instance->CFG2 |= SPI_POLARITY_LOW | SPI_PHASE_2EDGE;
 		break;
 	case SPIDEV_MODE2:
-	    priv->hspi.Instance->CFG2 |= SPI_POLARITY_HIGH | SPI_PHASE_1EDGE;
+        priv->hspi.Instance->CFG2 |= SPI_POLARITY_HIGH | SPI_PHASE_1EDGE;
 		break;
 	case SPIDEV_MODE3:
-	    priv->hspi.Instance->CFG2 |= SPI_POLARITY_HIGH | SPI_PHASE_2EDGE;
+        priv->hspi.Instance->CFG2 |= SPI_POLARITY_HIGH | SPI_PHASE_2EDGE;
 		break;	
 	default :break;
 	}
@@ -332,16 +540,16 @@ void up_setmode(struct spi_dev_s *dev, enum spi_mode_e mode)
 #if defined (DRV_BSP_F4) || defined (DRV_BSP_F1)
     switch (dev->mode) {
 	case SPIDEV_MODE0:
-	    priv->hspi.Instance->CR1 |= SPI_POLARITY_LOW | SPI_PHASE_1EDGE;
+        priv->hspi.Instance->CR1 |= SPI_POLARITY_LOW | SPI_PHASE_1EDGE;
 		break;
 	case SPIDEV_MODE1:
-	    priv->hspi.Instance->CR1 |= SPI_POLARITY_LOW | SPI_PHASE_2EDGE;
+        priv->hspi.Instance->CR1 |= SPI_POLARITY_LOW | SPI_PHASE_2EDGE;
 		break;
 	case SPIDEV_MODE2:
-	    priv->hspi.Instance->CR1 |= SPI_POLARITY_HIGH | SPI_PHASE_1EDGE;
+        priv->hspi.Instance->CR1 |= SPI_POLARITY_HIGH | SPI_PHASE_1EDGE;
 		break;
 	case SPIDEV_MODE3:
-	    priv->hspi.Instance->CR1 |= SPI_POLARITY_HIGH | SPI_PHASE_2EDGE;
+        priv->hspi.Instance->CR1 |= SPI_POLARITY_HIGH | SPI_PHASE_2EDGE;
 		break;	
 	default :break;
 	}
@@ -355,10 +563,10 @@ void up_setbits(struct spi_dev_s *dev, int nbits)
 #if defined (DRV_BSP_H7)
     switch (nbits) {
 	case 8:
-	    priv->hspi.Instance->CFG1 |= SPI_DATASIZE_8BIT;
+        priv->hspi.Instance->CFG1 |= SPI_DATASIZE_8BIT;
 		break;
 	case 16:
-	    priv->hspi.Instance->CFG1 |= SPI_DATASIZE_16BIT;
+        priv->hspi.Instance->CFG1 |= SPI_DATASIZE_16BIT;
 		break;
 	default :break;
 	}
@@ -368,10 +576,10 @@ void up_setbits(struct spi_dev_s *dev, int nbits)
 	priv->hspi.Instance->CR1 &= ~SPI_CR1_SPE;  // disable spi
     switch (nbits) {
 	case 8:
-	    priv->hspi.Instance->CR1 |= (0x0UL) << 11;
+        priv->hspi.Instance->CR1 |= (0x0UL) << 11;
 		break;
 	case 16:
-	    priv->hspi.Instance->CR1 |= (0x1UL) << 11;
+        priv->hspi.Instance->CR1 |= (0x1UL) << 11;
 		break;
 	default :break;
 	}
@@ -398,7 +606,28 @@ int up_select(struct spi_dev_s *dev, uint32_t devid, bool selected)
 int up_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbuffer, size_t nwords)
 {
     struct up_spi_dev_s *priv = dev->priv;
-	return HAL_SPI_TransmitReceive(&priv->hspi, txbuffer, rxbuffer, nwords, 5000);
+	// bug: when write sensor register data:
+	// call HAL_SPI_TransmitReceive_DMA(dev, {addr, data}, {0x00, 0x00}, 2), it can not work
+	// call HAL_SPI_Transmit_DMA(dev, {addr, data}, 2), it works
+	// ???
+
+    int ret = 0;
+	if (txbuffer == NULL && rxbuffer != NULL) {
+		priv->dmarx_ready = false;
+		ret = HAL_SPI_Receive_DMA(&priv->hspi, rxbuffer, nwords);
+		while(!priv->dmarx_ready);
+	} else if (txbuffer != NULL && rxbuffer == NULL) {
+		priv->dmatx_ready = false;
+		ret = HAL_SPI_Transmit_DMA(&priv->hspi, txbuffer, nwords);
+		while(!priv->dmatx_ready);
+	} else if (txbuffer != NULL && rxbuffer != NULL) {
+		priv->dmartx_ready = false;
+		int ret = HAL_SPI_TransmitReceive_DMA(&priv->hspi, txbuffer, rxbuffer, nwords);
+		//int ret = HAL_SPI_TransmitReceive(&priv->hspi, txbuffer, rxbuffer, nwords, 3000);
+		while(!priv->dmartx_ready);
+	}
+
+	return ret;
 }
 
 int up_sndblock(struct spi_dev_s *dev, const void *buffer, size_t nwords)
@@ -416,3 +645,84 @@ int up_recvblock(struct spi_dev_s *dev, void *buffer, size_t nwords)
 	ret = HAL_SPI_Receive(&priv->hspi, buffer, nwords, 5000);
 	return ret;
 }
+
+/****************************************************************************
+ * STM32 HAL Library Callback 
+ ****************************************************************************/
+
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+    uint8_t idx = 0;
+    if (hspi->Instance == SPI1)		    idx = 0;
+    else if (hspi->Instance == SPI2)	idx = 1;
+#if (BSP_CHIP_RESOURCE_LEVEL > 1)
+    else if (hspi->Instance == SPI3)	idx = 2;
+    else if (hspi->Instance == SPI4)	idx = 3;
+    else if (hspi->Instance == SPI5)	idx = 4;
+    else if (hspi->Instance == SPI6)	idx = 5;
+#endif
+
+    low_irq_dmartx(g_spi_list[idx]);
+}
+
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+    uint8_t idx = 0;
+    if (hspi->Instance == SPI1)		    idx = 0;
+    else if (hspi->Instance == SPI2)	idx = 1;
+#if (BSP_CHIP_RESOURCE_LEVEL > 1)
+    else if (hspi->Instance == SPI3)	idx = 2;
+    else if (hspi->Instance == SPI4)	idx = 3;
+    else if (hspi->Instance == SPI5)	idx = 4;
+    else if (hspi->Instance == SPI6)	idx = 5;
+#endif
+
+    low_irq_dmatx(g_spi_list[idx]);
+}
+
+void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+    uint8_t idx = 0;
+    if (hspi->Instance == SPI1)		    idx = 0;
+    else if (hspi->Instance == SPI2)	idx = 1;
+#if (BSP_CHIP_RESOURCE_LEVEL > 1)
+    else if (hspi->Instance == SPI3)	idx = 2;
+    else if (hspi->Instance == SPI4)	idx = 3;
+    else if (hspi->Instance == SPI5)	idx = 4;
+    else if (hspi->Instance == SPI6)	idx = 5;
+#endif
+
+    low_irq_dmarx(g_spi_list[idx]);
+}
+
+void SPI1_IRQHandler(void)
+{
+	low_irq(g_spi_list[0]);
+}
+
+void SPI2_IRQHandler(void)
+{
+	low_irq(g_spi_list[1]);
+}
+
+#if (BSP_CHIP_RESOURCE_LEVEL > 1)
+void SPI3_IRQHandler(void)
+{
+	low_irq(g_spi_list[2]);
+}
+
+void SPI4_IRQHandler(void)
+{
+	low_irq(g_spi_list[3]);
+}
+
+void SPI5_IRQHandler(void)
+{
+	low_irq(g_spi_list[4]);
+}
+
+void SPI6_IRQHandler(void)
+{
+	low_irq(g_spi_list[5]);
+}
+#endif

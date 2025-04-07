@@ -20,6 +20,16 @@ struct up_spi_dev_s
     uint8_t pin_sck;
     uint8_t pin_miso;
     uint8_t pin_mosi;
+    uint8_t priority;
+    uint8_t priority_dmatx;
+    uint8_t priority_dmarx;
+    bool enable_dmatx;
+    bool enable_dmarx;
+
+    volatile bool dmatx_ready;
+    volatile bool dmarx_ready;
+    volatile bool dmartx_ready;
+
     const uint32_t devid[CONFIG_SPI_ATTACH_CS_NUM];
     const struct {
         GPIO_TypeDef *port;   
@@ -27,8 +37,12 @@ struct up_spi_dev_s
     } devcs[CONFIG_SPI_ATTACH_CS_NUM];
 
     SPI_HandleTypeDef hspi;
+    DMA_HandleTypeDef txdma;
+    DMA_HandleTypeDef rxdma;
 };
 
+#define DRV_SPI_PERIPHAL_NUM  CONFIG_SPI_PERIPHAL_NUM
 extern const struct spi_ops_s g_spi_ops;
+extern struct spi_dev_s *g_spi_list[DRV_SPI_PERIPHAL_NUM];
 
 #endif

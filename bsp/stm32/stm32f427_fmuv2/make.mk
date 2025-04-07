@@ -42,6 +42,9 @@ BOARD_CSRCS += board_bsp.c
 BOARD_ASMSOURCES += fmuv2_startup.s
 BOARD_LNK_FILE   += fmuv2_lnk_script.ld
 
+BOARD_CDEFS += CONFIG_STM32_DMA_SPI1_RX
+BOARD_CDEFS += CONFIG_STM32_DMA_SPI1_TX
+
 TMPBOARD_CSRCS = ${addprefix bsp/stm32/stm32f427_fmuv2/,${BOARD_CSRCS}}
 TMPBOARD_ASMSOURCES = ${addprefix bsp/stm32/stm32f427_fmuv2/,${BOARD_ASMSOURCES}}
 TMPBOARD_LNK_FILE = ${addprefix bsp/stm32/stm32f427_fmuv2/,${BOARD_LNK_FILE}}

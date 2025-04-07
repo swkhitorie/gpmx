@@ -1,4 +1,5 @@
 #include <drv_uart.h>
+#include <drv_spi.h>
 
 /****************************************************************************
  * STM32H7 DMA Interrupt Callback 
@@ -18,11 +19,14 @@ all dma configured into usart default
 driver library define spi dma map allocation:
 |    DMA1    | Stream 0         | Stream 1         | Stream 2         | Stream 3         | Stream 4         | Stream 5         | Stream 6         | Stream 7         |
 |------------|------------------|------------------|------------------|------------------|------------------|------------------|------------------|------------------|
-|            | ---------        | ---------        | SPI1_TX          | SPI2_TX          | SPI3_TX          | SPI4_TX          | SPI5_TX          | SPI6_TX          |
+|            | ---------        | ---------        | SPI1_TX          | SPI2_TX          | SPI3_TX          | SPI4_TX          | SPI5_TX          |                  |
 
 |    DMA2    | Stream 0         | Stream 1         | Stream 2         | Stream 3         | Stream 4         | Stream 5         | Stream 6         | Stream 7         |
 |------------|------------------|------------------|------------------|------------------|------------------|------------------|------------------|------------------|
-|            | ---------        | ---------        | SPI1_RX          | SPI2_RX          | SPI3_RX          | SPI4_RX          | SPI5_RX          | SPI6_RX          |
+|            | ---------        | ---------        | SPI1_RX          | SPI2_RX          | SPI3_RX          | SPI4_RX          | SPI5_RX          |                  |
+
+SPI6_TX -> BDMA Stream0
+SPI6_RX -> BDMA Stream1
 
 if usart dma callback has conflict with spi dma
 define CONFIG_STM32_DMA_SPIx_TX to use it
@@ -53,7 +57,8 @@ void DMA1_Stream2_IRQHandler(void)
         struct up_uart_dev_s *priv = g_uart_list[2]->priv;
         hdmatx = priv->com.hdmatx;
     #else
-        hdmatx = NULL;
+        struct up_spi_dev_s *priv = g_spi_list[0]->priv;
+        hdmatx = priv->hspi.hdmatx;
     #endif
 
     HAL_DMA_IRQHandler(hdmatx);
@@ -66,7 +71,8 @@ void DMA1_Stream3_IRQHandler(void)
         struct up_uart_dev_s *priv = g_uart_list[3]->priv;
         hdmatx = priv->com.hdmatx;
     #else
-        hdmatx = NULL;
+        struct up_spi_dev_s *priv = g_spi_list[1]->priv;
+        hdmatx = priv->hspi.hdmatx;
     #endif
 
     HAL_DMA_IRQHandler(hdmatx);
@@ -79,7 +85,8 @@ void DMA1_Stream4_IRQHandler(void)
         struct up_uart_dev_s *priv = g_uart_list[4]->priv;
         hdmatx = priv->com.hdmatx;
     #else
-        hdmatx = NULL;
+        struct up_spi_dev_s *priv = g_spi_list[2]->priv;
+        hdmatx = priv->hspi.hdmatx;
     #endif
 
     HAL_DMA_IRQHandler(hdmatx);
@@ -92,7 +99,8 @@ void DMA1_Stream5_IRQHandler(void)
         struct up_uart_dev_s *priv = g_uart_list[5]->priv;
         hdmatx = priv->com.hdmatx;
     #else
-        hdmatx = NULL;
+        struct up_spi_dev_s *priv = g_spi_list[3]->priv;
+        hdmatx = priv->hspi.hdmatx;
     #endif
 
     HAL_DMA_IRQHandler(hdmatx);
@@ -105,7 +113,8 @@ void DMA1_Stream6_IRQHandler(void)
         struct up_uart_dev_s *priv = g_uart_list[6]->priv;
         hdmatx = priv->com.hdmatx;
     #else
-        hdmatx = NULL;
+        struct up_spi_dev_s *priv = g_spi_list[4]->priv;
+        hdmatx = priv->hspi.hdmatx;
     #endif
 
     HAL_DMA_IRQHandler(hdmatx);
@@ -114,13 +123,8 @@ void DMA1_Stream6_IRQHandler(void)
 void DMA1_Stream7_IRQHandler(void)
 {
     DMA_HandleTypeDef *hdmatx;
-    #ifndef CONFIG_STM32_DMA_SPI6_TX
-        struct up_uart_dev_s *priv = g_uart_list[7]->priv;
-        hdmatx = priv->com.hdmatx;
-    #else
-        hdmatx = NULL;
-    #endif
-
+    struct up_uart_dev_s *priv = g_uart_list[7]->priv;
+    hdmatx = priv->com.hdmatx;
     HAL_DMA_IRQHandler(hdmatx);
 }
 
@@ -147,7 +151,8 @@ void DMA2_Stream2_IRQHandler(void)
         struct up_uart_dev_s *priv = g_uart_list[2]->priv;
         hdmarx = priv->com.hdmarx;
     #else
-        hdmarx = NULL;
+        struct up_spi_dev_s *priv = g_spi_list[0]->priv;
+        hdmarx = priv->hspi.hdmarx;
     #endif
 
     HAL_DMA_IRQHandler(hdmarx);
@@ -160,7 +165,8 @@ void DMA2_Stream3_IRQHandler(void)
         struct up_uart_dev_s *priv = g_uart_list[3]->priv;
         hdmarx = priv->com.hdmarx;
     #else
-        hdmarx = NULL;
+        struct up_spi_dev_s *priv = g_spi_list[1]->priv;
+        hdmarx = priv->hspi.hdmarx;
     #endif
 
     HAL_DMA_IRQHandler(hdmarx);	
@@ -173,7 +179,8 @@ void DMA2_Stream4_IRQHandler(void)
         struct up_uart_dev_s *priv = g_uart_list[4]->priv;
         hdmarx = priv->com.hdmarx;
     #else
-        hdmarx = NULL;
+        struct up_spi_dev_s *priv = g_spi_list[2]->priv;
+        hdmarx = priv->hspi.hdmarx;
     #endif
 
     HAL_DMA_IRQHandler(hdmarx);
@@ -186,7 +193,8 @@ void DMA2_Stream5_IRQHandler(void)
         struct up_uart_dev_s *priv = g_uart_list[5]->priv;
         hdmarx = priv->com.hdmarx;
     #else
-        hdmarx = NULL;
+        struct up_spi_dev_s *priv = g_spi_list[3]->priv;
+        hdmarx = priv->hspi.hdmarx;
     #endif
 
     HAL_DMA_IRQHandler(hdmarx);
@@ -199,7 +207,8 @@ void DMA2_Stream6_IRQHandler(void)
         struct up_uart_dev_s *priv = g_uart_list[6]->priv;
         hdmarx = priv->com.hdmarx;
     #else
-        hdmarx = NULL;
+        struct up_spi_dev_s *priv = g_spi_list[4]->priv;
+        hdmarx = priv->hspi.hdmarx;
     #endif
 
     HAL_DMA_IRQHandler(hdmarx);
@@ -208,15 +217,29 @@ void DMA2_Stream6_IRQHandler(void)
 void DMA2_Stream7_IRQHandler(void)
 {
     DMA_HandleTypeDef *hdmarx;
-    #ifndef CONFIG_STM32_DMA_SPI6_RX
-        struct up_uart_dev_s *priv = g_uart_list[7]->priv;
-        hdmarx = priv->com.hdmarx;
-    #else
-        hdmarx = NULL;
-    #endif
-
+    struct up_uart_dev_s *priv = g_uart_list[7]->priv;
+    hdmarx = priv->com.hdmarx;
     HAL_DMA_IRQHandler(hdmarx);
 }
+
+void BDMA_Channel0_IRQHandler(void)
+{
+    /* spi6 tx */
+    DMA_HandleTypeDef *hdmatx;
+    struct up_spi_dev_s *priv = g_spi_list[5]->priv;
+    hdmatx = priv->hspi.hdmatx;
+    HAL_DMA_IRQHandler(hdmatx);
+}
+
+void BDMA_Channel1_IRQHandler(void)
+{
+    /* spi6 rx */
+    DMA_HandleTypeDef *hdmarx;
+    struct up_spi_dev_s *priv = g_spi_list[5]->priv;
+    hdmarx = priv->hspi.hdmarx;
+    HAL_DMA_IRQHandler(hdmarx);
+}
+
 #endif
 
 /****************************************************************************
@@ -260,7 +283,7 @@ void DMA2_Stream7_IRQHandler(void)
 | Usage      | SPI4_RX_1        | USART6_RX_1      | SPI1_RX_2        | SPI1_TX_1        | SPI4_TX_2        | TIM1_UP          | SDIO             | USART6_TX_2      |
 
 if usart dma callback has conflict with spi dma
-define CONFIG_STM32_DMA_SPI1_TX to use it
+define CONFIG_STM32_DMA_SPIx_TX to use it
 
 UART           TX                    RX
 UART1        DMA2_Stream7           DMA2_Stream2(2,5)
@@ -278,113 +301,195 @@ SPI2        DMA1_Stream4           DMA1_Stream3
 SPI3        DMA1_Stream5(1,7)      DMA1_Stream0(1,2)
 SPI4        DMA2_Stream1(2,4)      DMA2_Stream0(2,3)
 SPI5        DMA2_Stream4(2,6)      DMA2_Stream5(2,3)
-SPI6        DMA2_Stream5           DMA2_Stream6
+SPI6        DMA2_Stream5(no use)   DMA2_Stream6
 
  */
 
 #if defined (DRV_BSP_F4)
 void DMA1_Stream0_IRQHandler(void)
 {
-    struct up_uart_dev_s *priv = g_uart_list[4]->priv;
-    //DMA1_Stream0 -> UART5_RX+UART8_TX+SPI3_RX_1, prefer to UART5_RX 
-    HAL_DMA_IRQHandler(priv->com.hdmarx);
+    /* UART5_RX(default), UART8_TX(not use), SPI3_RX(default by macro) */
+    DMA_HandleTypeDef *hdma;
+    #ifndef CONFIG_STM32_DMA_SPI3_RX
+        struct up_uart_dev_s *priv = g_uart_list[4]->priv;
+        hdma = priv->com.hdmarx;
+    #else
+        struct up_spi_dev_s *priv = g_spi_list[2]->priv;
+        hdma = priv->hspi.hdmarx;
+    #endif
+
+    HAL_DMA_IRQHandler(hdma);
 }
 
 void DMA1_Stream1_IRQHandler(void)
 {
+    /* UART3_RX(default), UART7_TX(not use) */
+    DMA_HandleTypeDef *hdma;
     struct up_uart_dev_s *priv = g_uart_list[2]->priv;
-    //DMA1_Stream1 -> USART3_RX+UART7_TX, prefer to USART3_RX
-    HAL_DMA_IRQHandler(priv->com.hdmarx);
+    hdma = priv->com.hdmarx;
+    HAL_DMA_IRQHandler(hdma);
 }
 
 void DMA1_Stream2_IRQHandler(void)
 {
+    /* UART4_RX */
+    DMA_HandleTypeDef *hdma;
     struct up_uart_dev_s *priv = g_uart_list[3]->priv;
-    //UART4_RX+SPI3_RX_2
-    HAL_DMA_IRQHandler(priv->com.hdmarx);
+    hdma = priv->com.hdmarx;
+    HAL_DMA_IRQHandler(hdma);
 }
 
 void DMA1_Stream3_IRQHandler(void)
 {
-    struct up_uart_dev_s *priv = g_uart_list[2]->priv;
-    //USART3_TX+SPI2_RX
-    HAL_DMA_IRQHandler(priv->com.hdmatx);
+    /* UART3_TX(default), UART7_RX(not use), SPI2_RX(default by macro) */
+    DMA_HandleTypeDef *hdma;
+    #ifndef CONFIG_STM32_DMA_SPI2_RX
+        struct up_uart_dev_s *priv = g_uart_list[2]->priv;
+        hdma = priv->com.hdmatx;
+    #else
+        struct up_spi_dev_s *priv = g_spi_list[1]->priv;
+        hdma = priv->hspi.hdmarx;
+    #endif
+
+    HAL_DMA_IRQHandler(hdma);
 }
 
 void DMA1_Stream4_IRQHandler(void)
 {
-    struct up_uart_dev_s *priv = g_uart_list[3]->priv;
-    //USART4_TX+SPI2_TX
-    HAL_DMA_IRQHandler(priv->com.hdmatx);
+    /* UART4_TX(default), SPI2_TX(default by macro) */
+    DMA_HandleTypeDef *hdma;
+    #ifndef CONFIG_STM32_DMA_SPI2_TX
+        struct up_uart_dev_s *priv = g_uart_list[3]->priv;
+        hdma = priv->com.hdmatx;
+    #else
+        struct up_spi_dev_s *priv = g_spi_list[1]->priv;
+        hdma = priv->hspi.hdmatx;
+    #endif
+
+    HAL_DMA_IRQHandler(hdma);
 }
 
 void DMA1_Stream5_IRQHandler(void)
 {
-    struct up_uart_dev_s *priv = g_uart_list[1]->priv;
-    //USART2_RX+SPI3_TX_1
-    HAL_DMA_IRQHandler(priv->com.hdmarx);
+    /* UART2_RX(default), SPI3_TX(default by macro) */
+    DMA_HandleTypeDef *hdma;
+    #ifndef CONFIG_STM32_DMA_SPI3_TX
+        struct up_uart_dev_s *priv = g_uart_list[1]->priv;
+        hdma = priv->com.hdmarx;
+    #else
+        struct up_spi_dev_s *priv = g_spi_list[2]->priv;
+        hdma = priv->hspi.hdmatx;
+    #endif
+
+    HAL_DMA_IRQHandler(hdma);
 }
 
 void DMA1_Stream6_IRQHandler(void)
 {
+    /* UART2_TX(default), UART8_RX(not use) */
+    DMA_HandleTypeDef *hdma;
     struct up_uart_dev_s *priv = g_uart_list[1]->priv;
-    //USART2_TX
-    HAL_DMA_IRQHandler(priv->com.hdmatx);
+    hdma = priv->com.hdmatx;
+    HAL_DMA_IRQHandler(hdma);
 }
 
 void DMA1_Stream7_IRQHandler(void)
 {
+    /* UART5_TX */
+    DMA_HandleTypeDef *hdma;
     struct up_uart_dev_s *priv = g_uart_list[4]->priv;
-    //UART5_TX+SPI3_TX_2
-    HAL_DMA_IRQHandler(priv->com.hdmatx);
+    hdma = priv->com.hdmatx;
+    HAL_DMA_IRQHandler(hdma);
 }
 
 void DMA2_Stream0_IRQHandler(void)
 {
-    //SPI1_RX_1+SPI4_RX_1
+    /* SPI4_RX */
+    DMA_HandleTypeDef *hdma;
+    struct up_spi_dev_s *priv = g_spi_list[3]->priv;
+    hdma = priv->hspi.hdmarx;
+    HAL_DMA_IRQHandler(hdma);
 }
 
 void DMA2_Stream1_IRQHandler(void)
 {
-    struct up_uart_dev_s *priv = g_uart_list[5]->priv;
-    //USART6_RX+SPI4_TX_1
-    HAL_DMA_IRQHandler(priv->com.hdmarx);
+    /* UART6_RX(default), SPI4_TX(default by macro) */
+    DMA_HandleTypeDef *hdma;
+    #ifndef CONFIG_STM32_DMA_SPI4_TX
+        struct up_uart_dev_s *priv = g_uart_list[5]->priv;
+        hdma = priv->com.hdmarx;
+    #else
+        struct up_spi_dev_s *priv = g_spi_list[3]->priv;
+        hdma = priv->hspi.hdmatx;
+    #endif
+
+    HAL_DMA_IRQHandler(hdma);
 }
 
 void DMA2_Stream2_IRQHandler(void)
 {
-    struct up_uart_dev_s *priv = g_uart_list[0]->priv;
-    //USART1_RX+SPI1_RX_2
-    HAL_DMA_IRQHandler(priv->com.hdmarx);
+    /* UART1_RX(default), SPI1_RX(default by macro) */
+    DMA_HandleTypeDef *hdma;
+    #ifndef CONFIG_STM32_DMA_SPI1_RX
+        struct up_uart_dev_s *priv = g_uart_list[0]->priv;
+        hdma = priv->com.hdmarx;
+    #else
+        struct up_spi_dev_s *priv = g_spi_list[0]->priv;
+        hdma = priv->hspi.hdmarx;
+    #endif
+
+    HAL_DMA_IRQHandler(hdma);
 }
 
 void DMA2_Stream3_IRQHandler(void)
 {
-    //SPI5_RX_1+SPI1_TX_1
+    /* SPI1_TX */
+    DMA_HandleTypeDef *hdma;
+    struct up_spi_dev_s *priv = g_spi_list[0]->priv;
+    hdma = priv->hspi.hdmatx;
+    HAL_DMA_IRQHandler(hdma);
 }
 
 void DMA2_Stream4_IRQHandler(void)
 {
-    //SPI5_TX_1+SPI4_TX_2
+    /* SPI5_TX */
+    DMA_HandleTypeDef *hdma;
+    struct up_spi_dev_s *priv = g_spi_list[4]->priv;
+    hdma = priv->hspi.hdmatx;
+    HAL_DMA_IRQHandler(hdma);
 }
 
 void DMA2_Stream5_IRQHandler(void)
 {
-    //SPI6_TX+SPI1_TX_2+SPI5_RX_2
+    /* SPI5_RX(default), SPI6_TX(not use) */
+    DMA_HandleTypeDef *hdma;
+    struct up_spi_dev_s *priv = g_spi_list[4]->priv;
+    hdma = priv->hspi.hdmarx;
+    HAL_DMA_IRQHandler(hdma);
 }
 
 void DMA2_Stream6_IRQHandler(void)
 {
-    struct up_uart_dev_s *priv = g_uart_list[5]->priv;
-    //USART6_TX+SPI6_RX+SPI5_TX_2
-    HAL_DMA_IRQHandler(priv->com.hdmatx);
+    /* UART6_TX(default), SPI6_RX(default by macro) */
+    DMA_HandleTypeDef *hdma;
+    #ifndef CONFIG_STM32_DMA_SPI6_RX
+        struct up_uart_dev_s *priv = g_uart_list[5]->priv;
+        hdma = priv->com.hdmatx;
+    #else
+        struct up_spi_dev_s *priv = g_spi_list[5]->priv;
+        hdma = priv->hspi.hdmarx;
+    #endif
+
+    HAL_DMA_IRQHandler(hdma);
 }
 
 void DMA2_Stream7_IRQHandler(void)
 {
+    /* USART1_TX(default) */
+    DMA_HandleTypeDef *hdma;
     struct up_uart_dev_s *priv = g_uart_list[0]->priv;
-    //USART1_TX
-    HAL_DMA_IRQHandler(priv->com.hdmatx);
+    hdma = priv->com.hdmatx;
+    HAL_DMA_IRQHandler(hdma);
 }
 #endif
 

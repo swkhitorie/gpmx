@@ -67,6 +67,11 @@ struct up_spi_dev_s sensor_spi_dev =
 	.pin_sck = 1, //PA5
 	.pin_miso = 1, //PA6
 	.pin_mosi = 1, //PA7
+    .priority = 4,
+    .priority_dmarx = 5,
+    .priority_dmatx = 5,
+    .enable_dmarx = true,
+    .enable_dmatx = true,
 	/*            L3GD20 GYRO    LSM303D ACCEL+MAG         MPU6000      MS5611-01A      */
     .devid = { [0] = 0x11,        [1] = 0x12,        [2] = 0x13,       [3] = 0x14,      },
 	.devcs = { [0] = {GPIOC, 13}, [1] = {GPIOC, 15}, [2] = {GPIOC, 2}, [3] = {GPIOD, 7},},
