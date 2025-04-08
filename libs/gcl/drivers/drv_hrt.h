@@ -150,6 +150,30 @@ __EXPORT extern void	hrt_call_delay(struct hrt_call *entry, hrt_abstime delay);
 */
 __EXPORT extern void	hrt_init(void);
 
+
+namespace time_literals
+{
+
+// User-defined integer literals for different time units.
+// The base unit is hrt_abstime in microseconds
+
+constexpr hrt_abstime operator "" _s(unsigned long long seconds)
+{
+	return hrt_abstime(seconds * 1000000ULL);
+}
+
+constexpr hrt_abstime operator "" _ms(unsigned long long seconds)
+{
+	return hrt_abstime(seconds * 1000ULL);
+}
+
+constexpr hrt_abstime operator "" _us(unsigned long long seconds)
+{
+	return hrt_abstime(seconds);
+}
+
+} /* namespace time_literals */
+
 #if defined(__cplusplus)
 }
 #endif
