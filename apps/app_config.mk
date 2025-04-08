@@ -42,20 +42,19 @@ PROJ_CDEFS += CONFIG_FR_IDLE_TIMER_TASKCREATE_HANDLE
 PROJ_CINCDIRS += apps
 #CPPSOURCES += apps/app_debug/app_main.cpp
 #CPPSOURCES += apps/app_debug/app_posix_debug.cpp
-CPPSOURCES += apps/app_bsp_eval/app_main.cpp
+#CPPSOURCES += apps/app_bsp_eval/app_main.cpp
 
 
-CSOURCES += libs/gcl/drivers/imu/icm42688p/icm42688_test.c
 
-CPPSOURCES += libs/gcl/drivers/imu/mpu6050/mpu6050.cpp
-CPPSOURCES += libs/gcl/drivers/magnetometers/hmc5883/hmc5883l.cpp
+
+
+# CPPSOURCES += apps/app_fmuv2_test/app_main.cpp
 # CSOURCES += libs/gcl/drivers/imu/l3gd20/l3gd20_test.c
-# CSOURCES += libs/drivers/magnetometers/ist8310/ist8310_test.c
+
+# CPPSOURCES += apps/app_fmuv6c_test/app_main.cpp
+# CPPSOURCES += libs/gcl/drivers/magnetometers/ist8310/IST8310.cpp
+# CSOURCES += libs/gcl/drivers/imu/icm42688p/icm42688_test.c
 
 CONFIG_LINK_PRINTF_FLOAT:=y
-
 CONFIG_LINK_SCANF_FLOAT:=n
-
 CONFIG_COMPILE_OPTIMIZE:=O1
-
-

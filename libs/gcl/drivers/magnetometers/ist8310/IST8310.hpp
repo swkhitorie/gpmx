@@ -19,17 +19,23 @@ using namespace iSentek_IST8310;
 class IST8310
 {
 public:
-    IST8310(const I2CSPIDriverConfig &config);
+    IST8310(const char* i2c_ops_name);
     ~IST8310();
 
-    static void print_usage();
-
-    void RunImpl();
+    void run();
 
     int init();
+
     void print_status();
 
+    float mag_gaus[3];
+
 private:
+
+    bool ops_valid;
+    char ops_name[16];
+    struct i2c_master_s *ops;
+
     // Sensor Configuration
     struct register_config_t {
         Register reg;
@@ -37,19 +43,23 @@ private:
         uint8_t clear_bits{0};
     };
 
-    bool Reset();
+    bool register_check(const register_config_t &reg_cfg);
+    uint8_t register_read(Register reg);
+    void register_reads(Register reg, uint8_t *buf, uint16_t sz);
+    void register_write(Register reg, uint8_t value);
+    void register_modify(Register reg, uint8_t setbits, uint8_t clearbits);
 
-    bool Configure();
+    bool config();
 
-    bool RegisterCheck(const register_config_t &reg_cfg);
+    bool reset();
 
-    int RegisterRead(Register reg);
-    void RegisterWrite(Register reg, uint8_t value);
-    void RegisterSetAndClearBits(Register reg, uint8_t setbits, uint8_t clearbits);
 
-    hrt_abstime _reset_timestamp{0};
-    hrt_abstime _last_config_check_timestamp{0};
-    int _failure_count{0};
+    uint8_t _addr;
+
+    float _scale;
+
+    uint8_t _rawmag[6];
+    int16_t _mag[3];
 
     enum class STATE : uint8_t {
         RESET,

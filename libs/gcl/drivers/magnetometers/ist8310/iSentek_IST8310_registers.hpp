@@ -55,7 +55,7 @@ static constexpr uint8_t Bit7 = (1 << 7);
 namespace iSentek_IST8310
 {
 static constexpr uint32_t I2C_SPEED = 400 * 1000; // 400 kHz I2C serial interface
-static constexpr uint8_t I2C_ADDRESS_DEFAULT = 0x0E;
+static constexpr uint8_t I2C_ADDRESS_DEFAULT = 0x0C;
 
 static constexpr uint8_t Device_ID = 0x10;
 

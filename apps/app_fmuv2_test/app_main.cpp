@@ -2,10 +2,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-// #include <drivers/drv_hrt.h>
-// #include <drivers/barometer/ms5611/ms5611.hpp>
-// #include <drivers/magnetometers/ist8310/IST8310.hpp>
-
+#include <drivers/imu/l3gd20/l3gd20_test.h>
 
 int main(int argc, char *argv[])
 {
@@ -16,6 +13,7 @@ int main(int argc, char *argv[])
         if (HAL_GetTick() - m >= 100) {
             m = HAL_GetTick();
 
+            l3gd20_init();
 
             board_debug();
         }
