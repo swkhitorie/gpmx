@@ -48,8 +48,8 @@ PROJ_CINCDIRS += apps
 
 
 
-# CPPSOURCES += apps/app_fmuv2_test/app_main.cpp
-# CSOURCES += libs/gcl/drivers/imu/l3gd20/l3gd20_test.c
+CPPSOURCES += apps/app_fmuv2_test/app_main.cpp
+CSOURCES += libs/gcl/drivers/imu/l3gd20/l3gd20_test.c
 
 # CPPSOURCES += apps/app_fmuv6c_test/app_main.cpp
 # CPPSOURCES += libs/gcl/drivers/magnetometers/ist8310/IST8310.cpp

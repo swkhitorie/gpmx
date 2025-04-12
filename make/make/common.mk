@@ -22,7 +22,11 @@ MAKEFILES_COMMONDIR := ${MAKEFILES_ROOTDIR}/make
 MAKEFILES_PROJDIR := ${MAKEFILES_ROOTDIR}/${PROJ_NAME}
 
 # folder for target files
+ifneq (${PUSER_ROOTDIR},)
+TARGET_ROOTDIR := ${PUSER_ROOTDIR}/build/output/${MOD_CORE}/${PROJ_NAME}
+else
 TARGET_ROOTDIR := ${SDK_ROOTDIR}/build/output/${MOD_CORE}/${PROJ_NAME}
+endif
 
 # folder for binary outputs
 COMMON_BINDIR := bin
@@ -46,7 +50,11 @@ include ${TCDEFSINC}
 include ${COREDEFSINC}
 
 # definitions for binary folder target outputs
+ifneq (${PUSER_ROOTDIR},)
+TARGET_DEST_ROOTDIR       := ${PUSER_ROOTDIR}/${COMMON_BINDIR}
+else
 TARGET_DEST_ROOTDIR       := ${SDK_ROOTDIR}/${COMMON_BINDIR}
+endif
 TARGET_DEST_FILENAME      := ${PROJ_NAME}_${PROJ_TC}_${COMPILE_TIME}
 TARGET_DEST_FILENAME_EXE  := ${TARGET_DEST_ROOTDIR}/${TARGET_DEST_FILENAME}.${TC_SUFFIX}
 TARGET_DEST_FILENAME_BIN  := ${TARGET_DEST_ROOTDIR}/${TARGET_DEST_FILENAME}.${MOD_BINEXT}
@@ -116,6 +124,9 @@ CPPOPTS:=$(strip ${TC_CPPOPTS} ${TC_DBG_COPTS} ${CORE_COPTS} ${PROJ_COPTS} ${EXT
 CDEFS:=$(foreach def,$(strip ${TC_CDEFS} ${PROJ_CDEFS} ${OS_CDEFS} ${EXT_CDEFS}),-D${def})
 
 CINCDIRS:=$(foreach inc,$(strip ${PROJ_CINCDIRS} ${OS_CINCDIRS} ${EXT_CINCDIRS}),-I$(call MK_TC_PATH,${SDK_ROOTDIR}/${inc}))
+ifneq (${PUSER_ROOTDIR},)
+CINCDIRS+=$(foreach inc,$(strip ${PUSER_CINCDIRS}),-I$(call MK_TC_PATH,${PUSER_ROOTDIR}/${inc}))
+endif
 
 #####################################
 # linker section
