@@ -14,6 +14,11 @@ SDK_ROOTDIR := ${SDK_DIR_MK}
 # Absolute path to makefiles
 MAKEFILES_ROOTDIR := ${SDK_ROOTDIR}/make
 
+MAKE_TARGET_CLEANS := y
+ifeq (,$(findstring clean,$(MAKECMDGOALS))$(findstring distclean,$(MAKECMDGOALS)))
+MAKE_TARGET_CLEANS := n
+endif
+
 CONFIG_FILE := ${SDK_ROOTDIR}/apps/app_config.mk
 include ${CONFIG_FILE}
 

@@ -1,6 +1,8 @@
 
 ifeq (${BOARD_SELECTION},)
+ifeq (${MAKE_TARGET_CLEANS},n)
 $(error Invalid empty BOARD_SELECTION)
+endif
 endif
 
 ifeq (${BOARD_SELECTION},f103_eval)

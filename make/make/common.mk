@@ -47,7 +47,9 @@ DEFSINCLIST := ${TCDEFSINC} ${COREDEFSINC}
 # include toolchain, core and OS definitions
 #####################################
 include ${TCDEFSINC}
+ifeq (${MAKE_TARGET_CLEANS},n)
 include ${COREDEFSINC}
+endif
 
 # definitions for binary folder target outputs
 ifneq (${PUSER_ROOTDIR},)
