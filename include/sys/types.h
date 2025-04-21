@@ -31,6 +31,10 @@ typedef intptr_t     ssize_t;
 typedef uintptr_t    rsize_t;
 
 typedef int16_t      pid_t;
+
+typedef uint32_t     blkcnt_t;
+typedef int16_t      blksize_t;
+
 typedef int32_t      off_t;
 
 #if 1

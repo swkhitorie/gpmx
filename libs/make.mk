@@ -1,4 +1,6 @@
 
+FR_CSOURCES   +=  libs/noneuse_syscall.c
+
 FR_CSOURCES   +=  libs/dev/dnode.c
 FR_CSOURCES   +=  libs/dev/serial.c
 FR_CSOURCES   +=  libs/dev/i2c_master.c

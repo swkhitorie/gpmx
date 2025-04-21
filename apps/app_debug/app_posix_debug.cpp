@@ -111,7 +111,7 @@ void* p2_entry(void *p)
         fprintf(stdout, "[%s] %.6f p2 tag, val: %.5f, %d\r\n", name, hrt_absolute_time()/1e6f,
                                     *value, i);
         sleep(1000);
-        debug_led_toggle();
+        // debug_led_toggle();
     }
     fprintf(stdout, "[%s] %.6f p2 end\r\n", name, hrt_absolute_time()/1e6f);
     return NULL;
@@ -190,7 +190,7 @@ void* p5_entry(void *p)
         memcpy((char *)&tmp_rcv, &rcv_array[0], sizeof(euler_t));
         fprintf(stdout, "[%s] rcv data: %.3f, %.3f, %.3f, %d\r\n", &name[0], tmp_rcv.pitch, tmp_rcv.roll, tmp_rcv.yaw, res);
         sleep(1000);
-        debug_led_toggle();
+        // debug_led_toggle();
     }
 
     return NULL;
@@ -245,7 +245,7 @@ void* p7_entry(void *p)
         sem_getvalue(&a_sem, &val);
         fprintf(stdout, "[%s] post sem : %d\r\n", &name[0], val);
         sleep(1000);
-        debug_led_toggle();
+        // debug_led_toggle();
     }
 
     return NULL;
@@ -296,7 +296,7 @@ void* p9_entry(void *p)
 
         fprintf(stdout, "[%s] lock after val : %d\r\n", &name[0], critical_val);
         sleep(1000);
-        debug_led_toggle();
+        // debug_led_toggle();
     }
 
     return NULL;

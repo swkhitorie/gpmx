@@ -12,13 +12,13 @@ include ${SDK_ROOTDIR}/bsp/make.mk
 CONFIG_FR_ARCH=${MOD_ARCH}
 CONFIG_FR_TOOLCHAIN=gcc
 CONFIG_FR_MEM_METHOD=4
-CONFIG_FR_LIB_CPP=y
+CONFIG_FR_LIB_CPP=n
 CONFIG_FR_LIB_PX4_SUPPORT=n
-CONFIG_FR_LIB_POSIX=y
+CONFIG_FR_LIB_POSIX=n
 CONFIG_FR_FAT_FATFS=n
 CONFIG_CRUSB=n
 CONFIG_USE_DRV_HRT_INTERNAL=y
-CONFIG_FR_LIB_UORB=y
+CONFIG_FR_LIB_UORB=n
 
 include ${SDK_ROOTDIR}/sched/make.mk
 include ${SDK_ROOTDIR}/mm/make.mk
@@ -44,10 +44,6 @@ PROJ_CINCDIRS += apps
 #CPPSOURCES += apps/app_debug/app_posix_debug.cpp
 #CPPSOURCES += apps/app_bsp_eval/app_main.cpp
 
-
-
-
-
 CPPSOURCES += apps/app_fmuv2_test/app_main.cpp
 CSOURCES += libs/gcl/drivers/imu/l3gd20/l3gd20_test.c
 
@@ -55,6 +51,6 @@ CSOURCES += libs/gcl/drivers/imu/l3gd20/l3gd20_test.c
 # CPPSOURCES += libs/gcl/drivers/magnetometers/ist8310/IST8310.cpp
 # CSOURCES += libs/gcl/drivers/imu/icm42688p/icm42688_test.c
 
-CONFIG_LINK_PRINTF_FLOAT:=y
+CONFIG_LINK_PRINTF_FLOAT:=n
 CONFIG_LINK_SCANF_FLOAT:=n
 CONFIG_COMPILE_OPTIMIZE:=O1

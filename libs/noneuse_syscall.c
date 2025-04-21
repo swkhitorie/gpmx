@@ -1,18 +1,12 @@
-#include <sys/stat.h>
+#include "sys/stat.h"
 #include <stdlib.h>
-#include <errno.h>
+#include "errno.h"
 #include <stdio.h>
-#include <signal.h>
-#include <time.h>
-#include <sys/time.h>
-#include <sys/times.h>
+#include "signal.h"
+#include "time.h"
 
 char *__env[1] = { 0 };
 char **environ = __env;
-
-void initialise_monitor_handles()
-{
-}
 
 int _getpid(void)
 {
@@ -23,7 +17,7 @@ int _kill(int pid, int sig)
 {
     (void)pid;
     (void)sig;
-    errno = EINVAL;
+    // errno = EINVAL;
     return -1;
 }
 
@@ -88,14 +82,14 @@ int _open(char *path, int flags, ...)
 int _wait(int *status)
 {
     (void)status;
-    errno = ECHILD;
+    // errno = ECHILD;
     return -1;
 }
 
 int _unlink(char *name)
 {
     (void)name;
-    errno = ENOENT;
+    // errno = ENOENT;
     return -1;
 }
 
@@ -116,13 +110,13 @@ int _link(char *old, char *new)
 {
     (void)old;
     (void)new;
-    errno = EMLINK;
+    // errno = EMLINK;
     return -1;
 }
 
 int _fork(void)
 {
-    errno = EAGAIN;
+    // errno = EAGAIN;
     return -1;
 }
 
@@ -131,6 +125,6 @@ int _execve(char *name, char **argv, char **env)
     (void)name;
     (void)argv;
     (void)env;
-    errno = ENOMEM;
+    // errno = ENOMEM;
     return -1;
 }

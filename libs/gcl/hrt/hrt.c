@@ -43,6 +43,9 @@
 
 #include "./hrt_stm32.h"
 
+#include "FreeRTOS.h"
+#include "portmacro.h"
+
 #ifdef CONFIG_DEBUG_HRT
 #define hrtinfo _info
 #else
