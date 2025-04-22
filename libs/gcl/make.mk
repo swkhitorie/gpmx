@@ -28,8 +28,15 @@ FR_CSOURCES += libs/queue/sq_rem.c
 FR_CSOURCES += libs/queue/sq_remafter.c
 FR_CSOURCES += libs/queue/sq_remfirst.c
 FR_CSOURCES += libs/queue/sq_remlast.c
-endif
+endif # CONFIG_FR_LIB_POSIX
 
-endif
+endif # CONFIG_USE_DRV_HRT_INTERNAL
 
+endif # CONFIG_FR_LIB_PX4_SUPPORT
+
+
+ifeq (${CONFIG_USE_RTKLIB},y)
+FR_CSOURCES   +=  libs/gcl/rtklib/rtkcmn.c
+FR_CSOURCES   +=  libs/gcl/rtklib/rtcm3.c
+FR_CSOURCES   +=  libs/gcl/rtklib/rtcm_st_proprietary.c
 endif
