@@ -523,6 +523,10 @@ static const struct pin_node spi6_pinctrl[4][3] = {
  * ||																		||
  *  =========================================================================
 */
+#if defined (STM32H743xx) || defined (STM32H753xx) || defined (STM32H750xx) || defined (STM32H742xx) || \
+    defined (STM32H745xx) || defined (STM32H745xG) || defined (STM32H755xx) || defined (STM32H747xx) || \
+	defined (STM32H747xG) || defined (STM32H757xx)
+
 #define		QSPI_PIN_IO_0	 	0
 #define		QSPI_PIN_IO_1  		1
 #define		QSPI_PIN_IO_2	 	2
@@ -578,6 +582,7 @@ static const struct pin_node qspi_bank2_pinctrl[5][2] = {
 #define QSPI_PINCTRL_SOURCE(NUM, TYPE, SELECT)   \
 		(TYPE < QSPI_PIN_TYPE_NUM && SELECT <= qspi_max_selection_number[NUM - 1]) ?   \
 				&qspi_bank## NUM ##_pinctrl[INDEX(TYPE)][INDEX(SELECT) - 1] : NULL
+#endif
 /**
  * @brief 
  *  =========================================================================

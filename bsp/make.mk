@@ -20,6 +20,11 @@ MOD_ARCH = m7
 include ${SDK_ROOTDIR}/bsp/stm32/stm32h743_eval/make.mk
 endif
 
+ifeq (${BOARD_SELECTION},h7b0_eval)
+MOD_ARCH = m7
+include ${SDK_ROOTDIR}/bsp/stm32/stm32h7b0_eval/make.mk
+endif
+
 ifeq (${BOARD_SELECTION},fmu_v2)
 MOD_ARCH = m4
 include ${SDK_ROOTDIR}/bsp/stm32/stm32f427_fmuv2/make.mk
