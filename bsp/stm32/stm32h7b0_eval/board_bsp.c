@@ -1,7 +1,9 @@
 #include "board_config.h"
 #include <drv_uart.h>
+#include <drv_i2c.h>
 #include <dev/dnode.h>
 #include <dev/serial.h>
+#include <dev/i2c_master.h>
 
 /* COM5 --- for output debug in TH1030 */
 uint8_t com5_dma_rxbuff[256];
@@ -83,6 +85,24 @@ struct up_uart_dev_s com7_dev = {
     .enable_dmatx = true,
 };
 
+/**************
+ * Sensor I2C --- MS5611 + IST8310 + EEPROM
+ **************/
+struct up_i2c_master_s sensor_i2c_dev = 
+{
+    .dev = {
+		.clk_speed = 100000,   //100kHZ
+		.addr_mode = I2C_ADDR_7BIT,
+        .ops       = &g_i2c_master_ops,
+        .priv      = &sensor_i2c_dev,
+    },
+	.id = 2, //i2c2
+	.pin_scl = 1, //PB10
+    .pin_sda = 1, //PB11
+    .priority_event = 4,
+    .priority_error = 5,
+};
+
 uart_dev_t *dstdout;
 uart_dev_t *dstdin;
 
@@ -92,9 +112,11 @@ void board_bsp_init()
 {
     dregister("/com5", &com5_dev.dev);
     dregister("/com7", &com7_dev.dev);
+    dregister("/sensor_i2c", &sensor_i2c_dev.dev);
 
     com5_dev.dev.ops->setup(&com5_dev.dev);
     com7_dev.dev.ops->setup(&com7_dev.dev);
+    sensor_i2c_dev.dev.ops->setup(&sensor_i2c_dev.dev);
 
     dstdout = dbind("/com5");
     dstdin = dbind("/com5");

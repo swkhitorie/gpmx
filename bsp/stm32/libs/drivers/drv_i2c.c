@@ -2,6 +2,7 @@
 
 static struct i2c_master_s *i2c_mlist[4] = {0, 0, 0, 0};
 
+static uint32_t low_h7_calculate_timing(uint32_t frequency);
 static bool low_pinconfig(struct i2c_master_s *dev);
 static bool low_pinsetup(struct i2c_master_s *dev, uint32_t mode);
 static void low_config(struct i2c_master_s *dev);
@@ -26,6 +27,71 @@ const struct i2c_ops_s g_i2c_master_ops =
 /****************************************************************************
  * Private Function
  ****************************************************************************/
+
+/************************************************************************************
+ *   This function supports bus clock frequencies of:
+ *
+ *      1000Khz (Fast Mode+)
+ *      400Khz  (Fast Mode)
+ *      100Khz  (Standard Mode)
+ *      10Khz   (Standard Mode)
+ *
+ *    PCLK1 >------|\   I2CCLK
+ *   SYSCLK >------| |--------->
+ *      HSI >------|/
+ *
+ *   HSI is the default and is always 16Mhz.
+ ************************************************************************************/
+uint32_t low_h7_calculate_timing(uint32_t frequency) {
+    uint8_t presc;
+    uint8_t scl_delay;
+    uint8_t sda_delay;
+    uint8_t scl_h_period;
+    uint8_t scl_l_period;
+
+    /*  The Speed and timing calculation are based on the following
+       *  fI2CCLK = HSI and is 16Mhz
+       *  Analog filter is on,
+       *  Digital filter off
+       *  Rise Time is 120 ns and fall is 10ns
+       *  Mode is FastMode
+    */
+
+    if (frequency == 100000) {
+        presc        = 0;
+        scl_delay    = 5;
+        sda_delay    = 0;
+        scl_h_period = 61;
+        scl_l_period = 89;
+    } else if (frequency == 400000) {
+        presc        = 0;
+        scl_delay    = 3;
+        sda_delay    = 0;
+        scl_h_period = 6;
+        scl_l_period = 24;
+    } else if (frequency == 1000000) {
+        presc        = 0;
+        scl_delay    = 2;
+        sda_delay    = 0;
+        scl_h_period = 1;
+        scl_l_period = 5;
+    } else {
+        presc        = 7;
+        scl_delay    = 0;
+        sda_delay    = 0;
+        scl_h_period = 35;
+        scl_l_period = 162;
+    }
+    //503D59
+    uint32_t timingr =
+            (presc << 28) |
+            (scl_delay << 20) |
+            (sda_delay << 16) |
+            (scl_h_period << 8) |
+            (scl_l_period << 0);
+    return timingr;
+}
+
 bool low_pinconfig(struct i2c_master_s *dev)
 {
     struct up_i2c_master_s *priv = dev->priv;
@@ -130,12 +196,30 @@ void low_config(struct i2c_master_s *dev)
 {
     struct up_i2c_master_s *priv = dev->priv;
     uint8_t num = priv->id;
+    uint32_t timing = 0;
 	I2C_TypeDef *i2cx[4] = {
         I2C1, I2C2, I2C3,
 #if (BSP_CHIP_RESOURCE_LEVEL > 4)
         I2C4
 #endif
     };
+#if defined (DRV_BSP_H7)
+    /* h7 series use HSI/4 --> 16MHZ */
+    __HAL_RCC_HSI_CONFIG(RCC_HSI_DIV4);
+    uint32_t i2c_clk[4] = {
+        RCC_PERIPHCLK_I2C1, RCC_PERIPHCLK_I2C2, 
+        RCC_PERIPHCLK_I2C3, RCC_PERIPHCLK_I2C4,
+    };
+    uint32_t i2c_clk_src[4] = {
+        RCC_I2C1CLKSOURCE_HSI, RCC_I2C2CLKSOURCE_HSI,
+        RCC_I2C3CLKSOURCE_HSI, RCC_I2C4CLKSOURCE_HSI
+    };
+    RCC_PeriphCLKInitTypeDef i2c_clk_init = {0};
+    i2c_clk_init.PeriphClockSelection = i2c_clk[num-1];
+    if (num <= 3)      i2c_clk_init.I2c123ClockSelection = i2c_clk_src[num-1];
+    else if (num == 4) i2c_clk_init.I2c4ClockSelection   = i2c_clk_src[num-1];
+    HAL_RCCEx_PeriphCLKConfig(&i2c_clk_init);
+#endif
 
     low_pinconfig(dev);
 
@@ -145,7 +229,8 @@ void low_config(struct i2c_master_s *dev)
     priv->hi2c.Init.ClockSpeed = dev->clk_speed;    //100k, 400k
 #endif
 #if defined (DRV_BSP_H7)
-    priv->hi2c.Init.Timing  = 0x00901954;
+    timing = low_h7_calculate_timing(dev->clk_speed);
+    priv->hi2c.Init.Timing  = timing;  //constant: 0x20B0CCFF(h7b0) 0x00901954(h743)
 #endif
     priv->hi2c.Init.OwnAddress1      = 0;
     priv->hi2c.Init.AddressingMode   = I2C_ADDRESSINGMODE_7BIT;

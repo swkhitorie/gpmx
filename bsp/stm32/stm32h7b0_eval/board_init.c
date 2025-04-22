@@ -94,7 +94,7 @@ void board_config_power_rcc()
     }
 
     __HAL_RCC_CSI_ENABLE() ;
-    __HAL_RCC_SYSCFG_CLK_ENABLE() ;
+    __HAL_RCC_SYSCFG_CLK_ENABLE();
 
     HAL_EnableCompensationCell();
 
