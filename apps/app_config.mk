@@ -19,6 +19,7 @@ CONFIG_FR_FAT_FATFS=n
 CONFIG_CRUSB=n
 CONFIG_USE_DRV_HRT_INTERNAL=y
 CONFIG_FR_LIB_UORB=n
+CONFIG_USE_RTKLIB=y
 
 include ${SDK_ROOTDIR}/sched/make.mk
 include ${SDK_ROOTDIR}/mm/make.mk
@@ -41,7 +42,7 @@ PROJ_CDEFS += CONFIG_FR_IDLE_TIMER_TASKCREATE_HANDLE
 
 PROJ_CINCDIRS += apps
 
-CPPSOURCES += apps/app_bsp_eval/app_main.cpp
+CPPSOURCES += apps/app_h7b0_test/app_main.cpp
 CPPSOURCES += libs/gcl/drivers/imu/sh5001/sh5001.cpp
 
 CONFIG_LINK_PRINTF_FLOAT:=y

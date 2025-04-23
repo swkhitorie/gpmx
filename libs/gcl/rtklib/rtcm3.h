@@ -2,9 +2,8 @@
 #define RTCM3_H_
 
 #include "rtkcmn.h"
-#include "rtcm_st_proprietary.h"
 
-#ifdef cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -18,7 +17,7 @@ int input_rtcm3(rtcm_ut *rtcm, unsigned char data);
 
 int decode_rtcm3(rtcm_ut *rtcm);
 
-#ifdef cplusplus
+#ifdef __cplusplus
 }
 #endif
 

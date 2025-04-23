@@ -38,5 +38,4 @@ endif # CONFIG_FR_LIB_PX4_SUPPORT
 ifeq (${CONFIG_USE_RTKLIB},y)
 FR_CSOURCES   +=  libs/gcl/rtklib/rtkcmn.c
 FR_CSOURCES   +=  libs/gcl/rtklib/rtcm3.c
-FR_CSOURCES   +=  libs/gcl/rtklib/rtcm_st_proprietary.c
 endif

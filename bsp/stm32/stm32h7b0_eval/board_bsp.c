@@ -106,8 +106,6 @@ struct up_i2c_master_s sensor_i2c_dev =
 uart_dev_t *dstdout;
 uart_dev_t *dstdin;
 
-uart_dev_t *gnss_module;
-
 void board_bsp_init()
 {
     dregister("/com5", &com5_dev.dev);
@@ -120,7 +118,6 @@ void board_bsp_init()
 
     dstdout = dbind("/com5");
     dstdin = dbind("/com5");
-    gnss_module = dbind("/com7");
 }
 
 uint8_t buff_debug[1024];
