@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#ifdef CONFIG_BOARD_FREERTOS_ENABLE
+#include <FreeRTOS.h>
+#include <semphr.h>
+#endif
 
 #define I2C_M_WRITE          0x0001
 #define I2C_M_READ           0x0002
@@ -61,6 +65,11 @@ struct i2c_master_s
     uint8_t msgc;                /* Message count */
     uint8_t msgi;                /* Message index */
     struct i2c_msg_s *msgv;      /* Message list */
+
+#ifdef CONFIG_BOARD_FREERTOS_ENABLE
+    SemaphoreHandle_t  mutex;
+    SemaphoreHandle_t  transfer_sem;
+#endif
 
     /* Driver interface */
     const struct i2c_ops_s  *ops;  /* Arch-specific operations */

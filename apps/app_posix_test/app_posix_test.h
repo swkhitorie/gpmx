@@ -1,4 +1,6 @@
-#include "./app_main.h"
+#ifndef APP_POSIX_TEST_H_
+#define APP_POSIX_TEST_H_
+
 #include <drivers/drv_hrt.h>
 #include <stdio.h>
 #include <string.h>
@@ -33,3 +35,4 @@
 
 void app_posix_freertos_debug_init();
 
+#endif

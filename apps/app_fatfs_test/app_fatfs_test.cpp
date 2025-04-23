@@ -1,4 +1,4 @@
-#include "app_fatfs_debug.h"
+#include "app_fatfs_test.h"
 
 void ff_ls(const char *path)
 {

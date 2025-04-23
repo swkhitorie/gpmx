@@ -1,5 +1,5 @@
-#ifndef APP_FATFS_DEBUG_H_
-#define APP_FATFS_DEBUG_H_
+#ifndef APP_FATFS_TEST_H_
+#define APP_FATFS_TEST_H_
 
 #include "ff.h"
 

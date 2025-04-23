@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#ifdef CONFIG_BOARD_FREERTOS_ENABLE
+#include <FreeRTOS.h>
+#include <semphr.h>
+#endif
 
 #define SPI_LOCK(d,l) (d)->ops->lock(d,l)
 
@@ -67,6 +71,13 @@ struct spi_dev_s
     uint32_t frequency;
     enum spi_mode_e mode;
     uint8_t nbits;
+
+#ifdef CONFIG_BOARD_FREERTOS_ENABLE
+    SemaphoreHandle_t  mutex;
+    SemaphoreHandle_t  sendsem;
+    SemaphoreHandle_t  recvsem;
+    SemaphoreHandle_t  exchsem;
+#endif
 
     /* Driver interface */
     const struct spi_ops_s *ops;  /* Arch-specific operations */

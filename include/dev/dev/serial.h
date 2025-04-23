@@ -3,6 +3,10 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#ifdef CONFIG_BOARD_FREERTOS_ENABLE
+#include <FreeRTOS.h>
+#include <semphr.h>
+#endif
 
 #define SERIAL_DMASEND(d,m,c) ((d)->ops->dmasend(d,m,c))
 
@@ -65,6 +69,12 @@ struct uart_dev_s {
     /* DMA transfers */
     struct uart_dmaxfer_s dmatx;  /* Describes transmit DMA transfer */
     struct uart_dmaxfer_s dmarx;  /* Describes receive DMA transfer */
+
+#ifdef CONFIG_BOARD_FREERTOS_ENABLE
+    SemaphoreHandle_t  mutex;
+    SemaphoreHandle_t  xmitsem;
+    SemaphoreHandle_t  recvsem;
+#endif
 
     /* Driver interface */
     const struct uart_ops_s *ops;  /* Arch-specific operations */

@@ -1,4 +1,4 @@
-#include "./app_posix_debug.h"
+#include "app_posix_test.h"
 
 #include <uorb/topics/sensor_accel.h>
 #include "uorb/abs_time.h"
