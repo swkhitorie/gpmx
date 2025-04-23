@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-#ifdef CONFIG_BOARD_FREERTOS_ENABLE
+#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_I2C_TASKSYNC
 #include <FreeRTOS.h>
 #include <semphr.h>
 #endif
@@ -66,9 +66,29 @@ struct i2c_master_s
     uint8_t msgi;                /* Message index */
     struct i2c_msg_s *msgv;      /* Message list */
 
-#ifdef CONFIG_BOARD_FREERTOS_ENABLE
-    SemaphoreHandle_t  mutex;
-    SemaphoreHandle_t  transfer_sem;
+#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_I2C_TASKSYNC
+    SemaphoreHandle_t  mutex;       /* Prevent devices from being occupied by multiple threads */
+    /**
+     * Synch Bus:
+     * sem_excl: protect transfer process
+     * sem_isr: i2c dev will get with time wait, until i2c isr give
+     * 
+     * example:
+     * 
+     * void i2c_transfer() {
+     *     take sem_excl
+     *     do {
+     *        sem_timewait(&sem_isr)
+     *     } (i2c transfer isr completed)
+     *     give sem_excl
+     * }
+     * 
+     * void i2c_transfer_isr_callback() {
+     *     sem_post(&sem_isr)
+     * }
+     */
+    SemaphoreHandle_t  sem_excl;    /* Mutual exclusion semaphore */
+    SemaphoreHandle_t  sem_isr;     /* Interrupt wait semaphore */
 #endif
 
     /* Driver interface */
@@ -80,7 +100,19 @@ struct i2c_master_s
 extern "C"{
 #endif
 
-int i2c_register(struct i2c_master_s *i2c, int bus);
+int i2c_register(struct i2c_master_s *dev, int bus);
+
+#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_I2C_TASKSYNC
+
+void i2c_sem_init(struct i2c_master_s *dev);
+
+void i2c_sem_destroy(struct i2c_master_s *dev);
+
+void i2c_sem_wait(struct i2c_master_s *dev);
+
+void i2c_sem_post(struct i2c_master_s *dev);
+
+#endif
 
 #if defined(__cplusplus)
 }

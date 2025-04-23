@@ -1,6 +1,7 @@
 #include <board_config.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <drivers/drv_hrt.h>
 
 int main(int argc, char *argv[])
 {

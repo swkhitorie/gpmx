@@ -12,8 +12,10 @@ extern uint32_t SystemCoreClock;
 /****************************************************************************
  * FreeRTOS Interrupt Configuration
  ****************************************************************************/
+#ifdef CONFIG_BOARD_FREERTOS_ENABLE
 #define xPortPendSVHandler 	PendSV_Handler
 #define vPortSVCHandler 	SVC_Handler
+#endif
 // #define xPortSysTickHandler SysTick_Handler
 
 #ifdef __NVIC_PRIO_BITS

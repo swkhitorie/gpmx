@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#ifdef CONFIG_BOARD_FREERTOS_ENABLE
+#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_SERIAL_TASKSYNC
 #include <FreeRTOS.h>
 #include <semphr.h>
 #endif
@@ -70,8 +70,17 @@ struct uart_dev_s {
     struct uart_dmaxfer_s dmatx;  /* Describes transmit DMA transfer */
     struct uart_dmaxfer_s dmarx;  /* Describes receive DMA transfer */
 
-#ifdef CONFIG_BOARD_FREERTOS_ENABLE
-    SemaphoreHandle_t  mutex;
+#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_SERIAL_TASKSYNC
+    SemaphoreHandle_t  mutex;     /* Prevent devices from being occupied by multiple threads */
+    /**
+     * Asynch Bus:
+     * serial poll send: xmitsem can protect poll send action
+     * serial dma send: xmitsem can protect in next xmit, 
+     *                  txisr will give sem to wakeup
+     * 
+     * serial recv: use dma isr buffer, 
+     *              recvsem protect dma isr buffer read action
+     */
     SemaphoreHandle_t  xmitsem;
     SemaphoreHandle_t  recvsem;
 #endif

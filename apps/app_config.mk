@@ -42,8 +42,9 @@ PROJ_CDEFS += CONFIG_FR_IDLE_TIMER_TASKCREATE_HANDLE
 
 PROJ_CINCDIRS += apps
 
-CPPSOURCES += apps/app_h7b0_test/app_main.cpp
-CPPSOURCES += libs/gcl/drivers/imu/sh5001/sh5001.cpp
+# CPPSOURCES += apps/app_h7b0_test/app_main.cpp
+# CPPSOURCES += libs/gcl/drivers/imu/sh5001/sh5001.cpp
+CPPSOURCES += apps/app_freertos_test/app_main.cpp
 
 CONFIG_LINK_PRINTF_FLOAT:=y
 CONFIG_LINK_SCANF_FLOAT:=n

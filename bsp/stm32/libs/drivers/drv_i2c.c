@@ -341,12 +341,18 @@ int low_transfer_it(struct i2c_master_s *dev)
             priv->ts_ecnt++;
         }
     }
+    return ret;
 }
 
 void low_completed_irq(struct i2c_master_s *dev)
 {
     struct up_i2c_master_s *priv = dev->priv;
-    if (HAL_I2C_GetState(&priv->hi2c) == HAL_I2C_STATE_READY) {
+
+    if (dev->msgi == dev->msgc) {
+#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_I2C_TASKSYNC
+        xSemaphoreGive(dev->sem_isr);
+#endif
+    } else if (HAL_I2C_GetState(&priv->hi2c) == HAL_I2C_STATE_READY) {
         low_transfer_it(dev);
     }
 }
@@ -366,6 +372,10 @@ int up_setup(struct i2c_master_s *dev)
 
     low_setup(dev);
 
+#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_I2C_TASKSYNC
+    i2c_sem_init(dev);
+#endif
+
     dev->msgc = 0;
     dev->msgi = 0;
     dev->msgv = NULL;
@@ -378,11 +388,40 @@ int up_setup(struct i2c_master_s *dev)
 
 int up_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
 {
+    int ret = 0;
+    int ret2 = 0, timeout = 0;
+    if (count == 0) return 0;
+
+#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_I2C_TASKSYNC
+    i2c_sem_wait(dev);
+#endif
     dev->msgv = msgs;
     dev->msgc = count;
     dev->msgi = 0;
 
-    return low_transfer(dev);
+#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_I2C_TASKSYNC
+    ret = low_transfer_it(dev);
+
+    do {
+        if (xSemaphoreTake(dev->sem_isr, 1000) == pdTRUE) {
+            break;
+        } else {
+            timeout++;
+        }
+    } while (dev->msgi < dev->msgc && timeout < 10);
+
+    if (dev->msgi < dev->msgc) {
+        ret = 0xff;
+    }
+#else
+    ret = low_transfer(dev);
+#endif
+
+#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_I2C_TASKSYNC
+    i2c_sem_post(dev);
+#endif
+
+    return ret;
 }
 
 int up_transferit(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)

@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-#ifdef CONFIG_BOARD_FREERTOS_ENABLE
+#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_SPI_TASKSYNC
 #include <FreeRTOS.h>
 #include <semphr.h>
 #endif
@@ -72,11 +72,14 @@ struct spi_dev_s
     enum spi_mode_e mode;
     uint8_t nbits;
 
-#ifdef CONFIG_BOARD_FREERTOS_ENABLE
-    SemaphoreHandle_t  mutex;
-    SemaphoreHandle_t  sendsem;
-    SemaphoreHandle_t  recvsem;
-    SemaphoreHandle_t  exchsem;
+#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_SPI_TASKSYNC
+    SemaphoreHandle_t  mutex;    /* Prevent devices from being occupied by multiple threads */
+    SemaphoreHandle_t  rxsem;    /* Wait for RX DMA to complete */
+    SemaphoreHandle_t  txsem;    /* Wait for TX DMA to complete */
+    SemaphoreHandle_t  rtxsem;   /* Wait for TRX DMA to complete */
+
+    /* exclsem handle by SPI_LOCK() */
+    SemaphoreHandle_t  exclsem;  /* Held while chip is selected for mutual exclusion */
 #endif
 
     /* Driver interface */
@@ -89,6 +92,26 @@ extern "C"{
 #endif
 
 int spi_register(const char *path, struct spi_dev_s *dev);
+
+#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_SPI_TASKSYNC
+
+void spi_sem_init(struct spi_dev_s *dev);
+
+void spi_sem_destroy(struct spi_dev_s *dev);
+
+int spi_dmarxwait(struct spi_dev_s *dev, bool rxresult);
+
+void spi_dmarxwakeup(struct spi_dev_s *dev);
+
+int spi_dmatxwait(struct spi_dev_s *dev, bool txresult);
+
+void spi_dmatxwakeup(struct spi_dev_s *dev);
+
+int spi_dmartxwait(struct spi_dev_s *dev, bool rtxresult);
+
+void spi_dmartxwakeup(struct spi_dev_s *dev);
+
+#endif
 
 #if defined(__cplusplus)
 }

@@ -604,6 +604,9 @@ void low_irq_dmatx(struct uart_dev_s *dev)
 {
     struct up_uart_dev_s *priv = dev->priv;
     uint32_t len = dev->xmit.size;
+#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_SERIAL_TASKSYNC
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+#endif
 
     if (len > 0) {
         if(len > dev->dmatx.capacity) 
@@ -617,6 +620,10 @@ void low_irq_dmatx(struct uart_dev_s *dev)
         HAL_UART_Transmit_DMA(&priv->com, &dev->dmatx.buffer[0], len);
     } else {
         dev->tx_ready = true;
+#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_SERIAL_TASKSYNC
+        xSemaphoreGiveFromISR(dev->xmitsem, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+#endif
     }
 }
 
@@ -647,6 +654,12 @@ void low_irq_dmarx(struct uart_dev_s *dev)
 int up_setup(struct uart_dev_s *dev) 
 {
     low_setup(dev);
+#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_SERIAL_TASKSYNC
+    dev->xmitsem = xSemaphoreCreateBinary();
+    dev->recvsem = xSemaphoreCreateBinary();
+    xSemaphoreGive(dev->xmitsem);
+    xSemaphoreGive(dev->recvsem);
+#endif
 }
 
 bool up_txready(struct uart_dev_s *dev)
@@ -662,8 +675,14 @@ bool up_rxavailable(struct uart_dev_s *dev)
 int up_dmasend(struct uart_dev_s *dev, const uint8_t *p, uint16_t len)
 {
     struct up_uart_dev_s *priv = dev->priv;
-    uart_buf_write(&dev->xmit, &p[0], len);
 
+#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_SERIAL_TASKSYNC
+    if (xSemaphoreTake(dev->xmitsem, 5000) != pdTRUE) {
+        return 0;
+    }
+#endif
+
+    uart_buf_write(&dev->xmit, &p[0], len);
     if (!dev->tx_ready) return false;
     dev->tx_ready = false;
 
@@ -686,12 +705,30 @@ int up_dmasend(struct uart_dev_s *dev, const uint8_t *p, uint16_t len)
 int up_send(struct uart_dev_s *dev, const uint8_t *p, uint16_t len)
 {
     struct up_uart_dev_s *priv = dev->priv;
+#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_SERIAL_TASKSYNC
+    if (xSemaphoreTake(dev->xmitsem, 5000) != pdTRUE) {
+        return 0;
+    }
+#endif
     HAL_UART_Transmit(&priv->com, (uint8_t *)p, len, 3000);
+#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_SERIAL_TASKSYNC
+    xSemaphoreGive(dev->xmitsem);
+#endif
 }
 
 int up_readbuf(struct uart_dev_s *dev, uint8_t *p, uint16_t len)
 {
-    return uart_buf_read(&dev->recv, p, len);
+    int sz = 0;
+#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_SERIAL_TASKSYNC
+    if (xSemaphoreTake(dev->recvsem, 5000) != pdTRUE) {
+        return 0;
+    }
+#endif
+    sz = uart_buf_read(&dev->recv, p, len);
+#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_SERIAL_TASKSYNC
+    xSemaphoreGive(dev->recvsem);
+#endif
+    return sz;
 }
 
 /****************************************************************************
