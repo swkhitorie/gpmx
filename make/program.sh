@@ -30,7 +30,7 @@ then
 fi
 
 # make/program.sh f407_eval -j2 -r stlink stm32f4x
-# make/program.sh f407_eval -j2 -r stlink stm32h7x
+# make/program.sh h743_eval -j2 -r stlink stm32h7x
 
 make program ${make_thread} \
         OS=${makefile_os} \
