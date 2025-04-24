@@ -40,6 +40,31 @@ linux:
 ./make/program.sh h743_eval -j2 -r stlink stm32h7x
 ```
 
+例程修改:
+
+在apps/app_config.mk里添加修改:
+
+```makefile
+PROJ_NAME  :=  test                               #工程名
+PROJ_TC    :=  gae                                #选择编译器, 目前只针对gcc进行了编写
+# ....
+CONFIG_FR_ARCH=${MOD_ARCH}
+CONFIG_FR_TOOLCHAIN=gcc
+CONFIG_FR_MEM_METHOD=4                            #选择heap_x.c
+CONFIG_FR_LIB_CPP=n                               #是否添加cpp new delete到内存管理
+CONFIG_FR_LIB_PX4_SUPPORT=n                       
+CONFIG_FR_LIB_POSIX=n                             #是否使用freertos-posix
+CONFIG_FR_FAT_FATFS=n                             #是否使用fatfs
+CONFIG_CRUSB=n                                   
+CONFIG_USE_DRV_HRT_INTERNAL=y
+CONFIG_FR_LIB_UORB=n
+CONFIG_USE_RTKLIB=y
+
+PROJ_CDEFS += CONFIG_BOARD_COM_STDINOUT               #条件编译宏
+PROJ_CINCDIRS += apps                                 #头文件目录
+CPPSOURCES += apps/app_freertos_test/app_main.cpp     #源文件
+```
+
 
 
 
