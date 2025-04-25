@@ -53,10 +53,12 @@
 #elif defined (DRV_BSP_G0)
     #define BSP_CHIP_RESOURCE_LEVEL 1
     #define CONFIG_UART_PERIPHAL_NUM (4)
+    #define CONFIG_SPI_PERIPHAL_NUM  (2)
     #define CONFIG_DRV_GPIO_EXTERNAL_IRQ_LINE_NUM (16)
 #elif defined (DRV_BSP_WL)
     #define BSP_CHIP_RESOURCE_LEVEL 0
     #define CONFIG_UART_PERIPHAL_NUM (2)
+    #define CONFIG_SPI_PERIPHAL_NUM  (2)
     #define CONFIG_DRV_GPIO_EXTERNAL_IRQ_LINE_NUM (16)
 #endif
 

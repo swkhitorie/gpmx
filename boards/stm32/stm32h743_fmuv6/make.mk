@@ -7,10 +7,10 @@
 BSP_LIBCONFIG_STM32_LLDRV=y
 
 # compile macros for low level driver user library
-BSP_LIBCONFIG_STM32_LLDRV_SERIES=DRV_BSP_WL
+BSP_LIBCONFIG_STM32_LLDRV_SERIES=DRV_BSP_H7
 
-# sdk sources selection, enable stm32 cubeLibrary WL
-BSP_LIBCONFIG_STM32_SERIES=BSP_STM32_WL
+# sdk sources selection, enable stm32 cubeLibrary H7
+BSP_LIBCONFIG_STM32_SERIES=BSP_STM32_H7
 
 # cubeLibrary modules and low level drivers selection
 BSP_LIBCONFIG_STM32_HAL_USART=y
@@ -18,48 +18,43 @@ BSP_LIBCONFIG_STM32_HAL_IWDG=y
 BSP_LIBCONFIG_STM32_HAL_RTC=y
 BSP_LIBCONFIG_STM32_HAL_FLASH=n
 BSP_LIBCONFIG_STM32_HAL_BASTIM=n
-BSP_LIBCONFIG_STM32_HAL_I2C=n
-BSP_LIBCONFIG_STM32_HAL_SPI=n
-BSP_LIBCONFIG_STM32WL_SUBGHZ_PHY=y
-BSP_LIBCONFIG_STM32WL_UTILITIES=y
+BSP_LIBCONFIG_STM32_HAL_I2C=y
+BSP_LIBCONFIG_STM32_HAL_SPI=y
+BSP_LIBCONFIG_STM32_HAL_QSPI=y
+BSP_LIBCONFIG_STM32_HAL_MMCSD=y
 
 # include all cubelibrary files and low level driver files
-include ${SDK_ROOTDIR}/bsp/stm32/libs/bsp_libs_stm32.mk
+include ${SDK_ROOTDIR}/boards/stm32/libs/bsp_libs_stm32.mk
 
 #########################################################################
 # BSP macros, sources + asm + link files, includes, and entry address
 #########################################################################
 BOARD_CDEFS += ${BSP_LIBCONFIG_STM32_LLDRV_SERIES}
-BOARD_CDEFS += STM32WL55xx
+BOARD_CDEFS += STM32H743xx
 BOARD_CDEFS += USE_HAL_DRIVER
-BOARD_CDEFS += CORE_CM4
 
 BOARD_CSRCS += board_irq.c
 BOARD_CSRCS += board_rcc_init.c
+BOARD_CSRCS += board_usb.c
 BOARD_CSRCS += board_init.c
 BOARD_CSRCS += board_bsp.c
 
-BOARD_CSRCS += app_subghz.c
-BOARD_CSRCS += ringbuffer.c
+BOARD_ASMSOURCES += fmuv6_startup.s
+BOARD_LNK_FILE   += fmuv6_lnk_script.ld
 
-BOARD_SUBGHZ_IF_INCDIRS += bsp/stm32/stm32wl55_eval/subghz_utilities_if
-BOARD_SUBGHZ_IF_CSRCS += subghz_utilities_if/timer_if.c
-BOARD_SUBGHZ_IF_CSRCS += subghz_utilities_if/stm32_lpm_if.c
-BOARD_SUBGHZ_IF_CSRCS += subghz_utilities_if/stm32_adv_trace_if.c
-BOARD_SUBGHZ_IF_CSRCS += subghz_utilities_if/radio_board_if.c
+BOARD_CDEFS += CONFIG_STM32_DMA_SPI1_RX
+BOARD_CDEFS += CONFIG_STM32_DMA_SPI1_TX
+BOARD_CDEFS += CONFIG_STM32_DMA_SPI2_RX
+BOARD_CDEFS += CONFIG_STM32_DMA_SPI2_TX
 
-BOARD_ASMSOURCES += stm32wl55_eval_startup_gcc.s
-BOARD_LNK_FILE   += stm32wl55_eval_lnk_gcc.ld
-
-TMPBOARD_CSRCS = ${addprefix bsp/stm32/stm32wl55_eval/,${BOARD_CSRCS}}
-TMPBOARD_SUBGHZ_CSRCS = ${addprefix bsp/stm32/stm32wl55_eval/,${BOARD_SUBGHZ_IF_CSRCS}}
-TMPBOARD_ASMSOURCES = ${addprefix bsp/stm32/stm32wl55_eval/,${BOARD_ASMSOURCES}}
-TMPBOARD_LNK_FILE = ${addprefix bsp/stm32/stm32wl55_eval/,${BOARD_LNK_FILE}}
+TMPBOARD_CSRCS = ${addprefix boards/stm32/stm32h743_fmuv6/,${BOARD_CSRCS}}
+TMPBOARD_ASMSOURCES = ${addprefix boards/stm32/stm32h743_fmuv6/,${BOARD_ASMSOURCES}}
+TMPBOARD_LNK_FILE = ${addprefix boards/stm32/stm32h743_fmuv6/,${BOARD_LNK_FILE}}
 
 BSP_BOARD_ENTRY_POINT   := Reset_Handler
 BSP_CDEFS               += ${BOARD_CDEFS}
-BSP_CSRCS               += ${TMPBOARD_CSRCS} ${LIB_CSRCS} ${TMPBOARD_SUBGHZ_CSRCS}
-BSP_CINCDIRS            += ${LIB_CINCDIRS} ${BOARD_SUBGHZ_IF_INCDIRS} bsp/stm32/stm32wl55_eval
+BSP_CSRCS               += ${TMPBOARD_CSRCS} ${LIB_CSRCS}
+BSP_CINCDIRS            += ${LIB_CINCDIRS} boards/stm32/stm32h743_fmuv6
 BSP_ASMSOURCES          := ${TMPBOARD_ASMSOURCES}
 BSP_LNK_FILE            := ${TMPBOARD_LNK_FILE}
 

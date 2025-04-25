@@ -24,7 +24,7 @@ BSP_LIBCONFIG_STM32_HAL_QSPI=n
 BSP_LIBCONFIG_STM32_HAL_MMCSD=n
 
 # include all cubelibrary files and low level driver files
-include ${SDK_ROOTDIR}/bsp/stm32/libs/bsp_libs_stm32.mk
+include ${SDK_ROOTDIR}/boards/stm32/libs/bsp_libs_stm32.mk
 
 #########################################################################
 # BSP macros, sources + asm + link files, includes, and entry address
@@ -45,14 +45,14 @@ BOARD_LNK_FILE   += fmuv2_lnk_script.ld
 BOARD_CDEFS += CONFIG_STM32_DMA_SPI1_RX
 BOARD_CDEFS += CONFIG_STM32_DMA_SPI1_TX
 
-TMPBOARD_CSRCS = ${addprefix bsp/stm32/stm32f427_fmuv2/,${BOARD_CSRCS}}
-TMPBOARD_ASMSOURCES = ${addprefix bsp/stm32/stm32f427_fmuv2/,${BOARD_ASMSOURCES}}
-TMPBOARD_LNK_FILE = ${addprefix bsp/stm32/stm32f427_fmuv2/,${BOARD_LNK_FILE}}
+TMPBOARD_CSRCS = ${addprefix boards/stm32/stm32f427_fmuv2/,${BOARD_CSRCS}}
+TMPBOARD_ASMSOURCES = ${addprefix boards/stm32/stm32f427_fmuv2/,${BOARD_ASMSOURCES}}
+TMPBOARD_LNK_FILE = ${addprefix boards/stm32/stm32f427_fmuv2/,${BOARD_LNK_FILE}}
 
 BSP_BOARD_ENTRY_POINT   := Reset_Handler
 BSP_CDEFS               += ${BOARD_CDEFS}
 BSP_CSRCS               += ${TMPBOARD_CSRCS} ${LIB_CSRCS}
-BSP_CINCDIRS            += ${LIB_CINCDIRS} bsp/stm32/stm32f427_fmuv2
+BSP_CINCDIRS            += ${LIB_CINCDIRS} boards/stm32/stm32f427_fmuv2
 BSP_ASMSOURCES          := ${TMPBOARD_ASMSOURCES}
 BSP_LNK_FILE            := ${TMPBOARD_LNK_FILE}
 

@@ -5,8 +5,8 @@ PROJ_TC    :=  gae
 
 TARGET_POSTBUILD := ${TARGET_DEST_FILENAME_BIN}
 
-# bsp configuration
-include ${SDK_ROOTDIR}/bsp/make.mk
+# board configuration
+include ${SDK_ROOTDIR}/boards/make.mk
 
 # os and library configuration
 CONFIG_FR_ARCH=${MOD_ARCH}
