@@ -5,9 +5,9 @@
 
 #include <dev/serial.h>
 
-#include <drivers/imu/sh5001/sh5001.hpp>
-#include <rtklib/rtcm3.h>
-#include <rtklib/rtkcmn.h>
+#include "sh5001.hpp"
+#include "rtcm3.h"
+#include "rtkcmn.h"
 
 SH5001 imu("/sensor_i2c");
 

@@ -41,10 +41,16 @@
 #include <string.h>
 #include <drivers/drv_hrt.h>
 
-#include "./hrt_stm32.h"
+#include "hrt_stm32.h"
 
+#ifdef CONFIG_BOARD_FREERTOS_ENABLE
 #include "FreeRTOS.h"
 #include "portmacro.h"
+#else
+#define portSET_INTERRUPT_MASK_FROM_ISR()		0
+#define portCLEAR_INTERRUPT_MASK_FROM_ISR(x)
+typedef uint32_t UBaseType_t;
+#endif
 
 #ifdef CONFIG_DEBUG_HRT
 #define hrtinfo _info

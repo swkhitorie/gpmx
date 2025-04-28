@@ -1,14 +1,15 @@
 
-FR_CSOURCES   +=  libs/noneuse_syscall.c
-
+# default simple device driver interface
 FR_CSOURCES   +=  libs/dev/dnode.c
 FR_CSOURCES   +=  libs/dev/serial.c
 FR_CSOURCES   +=  libs/dev/i2c_master.c
 FR_CSOURCES   +=  libs/dev/spi.c
 
-include ${SDK_ROOTDIR}/libs/gcl/make.mk
+ifeq (${CONFIG_MK_COMPILER},y)
+FR_CSOURCES   +=  libs/noneuse_syscall.c
+endif
 
-ifeq (${CONFIG_FR_LIB_CPP},y)
+ifeq (${CONFIG_MK_USE_LIB_CPP},y)
 FR_CINCDIRS   +=  libs/cpp
 FR_CPPSOURCES +=  libs/cpp/libxx_delete.cpp
 FR_CPPSOURCES +=  libs/cpp/libxx_delete_sized.cpp
@@ -16,28 +17,29 @@ FR_CPPSOURCES +=  libs/cpp/libxx_deletea.cpp
 FR_CPPSOURCES +=  libs/cpp/libxx_deletea_sized.cpp
 FR_CPPSOURCES +=  libs/cpp/libxx_new.cpp
 FR_CPPSOURCES +=  libs/cpp/libxx_newa.cpp
-endif
+endif # end with CONFIG_MK_USE_LIB_CPP
 
-ifeq (${CONFIG_FR_FAT_FATFS},y)
+ifeq (${CONFIG_MK_USE_FS_FATFS},y)
 FR_CINCDIRS += libs/fs/fat/
 FR_CSOURCES += libs/fs/fat/ff.c
 FR_CSOURCES += libs/fs/fat/diskio.c
 FR_CSOURCES += libs/fs/fat/ff_drv.c
 FR_CSOURCES += libs/fs/fat/ffsystem.c
 FR_CSOURCES += libs/fs/fat/ffunicode.c
-endif
+endif # end with CONFIG_MK_USE_FS_FATFS - y
 
-ifeq (${CONFIG_FR_FAT_FATFS},l)
+ifeq (${CONFIG_MK_USE_FS_FATFS},l)
 FR_CINCDIRS += libs/fs/fat/legacy
 FR_CSOURCES += libs/fs/fat/legacy/ff.c
 FR_CSOURCES += libs/fs/fat/legacy/diskio.c
 FR_CSOURCES += libs/fs/fat/legacy/ff_drv.c
 FR_CSOURCES += libs/fs/fat/legacy/option/syscall.c
 FR_CSOURCES += libs/fs/fat/legacy/option/unicode.c
-endif
+endif # end with CONFIG_MK_USE_FS_FATFS - l
 
+ifeq (${CONFIG_MK_USE_FREERTOS},y)
 
-ifeq (${CONFIG_FR_LIB_POSIX},y)
+ifeq (${CONFIG_MK_USE_FR_POSIX},y)
 FR_CSOURCES += libs/queue/dq_addafter.c
 FR_CSOURCES += libs/queue/dq_addbefore.c
 FR_CSOURCES += libs/queue/dq_addfirst.c
@@ -100,21 +102,49 @@ FR_CSOURCES += libs/unistd/lib_sleep.c
 FR_CSOURCES += libs/unistd/lib_usleep.c
 
 FR_CSOURCES += libs/utils.c
-endif
+endif # end with CONFIG_MK_USE_FR_POSIX
 
-ifeq (${CONFIG_FR_LIB_UORB},y)
+endif # end with CONFIG_MK_USE_FREERTOS
+
+ifeq (${CONFIG_MK_USE_PX4_SUPPORT},y)
+FR_CSOURCES   +=  libs/hrt/hrt.c
+FR_CPPSOURCES +=  libs/hrt/px4_tasks.cpp
+else
+ifeq (${CONFIG_MK_USE_HRT},y)
+FR_CINCDIRS   +=  libs/hrt/
+FR_CSOURCES   +=  libs/hrt/hrt.c
+ifeq (${CONFIG_MK_USE_FR_POSIX},n)
+FR_CINCDIRS += libs/hrt/queue
+FR_CSOURCES += libs/queue/dq_addafter.c
+FR_CSOURCES += libs/queue/dq_addbefore.c
+FR_CSOURCES += libs/queue/dq_addfirst.c
+FR_CSOURCES += libs/queue/dq_addlast.c
+FR_CSOURCES += libs/queue/dq_cat.c
+FR_CSOURCES += libs/queue/dq_count.c
+FR_CSOURCES += libs/queue/dq_rem.c
+FR_CSOURCES += libs/queue/dq_remfirst.c
+FR_CSOURCES += libs/queue/dq_remlast.c
+FR_CSOURCES += libs/queue/sq_addafter.c
+FR_CSOURCES += libs/queue/sq_addfirst.c
+FR_CSOURCES += libs/queue/sq_addlast.c
+FR_CSOURCES += libs/queue/sq_cat.c
+FR_CSOURCES += libs/queue/sq_count.c
+FR_CSOURCES += libs/queue/sq_rem.c
+FR_CSOURCES += libs/queue/sq_remafter.c
+FR_CSOURCES += libs/queue/sq_remfirst.c
+FR_CSOURCES += libs/queue/sq_remlast.c
+endif # CONFIG_MK_USE_FR_POSIX
+
+endif # CONFIG_MK_USE_HRT
+
+endif # CONFIG_MK_USE_PX4_SUPPORT
+
+ifeq (${CONFIG_MK_USE_UORB},y)
 FR_CINCDIRS   +=  libs/uorb/include
 FR_CINCDIRS   +=  libs/uorb/src
 FR_CPPSOURCES +=  libs/uorb/src/device_master.cpp
 FR_CPPSOURCES +=  libs/uorb/src/device_node.cpp
 FR_CPPSOURCES +=  libs/uorb/src/uorb.cpp
-
 include ${SDK_ROOTDIR}/libs/uorb_msgs/make.mk
-
 endif
-
-
-
-
-
 
