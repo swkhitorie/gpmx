@@ -14,14 +14,14 @@ include ${SDK_ROOTDIR}/boards/make.mk
 # os and library configuration
 CONFIG_MK_CHIP_ARCH=${MOD_ARCH}
 CONFIG_MK_COMPILER=gcc
-CONFIG_MK_USE_FREERTOS=n
+CONFIG_MK_USE_FREERTOS=y
 CONFIG_MK_USE_FRMEM_METHOD=4
 CONFIG_MK_USE_FR_POSIX=n
 CONFIG_MK_USE_FS_FATFS=n
 CONFIG_MK_USE_LIB_CPP=n
 CONFIG_MK_USE_UORB=n
 CONFIG_MK_USE_PX4_SUPPORT=n
-CONFIG_MK_USE_HRT=n
+CONFIG_MK_USE_HRT=y
 CONFIG_MK_USE_CRUSB=n
 CONFIG_MK_USE_CRUSB_CDC=n
 CONFIG_MK_CRUSB_IP=none
@@ -56,14 +56,14 @@ PROJ_CINCDIRS += ${FR_CINCDIRS}
 #     CONFIG_CRUSB_CDC_TX_FIFO_ENABLE
 #     CONFIG_BOARD_CRUSB_CDC_ACM_STDINOUT
 #####################################
-# PROJ_CDEFS += CONFIG_BOARD_COM_STDINOUT
-# PROJ_CDEFS += CONFIG_BOARD_FREERTOS_ENABLE
+PROJ_CDEFS += CONFIG_BOARD_COM_STDINOUT
+PROJ_CDEFS += CONFIG_BOARD_FREERTOS_ENABLE
 PROJ_CDEFS += CONFIG_FR_MALLOC_FAILED_HANDLE
 PROJ_CDEFS += CONFIG_FR_IDLE_TIMER_TASKCREATE_HANDLE
 
-# PROJ_CINCDIRS += apps/app_h7b0_test/
-# CPPSOURCES += apps/app_h7b0_test/app_main.cpp
-# CPPSOURCES += apps/app_h7b0_test/sh5001.cpp
-# CSOURCES += apps/app_h7b0_test/rtcm3.c
-# CSOURCES += apps/app_h7b0_test/rtkcmn.c
-CPPSOURCES += apps/app_bsp_test/app_main.cpp
+PROJ_CINCDIRS += apps/app_h7b0_test/
+CPPSOURCES += apps/app_h7b0_test/app_main.cpp
+CPPSOURCES += apps/app_h7b0_test/sh5001.cpp
+CSOURCES += apps/app_h7b0_test/rtcm3.c
+CSOURCES += apps/app_h7b0_test/rtkcmn.c
+# CPPSOURCES += apps/app_bsp_test/app_main.cpp
