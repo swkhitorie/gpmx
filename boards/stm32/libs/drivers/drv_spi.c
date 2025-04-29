@@ -480,7 +480,7 @@ void low_irq_dmatx(struct spi_dev_s *dev)
 {
 	struct up_spi_dev_s *priv = dev->priv;
     priv->dmatx_ready = true;
-#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_SPI_TASKSYNC
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SPI_TASKSYNC)
     spi_dmatxwakeup(dev);
 #endif
 }
@@ -489,7 +489,7 @@ void low_irq_dmarx(struct spi_dev_s *dev)
 {
 	struct up_spi_dev_s *priv = dev->priv;
     priv->dmarx_ready = true;
-#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_SPI_TASKSYNC
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SPI_TASKSYNC)
     spi_dmarxwakeup(dev);
 #endif
 }
@@ -498,7 +498,7 @@ void low_irq_dmartx(struct spi_dev_s *dev)
 {
 	struct up_spi_dev_s *priv = dev->priv;
     priv->dmartx_ready = true;
-#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_SPI_TASKSYNC
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SPI_TASKSYNC)
     spi_dmartxwakeup(dev);
 #endif
 }
@@ -509,9 +509,10 @@ void low_irq_dmartx(struct spi_dev_s *dev)
 int up_setup(struct spi_dev_s *dev)
 {
     low_setup(dev);
-#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_SPI_TASKSYNC
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SPI_TASKSYNC)
     spi_sem_init(dev);
 #endif
+    return 0;
 }
 
 uint32_t up_setfrequency(struct spi_dev_s *dev, uint32_t frequency)
@@ -602,7 +603,7 @@ void up_setbits(struct spi_dev_s *dev, int nbits)
 int up_lock(struct spi_dev_s *dev, bool lock)
 {
     int ret = 0xff;
-#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_SPI_TASKSYNC
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SPI_TASKSYNC)
 	if (lock) {
         ret = xSemaphoreTake(dev->exclsem, 1000);
 	} else {
@@ -619,8 +620,10 @@ int up_select(struct spi_dev_s *dev, uint32_t devid, bool selected)
 	for (; i < CONFIG_SPI_ATTACH_CS_NUM; i++) {
         if (devid == priv->devid[i] && priv->devcs[i].port != NULL) {
 			HAL_GPIO_WritePin(priv->devcs[i].port, (0x01 << priv->devcs[i].pin), !selected);
+			return 0;
 		}
 	}
+	return 1;
 }
 
 int up_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbuffer, size_t nwords)
@@ -635,7 +638,7 @@ int up_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbuffer, siz
 	if (txbuffer == NULL && rxbuffer != NULL) {
 		priv->dmarx_ready = false;
 		ret = HAL_SPI_Receive_DMA(&priv->hspi, rxbuffer, nwords);
-#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_SPI_TASKSYNC
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SPI_TASKSYNC)
         ret = spi_dmarxwait(dev, priv->dmarx_ready);
 #else
         while(!priv->dmarx_ready);
@@ -643,7 +646,7 @@ int up_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbuffer, siz
 	} else if (txbuffer != NULL && rxbuffer == NULL) {
 		priv->dmatx_ready = false;
 		ret = HAL_SPI_Transmit_DMA(&priv->hspi, txbuffer, nwords);
-#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_SPI_TASKSYNC
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SPI_TASKSYNC)
         ret = spi_dmatxwait(dev, priv->dmatx_ready);
 #else
         while(!priv->dmatx_ready);
@@ -652,7 +655,7 @@ int up_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbuffer, siz
 		priv->dmartx_ready = false;
 		int ret = HAL_SPI_TransmitReceive_DMA(&priv->hspi, txbuffer, rxbuffer, nwords);
 		//int ret = HAL_SPI_TransmitReceive(&priv->hspi, txbuffer, rxbuffer, nwords, 3000);
-#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_SPI_TASKSYNC
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SPI_TASKSYNC)
         ret = spi_dmartxwait(dev, priv->dmartx_ready);
 #else
         while(!priv->dmartx_ready);

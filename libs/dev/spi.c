@@ -6,7 +6,7 @@ int spi_register(const char *path, struct spi_dev_s *dev)
     return 0;
 }
 
-#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_SPI_TASKSYNC
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SPI_TASKSYNC)
 
 void spi_sem_init(struct spi_dev_s *dev)
 {

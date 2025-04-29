@@ -190,6 +190,8 @@ bool low_pinsetup(struct i2c_master_s *dev, uint32_t mode)
 
     low_gpio_setup(scl_port, scl_pin, mode, IO_NOPULL, IO_SPEEDHIGH, i2c_af[num-1], NULL, 0);
     low_gpio_setup(sda_port, sda_pin, mode, IO_NOPULL, IO_SPEEDHIGH, i2c_af[num-1], NULL, 0);
+
+    return true;
 }
 
 void low_config(struct i2c_master_s *dev)
@@ -506,54 +508,54 @@ void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c)
     else if (hi2c->Instance == I2C4)	idx = 3;
 #endif
 
-    priv = i2c_mlist[idx];
+    priv = i2c_mlist[idx]->priv;
     priv->ecnt++;
 }
 
 void I2C1_EV_IRQHandler(void)
 {
-    struct up_i2c_master_s *priv = i2c_mlist[0];
+    struct up_i2c_master_s *priv = i2c_mlist[0]->priv;
     HAL_I2C_EV_IRQHandler(&priv->hi2c);
 }
 
 void I2C1_ER_IRQHandler(void)
 {
-    struct up_i2c_master_s *priv = i2c_mlist[0];
+    struct up_i2c_master_s *priv = i2c_mlist[0]->priv;
     HAL_I2C_ER_IRQHandler(&priv->hi2c);
 }
 
 void I2C2_EV_IRQHandler(void)
 {
-    struct up_i2c_master_s *priv = i2c_mlist[1];
+    struct up_i2c_master_s *priv = i2c_mlist[1]->priv;
     HAL_I2C_EV_IRQHandler(&priv->hi2c);
 }
 
 void I2C2_ER_IRQHandler(void)
 {
-    struct up_i2c_master_s *priv = i2c_mlist[1];
+    struct up_i2c_master_s *priv = i2c_mlist[1]->priv;
     HAL_I2C_ER_IRQHandler(&priv->hi2c);
 }
 
 void I2C3_EV_IRQHandler(void)
 {
-    struct up_i2c_master_s *priv = i2c_mlist[2];
+    struct up_i2c_master_s *priv = i2c_mlist[2]->priv;
     HAL_I2C_EV_IRQHandler(&priv->hi2c);
 }
 
 void I2C3_ER_IRQHandler(void)
 {
-    struct up_i2c_master_s *priv = i2c_mlist[2];
+    struct up_i2c_master_s *priv = i2c_mlist[2]->priv;
     HAL_I2C_ER_IRQHandler(&priv->hi2c);
 }
 
 void I2C4_EV_IRQHandler(void)
 {
-    struct up_i2c_master_s *priv = i2c_mlist[3];
+    struct up_i2c_master_s *priv = i2c_mlist[3]->priv;
     HAL_I2C_EV_IRQHandler(&priv->hi2c);
 }
 
 void I2C4_ER_IRQHandler(void)
 {
-    struct up_i2c_master_s *priv = i2c_mlist[3];
+    struct up_i2c_master_s *priv = i2c_mlist[3]->priv;
     HAL_I2C_ER_IRQHandler(&priv->hi2c);
 }

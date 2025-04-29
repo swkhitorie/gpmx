@@ -51,4 +51,5 @@ uint16_t uart_buf_read(struct uart_buffer_s *obj, uint8_t *p, uint16_t len)
 int uart_register(const char *path, uart_dev_t *dev)
 {
 
+	return 0;
 }

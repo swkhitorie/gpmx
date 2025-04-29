@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_I2C_TASKSYNC
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_I2C_TASKSYNC)
 #include <FreeRTOS.h>
 #include <semphr.h>
 #endif
@@ -45,6 +45,7 @@ struct i2c_transfer_s
     size_t msgc;             /* Number of messages in the array. */
 };
 
+struct i2c_master_s;
 struct i2c_ops_s
 {
     int (*setup)(struct i2c_master_s *dev);
@@ -66,7 +67,7 @@ struct i2c_master_s
     uint8_t msgi;                /* Message index */
     struct i2c_msg_s *msgv;      /* Message list */
 
-#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_I2C_TASKSYNC
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_I2C_TASKSYNC)
     SemaphoreHandle_t  mutex;       /* Prevent devices from being occupied by multiple threads */
     /**
      * Synch Bus:
@@ -102,7 +103,7 @@ extern "C"{
 
 int i2c_register(struct i2c_master_s *dev, int bus);
 
-#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_I2C_TASKSYNC
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_I2C_TASKSYNC)
 
 void i2c_sem_init(struct i2c_master_s *dev);
 

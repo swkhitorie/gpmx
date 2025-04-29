@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_SPI_TASKSYNC
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SPI_TASKSYNC)
 #include <FreeRTOS.h>
 #include <semphr.h>
 #endif
@@ -72,7 +72,7 @@ struct spi_dev_s
     enum spi_mode_e mode;
     uint8_t nbits;
 
-#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_SPI_TASKSYNC
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SPI_TASKSYNC)
     SemaphoreHandle_t  mutex;    /* Prevent devices from being occupied by multiple threads */
     SemaphoreHandle_t  rxsem;    /* Wait for RX DMA to complete */
     SemaphoreHandle_t  txsem;    /* Wait for TX DMA to complete */
@@ -93,7 +93,7 @@ extern "C"{
 
 int spi_register(const char *path, struct spi_dev_s *dev);
 
-#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_SPI_TASKSYNC
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SPI_TASKSYNC)
 
 void spi_sem_init(struct spi_dev_s *dev);
 

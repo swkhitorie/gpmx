@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_SERIAL_TASKSYNC
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SERIAL_TASKSYNC)
 #include <FreeRTOS.h>
 #include <semphr.h>
 #endif
@@ -70,7 +70,7 @@ struct uart_dev_s {
     struct uart_dmaxfer_s dmatx;  /* Describes transmit DMA transfer */
     struct uart_dmaxfer_s dmarx;  /* Describes receive DMA transfer */
 
-#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_SERIAL_TASKSYNC
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SERIAL_TASKSYNC)
     SemaphoreHandle_t  mutex;     /* Prevent devices from being occupied by multiple threads */
     /**
      * Asynch Bus:

@@ -700,6 +700,7 @@ int up_dmasend(struct uart_dev_s *dev, const uint8_t *p, uint16_t len)
         // bug
         HAL_UART_Transmit_IT(&priv->com, &dev->xmit.buffer[0], bufsize);
     }
+    return len;
 }
 
 int up_send(struct uart_dev_s *dev, const uint8_t *p, uint16_t len)
@@ -714,6 +715,7 @@ int up_send(struct uart_dev_s *dev, const uint8_t *p, uint16_t len)
 #if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SERIAL_TASKSYNC)
     xSemaphoreGive(dev->xmitsem);
 #endif
+    return len;
 }
 
 int up_readbuf(struct uart_dev_s *dev, uint8_t *p, uint16_t len)

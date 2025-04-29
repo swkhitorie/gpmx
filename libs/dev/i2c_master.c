@@ -6,7 +6,7 @@ int i2c_register(struct i2c_master_s *dev, int bus)
     return 0;
 }
 
-#ifdef CONFIG_BOARD_FREERTOS_ENABLE && CONFIG_I2C_TASKSYNC
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_I2C_TASKSYNC)
 
 void i2c_sem_init(struct i2c_master_s *dev)
 {
