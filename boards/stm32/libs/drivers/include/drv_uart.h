@@ -7,7 +7,7 @@
 #if defined (DRV_BSP_H7)
 #include "drv_pin_h7.h"
 #endif
-#include <dev/serial.h>
+#include <device/serial.h>
 
 struct up_uart_dev_s
 {

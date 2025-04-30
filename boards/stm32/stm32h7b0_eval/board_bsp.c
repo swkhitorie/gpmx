@@ -1,9 +1,9 @@
 #include "board_config.h"
 #include <drv_uart.h>
 #include <drv_i2c.h>
-#include <dev/dnode.h>
-#include <dev/serial.h>
-#include <dev/i2c_master.h>
+#include <device/dnode.h>
+#include <device/serial.h>
+#include <device/i2c_master.h>
 
 /* COM5 --- for output debug in TH1030 */
 uint8_t com5_dma_rxbuff[256];

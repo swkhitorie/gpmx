@@ -1,5 +1,5 @@
 #include "l3gd20_test.h"
-#include <dev/spi.h>
+#include <device/spi.h>
 
 struct spi_dev_s *selpi;
 

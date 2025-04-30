@@ -1,7 +1,7 @@
 #include <board_config.h>
 #include <drv_uart.h>
-#include <dev/dnode.h>
-#include <dev/serial.h>
+#include <device/dnode.h>
+#include <device/serial.h>
 
 #include "ringbuffer.h"
 

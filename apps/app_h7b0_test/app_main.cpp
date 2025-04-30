@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <dev/serial.h>
+#include <device/serial.h>
 
 #include "sh5001.hpp"
 #include "rtcm3.h"

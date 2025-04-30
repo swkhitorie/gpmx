@@ -1,9 +1,9 @@
 
 # default simple device driver interface
-FR_CSOURCES   +=  libs/dev/dnode.c
-FR_CSOURCES   +=  libs/dev/serial.c
-FR_CSOURCES   +=  libs/dev/i2c_master.c
-FR_CSOURCES   +=  libs/dev/spi.c
+FR_CSOURCES   +=  libs/device/dnode.c
+FR_CSOURCES   +=  libs/device/serial.c
+FR_CSOURCES   +=  libs/device/i2c_master.c
+FR_CSOURCES   +=  libs/device/spi.c
 
 ifeq (${CONFIG_MK_COMPILER},y)
 FR_CSOURCES   +=  libs/noneuse_syscall.c

@@ -1,4 +1,4 @@
-#include <dev/i2c_master.h>
+#include <device/i2c_master.h>
 
 int i2c_register(struct i2c_master_s *dev, int bus)
 {

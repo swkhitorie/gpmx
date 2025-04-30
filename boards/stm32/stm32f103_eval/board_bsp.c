@@ -1,6 +1,6 @@
 #include <board_config.h>
 #include <drv_uart.h>
-#include <dev/dnode.h>
+#include <device/dnode.h>
 
 /* COM1 */
 uint8_t com1_dma_rxbuff[256];

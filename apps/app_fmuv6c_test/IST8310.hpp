@@ -10,8 +10,8 @@
 #include "iSentek_IST8310_registers.hpp"
 
 #include <drivers/drv_hrt.h>
-#include <dev/dnode.h>
-#include <dev/i2c_master.h>
+#include <device/dnode.h>
+#include <device/i2c_master.h>
 #include <cstdint>
 
 using namespace iSentek_IST8310;

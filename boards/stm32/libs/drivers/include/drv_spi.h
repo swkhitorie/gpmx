@@ -7,7 +7,7 @@
 #if defined (DRV_BSP_H7)
 #include "drv_pin_h7.h"
 #endif
-#include <dev/spi.h>
+#include <device/spi.h>
 
 #define CONFIG_SPI_ATTACH_CS_NUM   4
 

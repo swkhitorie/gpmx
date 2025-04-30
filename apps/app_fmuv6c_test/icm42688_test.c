@@ -1,5 +1,5 @@
 #include "icm42688_test.h"
-#include <dev/spi.h>
+#include <device/spi.h>
 
 struct spi_dev_s *senpi;
 void wait_block_1(uint8_t t)

@@ -2,10 +2,10 @@
 #include <drv_uart.h>
 #include <drv_i2c.h>
 #include <drv_spi.h>
-#include <dev/dnode.h>
-#include <dev/serial.h>
-#include <dev/i2c_master.h>
-#include <dev/spi.h>
+#include <device/dnode.h>
+#include <device/serial.h>
+#include <device/i2c_master.h>
+#include <device/spi.h>
 
 /**************
  * TELEM1 Serial port

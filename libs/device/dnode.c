@@ -1,4 +1,4 @@
-#include <dev/dnode.h>
+#include <device/dnode.h>
 #include <string.h>
 
 static struct dnode d_list[CONFIG_DRIVER_DEVICE_NODE_NUM];

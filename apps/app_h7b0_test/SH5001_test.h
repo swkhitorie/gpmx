@@ -527,8 +527,8 @@
 #define SH5001_FIFO_BUFFER      (500U)
 
 
-#include <dev/dnode.h>
-#include <dev/i2c_master.h>
+#include <device/dnode.h>
+#include <device/i2c_master.h>
 #include <drivers/drv_hrt.h>
 
 /***************************************************************************

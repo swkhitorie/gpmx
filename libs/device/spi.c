@@ -1,4 +1,4 @@
-#include <dev/spi.h>
+#include <device/spi.h>
 
 int spi_register(const char *path, struct spi_dev_s *dev)
 {

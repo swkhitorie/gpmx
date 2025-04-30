@@ -1,4 +1,4 @@
-#include <dev/serial.h>
+#include <device/serial.h>
 
 uint16_t uart_buf_write(struct uart_buffer_s *obj, const uint8_t *p, uint16_t len)
 {
