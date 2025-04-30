@@ -1,6 +1,7 @@
 
-#include <px4_platform_common/log.h>
-#include <px4_platform_common/defines.h>
+#include <common/log.h>
+#include <common/defines.h>
+#include <common/gpx_tasks.h>
 
 #include <FreeRTOS.h>
 #include <tasks.h>
@@ -21,14 +22,10 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <px4_platform_common/tasks.h>
-#include <px4_platform_common/posix.h>
-#include <systemlib/err.h>
+//#define GPX_TASK_DEBUG
 
-//#define PX4_TASK_DEBUG
-
-#define PX4_MAX_TASKS 50
-#define SHELL_TASK_ID (PX4_MAX_TASKS+1)
+#define GPX_MAX_TASKS 50
+#define SHELL_TASK_ID (GPX_MAX_TASKS+1)
 
 pthread_t _shell_task_id = 0;
 pthread_mutex_t task_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -40,10 +37,10 @@ struct task_entry {
 	task_entry() : isused(false) {}
 };
 
-static task_entry taskmap[PX4_MAX_TASKS] = {};
+static task_entry taskmap[GPX_MAX_TASKS] = {};
 
 typedef struct {
-	px4_main_t entry;
+	gpx_main_t entry;
 	char name[16]; //pthread_setname_np is restricted to 16 chars
 	int argc;
 	char *argv[];
@@ -64,18 +61,18 @@ static void *entry_adapter(void *ptr)
 	data->entry(data->argc, data->argv);
 
 	vPortFree(ptr);
-	#ifdef PX4_TASK_DEBUG
+#ifdef GPX_TASK_DEBUG
 	PX4_DEBUG("Before px4_task_exit");
-	#endif
+#endif
 	px4_task_exit(0);
-	#ifdef PX4_TASK_DEBUG
+#ifdef GPX_TASK_DEBUG
 	PX4_DEBUG("After px4_task_exit");
-	#endif
+#endif
 
 	return nullptr;
 }
 
-int px4_task_spawn_cmd(const char *name, int scheduler, int priority, int stack_size, main_t entry, char *const argv[])
+int gpx_task_spawn_cmd(const char *name, int scheduler, int priority, int stack_size, main_t entry, char *const argv[])
 {
 	int i;
 	int argc = 0;
@@ -113,9 +110,9 @@ int px4_task_spawn_cmd(const char *name, int scheduler, int priority, int stack_
 	taskdata->argc = argc;
 
 	for (i = 0; i < argc; i++) {
-		#ifdef PX4_TASK_DEBUG
+	#ifdef GPX_TASK_DEBUG
 		PX4_DEBUG("arg %d %s\n", i, argv[i]);
-		#endif
+	#endif
 		taskdata->argv[i] = (char *)offset;
 		strcpy((char *)offset, argv[i]);
 		offset += strlen(argv[i]) + 1;
@@ -123,16 +120,16 @@ int px4_task_spawn_cmd(const char *name, int scheduler, int priority, int stack_
 
 	// Must add NULL at end of argv
 	taskdata->argv[argc] = (char *)NULL;
-    #ifdef PX4_TASK_DEBUG
+#ifdef GPX_TASK_DEBUG
 	PX4_DEBUG("starting task %s", name);
-    #endif
+#endif
 	pthread_attr_t attr;
 	int rv = pthread_attr_init(&attr);
 
 	if (rv != 0) {
-		#ifdef PX4_TASK_DEBUG
+	#ifdef GPX_TASK_DEBUG
 		PX4_ERR("px4_task_spawn_cmd: failed to init thread attrs");
-		#endif
+	#endif
 		vPortFree(taskdata);
 		return (rv < 0) ? rv : -rv;
 	}
@@ -144,9 +141,9 @@ int px4_task_spawn_cmd(const char *name, int scheduler, int priority, int stack_
 	rv = pthread_attr_setstacksize(&attr, PX4_STACK_ADJUSTED(stack_size));
 
 	if (rv != 0) {
-		#ifdef PX4_TASK_DEBUG
+	#ifdef GPX_TASK_DEBUG
 		PX4_ERR("pthread_attr_setstacksize to %d returned error (%d)", stack_size, rv);
-		#endif
+	#endif
 		pthread_attr_destroy(&attr);
 		vPortFree(taskdata);
 		return (rv < 0) ? rv : -rv;
@@ -155,9 +152,9 @@ int px4_task_spawn_cmd(const char *name, int scheduler, int priority, int stack_
 	rv = pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
 
 	if (rv != 0) {
-		#ifdef PX4_TASK_DEBUG
+	#ifdef GPX_TASK_DEBUG
 		PX4_ERR("px4_task_spawn_cmd: failed to set inherit sched");
-		#endif
+	#endif
 		pthread_attr_destroy(&attr);
 		vPortFree(taskdata);
 		return (rv < 0) ? rv : -rv;
@@ -166,9 +163,9 @@ int px4_task_spawn_cmd(const char *name, int scheduler, int priority, int stack_
 	rv = pthread_attr_setschedpolicy(&attr, scheduler);
 
 	if (rv != 0) {
-		#ifdef PX4_TASK_DEBUG
+	#ifdef GPX_TASK_DEBUG
 		PX4_ERR("px4_task_spawn_cmd: failed to set sched policy");
-		#endif
+	#endif
 		pthread_attr_destroy(&attr);
 		vPortFree(taskdata);
 		return (rv < 0) ? rv : -rv;
@@ -179,9 +176,9 @@ int px4_task_spawn_cmd(const char *name, int scheduler, int priority, int stack_
 	rv = pthread_attr_setschedparam(&attr, &param);
 
 	if (rv != 0) {
-		#ifdef PX4_TASK_DEBUG
+	#ifdef GPX_TASK_DEBUG
 		PX4_ERR("px4_task_spawn_cmd: failed to set sched param");
-		#endif
+	#endif
 		pthread_attr_destroy(&attr);
 		vPortFree(taskdata);
 		return (rv < 0) ? rv : -rv;
@@ -191,7 +188,7 @@ int px4_task_spawn_cmd(const char *name, int scheduler, int priority, int stack_
 
 	px4_task_t taskid = 0;
 
-	for (i = 0; i < PX4_MAX_TASKS; ++i) {
+	for (i = 0; i < GPX_MAX_TASKS; ++i) {
 		if (!taskmap[i].isused) {
 			strncpy(taskmap[i].name, name, 16);
             taskmap[i].name[15] = 0;
@@ -201,7 +198,7 @@ int px4_task_spawn_cmd(const char *name, int scheduler, int priority, int stack_
 		}
 	}
 
-	if (i >= PX4_MAX_TASKS) {
+	if (i >= GPX_MAX_TASKS) {
 		pthread_attr_destroy(&attr);
 		pthread_mutex_unlock(&task_mutex);
 		vPortFree(taskdata);
@@ -217,9 +214,9 @@ int px4_task_spawn_cmd(const char *name, int scheduler, int priority, int stack_
 			rv = pthread_create(&taskmap[taskid].pid, NULL, &entry_adapter, (void *) taskdata);
 
 			if (rv != 0) {
-				#ifdef PX4_TASK_DEBUG
+			#ifdef GPX_TASK_DEBUG
 				PX4_ERR("px4_task_spawn_cmd: failed to create thread %d %d\n", rv, errno);
-				#endif
+			#endif
 				taskmap[taskid].isused = false;
 				pthread_attr_destroy(&attr);
 				pthread_mutex_unlock(&task_mutex);
@@ -244,15 +241,15 @@ int px4_task_spawn_cmd(const char *name, int scheduler, int priority, int stack_
 /**
  * only support delete itself
  */
-int px4_task_delete(px4_task_t id)
+int gpx_task_delete(px4_task_t id)
 {
 	int rv = 0;
 	pthread_t pid;
-	#ifdef PX4_TASK_DEBUG
+#ifdef GPX_TASK_DEBUG
 	PX4_DEBUG("Called px4_task_delete");
-    #endif
+#endif
 
-	if (id < PX4_MAX_TASKS && taskmap[id].isused) {
+	if (id < GPX_MAX_TASKS && taskmap[id].isused) {
 		pid = taskmap[id].pid;
 
 	} else {
@@ -277,13 +274,13 @@ int px4_task_delete(px4_task_t id)
 	return rv;
 }
 
-void px4_task_exit(int ret)
+void gpx_task_exit(int ret)
 {
 	int i;
 	pthread_t pid = pthread_self();
 
 	// Get pthread ID from the opaque ID
-	for (i = 0; i < PX4_MAX_TASKS; ++i) {
+	for (i = 0; i < GPX_MAX_TASKS; ++i) {
 		if (taskmap[i].pid == pid) {
 			pthread_mutex_lock(&task_mutex);
 			taskmap[i].isused = false;
@@ -291,27 +288,27 @@ void px4_task_exit(int ret)
 		}
 	}
 
-	if (i >= PX4_MAX_TASKS)  {
+	if (i >= GPX_MAX_TASKS)  {
 		PX4_ERR("px4_task_exit: self task not found!");
 
 	} else {
-		#ifdef PX4_TASK_DEBUG
+	#ifdef GPX_TASK_DEBUG
 		PX4_DEBUG("px4_task_exit: %s", taskmap[i].name);
-		#endif
+	#endif
 	}
 
 	pthread_mutex_unlock(&task_mutex);
 	pthread_exit((void *)(unsigned long)ret);
 }
 
-void px4_show_tasks()
+void gpx_show_tasks()
 {
 	int idx;
 	int count = 0;
 
 	PX4_INFO("Active Tasks:");
 
-	for (idx = 0; idx < PX4_MAX_TASKS; idx++) {
+	for (idx = 0; idx < GPX_MAX_TASKS; idx++) {
 		if (taskmap[idx].isused) {
 			PX4_INFO("   %-10s %lu", taskmap[idx].name, (unsigned long)taskmap[idx].pid);
 			count++;
@@ -324,11 +321,11 @@ void px4_show_tasks()
 
 }
 
-bool px4_task_is_running(const char *taskname)
+bool gpx_task_is_running(const char *taskname)
 {
 	int idx;
 
-	for (idx = 0; idx < PX4_MAX_TASKS; idx++) {
+	for (idx = 0; idx < GPX_MAX_TASKS; idx++) {
 		if (taskmap[idx].isused && (strcmp(taskmap[idx].name, taskname) == 0)) {
 			return true;
 		}
@@ -337,14 +334,14 @@ bool px4_task_is_running(const char *taskname)
 	return false;
 }
 
-const char *px4_get_taskname()
+const char *gpx_get_taskname()
 {
 	pthread_t pid = pthread_self();
 	const char *prog_name = "UnknownApp";
 
 	pthread_mutex_lock(&task_mutex);
 
-	for (int i = 0; i < PX4_MAX_TASKS; i++) {
+	for (int i = 0; i < GPX_MAX_TASKS; i++) {
 		if (taskmap[i].isused && taskmap[i].pid == pid) {
 			prog_name = taskmap[i].name;
 		}

@@ -53,6 +53,10 @@ typedef struct hrt_call {
 extern const uint16_t latency_bucket_count;
 extern const uint16_t latency_buckets[LATENCY_BUCKET_COUNT];
 extern uint32_t latency_counters[LATENCY_BUCKET_COUNT + 1];
+typedef struct latency_info {
+	uint16_t                bucket;
+	uint32_t                counter;
+} latency_info_t;
 
 /**
  * Get absolute time in [us] (does not wrap).
@@ -62,12 +66,23 @@ __EXPORT extern hrt_abstime hrt_absolute_time(void);
 /**
  * Convert a timespec to absolute time.
  */
-__EXPORT extern hrt_abstime ts_to_abstime(const struct timespec *ts);
+static inline hrt_abstime ts_to_abstime(const struct timespec *ts)
+{
+	hrt_abstime	result;
 
+	result = (hrt_abstime)(ts->tv_sec) * 1000000;
+	result += (hrt_abstime)(ts->tv_nsec / 1000);
+	return result;
+}
 /**
  * Convert absolute time to a timespec.
  */
-__EXPORT extern void	abstime_to_ts(struct timespec *ts, hrt_abstime abstime);
+static inline void abstime_to_ts(struct timespec *ts, hrt_abstime abstime)
+{
+	ts->tv_sec = (typeof(ts->tv_sec))(abstime / 1000000);
+	abstime -= (hrt_abstime)(ts->tv_sec) * 1000000;
+	ts->tv_nsec = (typeof(ts->tv_nsec))(abstime * 1000);
+}
 
 /**
  * Compute the delta between a timestamp taken in the past
@@ -77,7 +92,11 @@ __EXPORT extern void	abstime_to_ts(struct timespec *ts, hrt_abstime abstime);
  */
 static inline hrt_abstime hrt_elapsed_time(const hrt_abstime *then)
 {
-    return hrt_absolute_time() - *then;
+	hrt_abstime now = hrt_absolute_time();
+	if (*then > now) {
+		return 0;
+	}
+	return now - *then;
 }
 
 /**
@@ -94,7 +113,7 @@ __EXPORT extern hrt_abstime hrt_elapsed_time_atomic(const volatile hrt_abstime *
  *
  * This function ensures that the timestamp cannot be seen half-written by an interrupt handler.
  */
-__EXPORT extern hrt_abstime hrt_store_absolute_time(volatile hrt_abstime *now);
+__EXPORT extern void hrt_store_absolute_time(volatile hrt_abstime *time);
 
 /**
  * Call callout(arg) after delay has elapsed.
@@ -151,6 +170,17 @@ __EXPORT extern void	hrt_call_delay(struct hrt_call *entry, hrt_abstime delay);
 __EXPORT extern void	hrt_init(void);
 
 #if defined(__cplusplus)
+static inline uint16_t get_latency_bucket_count(void) { return LATENCY_BUCKET_COUNT; }
+static inline latency_info_t get_latency(uint16_t bucket_idx, uint16_t counter_idx)
+{
+	latency_info_t ret = {latency_buckets[bucket_idx], latency_counters[counter_idx]};
+	return ret;
+}
+static inline void reset_latency_counters(void)
+{
+	for (int i = 0; i <= get_latency_bucket_count(); i++) {
+		latency_counters[i] = 0;
+	}
 }
 #endif
 

@@ -106,10 +106,6 @@ endif # end with CONFIG_MK_USE_FR_POSIX
 
 endif # end with CONFIG_MK_USE_FREERTOS
 
-ifeq (${CONFIG_MK_USE_PX4_SUPPORT},y)
-FR_CSOURCES   +=  libs/hrt/hrt.c
-FR_CPPSOURCES +=  libs/hrt/px4_tasks.cpp
-else
 ifeq (${CONFIG_MK_USE_HRT},y)
 FR_CINCDIRS   +=  libs/hrt/
 FR_CSOURCES   +=  libs/hrt/hrt.c
@@ -134,10 +130,7 @@ FR_CSOURCES += libs/queue/sq_remafter.c
 FR_CSOURCES += libs/queue/sq_remfirst.c
 FR_CSOURCES += libs/queue/sq_remlast.c
 endif # CONFIG_MK_USE_FR_POSIX
-
 endif # CONFIG_MK_USE_HRT
-
-endif # CONFIG_MK_USE_PX4_SUPPORT
 
 ifeq (${CONFIG_MK_USE_UORB},y)
 FR_CINCDIRS   +=  libs/uorb/include

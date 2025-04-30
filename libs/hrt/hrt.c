@@ -350,23 +350,6 @@ hrt_abstime hrt_absolute_time(void)
 	return abstime;
 }
 
-hrt_abstime ts_to_abstime(const struct timespec *ts)
-{
-	hrt_abstime	result;
-
-	result = (hrt_abstime)(ts->tv_sec) * 1000000;
-	result += ts->tv_nsec / 1000;
-
-	return result;
-}
-
-void abstime_to_ts(struct timespec *ts, hrt_abstime abstime)
-{
-	ts->tv_sec = abstime / 1000000;
-	abstime -= ts->tv_sec * 1000000;
-	ts->tv_nsec = abstime * 1000;
-}
-
 hrt_abstime hrt_elapsed_time_atomic(const volatile hrt_abstime *then)
 {
 	UBaseType_t flags = portSET_INTERRUPT_MASK_FROM_ISR();
@@ -378,15 +361,11 @@ hrt_abstime hrt_elapsed_time_atomic(const volatile hrt_abstime *then)
 	return delta;
 }
 
-hrt_abstime hrt_store_absolute_time(volatile hrt_abstime *now)
+void hrt_store_absolute_time(volatile hrt_abstime *t)
 {
 	UBaseType_t flags = portSET_INTERRUPT_MASK_FROM_ISR();
-
-	hrt_abstime ts = hrt_absolute_time();
-
+    *t = hrt_absolute_time();
 	portCLEAR_INTERRUPT_MASK_FROM_ISR(flags);
-
-	return ts;
 }
 
 void hrt_init(void)
