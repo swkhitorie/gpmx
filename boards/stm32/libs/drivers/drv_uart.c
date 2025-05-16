@@ -151,8 +151,8 @@ bool low_pinconfig(struct uart_dev_s *dev)
         GPIO_TypeDef* rx_port[3] = { GPIOB,		GPIOD,      GPIOD };
         uint16_t       rx_pin[3] = {   7,        6,          9,   };
 
-        low_gpio_setup(tx_port[num-1], tx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, NULL);
-        low_gpio_setup(rx_port[num-1], rx_pin[num-1], IOMODE_INPUT,IO_NOPULL, IO_SPEEDHIGH, NULL); 
+        low_gpio_setup(tx_port[num-1], tx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, 0);
+        low_gpio_setup(rx_port[num-1], rx_pin[num-1], IOMODE_INPUT,IO_NOPULL, IO_SPEEDHIGH, 0, NULL, 0); 
     }
     return true;
 #endif

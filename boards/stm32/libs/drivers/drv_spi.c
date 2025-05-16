@@ -384,6 +384,7 @@ void low_setup(struct spi_dev_s *dev)
 	case 2:	__HAL_RCC_SPI2_CLK_ENABLE();	break;
 #if (BSP_CHIP_RESOURCE_LEVEL > 1)
 	case 3:	__HAL_RCC_SPI3_CLK_ENABLE();	break;
+#elif (BSP_CHIP_RESOURCE_LEVEL > 2)
 	case 4:	__HAL_RCC_SPI4_CLK_ENABLE();	break;
 	case 5:	__HAL_RCC_SPI5_CLK_ENABLE();	break;
 	case 6:	__HAL_RCC_SPI6_CLK_ENABLE();	break;
@@ -395,7 +396,8 @@ void low_setup(struct spi_dev_s *dev)
 	SPI_TypeDef *spi_instance[6] = {
 		SPI1, SPI2, 
 #if (BSP_CHIP_RESOURCE_LEVEL > 1)
-		SPI3, 
+		SPI3,
+#elif (BSP_CHIP_RESOURCE_LEVEL > 2)
 		SPI4, SPI5, SPI6
 #endif
 	};
@@ -404,6 +406,7 @@ void low_setup(struct spi_dev_s *dev)
 		SPI1_IRQn, SPI2_IRQn, 
 #if (BSP_CHIP_RESOURCE_LEVEL > 1)
 		SPI3_IRQn, 
+#elif (BSP_CHIP_RESOURCE_LEVEL > 2)
 		SPI4_IRQn, SPI5_IRQn, SPI6_IRQn
 #endif
     };
@@ -692,6 +695,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     else if (hspi->Instance == SPI2)	idx = 1;
 #if (BSP_CHIP_RESOURCE_LEVEL > 1)
     else if (hspi->Instance == SPI3)	idx = 2;
+#elif (BSP_CHIP_RESOURCE_LEVEL > 2)
     else if (hspi->Instance == SPI4)	idx = 3;
     else if (hspi->Instance == SPI5)	idx = 4;
     else if (hspi->Instance == SPI6)	idx = 5;
@@ -707,6 +711,7 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
     else if (hspi->Instance == SPI2)	idx = 1;
 #if (BSP_CHIP_RESOURCE_LEVEL > 1)
     else if (hspi->Instance == SPI3)	idx = 2;
+#elif (BSP_CHIP_RESOURCE_LEVEL > 2)
     else if (hspi->Instance == SPI4)	idx = 3;
     else if (hspi->Instance == SPI5)	idx = 4;
     else if (hspi->Instance == SPI6)	idx = 5;
@@ -722,6 +727,7 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
     else if (hspi->Instance == SPI2)	idx = 1;
 #if (BSP_CHIP_RESOURCE_LEVEL > 1)
     else if (hspi->Instance == SPI3)	idx = 2;
+#elif (BSP_CHIP_RESOURCE_LEVEL > 2)
     else if (hspi->Instance == SPI4)	idx = 3;
     else if (hspi->Instance == SPI5)	idx = 4;
     else if (hspi->Instance == SPI6)	idx = 5;

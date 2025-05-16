@@ -52,9 +52,15 @@ endif
 
 # C ARM sources
 BUILD_CARMSOURCES:=$(foreach src,${PROJ_CARMSOURCES},${SDK_ROOTDIR}/$(src))
+ifneq (${PUSER_ROOTDIR},)
+BUILD_CARMSOURCES+=$(foreach src,${PUSER_CARMSOURCES},${PUSER_ROOTDIR}/$(src))
+endif
 
 # Assembly sources
 BUILD_ASMSOURCES:=$(foreach src,${PROJ_ASMSOURCES},${SDK_ROOTDIR}/$(src))
+ifneq (${PUSER_ROOTDIR},)
+BUILD_ASMSOURCES+=$(foreach src,${PUSER_ASMSOURCES},${PUSER_ROOTDIR}/$(src))
+endif
 
 # All sources
 BUILD_SOURCES:=${BUILD_CSOURCES} ${BUILD_CPPSOURCES} ${BUILD_CARMSOURCES} ${BUILD_ASMSOURCES}

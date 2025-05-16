@@ -25,6 +25,8 @@ BSP_LIBCONFIG_STM32WL_UTILITIES=y
 
 # include all cubelibrary files and low level driver files
 include ${SDK_ROOTDIR}/boards/stm32/libs/bsp_libs_stm32.mk
+CSOURCES += ${LIB_CSRCS}
+PROJ_CINCDIRS += ${LIB_CINCDIRS}
 
 #########################################################################
 # BSP macros, sources + asm + link files, includes, and entry address
@@ -56,19 +58,12 @@ TMPBOARD_SUBGHZ_CSRCS = ${addprefix boards/stm32/stm32wl55_eval/,${BOARD_SUBGHZ_
 TMPBOARD_ASMSOURCES = ${addprefix boards/stm32/stm32wl55_eval/,${BOARD_ASMSOURCES}}
 TMPBOARD_LNK_FILE = ${addprefix boards/stm32/stm32wl55_eval/,${BOARD_LNK_FILE}}
 
-BSP_BOARD_ENTRY_POINT   := Reset_Handler
-BSP_CDEFS               += ${BOARD_CDEFS}
-BSP_CSRCS               += ${TMPBOARD_CSRCS} ${LIB_CSRCS} ${TMPBOARD_SUBGHZ_CSRCS}
-BSP_CINCDIRS            += ${LIB_CINCDIRS} ${BOARD_SUBGHZ_IF_INCDIRS} boards/stm32/stm32wl55_eval
-BSP_ASMSOURCES          := ${TMPBOARD_ASMSOURCES}
-BSP_LNK_FILE            := ${TMPBOARD_LNK_FILE}
-
 #######################################
 # Add all setting to root make variable
 #######################################
-PROJ_CDEFS              += ${BSP_CDEFS}
-CSOURCES                += ${BSP_CSRCS}
-PROJ_CINCDIRS           += ${BSP_CINCDIRS}
-ASMSOURCES              := ${BSP_ASMSOURCES}
-SCF_FILE                := ${BSP_LNK_FILE}
-PROJ_ENTRY_POINT        := ${BSP_BOARD_ENTRY_POINT}
+PROJ_ENTRY_POINT        := Reset_Handler
+SCF_FILE                := ${TMPBOARD_LNK_FILE}
+PROJ_CDEFS              += ${BOARD_CDEFS}
+PROJ_CINCDIRS           += ${BOARD_SUBGHZ_IF_INCDIRS} boards/stm32/stm32wl55_eval 
+CSOURCES                += ${TMPBOARD_CSRCS} ${TMPBOARD_SUBGHZ_CSRCS}
+ASMSOURCES              := ${TMPBOARD_ASMSOURCES}

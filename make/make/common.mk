@@ -82,7 +82,11 @@ LOPTS_FILE := ${TARGET_ROOTDIR}/lopts.via
 PROJ_MAKEFILE := ${SDK_ROOTDIR}/Makefile
 
 # scatter file name
+ifneq (${PUSER_ROOTDIR},)
+SCF_FILE_NAME := ${PUSER_ROOTDIR}/${SCF_FILE}
+else
 SCF_FILE_NAME := ${SDK_ROOTDIR}/${SCF_FILE}
+endif
 
 
 # definitions for local folder target outputs
