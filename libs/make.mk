@@ -5,7 +5,7 @@ FR_CSOURCES   +=  libs/device/serial.c
 FR_CSOURCES   +=  libs/device/i2c_master.c
 FR_CSOURCES   +=  libs/device/spi.c
 
-ifeq (${CONFIG_MK_COMPILER},y)
+ifeq (${CONFIG_MK_COMPILER},gcc)
 FR_CSOURCES   +=  libs/noneuse_syscall.c
 endif
 
