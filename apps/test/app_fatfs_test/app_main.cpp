@@ -3,7 +3,6 @@
 
 #include "app_fatfs_debug.h"
 
-
 void fr_heart(void *p)
 {
     static char fr_debug_str[512];
@@ -18,8 +17,6 @@ int main(void)
 {
     board_init();
     printf("\r\n[app] bsp init completed \r\n");
-
-    hrt_init();
 
     ff_ls("0:/");
     ff_display("0:/my tech.txt");

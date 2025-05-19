@@ -1,3 +1,6 @@
+#####
+# no use
+#####
 
 ifeq (${BOARD_SELECTION},)
 ifeq (${MAKE_TARGET_CLEANS},n)

@@ -14,8 +14,8 @@ uint16_t dfifocdc_write(struct devfifo_cdc *obj, const uint8_t *p, uint16_t len)
 	for (i = 0; i < wlen; i++) {
 		obj->buf[obj->in] = p[i];
 		obj->in++;
-		if (obj->in >= DEV_CDC_FIFO_BUFFER_LENGTH) {
-			obj->in -= DEV_CDC_FIFO_BUFFER_LENGTH;
+		if (obj->in >= CONFIG_DEV_CDC_FIFO_BUFFER_LENGTH) {
+			obj->in -= CONFIG_DEV_CDC_FIFO_BUFFER_LENGTH;
 		}
         obj->size++;
 	}
@@ -31,8 +31,8 @@ uint16_t dfifocdc_read(struct devfifo_cdc *obj, uint8_t *p, uint16_t len)
 	for (i = 0; i < rlen; i++) {
 		p[i] = obj->buf[obj->out];
 		obj->out++;
-		if (obj->out >= DEV_CDC_FIFO_BUFFER_LENGTH) {
-			obj->out -= DEV_CDC_FIFO_BUFFER_LENGTH;
+		if (obj->out >= CONFIG_DEV_CDC_FIFO_BUFFER_LENGTH) {
+			obj->out -= CONFIG_DEV_CDC_FIFO_BUFFER_LENGTH;
 		}
         obj->size--;
 	}

@@ -3,10 +3,12 @@
 
 #include <stdint.h>
 
-#define DEV_CDC_FIFO_BUFFER_LENGTH  (512)
+#ifndef CONFIG_DEV_CDC_FIFO_BUFFER_LENGTH
+#define CONFIG_DEV_CDC_FIFO_BUFFER_LENGTH  (512)
+#endif
 
 struct devfifo_cdc {
-    uint8_t buf[DEV_CDC_FIFO_BUFFER_LENGTH];
+    uint8_t buf[CONFIG_DEV_CDC_FIFO_BUFFER_LENGTH];
     uint16_t size;
     uint16_t in;
     uint16_t out;

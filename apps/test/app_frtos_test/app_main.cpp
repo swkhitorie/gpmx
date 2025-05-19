@@ -1,6 +1,5 @@
 #include "board_config.h"
 #include <stdio.h>
-#include <drivers/drv_hrt.h>
 #include "FreeRTOS.h"
 #include "task.h"
 
@@ -23,7 +22,6 @@ void debug2(void *p)
 int main(void)
 {
     board_init();
-    hrt_init();
 
     xTaskCreate(debug1, "debug1", 256, NULL, 3, NULL);
     xTaskCreate(debug2, "debug2", 256, NULL, 3, NULL);

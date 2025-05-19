@@ -19,12 +19,6 @@
 #define GPIO_nLED_BLUE_PORT   (GPIOH)
 #define GPIO_nLED_BLUE_PIN    (7)
 
-#define CONFIG_BOARD_MTD_QSPIFLASH_ENABLE
-#define CONFIG_BOARD_MTD_QSPIFLASH_RAW_RW_TEST
-
-#define CONFIG_BOARD_MMCSD_ENABLE
-#define CONFIG_BOARD_MMCSD_RAW_RW_TEST
-#define CONFIG_BOARD_MMCSD_INFO_CHECK
 /** 
  * std stream macro:
  * CONFIG_BOARD_COM_STDINOUT
@@ -47,8 +41,6 @@
  * CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
  * 
  */
-
-#define BOARD_MMCSD_FATFS_SUPPORT
 
 #define BOARD_BLUE_LED(on_true)  HAL_GPIO_WritePin(GPIO_nLED_BLUE_PORT, \
                                     (0x01<<GPIO_nLED_BLUE_PIN), !(on_true))

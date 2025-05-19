@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "dev_cdc_acm.h"
-#include <FreeRTOS.h>
-#include <semphr.h>
+// #include <FreeRTOS.h>
+// #include <semphr.h>
 
 /*!< endpoint address */
 #define CDC_IN_EP  0x81
@@ -286,7 +286,11 @@ int _write(int file, char *ptr, int len)
 {
     if (file == 1) {
         // file -> 0:stdin 1:stdout 2: stderr
+#ifdef CONFIG_CRUSB_CDC_TX_FIFO_ENABLE
+        dev_cdc_acm_send(0, ptr, len, 1);
+#else
         dev_cdc_acm_send(0, ptr, len, 0);
+#endif
         return len;
     }
     return 0;
