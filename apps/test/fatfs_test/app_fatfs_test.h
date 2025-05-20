@@ -9,7 +9,7 @@ extern "C" {
 
 void ff_ls(const char *path);
 
-void ff_display(char *path);
+void ff_cat(char *path);
 
 #ifdef __cplusplus
 }

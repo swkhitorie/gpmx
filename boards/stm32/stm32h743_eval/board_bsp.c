@@ -75,6 +75,7 @@ void board_bsp_init()
 #ifdef CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
     HAL_Delay(300);
     cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
+    HAL_Delay(600);  // wait cdc init completed
 #endif
 }
 

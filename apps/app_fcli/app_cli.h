@@ -2,7 +2,6 @@
 #define APP_CLI_H_
 
 #include "cli.h"
-#include <FreeRTOS.h>
 
 #ifdef CONFIG_FRCLI_EXCMD_NUM
 extern const struct cli_cmdmap_s ex_cmdmap[CONFIG_FRCLI_EXCMD_NUM];

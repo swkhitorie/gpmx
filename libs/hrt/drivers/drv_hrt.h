@@ -10,13 +10,14 @@
 #include <stdbool.h>
 #include <inttypes.h>
 #include <sdqueue.h>
+#include <time.h>
 
 #ifndef __EXPORT
 #define __EXPORT __attribute__ ((visibility ("default")))
 #endif
 
-#if defined(__cplusplus)
-extern "C"{
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 /**
@@ -181,6 +182,10 @@ static inline void reset_latency_counters(void)
 	for (int i = 0; i <= get_latency_bucket_count(); i++) {
 		latency_counters[i] = 0;
 	}
+}
+#endif
+
+#ifdef __cplusplus
 }
 #endif
 

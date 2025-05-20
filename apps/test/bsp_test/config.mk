@@ -1,5 +1,5 @@
 
-PROJ_NAME  :=  test_drv_hrt
+PROJ_NAME  :=  test_bsp
 PROJ_TC    :=  gae
 
 CONFIG_LINK_PRINTF_FLOAT:=y
@@ -61,7 +61,5 @@ PROJ_CDEFS += CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
 PROJ_CDEFS += CONFIG_BOARD_CRUSB_CDC_ACM_STDINOUT
 PROJ_CDEFS += CONFIG_CRUSB_CDC_TX_FIFO_ENABLE
 
-PROJ_CINCDIRS += apps/test/app_fatfs_test/
-CPPSOURCES += apps/test/app_fatfs_test/app_main.cpp
-CPPSOURCES += apps/test/app_fatfs_test/app_fatfs_test.cpp
-
+PROJ_CINCDIRS += apps/test/bsp_test/
+CPPSOURCES += apps/test/bsp_test/app_main.cpp
