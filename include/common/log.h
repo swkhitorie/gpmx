@@ -38,6 +38,10 @@
 
 #pragma once
 
+#ifndef MODULE_NAME
+#define MODULE_NAME "log"
+#endif
+
 #include <common/visibility.h>
 
 #define _PX4_LOG_LEVEL_DEBUG		0

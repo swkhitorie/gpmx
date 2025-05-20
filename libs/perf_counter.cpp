@@ -46,6 +46,7 @@
 #include <sdqueue.h>
 
 #include <drivers/drv_hrt.h>
+#include <common/log.h>
 #include <common/perf_counter.h>
 
 /**

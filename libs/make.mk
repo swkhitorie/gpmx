@@ -141,3 +141,19 @@ FR_CPPSOURCES +=  libs/uorb/src/uorb.cpp
 include ${SDK_ROOTDIR}/libs/uorb_msgs/make.mk
 endif
 
+ifeq (${CONFIG_MK_USE_PX4_LOG},y)
+FR_CPPSOURCES +=  libs/px4_log.cpp
+endif
+
+ifeq (${CONFIG_MK_USE_PX4_MODULE},y)
+FR_CPPSOURCES +=  libs/module.cpp
+endif
+
+ifeq (${CONFIG_MK_USE_PX4_TASKS},y)
+FR_CPPSOURCES +=  libs/px4_tasks.cpp
+endif
+
+ifeq (${CONFIG_MK_USE_PERF_CNTER},y)
+FR_CPPSOURCES +=  libs/perf_counter.cpp
+endif
+
