@@ -7,25 +7,34 @@
 
 #define MODULE_NAME "logger"
 
+char cmd[] = "start";
+char cmd2[] = "SWorkItemExample";
+char *t_argv_list[10];
+
+static char debug_2[512];
 int px4_app1_main(int argc, char *argv[])
 {
 	int ret = 0;
-
+    bool sworkItem_init = false;
     for(;;) {
 		sleep(100);
-        PX4_INFO("px4 app111 running %.5f", hrt_absolute_time()/1e6f);
+
+        if (!sworkItem_init && hrt_absolute_time()/1e6f > 8.0f) {
+            sworkItem_init = true;
+            int ret = SWorkItemExample::main(2, t_argv_list);
+            PX4_INFO("SWorkItemEXample start ret: %d \r\n", ret);
+        }
+
+        // vTaskList(&debug_2[0]);
+        // printf("%s \r\n", debug_2);
+        PX4_INFO("px4 app111 running %.5f %d ", hrt_absolute_time()/1e6f, SWorkItemExample::is_running());
     }
 
 	PX4_INFO("px4 app1 exit");
 	return ret;
 }
 
-// see https://github.com/PX4/PX4-Autopilot/tree/main/src/templates/template_module
-
-char cmd[] = "start";
-char cmd2[] = "SWorkItemExample";
-char *t_argv_list[10];
-
+// see https://github.com/PX4/PX4-Autopilot/tree/main/src/examples/work_item
 int main(void)
 {
     board_init();
@@ -34,7 +43,8 @@ int main(void)
     t_argv_list[0] = &cmd2[0];
     t_argv_list[1] = &cmd[0];
 
-    SWorkItemExample::main(2, t_argv_list);
+    px4::WorkQueueManagerStart();
+    PX4_INFO("workqueue started \r\n");
 
     px4_task_t taskid1 = px4_task_spawn_cmd( "px4_app1", 
                                             SCHED_DEFAULT, SCHED_PRIORITY_MIN + 3, 

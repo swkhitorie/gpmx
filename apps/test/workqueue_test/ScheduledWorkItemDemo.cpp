@@ -14,7 +14,7 @@ SWorkItemExample::~SWorkItemExample()
 
 bool SWorkItemExample::init()
 {
-    PX4_INFO("[SWorkItemExample] init() called %.5f \r\n", hrt_absolute_time()/1e6f);
+    PX4_INFO("init() called %.5f \r\n", hrt_absolute_time()/1e6f);
 
 	return true;
 }
@@ -30,8 +30,8 @@ void SWorkItemExample::Run()
 	perf_begin(_loop_perf);
 	perf_count(_loop_interval_perf);
 
-    PX4_INFO("[SWorkItemExample] Run() called %.5f \r\n", hrt_absolute_time()/1e6f);
-    ScheduleDelayed(100_ms);
+    PX4_INFO("Run() called %.5f \r\n", hrt_absolute_time()/1e6f);
+    // ScheduleDelayed(100_ms);
 
 	perf_end(_loop_perf);
 }
@@ -45,6 +45,8 @@ int SWorkItemExample::task_spawn(int argc, char *argv[])
 		_task_id = task_id_is_work_queue;
 
 		if (instance->init()) {
+            PX4_INFO("init ok");
+            instance->ScheduleOnInterval(100*1000);
 			return PX4_OK;
 		}
 
