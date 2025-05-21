@@ -5,8 +5,14 @@
 
 void debug1(void *p)
 {
+    int cnt = 1;
     for (;;) {
         printf("debug1 : send \r\n");
+        cnt++;
+        if (cnt == 5) {
+            vTaskSuspend(NULL);
+            // vTaskResume(NULL);
+        }
         vTaskDelay(1000);
     }
 }
@@ -23,8 +29,11 @@ int main(void)
 {
     board_init();
 
+    taskENTER_CRITICAL(); 
     xTaskCreate(debug1, "debug1", 256, NULL, 3, NULL);
     xTaskCreate(debug2, "debug2", 256, NULL, 3, NULL);
+    taskEXIT_CRITICAL();
+
     vTaskStartScheduler();
     for (;;);
 }

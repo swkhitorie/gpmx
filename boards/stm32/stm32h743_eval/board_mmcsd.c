@@ -277,19 +277,19 @@ DRESULT mmcsd_ioctl(BYTE lun, BYTE cmd, void *buff)
 
 	/* Get number of sectors on the disk (DWORD) */
 	case GET_SECTOR_COUNT :
-		*(DWORD*)buff = sd.info.LogBlockNbr;
+		*(DWORD*)buff = sd_dev.info.LogBlockNbr;
 		res = RES_OK;
 		break;
 
 	/* Get R/W sector size (WORD) */
 	case GET_SECTOR_SIZE :
-		*(WORD*)buff = sd.info.LogBlockSize;
+		*(WORD*)buff = sd_dev.info.LogBlockSize;
 		res = RES_OK;
 		break;
 
 	/* Get erase block size in unit of sector (DWORD) */
 	case GET_BLOCK_SIZE :
-		*(DWORD*)buff = sd.info.LogBlockSize / SD_DEFAULT_BLOCK_SIZE;
+		*(DWORD*)buff = sd_dev.info.LogBlockSize / SD_DEFAULT_BLOCK_SIZE;
 		res = RES_OK;
 		break;
 
