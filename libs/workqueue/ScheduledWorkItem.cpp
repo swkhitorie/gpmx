@@ -31,7 +31,8 @@
  *
  ****************************************************************************/
 
-#include <px4_platform_common/px4_work_queue/ScheduledWorkItem.hpp>
+#include <workqueue/ScheduledWorkItem.hpp>
+#include <common/log.h>
 
 namespace px4
 {

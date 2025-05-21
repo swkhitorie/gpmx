@@ -31,24 +31,29 @@
  *
  ****************************************************************************/
 
-#include <px4_platform_common/px4_work_queue/WorkQueueManager.hpp>
+#include <workqueue/WorkQueueManager.hpp>
 
-#include <px4_platform_common/px4_work_queue/WorkQueue.hpp>
+#include <workqueue/WorkQueue.hpp>
 
 #include <drivers/drv_hrt.h>
-#include <px4_platform_common/posix.h>
-#include <px4_platform_common/tasks.h>
-#include <px4_platform_common/time.h>
-#include <px4_platform_common/atomic.h>
+#include <common/log.h>
+#include <common/atomic.h>
+#include <common/px4_tasks.h>
+// #include <common/time.h>
 #include <containers/BlockingList.hpp>
 #include <containers/BlockingQueue.hpp>
-#include <lib/drivers/device/Device.hpp>
-#include <lib/mathlib/mathlib.h>
 
+#include <unistd.h>
 #include <limits.h>
 #include <string.h>
 
 using namespace time_literals;
+
+size_t tmp_max(size_t a, size_t b)
+{
+	if (a >= b) return a;
+	else return b;
+}
 
 namespace px4
 {
@@ -105,7 +110,7 @@ WorkQueueFindOrCreate(const wq_config_t &new_wq)
 		while (wq == nullptr && t < 10_s) {
 			// Wait up to 10 seconds, checking every 1 ms
 			t += 1_ms;
-			px4_usleep(1_ms);
+			usleep(1_ms);
 
 			wq = FindWorkQueueByName(new_wq.name);
 		}
@@ -118,49 +123,49 @@ WorkQueueFindOrCreate(const wq_config_t &new_wq)
 	return wq;
 }
 
-const wq_config_t &
-device_bus_to_wq(uint32_t device_id_int)
-{
-	union device::Device::DeviceId device_id;
-	device_id.devid = device_id_int;
+// const wq_config_t &
+// device_bus_to_wq(uint32_t device_id_int)
+// {
+// 	union device::Device::DeviceId device_id;
+// 	device_id.devid = device_id_int;
 
-	const device::Device::DeviceBusType bus_type = device_id.devid_s.bus_type;
-	const uint8_t bus = device_id.devid_s.bus;
+// 	const device::Device::DeviceBusType bus_type = device_id.devid_s.bus_type;
+// 	const uint8_t bus = device_id.devid_s.bus;
 
-	if (bus_type == device::Device::DeviceBusType_I2C) {
-		switch (bus) {
-		case 0: return wq_configurations::I2C0;
+// 	if (bus_type == device::Device::DeviceBusType_I2C) {
+// 		switch (bus) {
+// 		case 0: return wq_configurations::DEV_I2C0;
 
-		case 1: return wq_configurations::I2C1;
+// 		case 1: return wq_configurations::DEV_I2C1;
 
-		case 2: return wq_configurations::I2C2;
+// 		case 2: return wq_configurations::DEV_I2C2;
 
-		case 3: return wq_configurations::I2C3;
+// 		case 3: return wq_configurations::DEV_I2C3;
 
-		case 4: return wq_configurations::I2C4;
-		}
+// 		case 4: return wq_configurations::DEV_I2C4;
+// 		}
 
-	} else if (bus_type == device::Device::DeviceBusType_SPI) {
-		switch (bus) {
-		case 0: return wq_configurations::SPI0;
+// 	} else if (bus_type == device::Device::DeviceBusType_SPI) {
+// 		switch (bus) {
+// 		case 0: return wq_configurations::DEV_SPI0;
 
-		case 1: return wq_configurations::SPI1;
+// 		case 1: return wq_configurations::DEV_SPI1;
 
-		case 2: return wq_configurations::SPI2;
+// 		case 2: return wq_configurations::DEV_SPI2;
 
-		case 3: return wq_configurations::SPI3;
+// 		case 3: return wq_configurations::DEV_SPI3;
 
-		case 4: return wq_configurations::SPI4;
+// 		case 4: return wq_configurations::DEV_SPI4;
 
-		case 5: return wq_configurations::SPI5;
+// 		case 5: return wq_configurations::DEV_SPI5;
 
-		case 6: return wq_configurations::SPI6;
-		}
-	}
+// 		case 6: return wq_configurations::DEV_SPI6;
+// 		}
+// 	}
 
-	// otherwise use high priority
-	return wq_configurations::hp_default;
-};
+// 	// otherwise use high priority
+// 	return wq_configurations::hp_default;
+// };
 
 const wq_config_t &
 serial_port_to_wq(const char *serial)
@@ -169,31 +174,31 @@ serial_port_to_wq(const char *serial)
 		return wq_configurations::hp_default;
 
 	} else if (strstr(serial, "ttyS0")) {
-		return wq_configurations::UART0;
+		return wq_configurations::DEV_UART0;
 
 	} else if (strstr(serial, "ttyS1")) {
-		return wq_configurations::UART1;
+		return wq_configurations::DEV_UART1;
 
 	} else if (strstr(serial, "ttyS2")) {
-		return wq_configurations::UART2;
+		return wq_configurations::DEV_UART2;
 
 	} else if (strstr(serial, "ttyS3")) {
-		return wq_configurations::UART3;
+		return wq_configurations::DEV_UART3;
 
 	} else if (strstr(serial, "ttyS4")) {
-		return wq_configurations::UART4;
+		return wq_configurations::DEV_UART4;
 
 	} else if (strstr(serial, "ttyS5")) {
-		return wq_configurations::UART5;
+		return wq_configurations::DEV_UART5;
 
 	} else if (strstr(serial, "ttyS6")) {
-		return wq_configurations::UART6;
+		return wq_configurations::DEV_UART6;
 
 	} else if (strstr(serial, "ttyS7")) {
-		return wq_configurations::UART7;
+		return wq_configurations::DEV_UART7;
 
 	} else if (strstr(serial, "ttyS8")) {
-		return wq_configurations::UART8;
+		return wq_configurations::DEV_UART8;
 	}
 
 	PX4_DEBUG("unknown serial port: %s", serial);
@@ -246,17 +251,7 @@ WorkQueueManagerRun(int, char **)
 			}
 
 			// stack size
-#if defined(__PX4_QURT)
-			const size_t stacksize = math::max(8 * 1024, PX4_STACK_ADJUSTED(wq->stacksize));
-#elif defined(__PX4_NUTTX)
-			const size_t stacksize = math::max((uint16_t)PTHREAD_STACK_MIN, wq->stacksize);
-#elif defined(__PX4_POSIX)
-			// On posix system , the desired stacksize round to the nearest multiplier of the system pagesize
-			// It is a requirement of the  pthread_attr_setstacksize* function
-			const unsigned int page_size = sysconf(_SC_PAGESIZE);
-			const size_t stacksize_adj = math::max(PTHREAD_STACK_MIN, PX4_STACK_ADJUSTED(wq->stacksize));
-			const size_t stacksize = (stacksize_adj + page_size - (stacksize_adj % page_size));
-#endif
+			const size_t stacksize = tmp_max((uint16_t)PTHREAD_STACK_MIN, wq->stacksize);
 			int ret_setstacksize = pthread_attr_setstacksize(&attr, stacksize);
 
 			if (ret_setstacksize != 0) {
@@ -359,7 +354,7 @@ WorkQueueManagerStop()
 
 			// wait until they're all stopped (empty list)
 			while (_wq_manager_wqs_list->size() > 0) {
-				px4_usleep(1000);
+				usleep(1000);
 			}
 
 			delete _wq_manager_wqs_list;
@@ -371,7 +366,7 @@ WorkQueueManagerStop()
 			// push nullptr to wake the wq manager task
 			_wq_manager_create_queue->push(nullptr);
 
-			px4_usleep(10000);
+			usleep(10000);
 
 			delete _wq_manager_create_queue;
 		}

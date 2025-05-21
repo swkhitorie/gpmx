@@ -43,6 +43,8 @@
 
 #include <unistd.h>
 #include <common/atomic.h>
+#include <common/log.h>
+#include <common/px4_tasks.h>
 
 #ifdef __cplusplus
 
@@ -241,7 +243,7 @@ public:
 						PX4_ERR("timeout, forcing stop");
 
 						if (_task_id != task_id_is_work_queue) {
-							gpx_task_delete(_task_id);
+							px4_task_delete(_task_id);
 						}
 
 						_task_id = -1;

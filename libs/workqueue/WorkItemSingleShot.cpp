@@ -31,8 +31,8 @@
  *
  ****************************************************************************/
 
-#include <px4_platform_common/px4_work_queue/WorkItemSingleShot.hpp>
-
+#include <workqueue/WorkItemSingleShot.hpp>
+#include <common/log.h>
 
 namespace px4
 {

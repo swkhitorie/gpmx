@@ -31,12 +31,12 @@
  *
  ****************************************************************************/
 
-#include <px4_platform_common/px4_work_queue/WorkItem.hpp>
+#include <workqueue/WorkItem.hpp>
 
-#include <px4_platform_common/px4_work_queue/WorkQueue.hpp>
-#include <px4_platform_common/px4_work_queue/WorkQueueManager.hpp>
+#include <workqueue/WorkQueue.hpp>
+#include <workqueue/WorkQueueManager.hpp>
 
-#include <px4_platform_common/log.h>
+#include <common/log.h>
 #include <drivers/drv_hrt.h>
 
 namespace px4

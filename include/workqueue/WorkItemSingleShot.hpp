@@ -34,7 +34,7 @@
 #pragma once
 
 #include "WorkItem.hpp"
-#include <px4_platform_common/sem.h>
+#include <common/px4_sem.h>
 
 namespace px4
 {

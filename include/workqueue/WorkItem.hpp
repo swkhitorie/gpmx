@@ -38,12 +38,12 @@
 
 #include <containers/IntrusiveQueue.hpp>
 #include <containers/IntrusiveSortedList.hpp>
-#include <px4_platform_common/defines.h>
+#include <common/defines.h>
 #include <drivers/drv_hrt.h>
-#include <lib/mathlib/mathlib.h>
-#include <lib/perf/perf_counter.h>
+#include <common/perf_counter.h>
 
 #include <string.h>
+#include <math.h>
 
 namespace px4
 {

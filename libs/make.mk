@@ -157,3 +157,10 @@ ifeq (${CONFIG_MK_USE_PERF_CNTER},y)
 FR_CPPSOURCES +=  libs/perf_counter.cpp
 endif
 
+ifeq (${CONFIG_MK_USE_PX4_WORKQUEUE},y)
+FR_CPPSOURCES +=  libs/workqueue/ScheduledWorkItem.cpp
+FR_CPPSOURCES +=  libs/workqueue/WorkItem.cpp
+FR_CPPSOURCES +=  libs/workqueue/WorkItemSingleShot.cpp
+FR_CPPSOURCES +=  libs/workqueue/WorkQueue.cpp
+FR_CPPSOURCES +=  libs/workqueue/WorkQueueManager.cpp
+endif

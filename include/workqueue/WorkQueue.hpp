@@ -38,10 +38,10 @@
 #include <containers/BlockingList.hpp>
 #include <containers/List.hpp>
 #include <containers/IntrusiveQueue.hpp>
-#include <px4_platform_common/atomic.h>
-#include <px4_platform_common/defines.h>
-#include <px4_platform_common/sem.h>
-#include <px4_platform_common/tasks.h>
+#include <common/atomic.h>
+#include <common/defines.h>
+#include <common/px4_sem.h>
+#include <common/px4_tasks.h>
 
 namespace px4
 {
