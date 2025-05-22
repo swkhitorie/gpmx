@@ -75,15 +75,54 @@
 #error "Please define a modem in the compiler subghz_phy_app.h."
 #endif /* USE_MODEM_LORA | USE_MODEM_FSK */
 
+#define RADIO_RXSIZE_SENDER    (128)
+#define RADIO_RXSIZE_RECEIVER  (1024*2)
+
+enum RADIO_ROLE {
+    RADIO_SENDER = 0x00,
+    RADIO_RECEIVER,
+};
+
 #ifdef __cplusplus
 extern "C"{
 #endif
 
-extern uint8_t MaxUserPayloadSize;
-
 void MX_SUBGHZ_Init();
 
-void app_subghz_init();
+void app_subghz_init(enum RADIO_ROLE role);
+
+/****************************************************************************
+ * Board Radio Function
+ ****************************************************************************/
+size_t board_radio_rxbuf_write(uint8_t *p, uint16_t sz);
+size_t board_radio_rxbuf_size();
+size_t board_radio_rxbuf_read(uint8_t *p, uint16_t sz);
+
+void board_radio_set_send_done_flag(bool flag);
+bool board_radio_get_send_done_flag();
+bool board_radio_is_ready_to_send();
+
+void board_radio_set_send_timeout_flag(bool flag);
+bool board_radio_get_send_timeout_flag();
+
+void board_radio_set_recv_timeout_flag(bool flag);
+bool board_radio_get_recv_timeout_flag();
+
+void board_radio_set_recv_error_flag(bool flag);
+bool board_radio_get_recv_error_flag();
+
+int16_t board_radio_get_rssi();
+int8_t board_radio_get_lora_snr();
+
+uint8_t board_radio_max_payload_sz();
+
+/**
+ * when radio tx trans to rx
+ *      no waiting, wait txDone() and call Rado.Rx
+ * when radio rx trans to tx
+ *      waiting call board_radio_delay_between_rx_tx()
+ */
+void board_radio_delay_between_rx_tx();
 
 #ifdef __cplusplus
 }

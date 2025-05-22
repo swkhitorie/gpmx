@@ -40,6 +40,7 @@ BOARD_CSRCS += board_irq.c
 BOARD_CSRCS += board_rcc_init.c
 BOARD_CSRCS += board_init.c
 BOARD_CSRCS += board_bsp.c
+BOARD_CSRCS += board_radio.c
 
 BOARD_CSRCS += app_subghz.c
 BOARD_CSRCS += ringbuffer.c

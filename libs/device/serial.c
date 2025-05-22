@@ -48,6 +48,16 @@ uint16_t uart_buf_read(struct uart_buffer_s *obj, uint8_t *p, uint16_t len)
 	return rlen;
 }
 
+void uart_buf_clear(struct uart_buffer_s *obj)
+{
+	for (int i = 0; i < obj->capacity; i++) {
+		obj->buffer[i] = 0;
+	}
+	obj->size = 0;
+	obj->in = 0;
+	obj->out = 0;
+}
+
 int uart_register(const char *path, uart_dev_t *dev)
 {
 

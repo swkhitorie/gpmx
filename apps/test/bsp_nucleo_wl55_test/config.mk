@@ -9,8 +9,8 @@ CONFIG_COMPILE_OPTIMIZE:=O1
 TARGET_POSTBUILD := ${TARGET_DEST_FILENAME_BIN}
 
 # board configuration
-MOD_ARCH = m7
-include ${SDK_ROOTDIR}/boards/stm32/stm32h743_eval/make.mk
+MOD_ARCH = m4
+include ${SDK_ROOTDIR}/boards/stm32/stm32wl55_eval/make.mk
 
 # os and library configuration
 CONFIG_MK_CHIP_ARCH=${MOD_ARCH}
@@ -23,9 +23,9 @@ CONFIG_MK_USE_LIB_CPP=n
 CONFIG_MK_USE_UORB=n
 CONFIG_MK_USE_HRT=n
 
-CONFIG_MK_USE_CRUSB=y
-CONFIG_MK_USE_CRUSB_CDC=y
-CONFIG_MK_CRUSB_IP=dwc2_st
+CONFIG_MK_USE_CRUSB=n
+CONFIG_MK_USE_CRUSB_CDC=n
+CONFIG_MK_CRUSB_IP=none
 
 include ${SDK_ROOTDIR}/sched/make.mk
 include ${SDK_ROOTDIR}/mm/make.mk
@@ -57,10 +57,7 @@ PROJ_CINCDIRS += ${FR_CINCDIRS}
 #     CONFIG_CRUSB_CDC_TX_FIFO_ENABLE
 #     CONFIG_BOARD_CRUSB_CDC_ACM_STDINOUT
 #####################################
-#PROJ_CDEFS += CONFIG_BOARD_COM_STDINOUT
-PROJ_CDEFS += CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
-PROJ_CDEFS += CONFIG_BOARD_CRUSB_CDC_ACM_STDINOUT
-PROJ_CDEFS += CONFIG_CRUSB_CDC_TX_FIFO_ENABLE
+PROJ_CDEFS += CONFIG_BOARD_COM_STDINOUT
 
-PROJ_CINCDIRS += apps/test/bsp_test/
-CPPSOURCES += apps/test/bsp_test/app_main.cpp
+PROJ_CINCDIRS += apps/test/bsp_nucleo_wl55_test/
+CPPSOURCES += apps/test/bsp_nucleo_wl55_test/app_main.cpp

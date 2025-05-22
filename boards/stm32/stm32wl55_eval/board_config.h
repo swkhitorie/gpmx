@@ -7,11 +7,14 @@
 #include <stm32wlxx_hal.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <device/serial.h>
 
 #define APP_LOAD_ADDRESS      (0x08000000)
 #define LSE_VALUE             (32768UL)
 #define __FPU_USED            1
 #define __FPU_PRESENT         1    /* need change __FPU_PRESENT macro in stm32wl55xx.h into 1UL */
+
+#define USE_BSP_DRIVER
 
 /** 
  * std stream macro:
@@ -22,13 +25,15 @@
  * 
  */
 
-#define RADIO_TRANSMITTER  1
-#define RADIO_RECEIVER     2
-#define RADIO_ROLE         RADIO_TRANSMITTER
+// #define RADIO_TRANSMITTER  1
+// #define RADIO_RECEIVER     2
+// #define RADIO_ROLE         RADIO_TRANSMITTER
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+extern char role_str[2][16];
 
 void board_irq_reset();
 
@@ -43,13 +48,11 @@ void board_debug();
 
 void board_led_toggle(int i);
 
-bool board_radio_sync();
+int board_get_role();
 
-int board_radio_rxbuf_write(uint8_t *p, uint16_t size);
+uart_dev_t *board_get_stream_transout();
 
-void board_radio_txflag_clr();
-
-bool board_radio_sync_already();
+uart_dev_t *board_get_stream_transin();
 
 #ifdef __cplusplus
 }

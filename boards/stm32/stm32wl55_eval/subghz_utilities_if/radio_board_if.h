@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include <board_config.h>
+#include "board_radio.h"
 
 #if defined(USE_BSP_DRIVER)
 

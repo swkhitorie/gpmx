@@ -14,6 +14,8 @@
 
 #define SERIAL_RDBUF(d,m,c) ((d)->ops->readbuf(d,m,c))
 
+#define SERIAL_RXCLEAR(d) ((d)->ops->rxclear(d))
+
 struct uart_buffer_s {
     volatile uint16_t in;   /* Index to the head [IN] index in the buffer */
     volatile uint16_t out;   /* Index to the tail [OUT] index in the buffer */
@@ -48,6 +50,8 @@ struct uart_ops_s
     int (*send)(struct uart_dev_s *dev, const uint8_t *p, uint16_t len);
 
     int (*readbuf)(struct uart_dev_s *dev, uint8_t *p, uint16_t len);
+
+    void (*rxclear)(struct uart_dev_s *dev);
 };
 
 struct uart_dev_s {
@@ -101,6 +105,8 @@ int uart_register(const char *path, uart_dev_t *dev);
 uint16_t uart_buf_write(struct uart_buffer_s *obj, const uint8_t *p, uint16_t len);
 
 uint16_t uart_buf_read(struct uart_buffer_s *obj, uint8_t *p, uint16_t len);
+
+void uart_buf_clear(struct uart_buffer_s *obj);
 
 #if defined(__cplusplus)
 }

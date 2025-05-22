@@ -16,6 +16,7 @@ static bool up_rxavailable(struct uart_dev_s *dev);
 static int  up_dmasend(struct uart_dev_s *dev, const uint8_t *p, uint16_t len);
 static int  up_send(struct uart_dev_s *dev, const uint8_t *p, uint16_t len);
 static int  up_readbuf(struct uart_dev_s *dev, uint8_t *p, uint16_t len);
+static void up_rxclear(struct uart_dev_s *dev);
 const struct uart_ops_s g_uart_ops = 
 {
     .setup = up_setup,
@@ -24,6 +25,7 @@ const struct uart_ops_s g_uart_ops =
     .dmasend = up_dmasend,
     .send = up_send,
     .readbuf = up_readbuf,
+    .rxclear = up_rxclear,
 };
 
 /****************************************************************************
@@ -325,6 +327,10 @@ void low_dmatx_setup(struct uart_dev_s *dev)
     priv->txdma.Init.Priority = DMA_PRIORITY_LOW;
 #endif   // End With Define DRV_BSP_F1 DRV_BSP_F4 DRV_BSP_H7
     HAL_DMA_Init(&priv->txdma);
+#if defined (DRV_BSP_WL)
+    HAL_DMA_ConfigChannelAttributes(&priv->rxdma, DMA_CHANNEL_NPRIV);
+#endif
+
     HAL_NVIC_SetPriority(uart_txdma_irq[num-1], priv->priority_dmatx, 0);
     HAL_NVIC_EnableIRQ(uart_txdma_irq[num-1]);
 }
@@ -427,6 +433,7 @@ void low_dmarx_setup(struct uart_dev_s *dev)
     priv->rxdma.Init.Priority = DMA_PRIORITY_MEDIUM;
     priv->rxdma.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
 #elif defined (DRV_BSP_WL)
+    __HAL_RCC_DMAMUX1_CLK_ENABLE();
     __HAL_RCC_DMA2_CLK_ENABLE();
     priv->rxdma.Instance = uart_rxdma_channel[num-1];;
     priv->rxdma.Init.Request = uart_rxdma_request[num-1];;
@@ -439,6 +446,10 @@ void low_dmarx_setup(struct uart_dev_s *dev)
     priv->rxdma.Init.Priority = DMA_PRIORITY_LOW;
 #endif   // End With Define DRV_BSP_F4 and DRV_BSP_H7
     HAL_DMA_Init(&priv->rxdma);
+#if defined (DRV_BSP_WL)
+    HAL_DMA_ConfigChannelAttributes(&priv->rxdma, DMA_CHANNEL_NPRIV);
+#endif
+
     HAL_NVIC_SetPriority(uart_rxdma_irq[num-1], priv->priority_dmarx, 0);
     HAL_NVIC_EnableIRQ(uart_rxdma_irq[num-1]);
 
@@ -731,6 +742,11 @@ int up_readbuf(struct uart_dev_s *dev, uint8_t *p, uint16_t len)
     xSemaphoreGive(dev->recvsem);
 #endif
     return sz;
+}
+
+void up_rxclear(struct uart_dev_s *dev)
+{
+    uart_buf_clear(&dev->recv);
 }
 
 /****************************************************************************
