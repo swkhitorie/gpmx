@@ -212,6 +212,12 @@ int main(int argc, char *argv[])
     uint32_t cnt1 = HAL_GetTick();
     uint32_t cnt2 = HAL_GetTick();
 
+    // uint32_t mcuID[3];
+    // mcuID[0] = *(volatile uint32_t*)(0x1FFF7590);
+    // mcuID[1] = *(volatile uint32_t*)(0x1FFF7594);
+    // mcuID[2] = *(volatile uint32_t*)(0x1FFF7598);
+    // printf("UID: %x, %x, %x \n", mcuID[0], mcuID[1], mcuID[2]);
+
     for (;;) {
 
         switch (rd_state) {
