@@ -42,6 +42,7 @@ void debug2(void *p)
 int main(void)
 {
     board_init();
+    board_bsp_init();
 
     taskENTER_CRITICAL(); 
     t_queue = xQueueCreate(3, 4); //3 items, 4 byte

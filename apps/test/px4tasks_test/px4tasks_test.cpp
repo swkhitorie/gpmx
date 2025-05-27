@@ -65,6 +65,8 @@ int px4_app1_detect_main(int argc, char *argv[])
 int main(void)
 {
     board_init();
+    board_bsp_init();
+
     hrt_init();
 
     px4_task_t taskid1 = px4_task_spawn_cmd( "px4_app1", 

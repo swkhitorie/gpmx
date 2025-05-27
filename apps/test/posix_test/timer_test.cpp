@@ -37,6 +37,8 @@ void tr1_entry(union sigval value)
 int main(void)
 {
     board_init();
+    board_bsp_init();
+
     hrt_init();
 
     //soft timer triggle

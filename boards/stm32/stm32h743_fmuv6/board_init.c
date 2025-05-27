@@ -168,6 +168,4 @@ void board_init()
     HAL_Delay(500);
 
     board_config_power_rcc();
-
-    board_bsp_init();
 }

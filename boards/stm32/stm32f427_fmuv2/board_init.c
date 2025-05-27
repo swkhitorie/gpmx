@@ -71,7 +71,5 @@ void board_init()
     board_config_power_rcc();
 
     HAL_Init();
-
-    board_bsp_init();
 }
 

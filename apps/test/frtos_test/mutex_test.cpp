@@ -63,6 +63,7 @@ void debug2(void *p)
 int main(void)
 {
     board_init();
+    board_bsp_init();
 
     taskENTER_CRITICAL(); 
     mutex = xSemaphoreCreateMutex();

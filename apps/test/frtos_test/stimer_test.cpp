@@ -29,6 +29,7 @@ void stimer2_callback(void *arg)
 int main(void)
 {
     board_init();
+    board_bsp_init();
 
     taskENTER_CRITICAL(); 
 

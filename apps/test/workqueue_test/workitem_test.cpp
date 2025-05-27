@@ -38,6 +38,8 @@ int px4_app1_main(int argc, char *argv[])
 int main(void)
 {
     board_init();
+    board_bsp_init();
+
     hrt_init();
 
     t_argv_list[0] = &cmd2[0];

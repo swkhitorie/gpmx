@@ -55,6 +55,8 @@ void* p1_entry(void *p)
 int main(void)
 {
     board_init();
+    board_bsp_init();
+
     hrt_init();
 
     int rv;

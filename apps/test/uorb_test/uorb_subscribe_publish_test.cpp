@@ -94,6 +94,8 @@ void *thread_subscriber(void *unused) {
 int main(void)
 {
     board_init();
+    board_bsp_init();
+
     hrt_init();
 
     int rv = pthread_create(&pa1.id, nullptr, thread_publisher, nullptr);

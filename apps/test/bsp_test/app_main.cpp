@@ -5,6 +5,7 @@
 int main(int argc, char *argv[])
 {
     board_init();
+    board_bsp_init();
 
     uint32_t m = HAL_GetTick();
     for (;;) {

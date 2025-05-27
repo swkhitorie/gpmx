@@ -11,6 +11,8 @@ int16_t data[3];
 int main(int argc, char *argv[])
 {
     board_init();
+    board_bsp_init();
+
     hrt_init();
 
     mag.init();

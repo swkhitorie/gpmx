@@ -83,6 +83,8 @@ void* p9_entry(void *p)
 int main(void)
 {
     board_init();
+    board_bsp_init();
+
     hrt_init();
 
     {

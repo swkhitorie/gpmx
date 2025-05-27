@@ -37,6 +37,8 @@ void hrt_call3(void *arg)
 int main(int argc, char *argv[])
 {
     board_init();
+    board_bsp_init();
+
     hrt_init();
 
     //call1: delay 2s, period 1s

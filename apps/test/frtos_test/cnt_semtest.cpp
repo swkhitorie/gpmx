@@ -33,6 +33,7 @@ void debug2(void *p)
 int main(void)
 {
     board_init();
+    board_bsp_init();
 
     taskENTER_CRITICAL(); 
     c_sem = xSemaphoreCreateCounting(5, 5); // max cnt, init cnt

@@ -29,6 +29,8 @@ char *t_argv_list[10];
 int main(void)
 {
     board_init();
+    board_bsp_init();
+
     hrt_init();
 
     t_argv_list[0] = &cmd2[0];

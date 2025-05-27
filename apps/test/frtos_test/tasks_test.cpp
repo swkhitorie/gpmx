@@ -28,6 +28,7 @@ void debug2(void *p)
 int main(void)
 {
     board_init();
+    board_bsp_init();
 
     taskENTER_CRITICAL(); 
     xTaskCreate(debug1, "debug1", 256, NULL, 3, NULL);

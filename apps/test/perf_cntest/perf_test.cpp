@@ -61,6 +61,8 @@ void* p1_entry(void *p)
 int main(void)
 {
     board_init();
+    board_bsp_init();
+
     hrt_init();
 
     test_perf = perf_alloc(PC_ELAPSED, "test");

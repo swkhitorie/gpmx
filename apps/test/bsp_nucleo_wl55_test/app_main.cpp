@@ -204,6 +204,7 @@ int process_receiver_connected()
 int main(int argc, char *argv[])
 {
     board_init();
+    board_bsp_init();
 
     out = board_get_stream_transout();
     in = board_get_stream_transin();
