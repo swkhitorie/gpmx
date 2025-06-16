@@ -68,3 +68,8 @@ LIBHAL_CSRCS += utilities/stm32_timer.c
 LIBHAL_CSRCS += utilities/stm32_tiny_sscanf.c
 LIBHAL_CSRCS += utilities/stm32_tiny_vsnprintf.c
 endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_RNG),y)
+LIBHAL_CSRCS += hal_driver/stm32wlxx_hal_rng.c
+LIBHAL_CSRCS += hal_driver/stm32wlxx_hal_rng_ex.c
+endif

@@ -327,7 +327,7 @@ void low_dmatx_setup(struct uart_dev_s *dev)
     priv->txdma.Init.Priority = DMA_PRIORITY_LOW;
 #endif   // End With Define DRV_BSP_F1 DRV_BSP_F4 DRV_BSP_H7
     HAL_DMA_Init(&priv->txdma);
-#if defined (DRV_BSP_WL)
+#if defined (DRV_BSP_WL) && defined (CORE_CM0PLUS)
     HAL_DMA_ConfigChannelAttributes(&priv->rxdma, DMA_CHANNEL_NPRIV);
 #endif
 
@@ -446,7 +446,7 @@ void low_dmarx_setup(struct uart_dev_s *dev)
     priv->rxdma.Init.Priority = DMA_PRIORITY_LOW;
 #endif   // End With Define DRV_BSP_F4 and DRV_BSP_H7
     HAL_DMA_Init(&priv->rxdma);
-#if defined (DRV_BSP_WL)
+#if defined (DRV_BSP_WL) && defined (CORE_CM0PLUS)
     HAL_DMA_ConfigChannelAttributes(&priv->rxdma, DMA_CHANNEL_NPRIV);
 #endif
 
