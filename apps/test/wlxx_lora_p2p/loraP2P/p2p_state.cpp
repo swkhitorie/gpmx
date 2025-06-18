@@ -5,6 +5,9 @@ void lora_p2p_state_to_linkfind(lora_state_t *obj)
     rb_reset(&obj->rf_rxbuf);
     memset(&obj->rf_rtcm, 0, sizeof(rtcm_t));
     memset(obj->rf_read, 0, 255);
+    memset((uint8_t *)obj->id_obj, 0, 12);
+    obj->id_key_obj = 0;
+    obj->auth_key_obj = 0;
 
     do {
         // wait last onTxDone trigger
@@ -16,6 +19,11 @@ void lora_p2p_state_to_linkfind(lora_state_t *obj)
 
     // exit other mode, return to standby mode
     Radio.Standby();
+    while (Radio.GetStatus() != RF_IDLE);
+
+    // switch to ping channel
+    Radio.SetChannel(obj->region_grp.ping.freq);
+
     if (obj->role == LORA_SENDER) {
         // start to recv link request
         Radio.Rx(0);
@@ -35,6 +43,12 @@ void lora_p2p_state_to_link_established(lora_state_t *obj)
 {
     rb_reset(&obj->rf_rxbuf);
     memset(&obj->rf_rtcm, 0, sizeof(rtcm_t));
+    rand_lcg_seed_set(obj->id_key_board);
+    obj->down_freq_idx = 0;
+    obj->up_freq_idx = 0;
+    obj->tick = 0;
+    obj->tick_lst = 0;
+    obj->tick_h = 0;
 
     Radio.Standby();
     if (obj->role == LORA_SENDER) {
@@ -46,6 +60,8 @@ void lora_p2p_state_to_link_established(lora_state_t *obj)
 
     obj->state = P2P_LINK_ESTABLISHED;
     obj->sub_state = 0x11;
+
+    obj->link_failed_timestamp = LORA_TIMESTAMP_GET();
 
     LORAP2P_DEBUG("Established \r\n");
 }

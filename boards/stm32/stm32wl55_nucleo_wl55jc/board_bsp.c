@@ -14,10 +14,10 @@
 #define MSG_RECEIVER_RX_SIZE          (128)
 
 /* log com buffer config */
-uint8_t log_dma_rxbuff[64];
-uint8_t log_dma_txbuff[64];
-uint8_t log_txbuff[64];
-uint8_t log_rxbuff[64];
+uint8_t log_dma_rxbuff[128];
+uint8_t log_dma_txbuff[256];
+uint8_t log_txbuff[256];
+uint8_t log_rxbuff[128];
 
 #if (RADIO_BOARD_ROLE == RADIO_BOARD_TRANSMITTER)
 
@@ -44,19 +44,19 @@ struct up_uart_dev_s com2_dev = {
         .stopbitlen = 1,
         .parity = 'n',
         .recv = {
-            .capacity = 64,
+            .capacity = 128,
             .buffer = log_rxbuff,
         },
         .xmit = {
-            .capacity = 64,
+            .capacity = 256,
             .buffer = log_txbuff,
         },
         .dmarx = {
-            .capacity = 64,
+            .capacity = 128,
             .buffer = log_dma_rxbuff,
         },
         .dmatx = {
-            .capacity = 64,
+            .capacity = 256,
             .buffer = log_dma_txbuff,
         },
         .ops       = &g_uart_ops,

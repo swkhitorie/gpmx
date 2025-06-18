@@ -50,6 +50,8 @@ void board_bsp_init();
 
 void board_rng_init();
 
+void board_crc_init();
+
 void board_subghz_init();
 
 /*-------------- board bsp interface --------------*/
@@ -66,6 +68,8 @@ void board_led_toggle(int i);
 uint32_t board_elapsed_tick(const uint32_t tick);
 
 bool board_subghz_tx_ready();
+
+uint32_t board_crc_key_get(uint32_t *uid, uint32_t key);
 
 #ifdef __cplusplus
 }

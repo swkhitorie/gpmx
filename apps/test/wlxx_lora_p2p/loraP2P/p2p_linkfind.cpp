@@ -31,8 +31,8 @@ static void lora_p2p_linkfind_recv(lora_state_t *obj)
             // wait REQUEST_CONNECT send completed, and turn to receiver REQUEST_ALLOW
             if (obj->tx_done && 
                 board_subghz_tx_ready()) {
+                while (Radio.GetStatus() != RF_IDLE);
 
-                LORAP2P_DEBUG("P2P Send Connect\n");
                 rb_reset(&obj->rf_rxbuf);
                 Radio.Rx(0);
                 obj->sub_state = 0x03;
@@ -48,6 +48,7 @@ static void lora_p2p_linkfind_recv(lora_state_t *obj)
                 case -2: break;
                 case -3:
                         LORAP2P_DEBUG("CRC ERROR in Allow\n");
+                        memset(&obj->rf_rtcm, 0, sizeof(rtcm_t));
                         break;
                 case 0:
                     {
@@ -62,13 +63,21 @@ static void lora_p2p_linkfind_recv(lora_state_t *obj)
                                 *((uint32_t *)&f_reqallow.snd_id[8]));
 
                             util_id_set_to_uid(&obj->id_obj[0], &f_reqallow.snd_id[0]);
-                            obj->sub_state = 0x04;
-                            lora_p2p_state_to_link_established(obj);
+                            obj->id_key_obj = f_reqallow.snd_key;
+                            obj->auth_key_obj = (*obj->hauth)(obj->id_obj, obj->id_key_obj);
+                            // LORAP2P_DEBUG("snd key %x %x\r\n", obj->id_key_obj, obj->auth_key_obj);
 
+                            obj->sub_state = 0x04;
+                            memset(&obj->rf_rtcm, 0, sizeof(rtcm_t));
+
+                            lora_p2p_state_to_link_established(obj);
                             return;
-                        } else {
-                            LORAP2P_DEBUG("Allow ERROR %d %d\n", ret, f_reqallow.typid);
+                        } else if (ret == 1) {
+                            // LORAP2P_DEBUG("Allow ERROR %d %d\n", ret, f_reqallow.typid);
+                        } else if (ret == 0) {
+                            // LORAP2P_DEBUG("Allow Id Error\n");
                         }
+                        memset(&obj->rf_rtcm, 0, sizeof(rtcm_t));
                         break;
                     }
                 }
@@ -111,6 +120,7 @@ static void lora_p2p_linkfind_send(lora_state_t *obj)
                 case -2: break;
                 case -3: 
                         LORAP2P_DEBUG("CRC ERROR in Req\n");
+                        memset(&obj->rf_rtcm, 0, sizeof(rtcm_t));
                         break;
                 case 0: {
                         ret = decode_req_connect(&obj->rf_rtcm, &f_reqconnect);
@@ -120,11 +130,14 @@ static void lora_p2p_linkfind_send(lora_state_t *obj)
 
                             util_id_set_to_uid(&obj->id_obj[0], &f_reqconnect.rcv_id[0]);
                             obj->id_key_obj = f_reqconnect.rcv_key;
+                            obj->auth_key_obj = (*obj->hauth)(obj->id_obj, obj->id_key_obj);
+                            // LORAP2P_DEBUG("rcv key %x %x\r\n", obj->id_key_obj, obj->auth_key_obj);
 
                             LORAP2P_DEBUG("OBJ-ID: %x %x %x\n",
                                 *((uint32_t *)&f_reqconnect.rcv_id[0]),
                                 *((uint32_t *)&f_reqconnect.rcv_id[4]),
                                 *((uint32_t *)&f_reqconnect.rcv_id[8]));
+                            memset(&obj->rf_rtcm, 0, sizeof(rtcm_t));
                         }
                         break;
                     }
@@ -159,6 +172,7 @@ static void lora_p2p_linkfind_send(lora_state_t *obj)
         {
             if (obj->tx_done && 
                 board_subghz_tx_ready()) {
+                while (Radio.GetStatus() != RF_IDLE);
 
                 LORAP2P_DEBUG("Link-Find Completed \r\n");
 

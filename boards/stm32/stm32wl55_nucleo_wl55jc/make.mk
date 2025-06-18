@@ -23,6 +23,7 @@ BSP_LIBCONFIG_STM32_HAL_SPI=n
 BSP_LIBCONFIG_STM32WL_SUBGHZ_PHY=y
 BSP_LIBCONFIG_STM32WL_UTILITIES=y
 BSP_LIBCONFIG_STM32_HAL_RNG=y
+BSP_LIBCONFIG_STM32_HAL_CRC=y
 
 # include all cubelibrary files and low level driver files
 include ${SDK_ROOTDIR}/boards/stm32/libs/bsp_libs_stm32.mk
@@ -43,6 +44,7 @@ BOARD_CSRCS += board_init.c
 BOARD_CSRCS += board_bsp.c
 BOARD_CSRCS += board_radio.c
 BOARD_CSRCS += board_rand.c
+BOARD_CSRCS += board_crc.c
 BOARD_CSRCS += board_subghz.c
 
 BOARD_SUBGHZ_IF_INCDIRS += boards/stm32/stm32wl55_nucleo_wl55jc/subghz_utilities_if

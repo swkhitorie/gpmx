@@ -73,3 +73,8 @@ ifeq ($(BSP_LIBCONFIG_STM32_HAL_RNG),y)
 LIBHAL_CSRCS += hal_driver/stm32wlxx_hal_rng.c
 LIBHAL_CSRCS += hal_driver/stm32wlxx_hal_rng_ex.c
 endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_CRC),y)
+LIBHAL_CSRCS += hal_driver/stm32wlxx_hal_crc.c
+LIBHAL_CSRCS += hal_driver/stm32wlxx_hal_crc_ex.c
+endif
