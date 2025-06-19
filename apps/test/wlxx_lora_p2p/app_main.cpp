@@ -36,13 +36,13 @@ int main(int argc, char *argv[])
     forwarding_data handle_forward;
     authkey_generate handle_auth_key;
 
-#if (RADIO_BOARD_ROLE == RADIO_BOARD_TRANSMITTER)
-    role_board = LORA_SENDER;
-    handle_forward = lora_forward_data_sender;
-#elif (RADIO_BOARD_ROLE == RADIO_BOARD_RECEIVER)
-    role_board = LORA_RECEIVER;
-    handle_forward = lora_forward_data_receiver;
-#endif
+    if (board_get_role() == RADIO_BOARD_TRANSMITTER) {
+        role_board = LORA_SENDER;
+        handle_forward = lora_forward_data_sender;
+    } else if (board_get_role() == RADIO_BOARD_RECEIVER) {
+        role_board = LORA_RECEIVER;
+        handle_forward = lora_forward_data_receiver;
+    }
     handle_auth_key = lora_authkey_generate;
 
     lora_p2p_setup(

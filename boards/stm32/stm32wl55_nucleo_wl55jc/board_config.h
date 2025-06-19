@@ -23,7 +23,7 @@
 
 #define RADIO_BOARD_TRANSMITTER  1
 #define RADIO_BOARD_RECEIVER     2
-#define RADIO_BOARD_ROLE         RADIO_BOARD_RECEIVER
+#define RADIO_BOARD_ROLE         RADIO_BOARD_TRANSMITTER
 
 #define BOARD_DEBUG(...) do {\
     printf("[%d.%03d] ", HAL_GetTick()/1000, HAL_GetTick()%1000); \
@@ -70,6 +70,8 @@ uint32_t board_elapsed_tick(const uint32_t tick);
 bool board_subghz_tx_ready();
 
 uint32_t board_crc_key_get(uint32_t *uid, uint32_t key);
+
+int board_get_role();
 
 #ifdef __cplusplus
 }

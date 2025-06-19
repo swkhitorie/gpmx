@@ -69,6 +69,7 @@ bool board_subghz_tx_ready();
 
 uint32_t board_crc_key_get(uint32_t *uid, uint32_t key);
 
+int board_get_role();
 #ifdef __cplusplus
 }
 #endif

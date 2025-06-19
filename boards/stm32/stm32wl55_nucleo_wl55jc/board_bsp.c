@@ -13,13 +13,13 @@
 #define MSG_RECEIVER_DMA_RX_SIZE      (128)
 #define MSG_RECEIVER_RX_SIZE          (128)
 
+int board_role;
+
 /* log com buffer config */
 uint8_t log_dma_rxbuff[128];
 uint8_t log_dma_txbuff[256];
 uint8_t log_txbuff[256];
 uint8_t log_rxbuff[128];
-
-#if (RADIO_BOARD_ROLE == RADIO_BOARD_TRANSMITTER)
 
 /* lora msg com buffer config, ROLE: Sender */
 uint8_t msg_dma_txbuff_sender[MSG_SENDER_DMA_TX_SIZE];
@@ -27,15 +27,11 @@ uint8_t msg_txbuff_sender[MSG_SENDER_TX_SIZE];
 uint8_t msg_dma_rxbuff_sender[MSG_SENDER_DMA_RX_SIZE];
 uint8_t msg_rxbuff_sender[MSG_SENDER_RX_SIZE];
 
-#elif (RADIO_BOARD_ROLE == RADIO_BOARD_RECEIVER)
-
 /* lora msg com buffer config, ROLE: Receiver */
 uint8_t msg_dma_txbuff_receiver[MSG_RECEIVER_DMA_TX_SIZE];
 uint8_t msg_txbuff_receiver[MSG_RECEIVER_TX_SIZE];
 uint8_t msg_dma_rxbuff_receiver[MSG_RECEIVER_DMA_RX_SIZE];
 uint8_t msg_rxbuff_receiver[MSG_RECEIVER_RX_SIZE];
-
-#endif
 
 struct up_uart_dev_s com2_dev = {
     .dev = {
@@ -123,36 +119,40 @@ void board_bsp_init()
     low_gpio_setup(GPIOB, 9, IOMODE_OUTPP, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, 0);
     low_gpio_setup(GPIOB, 11, IOMODE_OUTPP, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, 0);
 
+    board_role = RADIO_BOARD_ROLE;
+
     dregister("/com1", &com1_dev.dev);
     dregister("/com2", &com2_dev.dev);
     com2_dev.dev.ops->setup(&com2_dev.dev);
     com1_dev.dev.ops->setup(&com1_dev.dev);
 
-#if (RADIO_BOARD_ROLE == RADIO_BOARD_TRANSMITTER)
+    switch (board_role) {
+    case RADIO_BOARD_TRANSMITTER: {
+        com1_dev.dev.recv.capacity = MSG_SENDER_RX_SIZE;
+        com1_dev.dev.recv.buffer = msg_rxbuff_sender;
+        com1_dev.dev.xmit.capacity = MSG_SENDER_TX_SIZE;
+        com1_dev.dev.xmit.buffer = msg_txbuff_sender;
 
-    com1_dev.dev.recv.capacity = MSG_SENDER_RX_SIZE;
-    com1_dev.dev.recv.buffer = msg_rxbuff_sender;
-    com1_dev.dev.xmit.capacity = MSG_SENDER_TX_SIZE;
-    com1_dev.dev.xmit.buffer = msg_txbuff_sender;
+        com1_dev.dev.dmarx.capacity = MSG_SENDER_DMA_RX_SIZE;
+        com1_dev.dev.dmarx.buffer = msg_dma_rxbuff_sender;
+        com1_dev.dev.dmatx.capacity = MSG_SENDER_DMA_TX_SIZE;
+        com1_dev.dev.dmatx.buffer = msg_dma_txbuff_sender;
+        }
+        break;
+    case RADIO_BOARD_RECEIVER: {
+        com1_dev.dev.recv.capacity = MSG_RECEIVER_RX_SIZE;
+        com1_dev.dev.recv.buffer = msg_rxbuff_receiver;
+        com1_dev.dev.xmit.capacity = MSG_RECEIVER_TX_SIZE;
+        com1_dev.dev.xmit.buffer = msg_txbuff_receiver;
 
-    com1_dev.dev.dmarx.capacity = MSG_SENDER_DMA_RX_SIZE;
-    com1_dev.dev.dmarx.buffer = msg_dma_rxbuff_sender;
-    com1_dev.dev.dmatx.capacity = MSG_SENDER_DMA_TX_SIZE;
-    com1_dev.dev.dmatx.buffer = msg_dma_txbuff_sender;
-
-#elif (RADIO_BOARD_ROLE == RADIO_BOARD_RECEIVER)
-
-    com1_dev.dev.recv.capacity = MSG_RECEIVER_RX_SIZE;
-    com1_dev.dev.recv.buffer = msg_rxbuff_receiver;
-    com1_dev.dev.xmit.capacity = MSG_RECEIVER_TX_SIZE;
-    com1_dev.dev.xmit.buffer = msg_txbuff_receiver;
-
-    com1_dev.dev.dmarx.capacity = MSG_RECEIVER_DMA_RX_SIZE;
-    com1_dev.dev.dmarx.buffer = msg_dma_rxbuff_receiver;
-    com1_dev.dev.dmatx.capacity = MSG_RECEIVER_DMA_TX_SIZE;
-    com1_dev.dev.dmatx.buffer = msg_dma_txbuff_receiver;
-
-#endif
+        com1_dev.dev.dmarx.capacity = MSG_RECEIVER_DMA_RX_SIZE;
+        com1_dev.dev.dmarx.buffer = msg_dma_rxbuff_receiver;
+        com1_dev.dev.dmatx.capacity = MSG_RECEIVER_DMA_TX_SIZE;
+        com1_dev.dev.dmatx.buffer = msg_dma_txbuff_receiver;
+        }
+        break;
+    default:break;
+    }
 
     _tty_log_out = dbind("/com2");
     _tty_log_in = dbind("/com2");
@@ -206,7 +206,7 @@ int _write(int file, char *ptr, int len)
     const int stdout_fileno = 1;
     const int stderr_fileno = 2;
     if (file == stdout_fileno) {
-        SERIAL_SEND(_tty_log_out, ptr, len);
+        SERIAL_DMASEND(_tty_log_out, ptr, len);
     }
     return len;
 }
@@ -243,3 +243,5 @@ uint32_t board_elapsed_tick(const uint32_t tick)
     }
     return now - tick;
 }
+
+int board_get_role() { return board_role; }
