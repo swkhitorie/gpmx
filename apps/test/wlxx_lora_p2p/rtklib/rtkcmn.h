@@ -24,6 +24,7 @@ typedef struct __rtcm_t {        /* RTCM control struct type */
     unsigned char buff[1200]; /* message buffer */
 
     int sys;
+    int sync;
     double tow;
 } rtcm_t;
 

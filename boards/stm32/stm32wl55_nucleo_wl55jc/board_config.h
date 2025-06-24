@@ -23,7 +23,7 @@
 
 #define RADIO_BOARD_TRANSMITTER  1
 #define RADIO_BOARD_RECEIVER     2
-#define RADIO_BOARD_ROLE         RADIO_BOARD_TRANSMITTER
+#define RADIO_BOARD_ROLE         RADIO_BOARD_RECEIVER
 
 #define BOARD_DEBUG(...) do {\
     printf("[%d.%03d] ", HAL_GetTick()/1000, HAL_GetTick()%1000); \

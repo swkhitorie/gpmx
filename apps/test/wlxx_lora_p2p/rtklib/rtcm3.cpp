@@ -23,6 +23,12 @@ static int decode_type1006(rtcm_t *rtcm)
     return 1006;
 }
 
+static int decode_type1013(rtcm_t *rtcm)
+{
+    // do nothing
+    return 1013;
+}
+
 static int decode_type1033(rtcm_t *rtcm)
 {
     // do nothing
@@ -32,7 +38,7 @@ static int decode_type1033(rtcm_t *rtcm)
 static int decode_msm_head(rtcm_t *rtcm, int sys)
 {
     double tow,tod;
-    int i=24,dow,staid,type;
+    int i=24,dow,staid,type,sync;
 
     type=getbitu(rtcm->buff,i,12); i+=12;
 
@@ -51,12 +57,15 @@ static int decode_msm_head(rtcm_t *rtcm, int sys)
         else {
             tow   =getbitu(rtcm->buff,i,30)*0.001; i+=30;
         }
+        sync      =getbitu(rtcm->buff,i, 1);       i+= 1;
+
     } else {
         return -11;
     }
 
     rtcm->tow = tow;
     rtcm->sys = sys;
+    rtcm->sync = sync;
 
     return type;
 }
@@ -89,6 +98,7 @@ int decode_rtcm3(rtcm_t *rtcm)
     switch (type) {
         case 1005: ret=decode_type1005(rtcm); break;
         case 1006: ret=decode_type1006(rtcm); break;
+        case 1013: ret=decode_type1013(rtcm); break;
         case 1033: ret=decode_type1033(rtcm); break;
 
         case 1074: ret=decode_msm4(rtcm,SYS_GPS); break;

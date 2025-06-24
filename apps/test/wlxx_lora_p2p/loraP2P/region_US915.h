@@ -13,21 +13,21 @@
 #define US915_MAX_TX_POWER                          18
 #define US915_DEFAULT_TX_POWER                      16
 
-struct __region_grp;
-typedef struct __region_grp region_grp_t;
+struct __channel_grp;
+typedef struct __channel_grp channel_grp_t;
 
-struct __lora_state;
-typedef struct __lora_state lora_state_t;
+struct __p2p_obj;
+typedef struct __p2p_obj p2p_obj_t;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void region_us915_init_default(region_grp_t *param);
+void region_us915_init_default(channel_grp_t *param);
 
-uint8_t region_us915_downchannelnext(lora_state_t *obj);
+uint8_t region_us915_downchannelnext(p2p_obj_t *obj);
 
-uint8_t region_us915_upchannelnext(lora_state_t *obj);
+uint8_t region_us915_upchannelnext(p2p_obj_t *obj);
 
 #ifdef __cplusplus
 }

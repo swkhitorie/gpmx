@@ -23,21 +23,21 @@
 /* LoRaMac default up channel 3 */
 #define EU868_LC3                                   868500000
 
-struct __region_grp;
-typedef struct __region_grp region_grp_t;
+struct __channel_grp;
+typedef struct __channel_grp channel_grp_t;
 
-struct __lora_state;
-typedef struct __lora_state lora_state_t;
+struct __p2p_obj;
+typedef struct __p2p_obj p2p_obj_t;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void region_eu868_init_default(region_grp_t *param);
+void region_eu868_init_default(channel_grp_t *param);
 
-uint8_t region_eu868_downchannelnext(lora_state_t *obj);
+uint8_t region_eu868_downchannelnext(p2p_obj_t *obj);
 
-uint8_t region_eu868_upchannelnext(lora_state_t *obj);
+uint8_t region_eu868_upchannelnext(p2p_obj_t *obj);
 
 #ifdef __cplusplus
 }

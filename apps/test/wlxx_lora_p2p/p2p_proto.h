@@ -1,14 +1,14 @@
-#ifndef LORA_P2P_PROTO_H_
-#define LORA_P2P_PROTO_H_
+#ifndef P2P_PROTO_H_
+#define P2P_PROTO_H_
 
 #include <stdint.h>
 #include "rtkcmn.h"
 
-#define RTCM3_REQUEST_CONNECT_ARRAYLEN     (22)
-#define RTCM3_REQUEST_ALLOW_ARRAYLEN       (39)
+#define P2P_REQUEST_CONNECT_ARRAYLEN     (23)
+#define P2P_REQUEST_ALLOW_ARRAYLEN       (40)
 
-#define RTCM3_CONNECT_VERIFY_ARRAYLEN     (14)
-#define RTCM3_CONNECT_RESULT_ARRAYLEN     (15)
+#define RTCM3_CONNECT_VERIFY_ARRAYLEN     (17)
+#define RTCM3_CONNECT_RESULT_ARRAYLEN     (18)
 
 typedef struct __req_connect {
     uint8_t typid;            // 0x12
@@ -18,6 +18,7 @@ typedef struct __req_connect {
 
 typedef struct __req_allow {
     uint8_t typid;            // 0x14
+    uint8_t first_freq_idx;
     uint8_t rcv_id[12];
     uint8_t snd_id[12];
     uint32_t rcv_key;
@@ -26,17 +27,17 @@ typedef struct __req_allow {
 
 typedef struct __connect_verify {
     uint8_t typid;            // 0x24
-    uint8_t tick;
     uint8_t down_freq_idx;    // Sender -> Receiver
     uint8_t up_freq_idx;      // Receiver -> Sender
+    uint32_t seq;
     uint32_t rcv_auth_key;
 } connect_verify_t;
 
 typedef struct __connect_result {
     uint8_t typid;            // 0x22
-    uint8_t tick;
     int16_t rssi;
     int8_t snr;
+    uint32_t seq;
     uint32_t snd_auth_key;
 } connect_ret_t;
 

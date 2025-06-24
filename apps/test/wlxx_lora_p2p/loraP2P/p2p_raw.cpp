@@ -1,4 +1,4 @@
-#include "lora_common.h"
+#include "p2p_common.h"
 
 /**
  * 1.4k/s dataflow (raw mode)->
@@ -9,25 +9,23 @@
 /****************************************************************************
  * Sender 
  ****************************************************************************/
-void lora_p2p_raw_sender_process(lora_state_t *obj)
+void p2p_raw_sender_process(p2p_obj_t *obj)
 {
     size_t rsz;
     switch (obj->sub_state) {
     case 0x11:
         {
-            size_t rsz = (*obj->hp)(&obj->rf_read[0], obj->max_payload);
+            size_t rsz = (*obj->hp)(&obj->rf_read[0], obj->channelgrp.max_payload);
             if (rsz > 0) {
 
-                obj->tx_done = false;
-                Radio.Send(&obj->rf_read[0], rsz);
+                p2p_send(obj, &obj->rf_read[0], rsz);
                 obj->sub_state = 0x12;
             }
         }
         break;
     case 0x12:
         {
-            if (obj->tx_done && 
-                board_subghz_tx_ready()) {
+            if (p2p_is_tx_done(obj)) {
                 obj->sub_state = 0x11;
             }
         }
@@ -40,13 +38,13 @@ void lora_p2p_raw_sender_process(lora_state_t *obj)
 /****************************************************************************
  * Receiver 
  ****************************************************************************/
-void lora_p2p_raw_receiver_process(lora_state_t *obj)
+void p2p_raw_receiver_process(p2p_obj_t *obj)
 {
     size_t rsz;
     switch (obj->sub_state) {
     case 0x11:
         {
-            rsz = rb_read(&obj->rf_rxbuf, &obj->rf_read[0], obj->max_payload);
+            rsz = rb_read(&obj->rf_rxbuf, &obj->rf_read[0], obj->channelgrp.max_payload);
             if (rsz > 0) {
 
                 // char tmp[50];
@@ -62,11 +60,11 @@ void lora_p2p_raw_receiver_process(lora_state_t *obj)
     }
 }
 
-void lora_p2p_raw_process(lora_state_t *obj)
+void p2p_raw_process(p2p_obj_t *obj)
 {
-    if (obj->role == LORA_SENDER) {
-        lora_p2p_raw_sender_process(obj);
-    } else if (obj->role == LORA_RECEIVER) {
-        lora_p2p_raw_receiver_process(obj);
+    if (obj->role == P2P_SENDER) {
+        p2p_raw_sender_process(obj);
+    } else if (obj->role == P2P_RECEIVER) {
+        p2p_raw_receiver_process(obj);
     }
 }

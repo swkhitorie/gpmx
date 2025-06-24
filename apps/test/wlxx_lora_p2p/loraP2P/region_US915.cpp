@@ -1,5 +1,5 @@
 #include "region_US915.h"
-#include "lora_common.h"
+#include "p2p_common.h"
 
 /**
     上行链路频率 (MHz) - 设备→网关
@@ -23,36 +23,36 @@
     示例：下行信道0=923.3MHz, 信道1=923.9MHz, ..., 信道7=927.5MHz
 */
 
-void region_us915_init_default(region_grp_t *param)
+void region_us915_init_default(channel_grp_t *param)
 {
     // Ping Channel
-    lora_channel_set(&param->ping, US915_PING_SLOT_CHANNEL_FREQ, 0, 7, 1, 16);
+    p2p_channel_cfg(&param->ping, US915_PING_SLOT_CHANNEL_FREQ, 0, 7, 1, 16);
 
     for( uint8_t i = 0; i < US915_MAX_NB_CHANNELS - 8; i++ ) {
         // 125 kHz channels
-        lora_channel_set(&param->channels[i], 902300000 + i * 200000, 0, 7, 1, 16);
+        p2p_channel_cfg(&param->ch_list[i], 902300000 + i * 200000, 0, 7, 1, 16);
     }
 
     for( uint8_t i = US915_MAX_NB_CHANNELS - 8; i < US915_MAX_NB_CHANNELS; i++ ) {
         // 500 kHz channels
-        lora_channel_set(&param->channels[i], 903000000 + ( i - ( US915_MAX_NB_CHANNELS - 8 ) ) * 1600000, 2, 7, 1, 16);
+        p2p_channel_cfg(&param->ch_list[i], 903000000 + ( i - ( US915_MAX_NB_CHANNELS - 8 ) ) * 1600000, 2, 7, 1, 16);
     }
 
-    param->channel_num = US915_MAX_NB_CHANNELS;
-    for( uint8_t i = 0; i < param->channel_num; i++) {
-        param->bad_channels[i] = 0;
+    param->list_num = US915_MAX_NB_CHANNELS;
+    for( uint8_t i = 0; i < param->list_num; i++) {
+        param->bad_list[i] = 0;
     }
 
 }
 
-uint8_t region_us915_downchannelnext(lora_state_t *obj)
+uint8_t region_us915_downchannelnext(p2p_obj_t *obj)
 {
-    int arraylen = obj->region_grp.channel_num;
+    int arraylen = obj->channelgrp.list_num;
 
-    obj->down_freq_idx = rand_lcg_seed_next(arraylen);
+    obj->channelgrp.down_freq_idx = rand_lcg_seed_next(arraylen);
 }
 
-uint8_t region_us915_upchannelnext(lora_state_t *obj)
+uint8_t region_us915_upchannelnext(p2p_obj_t *obj)
 {
     return 0;
 }
