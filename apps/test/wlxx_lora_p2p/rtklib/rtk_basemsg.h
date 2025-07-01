@@ -17,10 +17,13 @@ typedef struct __rtk_msm_msg {
 } rtk_msm_t;
 
 typedef struct __rtk_basestation_msg {
-    uint8_t msg_arp[50];
-    uint8_t msg_1013[50];
+    uint8_t msg_arp[40];
     uint8_t len_arp;
+    uint8_t snd_bytes_arp;
+
+    uint8_t msg_1013[50];
     uint8_t len_1013;
+    uint8_t snd_bytes_1013;
 
     rtk_msm_t current_msm;
     rtk_msm_t decoding_msm;
@@ -44,6 +47,8 @@ void basemsmbuffer_clear(rtk_msm_t *buff, uint8_t capacity);
 void basemsmbuffer_peek(rtk_msm_t *buff, uint8_t capacity);
 
 bool basemsmbuffer_add(rtk_msm_t *node, rtk_msm_t *buff, uint8_t capacity);
+
+bool basemsmbuffer_fifoin(rtk_msm_t *node, rtk_msm_t *buff, uint8_t capacity);
 
 bool basemsmbuffer_newest(rtk_msm_t *node, rtk_msm_t *buff, uint8_t capacity);
 

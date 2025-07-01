@@ -1,6 +1,8 @@
 #include "region_EU868.h"
 #include "p2p_common.h"
 
+static uint8_t eu868_p2p_upchannel_idx = 0xff;
+
 /**
     上行链路频率 (MHz) - 设备→网关
     信道	中心频率	带宽 (BW)	扩频因子 (SF)	编码率 (CR)	最大占空比
@@ -65,18 +67,50 @@ void region_eu868_init_default(channel_grp_t *param)
     for (int i = 0; i < param->list_num; i++) {
         param->bad_list[i] = 0;
     }
+
+    param->uplist = &param->ch_list[0];
+    param->uplen = 3;
+    param->downlist = &param->ch_list[3];
+    param->downlen = param->list_num - 3;
 }
 
-uint8_t region_eu868_downchannelnext(p2p_obj_t *obj)
+void region_eu868_channelstate_reset(p2p_obj_t *obj)
 {
-    int arraylen = obj->channelgrp.list_num;
+    rand_lcg_seed_set(obj->id.auth_key_board);
+    for (int i = 0; i < obj->channelgrp.list_num; i++) {
+        obj->channelgrp.bad_list[i] = 0;
+    }
+}
 
-    obj->channelgrp.down_freq_idx = rand_lcg_seed_next(arraylen);
+uint8_t region_eu868_downchannelnext(p2p_obj_t *obj, int16_t rssi, int8_t snr)
+{
+    int cnt_down = 0;
+    if (rssi < -90 || snr < -4) {
+        obj->channelgrp.bad_list[3+obj->channelgrp.down_freq_idx] = 1;
+    }
 
+    do {
+        obj->channelgrp.down_freq_idx = rand_lcg_seed_next(obj->channelgrp.downlen);
+        cnt_down++;
+        if (cnt_down >= obj->channelgrp.downlen) {
+            obj->channelgrp.down_freq_idx = rand_lcg_seed_next(0);
+            region_eu868_channelstate_reset(obj);
+            P2P_DEBUG("down channel all bad, reset \r\n");
+            break;
+        }
+        if (1 == obj->channelgrp.bad_list[3+obj->channelgrp.down_freq_idx]) {
+            obj->channelgrp.down_freq_idx = rand_lcg_seed_next(obj->channelgrp.downlen);
+        } else {
+            break;
+        }
+    } while(1);
+
+    // obj->channelgrp.down_freq_idx = rand_lcg_seed_next(obj->channelgrp.downlen);
     return 0;
 }
 
 uint8_t region_eu868_upchannelnext(p2p_obj_t *obj)
 {
+    // use fixed up channel
     return 0;
 }

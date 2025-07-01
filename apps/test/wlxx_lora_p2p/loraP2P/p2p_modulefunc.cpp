@@ -1,8 +1,20 @@
 #include "p2p_common.h"
 
+uint8_t p2p_channel_idx(p2p_obj_t *obj, uint32_t freq)
+{
+    uint8_t i = 0;
+    for (i = 0; i < obj->channelgrp.list_num; i++) {
+        if (freq == obj->channelgrp.ch_list[i].freq) {
+            return i;
+        }
+    }
+    return 0;
+}
+
 void p2p_radio_cfg(p2p_obj_t *obj, channel_cfg_t *channel)
 {
     uint8_t max_payload = 242;
+    uint8_t preamble_len = obj->channelgrp.current.preamblelen;
 
     Radio.Standby();
     while (Radio.GetStatus() != RF_IDLE);
@@ -11,9 +23,9 @@ void p2p_radio_cfg(p2p_obj_t *obj, channel_cfg_t *channel)
 
     Radio.SetChannel(channel->freq);
 
-    Radio.SetTxConfig(MODEM_LORA, channel->power, 0, channel->bw, channel->sf, channel->cr, 8, 0, true, 0, 0, 0, 30);
+    Radio.SetTxConfig(MODEM_LORA, channel->power, 0, channel->bw, channel->sf, channel->cr, preamble_len, 0, true, 0, 0, 0, 30);
 
-    Radio.SetRxConfig(MODEM_LORA, channel->bw, channel->sf, channel->cr, 0, 8, 5, 0, 0, true, 0, 0, 0, true);
+    Radio.SetRxConfig(MODEM_LORA, channel->bw, channel->sf, channel->cr, 0, preamble_len, 5, 0, 0, true, 0, 0, 0, true);
 
     Radio.SetMaxPayloadLength(MODEM_LORA, max_payload);
 
@@ -36,7 +48,7 @@ void p2p_start_cad(p2p_obj_t *obj)
     Radio.StartCad();
 }
 
-bool p2p_is_channel_busy(p2p_obj_t *obj)
+bool p2p_ischannelbusy(p2p_obj_t *obj)
 {
     return obj->cad_busy;
 }
@@ -80,16 +92,18 @@ bool p2p_detect_first_freechannel(p2p_obj_t *obj, uint32_t unitScanTime,
     int i_scan = 0;
     int free_cnt = 0;
 
+    int channel_len = obj->channelgrp.downlen;
+    channel_cfg_t *pchannel = obj->channelgrp.downlist;
+
     while (P2P_ELAPSED_TIME(total_timestamp) <= total_time) {
 
-        freq = obj->channelgrp.ch_list[i_scan].freq;
+        freq = pchannel[i_scan].freq;
+        obj->channelgrp.cad_idx = i_scan;
         bool isfree = p2p_detectchannelfree(obj, freq, unit_time);
         if (isfree) {
             free_cnt++;
             if (free_cnt >= (free_timer/unit_time)) {
-                obj->channelgrp.current.freq = freq;
-                obj->channelgrp.first_idx = i_scan;
-                P2P_DEBUG("CAD: Get FreeChannel %d, %d\r\n", freq, i_scan);
+                obj->channelgrp.fdown_idx = i_scan;
                 return true;
             }
 
@@ -99,14 +113,14 @@ bool p2p_detect_first_freechannel(p2p_obj_t *obj, uint32_t unitScanTime,
             P2P_DEBUG("CAD: Busy in %d\r\n", freq);
         }
 
-        if (i_scan >= obj->channelgrp.list_num - 1) {
+        if (i_scan >= channel_len - 1) {
             i_scan = 0;
         } else {
             i_scan++;
         }
     }
 
-    P2P_DEBUG("WTF CAD Error: NO Free Channel\r\n");
+    P2P_DEBUG("WTF Error: NO Free Channel\r\n");
     return false;
 }
 
@@ -160,29 +174,30 @@ bool p2p_scan_first_freechannel(p2p_obj_t *obj, int16_t rssiThresh, uint32_t uni
     int i_scan = 0;
     int free_cnt = 0;
 
+    int channel_len = obj->channelgrp.downlen;
+    channel_cfg_t *pchannel = obj->channelgrp.downlist;
+
     while (P2P_ELAPSED_TIME(total_timestamp) <= total_scan_time) {
 
-        if (i_scan >= obj->channelgrp.list_num - 1) {
+        if (i_scan >= channel_len - 1) {
             i_scan = 0;
         } else {
             i_scan++;
         }
 
-        freq = obj->channelgrp.ch_list[i_scan].freq;
+        freq = pchannel[i_scan].freq;
         bool isfree = p2p_ischannelfree(obj, freq, rxbandwidth, rssi_thresh, unit_carrier_sense_time);
         if (isfree) {
             free_cnt++;
             if (free_cnt >= (free_continuous_time/unit_carrier_sense_time)) {
-                obj->channelgrp.current.freq = freq;
-                obj->channelgrp.first_idx = i_scan;
-                P2P_DEBUG("INIT-SCAN: Get FreeChannel %d, %d\r\n", freq, i_scan);
+                obj->channelgrp.fdown_idx = i_scan;
                 return true;
             }
 
             i_scan--;
         } else {
             free_cnt = 0;
-            P2P_DEBUG("INIT-SCAN: Busy in %d, rssi over %d\r\n", freq, rssiThresh);
+            P2P_DEBUG("SCAN: Busy in %d, rssi over %d\r\n", freq, rssiThresh);
         }
 
     }
@@ -205,13 +220,14 @@ int p2p_send(p2p_obj_t *obj, uint8_t *buffer, uint8_t size)
 int p2p_lbt_send(p2p_obj_t *obj, uint8_t *buffer, uint8_t size, 
     int16_t rssiThresh, uint16_t unitms, uint8_t continonousTimes, uint32_t totalTimes)
 {
+    int freq = obj->channelgrp.current.freq;
+    uint16_t preamble_len = obj->channelgrp.current.preamblelen;
     int rxbandwidth = 150000;
     int16_t rssi_thresh = rssiThresh;
     int unit_carrier_sense_time = unitms; //5ms
     int total_scan_time = totalTimes; //50ms
     int free_continuous_time = continonousTimes; //20ms
     int total_timestamp = P2P_TIMESTAMP_GET();
-    int freq = obj->channelgrp.current.freq;
     int freecnt = 0;
     int backcnt = 0;
     bool air_free = false;
@@ -227,6 +243,7 @@ int p2p_lbt_send(p2p_obj_t *obj, uint8_t *buffer, uint8_t size,
             }
 
         } else {
+            obj->status.lbt_back_time += unit_carrier_sense_time;
             backcnt++;
             freecnt = 0;
         }
@@ -240,10 +257,10 @@ int p2p_lbt_send(p2p_obj_t *obj, uint8_t *buffer, uint8_t size,
     Radio.SetChannel(freq);
 
     Radio.SetTxConfig(MODEM_LORA, obj->channelgrp.current.power, 0,
-        obj->channelgrp.current.bw, obj->channelgrp.current.sf, obj->channelgrp.current.cr, 8, 0, true, 0, 0, 0, 30);
+        obj->channelgrp.current.bw, obj->channelgrp.current.sf, obj->channelgrp.current.cr, preamble_len, 0, true, 0, 0, 0, 30);
 
     Radio.SetRxConfig(MODEM_LORA, obj->channelgrp.current.bw, 
-        obj->channelgrp.current.sf, obj->channelgrp.current.cr, 0, 8, 5, 0, 0, true, 0, 0, 0, true);
+        obj->channelgrp.current.sf, obj->channelgrp.current.cr, 0, preamble_len, 5, 0, 0, true, 0, 0, 0, true);
 
     Radio.SetMaxPayloadLength(MODEM_LORA, obj->channelgrp.max_payload);
 
@@ -267,10 +284,12 @@ int p2p_cad_send(p2p_obj_t *obj, uint8_t *buffer, uint8_t size,
     int freq = obj->channelgrp.current.freq;
     int free_cnt = 0;
     int backcnt = 0;
-
+    int freq_idx = p2p_channel_idx(obj, freq);
     bool air_free = false;
 
+    
     while (P2P_ELAPSED_TIME(total_timestamp) <= total_time) {
+        obj->channelgrp.cad_idx = freq_idx;
         bool isfree = p2p_detectchannelfree(obj, freq, unit_time);
         if (isfree) {
             free_cnt++;
@@ -279,6 +298,7 @@ int p2p_cad_send(p2p_obj_t *obj, uint8_t *buffer, uint8_t size,
                 break;
             }
         } else {
+            obj->status.lbt_back_time += unit_time;
             backcnt++;
             free_cnt = 0;
         }
@@ -292,14 +312,28 @@ int p2p_cad_send(p2p_obj_t *obj, uint8_t *buffer, uint8_t size,
     return Radio.Send(buffer, size);
 }
 
-uint8_t p2p_downchannelnext(p2p_obj_t *obj)
+void p2p_channelstate_reset(p2p_obj_t *obj)
 {
     switch (obj->region) {
     case LORA_REGION_EU868:
-        region_eu868_downchannelnext(obj);
+        region_eu868_channelstate_reset(obj);
         break;
     case LORA_REGION_US915:
-        region_us915_downchannelnext(obj);
+        region_us915_channelstate_reset(obj);
+        break;
+    }
+
+    return;
+}
+
+uint8_t p2p_downchannelnext(p2p_obj_t *obj, int16_t rssi, int8_t snr)
+{
+    switch (obj->region) {
+    case LORA_REGION_EU868:
+        region_eu868_downchannelnext(obj, rssi, snr);
+        break;
+    case LORA_REGION_US915:
+        region_us915_downchannelnext(obj, rssi, snr);
         break;
     }
 
@@ -355,3 +389,46 @@ bool util_id_empty(uint32_t *uid)
     return (uid[0] == 0) && (uid[1] == 0) && (uid[2] == 0);
 }
 
+int fcl_cal(p2p_obj_t *obj, int verify_sz)
+{
+    int wsz = 0;
+    int rsz = 0;
+
+    if (obj->flowctrl_bytes_max_ones <= 0) {
+        return obj->channelgrp.max_payload;
+    }
+
+    if (obj->flowctrl_bytes_snd == 0) {
+        obj->flowctrl_bytes_snd = obj->flowctrl_bytes_max_ones;
+        obj->status.flowctrl_timestamp = P2P_TIMESTAMP_GET();
+        P2P_DEBUG("first resume\r\n");
+    }
+
+    if (P2P_ELAPSED_TIME(obj->status.flowctrl_timestamp) > 1000) {
+        obj->flowctrl_bytes_snd = obj->flowctrl_bytes_max_ones;
+        obj->status.flowctrl_timestamp = P2P_TIMESTAMP_GET();
+        P2P_DEBUG("resume bytes, and start cnt\r\n");
+    }
+
+    wsz = (obj->flowctrl_bytes_snd > obj->channelgrp.max_payload) ? 
+        obj->channelgrp.max_payload : 
+        obj->flowctrl_bytes_snd;
+
+    rsz = wsz - verify_sz;
+    if (rsz < verify_sz) {
+        // P2P_DEBUG("Remain flow can't send rtcm data except heading \r\n");
+        return 0;
+    } 
+
+    // P2P_DEBUG("debug1 %d %d %d \r\n", rsz, wsz, verify_sz);
+    return rsz;
+}
+
+void fcl_sndbytes(p2p_obj_t *obj)
+{
+    if (obj->flowctrl_bytes_max_ones <= 0) {
+        return;
+    }
+    obj->flowctrl_bytes_snd -= obj->status.nbytes_send;
+    return;
+}

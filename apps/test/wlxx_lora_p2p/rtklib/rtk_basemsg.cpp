@@ -1,8 +1,6 @@
 #include "rtk_basemsg.h"
 #include <string.h>
-
 #include <stdio.h>
-#include "board_config.h"
 
 void rtk_basemsg_decode(rtk_basemsg_t *baseobj, rtcm_t *rtcm, uint8_t *buffer, uint32_t len)
 {
@@ -49,25 +47,27 @@ void rtk_basemsg_msm_decode(rtk_basemsg_t *baseobj, rtcm_t *rtcm)
     if (baseobj->decoding_msm.tow == 0) {
         baseobj->decoding_msm.tow = itow;
         baseobj->decoding_msm.len += ilen;
+
+        if (rtcm->sync == 0) {
+            basemsmbuffer_fifoin(&baseobj->decoding_msm, &baseobj->msg[0], RTK_BASEMSG_BUFFER_LEN);
+
+            memset(&baseobj->decoding_msm, 0, sizeof(rtk_msm_t));
+            basemsmbuffer_print(&baseobj->msg[0], RTK_BASEMSG_BUFFER_LEN);
+        }
     } else if (baseobj->decoding_msm.tow < itow) {
-        // error
-        BOARD_DEBUG("Tow Error1\r\n");
+        // error1
+        memset(&baseobj->decoding_msm, 0, sizeof(rtk_msm_t));
+        // BOARD_DEBUG("Tow Error1\r\n");
     } else if (baseobj->decoding_msm.tow > itow) {
-        // error
-        BOARD_DEBUG("Tow Error2\r\n");
+        // error2
+        // BOARD_DEBUG("Tow Error2\r\n");
     } else if (baseobj->decoding_msm.tow == itow) {
         baseobj->decoding_msm.len += ilen;
         if (rtcm->sync == 0) {
-            if (RTK_BASEMSG_BUFFER_LEN == basemsmbuffer_size(baseobj->msg, RTK_BASEMSG_BUFFER_LEN)) {
-                basemsmbuffer_peek(baseobj->msg, RTK_BASEMSG_BUFFER_LEN);
-            }
+            basemsmbuffer_fifoin(&baseobj->decoding_msm, &baseobj->msg[0], RTK_BASEMSG_BUFFER_LEN);
 
-            basemsmbuffer_add(&baseobj->decoding_msm, &baseobj->msg[0], RTK_BASEMSG_BUFFER_LEN);
             memset(&baseobj->decoding_msm, 0, sizeof(rtk_msm_t));
-
-            BOARD_DEBUG("MSM Add\r\n");
-            basemsmbuffer_print(baseobj->msg, RTK_BASEMSG_BUFFER_LEN);
-
+            basemsmbuffer_print(&baseobj->msg[0], RTK_BASEMSG_BUFFER_LEN);
         }
     }
 }
@@ -126,6 +126,16 @@ bool basemsmbuffer_add(rtk_msm_t *node, rtk_msm_t *buff, uint8_t capacity)
     return true;
 }
 
+bool basemsmbuffer_fifoin(rtk_msm_t *node, rtk_msm_t *buff, uint8_t capacity)
+{
+    if (capacity == basemsmbuffer_size(buff, capacity)) {
+        basemsmbuffer_peek(buff, capacity);
+    }
+
+    basemsmbuffer_add(node, buff, capacity);
+    return true;
+}
+
 bool basemsmbuffer_newest(rtk_msm_t *node, rtk_msm_t *buff, uint8_t capacity)
 {
     int sz = basemsmbuffer_size(buff, capacity);
@@ -134,9 +144,9 @@ bool basemsmbuffer_newest(rtk_msm_t *node, rtk_msm_t *buff, uint8_t capacity)
         return false;
     }
 
-    memcpy(node, &buff[sz], sizeof(rtk_msm_t));
-
+    memcpy(node, &buff[sz-1], sizeof(rtk_msm_t));
     basemsmbuffer_clear(buff, capacity);
+    return true;
 }
 
 bool basemsmbuffer_towmatch(rtk_msm_t *node, uint32_t tow, rtk_msm_t *buff, uint8_t capacity)

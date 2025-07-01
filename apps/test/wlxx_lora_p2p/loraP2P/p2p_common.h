@@ -32,7 +32,12 @@
 #define P2P_ACK_TIMEOUT_MAX_TRY_TIMES    (5)
 #define P2P_LINK_FAIL_TIMEOUT            (1500)
 
-#define REGION_NVM_MAX_NB_CHANNELS           (72)
+#define P2P_SEND_LBT_RSSI_THRESH         (-40)
+#define P2P_SEND_LBT_SENSE_TIME          (5)
+#define P2P_SEND_LBT_FREECNT_TIME        (5)
+#define P2P_SEND_LBT_TOTAL_TIME          (50)
+
+#define REGION_NVM_MAX_NB_CHANNELS       (72)
 
 #define P2P_DEBUG(...) do {\
     printf("[%d.%03d] ", P2P_TIMESTAMP_GET()/1000, P2P_TIMESTAMP_GET()%1000); \
@@ -92,22 +97,29 @@ typedef struct __p2p_status {
     bool first_enter;
 
     uint32_t seq;
-
     uint32_t seq_lst;
 
-    uint32_t nbytes_send;
+    uint32_t pack_lost;
 
+    uint32_t nbytes_send;
     uint32_t nbytes_recv;
 
-    uint32_t nbytes_total_lost;
-
+    uint32_t nbytes_actual_snd;
     uint32_t nbytes_total_snd;
-
     uint32_t nbytes_total_recv;
 
     uint32_t ack_timestamp;
-
     uint32_t ack_completed_time; // unit times: (MaxPack TOA + Get Ack)
+
+    uint32_t ack_wait_timestamp;
+    uint32_t ack_wait_time;
+
+    uint32_t lbt_back_time;
+
+    uint32_t rcv_ack_timestamp;
+    uint32_t rcv_ack_time;
+
+    uint32_t flowctrl_timestamp;
 
 } p2p_status_t;
 
@@ -117,11 +129,16 @@ typedef struct __channel_cfg {
     uint8_t sf;      /* sf5 ~ sf12 */
     uint8_t cr;      /* 1: 4/5, 2: 4/6, 3: 4/7, 4: 4/8 */
     uint8_t power;   /* 9~22 dbm */
+    uint16_t preamblelen; /* 8bits 16bits... */
 } channel_cfg_t;
 
 typedef struct __channel_grp {
     channel_cfg_t ping;
     channel_cfg_t ch_list[REGION_NVM_MAX_NB_CHANNELS];
+    channel_cfg_t *uplist;
+    channel_cfg_t *downlist;
+    uint8_t uplen;
+    uint8_t downlen;
 
     channel_cfg_t current;
     uint8_t bad_list[REGION_NVM_MAX_NB_CHANNELS];
@@ -137,9 +154,13 @@ typedef struct __channel_grp {
     int8_t up_snr;
 
     uint16_t max_payload;
-    uint16_t time_on_air;
+    uint16_t time_on_air[3];
 
-    uint8_t first_idx;
+    uint8_t fdown_idx;
+    uint8_t fup_idx;
+
+    uint8_t cad_idx;
+
 } channel_grp_t;
 
 
@@ -151,6 +172,10 @@ typedef struct __p2p_obj {
 
     p2p_state_t state;
     p2p_substate_t sub_state;
+    bool isbond;
+
+    uint16_t flowctrl_bytes_snd;
+    uint16_t flowctrl_bytes_max_ones;
 
     p2p_id_auth_t id;
 
@@ -213,7 +238,7 @@ void p2p_objcallback_set(p2p_obj_t *obj);
 
 void p2p_setup(p2p_obj_t *obj, p2p_role_t role, p2p_mode_t mode,
     region_t region, forwarding_data ph, authkey_generate auth,
-    uint32_t *id, uint32_t id_key);
+    uint32_t *id, uint32_t id_key, uint16_t fcl_bytes);
 
 void p2p_process(p2p_obj_t *obj);
 
@@ -240,28 +265,36 @@ void util_id_set_to_uid(uint32_t *dst, uint8_t *src);
 void util_id_set_to_array(uint8_t *dst, uint32_t *src);
 bool util_id_compare(uint32_t *a, uint8_t *b);
 bool util_id_empty(uint32_t *uid);
+int fcl_cal(p2p_obj_t *obj, int verify_sz);
+void fcl_sndbytes(p2p_obj_t *obj);
 
+uint8_t p2p_channel_idx(p2p_obj_t *obj, uint32_t freq);
+
+void p2p_radio_cfg(p2p_obj_t *obj, channel_cfg_t *channel);
+
+void p2p_channel_cfg(channel_cfg_t *channel, uint32_t freq,
+        uint8_t bw, uint8_t sf, uint8_t cr, uint8_t power);
+
+/* LBT(CAD) method: Channel Activity Detect */
 void p2p_start_cad(p2p_obj_t *obj);
 
-bool p2p_is_channel_busy(p2p_obj_t *obj);
+bool p2p_ischannelbusy(p2p_obj_t *obj);
 
 bool p2p_detectchannelfree(p2p_obj_t *obj, uint32_t freq, uint32_t timeout);
 
 bool p2p_detect_first_freechannel(p2p_obj_t *obj, uint32_t unitScanTime,
     uint32_t freeContinuousTime, uint32_t totalScanTime);
 
-void p2p_channel_cfg(channel_cfg_t *channel, uint32_t freq,
-        uint8_t bw, uint8_t sf, uint8_t cr, uint8_t power);
-
+/* LBT(FSK) method: Carrier Sense, Read RSSI */
 bool p2p_ischannelfree(p2p_obj_t *obj, uint32_t freq, 
     uint32_t rxBandwidth, int16_t rssiThresh, uint32_t maxCarrierSenseTime);
 
 bool p2p_scan_first_freechannel(p2p_obj_t *obj, int16_t rssiThresh, uint32_t unitScanTime,
     uint32_t freeContinuousTime, uint32_t totalScanTime);
 
-void p2p_radio_cfg(p2p_obj_t *obj, channel_cfg_t *channel);
+void p2p_channelstate_reset(p2p_obj_t *obj);
 
-uint8_t p2p_downchannelnext(p2p_obj_t *obj);
+uint8_t p2p_downchannelnext(p2p_obj_t *obj, int16_t rssi, int8_t snr);
 
 uint8_t p2p_upchannelnext(p2p_obj_t *obj);
 

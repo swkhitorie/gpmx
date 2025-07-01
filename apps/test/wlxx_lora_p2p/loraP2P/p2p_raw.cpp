@@ -13,24 +13,20 @@ void p2p_raw_sender_process(p2p_obj_t *obj)
 {
     size_t rsz;
     switch (obj->sub_state) {
-    case 0x11:
-        {
+    case 0x11: {
             size_t rsz = (*obj->hp)(&obj->rf_read[0], obj->channelgrp.max_payload);
             if (rsz > 0) {
-
                 p2p_send(obj, &obj->rf_read[0], rsz);
                 obj->sub_state = 0x12;
             }
+            break;
         }
-        break;
-    case 0x12:
-        {
+    case 0x12: {
             if (p2p_is_tx_done(obj)) {
                 obj->sub_state = 0x11;
             }
+            break;
         }
-        break;
-
     default: break;
     }
 }
@@ -41,21 +37,17 @@ void p2p_raw_sender_process(p2p_obj_t *obj)
 void p2p_raw_receiver_process(p2p_obj_t *obj)
 {
     size_t rsz;
+    char tmp[50];
     switch (obj->sub_state) {
-    case 0x11:
-        {
+    case 0x11: {
             rsz = rb_read(&obj->rf_rxbuf, &obj->rf_read[0], obj->channelgrp.max_payload);
-            if (rsz > 0) {
-
-                // char tmp[50];
-                // sprintf(tmp, "\r\n rssi: %d \r\n", obj->rssi);
-                // (*obj->hp)((uint8_t *)tmp, strlen(tmp));
-
+            if (rsz > 0) { 
                 (*obj->hp)(&obj->rf_read[0], rsz);
+                sprintf(tmp, "\r\n rssi: %d \r\n", obj->channelgrp.down_rssi);
+                // (*obj->hp)((uint8_t *)tmp, strlen(tmp));
             }
+            break;
         }
-        break;
-
     default: break;
     }
 }

@@ -7,7 +7,9 @@ p2p_obj_t *_p2p_obj_callback;
 
 void CadDone(bool channelActivityDetected) {
     //true: channel busy, false: channel free
-    BOARD_DEBUG("CAD: %d\r\n", channelActivityDetected);
+    if (channelActivityDetected) {
+        BOARD_DEBUG("CAD Busy in %d\r\n", _p2p_obj_callback->channelgrp.ch_list[_p2p_obj_callback->channelgrp.cad_idx].freq);
+    }
 
     _p2p_obj_callback->cad_done = true;
     _p2p_obj_callback->cad_busy = channelActivityDetected;
@@ -63,10 +65,12 @@ void p2p_objcallback_set(p2p_obj_t *obj)
 
 void p2p_setup(p2p_obj_t *obj, p2p_role_t role, p2p_mode_t mode,
     region_t region, forwarding_data ph, authkey_generate auth,
-    uint32_t *id, uint32_t id_key)
+    uint32_t *id, uint32_t id_key, uint16_t fcl_bytes)
 {
     obj->role = role;
     obj->p2p_mode = mode;
+    obj->flowctrl_bytes_max_ones = fcl_bytes;
+    obj->flowctrl_bytes_snd = 0;
 
     obj->tx_done = true;
     _radio_events.TxDone = OnTxDone;
@@ -87,6 +91,9 @@ void p2p_setup(p2p_obj_t *obj, p2p_role_t role, p2p_mode_t mode,
     obj->id.auth_key_board = (*obj->hauth)(obj->id.uid_board, obj->id.rand_key_board);
     rand_lcg_seed_set(obj->id.rand_key_board);
 
+    memset((uint8_t *)obj->id.uid_obj, 0, 12);
+    obj->isbond = false;
+
     /* init channel group */
     switch (region) {
     case LORA_REGION_EU868:
@@ -97,20 +104,34 @@ void p2p_setup(p2p_obj_t *obj, p2p_role_t role, p2p_mode_t mode,
         break;
     }
 
-    obj->channelgrp.current.bw = 1;            //bw: 500Khz
-    obj->channelgrp.current.sf = 6;            //sf: 7
-    obj->channelgrp.current.cr = 1;            //cr: 4/5
-    obj->channelgrp.current.power = 18;        //power: 18dbm
-    obj->channelgrp.current.freq = 902300000; //obj->channelgrp.ping.freq;    //init with ping channel
+    if (obj->p2p_mode == P2P_RAW) {
+        obj->channelgrp.current.preamblelen = 16;
+        obj->channelgrp.current.bw = 1; //250khz
+        obj->channelgrp.current.sf = 7; //sf7
+        obj->channelgrp.current.cr = 1;            
+    } else {
+        obj->channelgrp.current.preamblelen = 16;
+        obj->channelgrp.current.bw = 1; //250khz
+        obj->channelgrp.current.sf = 6; //sf6
+        obj->channelgrp.current.cr = 1; 
+    }
+
+    obj->channelgrp.current.power = 16;        //power: 18dbm
+    obj->channelgrp.current.freq = obj->channelgrp.ping.freq;    //init with ping channel
 
     p2p_radio_cfg(obj, &obj->channelgrp.current);
-    obj->channelgrp.time_on_air = Radio.TimeOnAir(MODEM_LORA, 
+    obj->channelgrp.time_on_air[0] = Radio.TimeOnAir(MODEM_LORA, 
         obj->channelgrp.current.bw, 
         obj->channelgrp.current.sf, 
         obj->channelgrp.current.cr, 8, true, obj->channelgrp.max_payload, true);
 
+    obj->channelgrp.time_on_air[1] = Radio.TimeOnAir(MODEM_LORA, 
+        obj->channelgrp.current.bw, 
+        obj->channelgrp.current.sf, 
+        obj->channelgrp.current.cr, 8, true, P2P_CONNECT_RESULT_ARRAYLEN, true);
+
     P2P_DEBUG("\r\n\tLORA P2P Version:v%d.%d.%d, BOARD ID:%x %x %x\r\n\
-\tDefault Freq:%d, Power:%d, BW:%d, SF:%d, CR:%d, TOA(%d):%dms\r\n\
+\tDefault Freq:%d, Power:%d, BW:%d, SF:%d, CR:%d, PreambleLen:%d, TOA(%d):%dms\r\n\
 \tKey: %x, Auth Key: %x\r\n",
         P2P_VERSION_MAIN, P2P_VERSION_SUB1, P2P_VERSION_SUB2,
         obj->id.uid_board[0], obj->id.uid_board[1], obj->id.uid_board[2],
@@ -119,11 +140,13 @@ void p2p_setup(p2p_obj_t *obj, p2p_role_t role, p2p_mode_t mode,
         obj->channelgrp.current.bw, 
         obj->channelgrp.current.sf, 
         obj->channelgrp.current.cr, 
+        obj->channelgrp.current.preamblelen,
         obj->channelgrp.max_payload,
-        obj->channelgrp.time_on_air,
+        obj->channelgrp.time_on_air[0],
         obj->id.rand_key_board,
         obj->id.auth_key_board);
 
+    // select first free down and up channel for Role:Sender
     obj->status.first_enter = true;
     if (obj->role == P2P_SENDER) {
         bool isfind = p2p_detect_first_freechannel(obj, 800, 800, 10000);
@@ -131,6 +154,12 @@ void p2p_setup(p2p_obj_t *obj, p2p_role_t role, p2p_mode_t mode,
             P2P_DEBUG("Can't Find Any FreeChannel\r\n");
             while(1){}
         }
+        obj->channelgrp.fup_idx = rand_lcg_seed_next(obj->channelgrp.uplen);
+        P2P_DEBUG("downch: [%d]%d, upch: [%d]%d\r\n", 
+            obj->channelgrp.fdown_idx,
+            obj->channelgrp.downlist[obj->channelgrp.fdown_idx].freq,
+            obj->channelgrp.fup_idx,
+            obj->channelgrp.uplist[obj->channelgrp.fup_idx].freq);
     }
 
     if (obj->p2p_mode == P2P_LISTEN) {
@@ -170,7 +199,7 @@ void p2p_process(p2p_obj_t *obj)
         } else if (obj->p2p_mode == P2P_RAWACK) {
             p2p_raw_ack_process(obj);
         } else if (obj->p2p_mode == P2P_RAWACK_FHSS) {
-            //p2p_raw_ackfhss_process(obj);
+            p2p_raw_ackfhss_process(obj);
         }
         break;
     }

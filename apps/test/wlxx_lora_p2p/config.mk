@@ -79,7 +79,7 @@ CPPSOURCES += apps/test/wlxx_lora_p2p/loraP2P/p2p_state.cpp
 CPPSOURCES += apps/test/wlxx_lora_p2p/loraP2P/p2p_linkfind.cpp
 CPPSOURCES += apps/test/wlxx_lora_p2p/loraP2P/p2p_raw.cpp
 CPPSOURCES += apps/test/wlxx_lora_p2p/loraP2P/p2p_rawack.cpp
-#CPPSOURCES += apps/test/wlxx_lora_p2p/loraP2P/p2p_rawack_fhss.cpp
+CPPSOURCES += apps/test/wlxx_lora_p2p/loraP2P/p2p_rawack_fhss.cpp
 
 CPPSOURCES += apps/test/wlxx_lora_p2p/rtklib/rtcm3.cpp
 CPPSOURCES += apps/test/wlxx_lora_p2p/rtklib/rtkcmn.cpp

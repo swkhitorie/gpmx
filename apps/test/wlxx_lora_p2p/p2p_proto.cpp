@@ -49,21 +49,22 @@ int encode_req_connect(uint8_t *p, req_connect_t *req_connect)
 int decode_req_allow(rtcm_t *rtcm, req_allow_t *req_allow)
 {
     int ret = 1;
-    int payload_len = 34;
+    int payload_len = 35;
 
     int typid = getbitu(rtcm->buff, 24, 8);
     req_allow->typid = typid;
-    req_allow->first_freq_idx = getbitu(rtcm->buff, 32, 8);
+    req_allow->down_freq_idx = getbitu(rtcm->buff, 32, 8);
+    req_allow->up_freq_idx = getbitu(rtcm->buff, 40, 8);
 
     for (int i = 0; i < 12; i++) {
-        req_allow->rcv_id[i] = rtcm->buff[5+i];
+        req_allow->rcv_id[i] = rtcm->buff[6+i];
     }
     for (int i = 0; i < 12; i++) {
-        req_allow->snd_id[i] = rtcm->buff[17+i];
+        req_allow->snd_id[i] = rtcm->buff[18+i];
     }
 
-    req_allow->rcv_key = getbitu(rtcm->buff, 232, 32);
-    req_allow->snd_key = getbitu(rtcm->buff, 264, 32);
+    req_allow->rcv_key = getbitu(rtcm->buff, 240, 32);
+    req_allow->snd_key = getbitu(rtcm->buff, 272, 32);
 
     if (typid == 0x14 && rtcm->len == (payload_len+3)) {
         ret = 0;
@@ -74,24 +75,25 @@ int decode_req_allow(rtcm_t *rtcm, req_allow_t *req_allow)
 
 int encode_req_allow(uint8_t *p, req_allow_t *req_allow)
 {
-    int payload_len = 34;
+    int payload_len = 35;
 
     p[0] = RTCM3PREAMB;
     p[1] = 0x00;
     setbitu(&p[0], 14, 10, payload_len);
 
     setbitu(&p[0], 24, 8, 0x14); //req_allow->typid
-    setbitu(&p[0], 32, 8, req_allow->first_freq_idx);
+    setbitu(&p[0], 32, 8, req_allow->down_freq_idx);
+    setbitu(&p[0], 40, 8, req_allow->up_freq_idx);
     for (int i = 0; i < 12; i++) {
-        p[5+i] = req_allow->rcv_id[i];
+        p[6+i] = req_allow->rcv_id[i];
     }
     for (int i = 0; i < 12; i++) {
-        p[17+i] = req_allow->snd_id[i];
+        p[18+i] = req_allow->snd_id[i];
     }
-    setbitu(&p[0], 232, 32, req_allow->rcv_key);
-    setbitu(&p[0], 264, 32, req_allow->snd_key);
+    setbitu(&p[0], 240, 32, req_allow->rcv_key);
+    setbitu(&p[0], 272, 32, req_allow->snd_key);
 
-    setbitu(&p[0], 296, 24, 
+    setbitu(&p[0], 304, 24, 
         rtk_crc24q(&p[0], payload_len+3));
 
     return payload_len + 6;

@@ -5,9 +5,10 @@ void p2p_state_to_linkfind(p2p_obj_t *obj)
     rb_reset(&obj->rf_rxbuf);
     memset(&obj->rf_rtcm, 0, sizeof(rtcm_t));
     memset(obj->rf_read, 0, 255);
-    memset((uint8_t *)obj->id.uid_obj, 0, 12);
     obj->id.rand_key_obj = 0;
     obj->id.auth_key_obj = 0;
+    obj->flowctrl_bytes_snd = 0;
+    p2p_channelstate_reset(obj);
 
     do {
         // wait last onTxDone trigger

@@ -25,7 +25,9 @@ extern "C" {
 
 void region_us915_init_default(channel_grp_t *param);
 
-uint8_t region_us915_downchannelnext(p2p_obj_t *obj);
+void region_us915_channelstate_reset(p2p_obj_t *obj);
+
+uint8_t region_us915_downchannelnext(p2p_obj_t *obj, int16_t rssi, int8_t snr);
 
 uint8_t region_us915_upchannelnext(p2p_obj_t *obj);
 

@@ -5,10 +5,10 @@
 #include "rtkcmn.h"
 
 #define P2P_REQUEST_CONNECT_ARRAYLEN     (23)
-#define P2P_REQUEST_ALLOW_ARRAYLEN       (40)
+#define P2P_REQUEST_ALLOW_ARRAYLEN       (41)
 
-#define RTCM3_CONNECT_VERIFY_ARRAYLEN     (17)
-#define RTCM3_CONNECT_RESULT_ARRAYLEN     (18)
+#define P2P_CONNECT_VERIFY_ARRAYLEN     (17)
+#define P2P_CONNECT_RESULT_ARRAYLEN     (18)
 
 typedef struct __req_connect {
     uint8_t typid;            // 0x12
@@ -18,7 +18,8 @@ typedef struct __req_connect {
 
 typedef struct __req_allow {
     uint8_t typid;            // 0x14
-    uint8_t first_freq_idx;
+    uint8_t down_freq_idx;
+    uint8_t up_freq_idx;
     uint8_t rcv_id[12];
     uint8_t snd_id[12];
     uint32_t rcv_key;
