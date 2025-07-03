@@ -1,5 +1,5 @@
 
-PROJ_NAME  :=  test_quadpilotf4_sensor
+PROJ_NAME  :=  test_bsp
 PROJ_TC    :=  gae
 
 CONFIG_LINK_PRINTF_FLOAT:=y
@@ -9,8 +9,8 @@ CONFIG_COMPILE_OPTIMIZE:=O1
 TARGET_POSTBUILD := ${TARGET_DEST_FILENAME_BIN}
 
 # board configuration
-MOD_ARCH = m4
-include ${SDK_ROOTDIR}/boards/stm32/stm32f407_eval/make.mk
+MOD_ARCH = m7
+include ${SDK_ROOTDIR}/boards/stm32/stm32h743_eval/make.mk
 
 # os and library configuration
 CONFIG_MK_CHIP_ARCH=${MOD_ARCH}
@@ -22,6 +22,7 @@ CONFIG_MK_USE_FS_FATFS=n
 CONFIG_MK_USE_LIB_CPP=n
 CONFIG_MK_USE_UORB=n
 CONFIG_MK_USE_HRT=n
+
 CONFIG_MK_USE_CRUSB=y
 CONFIG_MK_USE_CRUSB_CDC=y
 CONFIG_MK_CRUSB_IP=dwc2_st
@@ -61,7 +62,5 @@ PROJ_CDEFS += CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
 PROJ_CDEFS += CONFIG_BOARD_CRUSB_CDC_ACM_STDINOUT
 PROJ_CDEFS += CONFIG_CRUSB_CDC_TX_FIFO_ENABLE
 
-PROJ_CINCDIRS += apps/test/app_fatfs_test/
-CPPSOURCES += apps/test/app_fatfs_test/app_main.cpp
-CPPSOURCES += apps/test/app_fatfs_test/app_fatfs_test.cpp
-
+PROJ_CINCDIRS += apps/test/simple_test/
+CPPSOURCES += apps/test/simple_test/app_main.cpp

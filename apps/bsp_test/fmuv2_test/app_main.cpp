@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include <drivers/imu/l3gd20/l3gd20_test.h>
+#include "l3gd20_test.h"
 
 int main(int argc, char *argv[])
 {
@@ -16,6 +16,7 @@ int main(int argc, char *argv[])
 
             l3gd20_init();
 
+            // printf("hello v2\r\n");
             board_debug();
         }
     }

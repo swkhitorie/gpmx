@@ -61,27 +61,27 @@ PROJ_CINCDIRS += ${FR_CINCDIRS}
 #####################################
 PROJ_CDEFS += CONFIG_BOARD_COM_STDINOUT
 
-PROJ_CINCDIRS += apps/test/wlxx_lora_p2p/
-PROJ_CINCDIRS += apps/test/wlxx_lora_p2p/loraP2P/
-PROJ_CINCDIRS += apps/test/wlxx_lora_p2p/rtklib/
+PROJ_CINCDIRS += apps/bsp_test/wlxx_lora_p2p/
+PROJ_CINCDIRS += apps/bsp_test/wlxx_lora_p2p/loraP2P/
+PROJ_CINCDIRS += apps/bsp_test/wlxx_lora_p2p/rtklib/
 
-CPPSOURCES += apps/test/wlxx_lora_p2p/app_main.cpp
-CSOURCES += apps/test/wlxx_lora_p2p/ringbuffer.c
-CPPSOURCES += apps/test/wlxx_lora_p2p/p2p_proto.cpp
-CPPSOURCES += apps/test/wlxx_lora_p2p/rand_lcg_series.cpp
+CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/app_main.cpp
+CSOURCES += apps/bsp_test/wlxx_lora_p2p/ringbuffer.c
+CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/p2p_proto.cpp
+CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/rand_lcg_series.cpp
 
-CPPSOURCES += apps/test/wlxx_lora_p2p/loraP2P/region_EU868.cpp
-CPPSOURCES += apps/test/wlxx_lora_p2p/loraP2P/region_US915.cpp
-CPPSOURCES += apps/test/wlxx_lora_p2p/loraP2P/p2p_common.cpp
-CPPSOURCES += apps/test/wlxx_lora_p2p/loraP2P/p2p_modulefunc.cpp
+CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/loraP2P/region_EU868.cpp
+CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/loraP2P/region_US915.cpp
+CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/loraP2P/p2p_common.cpp
+CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/loraP2P/p2p_modulefunc.cpp
 
-CPPSOURCES += apps/test/wlxx_lora_p2p/loraP2P/p2p_state.cpp
-CPPSOURCES += apps/test/wlxx_lora_p2p/loraP2P/p2p_linkfind.cpp
-CPPSOURCES += apps/test/wlxx_lora_p2p/loraP2P/p2p_raw.cpp
-CPPSOURCES += apps/test/wlxx_lora_p2p/loraP2P/p2p_rawack.cpp
-CPPSOURCES += apps/test/wlxx_lora_p2p/loraP2P/p2p_rawack_fhss.cpp
+CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/loraP2P/p2p_state.cpp
+CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/loraP2P/p2p_linkfind.cpp
+CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/loraP2P/p2p_raw.cpp
+CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/loraP2P/p2p_rawack.cpp
+CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/loraP2P/p2p_rawack_fhss.cpp
 
-CPPSOURCES += apps/test/wlxx_lora_p2p/rtklib/rtcm3.cpp
-CPPSOURCES += apps/test/wlxx_lora_p2p/rtklib/rtkcmn.cpp
-CPPSOURCES += apps/test/wlxx_lora_p2p/rtklib/rtk_basemsg.cpp
+CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/rtklib/rtcm3.cpp
+CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/rtklib/rtkcmn.cpp
+CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/rtklib/rtk_basemsg.cpp
 

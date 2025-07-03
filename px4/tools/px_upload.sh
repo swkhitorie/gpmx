@@ -15,11 +15,11 @@ SERIAL_PORTS=$3
 FMUOUTPUT=$(basename $FMUBIN .bin).px4
 
 if [ $FMUTYPE = "fmuv2" ]; then
-PROTOTYPE=$SCRIPTDIR/fmuv2-firmware.prototype
+PROTOTYPE=$SCRIPTDIR/../boards/fmu-v2/fmuv2-firmware.prototype
 fi
 
 if [ $FMUTYPE = "fmuv6c" ]; then
-PROTOTYPE=$SCRIPTDIR/fmuv6c-firmware.prototype
+PROTOTYPE=$SCRIPTDIR/../boards/holybro-fmu-v6c/fmuv6c-firmware.prototype
 fi
 
 MKFW=$SCRIPTDIR/px_mkfw.py

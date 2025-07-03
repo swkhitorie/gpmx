@@ -2,11 +2,15 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include <drivers/magnetometers/ist8310/IST8310.hpp>
-#include <drivers/imu/icm42688p/icm42688_test.h>
+#include <IST8310.hpp>
+#include <icm42688_test.h>
+#include "px_upload/px_upload.h"
 
 IST8310 mag("/sensor_i2c");
 int16_t data[3];
+
+upload_msg_t rst_msg;
+uint8_t ch;
 
 int main(int argc, char *argv[])
 {
@@ -32,6 +36,7 @@ int main(int argc, char *argv[])
 
             board_debug();
         }
+
     }
 }
 
