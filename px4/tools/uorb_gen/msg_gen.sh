@@ -67,3 +67,5 @@ echo "Generating uorb msg completed"
 #         -o ${UORB_SOURCES_OUTPUT} \
 #         -e ${UORB_GEN_TEMPLATE} \
 #         -t ${UORB_SOURCES_TEMPORARY_DIR}
+
+# busybox.exe bash .\px4\tools\uorb_gen\msg_gen.sh ./px4/msg/ ./px4/build

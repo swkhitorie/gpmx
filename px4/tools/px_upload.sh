@@ -31,8 +31,4 @@ python $MKFW \
 
 python $SCRIPTDIR/px_uploader.py --port $SERIAL_PORTS ./bin/$FMUOUTPUT
 
-# windows:
-# busybox.exe bash .\tools\px_upload.sh .\bin\px4_fmu-v2.bin fmuv6c COM13
-
-# linux:
-# ./tools/px_upload.sh ./bin/px4_fmu-v2.bin fmuv6c /dev/ttyACM0
+# busybox.exe bash .\px4\tools\px_upload.sh .\bin\test_fmuv2_bsp_gae_.bin fmuv2 COM35
