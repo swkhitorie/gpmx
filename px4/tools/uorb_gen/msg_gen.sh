@@ -7,8 +7,11 @@ PYTHON_EXECUTABLE=python
 UORB_GEN_SCRIPT=${SCRIPT_DIR}/tools/px_generate_uorb_topic_files.py
 UORB_GEN_TEMPLATE=${SCRIPT_DIR}/templates/uorb/
 
-UORB_MSG_PATH=${SCRIPT_DIR}/../../msg/
-UORB_GENERATE_PATH=${SCRIPT_DIR}/../../build/
+UORB_MSG_PATH=$1
+UORB_GENERATE_PATH=$2
+
+# UORB_MSG_PATH=${SCRIPT_DIR}/../../msg/
+# UORB_GENERATE_PATH=${SCRIPT_DIR}/../../build/
 
 if [ ! -d ${UORB_GENERATE_PATH} ]; then
     mkdir ${UORB_GENERATE_PATH}
