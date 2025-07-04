@@ -6,6 +6,7 @@
 #ifndef CHERRYUSB_CONFIG_H
 #define CHERRYUSB_CONFIG_H
 
+#define CRUSB_LOG_ENABLE
 /* ================ USB common Configuration ================ */
 #ifdef CRUSB_LOG_ENABLE
 #define CONFIG_USB_PRINTF(...) printf(__VA_ARGS__)
@@ -17,7 +18,9 @@
 #define CONFIG_USB_DBG_LEVEL USB_DBG_INFO
 #endif
 
-#define CONFIG_USB_DWC2_DMA_ENABLE
+#if !defined (CONFIG_FMU_V2_USB_FS)
+    #define CONFIG_USB_DWC2_DMA_ENABLE
+#endif
 
 /* Enable print with color */
 #define CONFIG_USB_PRINTF_COLOR_ENABLE
@@ -193,11 +196,11 @@
 #define CONFIG_USB_DWC2_TX7_FIFO_SIZE (0 / 4)
 #define CONFIG_USB_DWC2_TX8_FIFO_SIZE (0 / 4)
 #if defined (STM32F427xx)
- #define CONFIG_USB_DWC2_RXALL_FIFO_SIZE (512 / 4)
- #define CONFIG_USB_DWC2_TX0_FIFO_SIZE (64 / 4)
- #define CONFIG_USB_DWC2_TX1_FIFO_SIZE (512 / 4)
- #define CONFIG_USB_DWC2_TX2_FIFO_SIZE (64 / 4)
- #define CONFIG_USB_DWC2_TX3_FIFO_SIZE (64 / 4)
+    #define CONFIG_USB_DWC2_RXALL_FIFO_SIZE (512 / 4)
+    #define CONFIG_USB_DWC2_TX0_FIFO_SIZE (64 / 4)
+    #define CONFIG_USB_DWC2_TX1_FIFO_SIZE (512 / 4)
+    #define CONFIG_USB_DWC2_TX2_FIFO_SIZE (64 / 4)
+    #define CONFIG_USB_DWC2_TX3_FIFO_SIZE (64 / 4)
 #endif
 /* ---------------- MUSB Configuration ---------------- */
 // #define CONFIG_USB_MUSB_SUNXI

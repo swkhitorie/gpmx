@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
 
             l3gd20_init();
 
-            // printf("hello v2\r\n");
+            printf("hello v2\r\n");
             board_debug();
         }
     }
