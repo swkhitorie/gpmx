@@ -25,3 +25,4 @@ include ${CONFIG_FILE}
 # including common build makefile
 include $(MAKEFILES_ROOTDIR)/make/build.mk
 all: prebuild build postbuild
+
