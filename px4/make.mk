@@ -63,4 +63,3 @@ ifeq (${CONFIG_MK_USE_PX4_PERF_CNTER},y)
 FR_CPPSOURCES +=  px4/src/lib/perf/perf_counter.cpp
 endif
 
-
