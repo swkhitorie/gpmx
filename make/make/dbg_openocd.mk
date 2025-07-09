@@ -12,3 +12,7 @@ TC_OPENOCD_DEBUG_CFG := ${TC_OPENOCD_DEBUG_CFG_PATH}\${PROJ_OPENOCD_DEBUG}.cfg
 
 TC_OPENOCD_CHIP_CFG := ${TC_OPENOCD_CHIP_CFG_PATH}\${PROJ_OPENOCD_CHIP}.cfg
 
+# to do: 
+#       openocd version judge
+#       openocd chipcfg path and interface path selection
+#       linux/win path format selection

@@ -12,7 +12,7 @@ TC_GCC_PREFIX = arm-none-eabi-
 #
 # GCC ARM Compiler related section
 #
-ifneq ($(OS), Linux)
+ifneq ($(OS),Linux)
 TC_PATH_BIN:=$(call MK_SHORTNAME,"${TC_PATH_INST_GCC}/bin")
 TC_PATH_INC:=$(call MK_SHORTNAME,"${TC_PATH_INST_GCC}/arm-none-eabi/include")
 TC_PATH_LIB:=$(call MK_SHORTNAME,"${TC_PATH_INST_GCC}/arm-none-eabi/lib")
@@ -25,7 +25,7 @@ endif
 #
 # toolchain executables
 #
-ifneq ($(OS), Linux)
+ifneq ($(OS),Linux)
 TC_MAKEDEP:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/$(TC_GCC_PREFIX)gcc.exe -MM)
 TC_CC:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/$(TC_GCC_PREFIX)gcc.exe)
 TC_CPP:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/$(TC_GCC_PREFIX)g++.exe)

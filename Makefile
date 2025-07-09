@@ -1,5 +1,5 @@
 
-ifneq ($(OS), Linux)
+ifneq ($(OS),Linux)
 TC_PATH_INST_GCC := $(shell where arm-none-eabi-gcc)/../../
 TC_PATH_INST_ARMCC := $(shell where armcc)/../../
 TC_PATH_INST_ARMCLANG := $(shell where armclang)/../../
