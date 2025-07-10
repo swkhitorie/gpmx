@@ -4,8 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "dev_cdc_acm.h"
-// #include <FreeRTOS.h>
-// #include <semphr.h>
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#include <FreeRTOS.h>
+#include <semphr.h>
+#endif
 
 /*!< endpoint address */
 #define CDC_IN_EP  0x81
@@ -118,6 +120,9 @@ USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t cdc_rbuf[CDC_MAX_MPS];
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t cdc_wbuf[CDC_MAX_MPS];
 struct devfifo_cdc cdc_txfifo = {.in = 0, .out = 0, .size = 0};
 struct devfifo_cdc cdc_rxfifo = {.in = 0, .out = 0, .size = 0};
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+static SemaphoreHandle_t write_sem;
+#endif
 
 volatile bool ep_tx_busy_flag = false;
 
@@ -203,7 +208,16 @@ static struct usbd_interface intf1;
 
 void cdc_acm_init(uint8_t busid, uintptr_t reg_base)
 {
+    ep_tx_busy_flag = true;
+
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+    write_sem = xSemaphoreCreateBinary();
+    xSemaphoreGive(write_sem);
+#endif
+
     dev_cdc_acm_init(busid, reg_base);
+
+    ep_tx_busy_flag = false;
 }
 
 void dev_cdc_acm_init(uint8_t busid, uintptr_t reg_base)
@@ -251,10 +265,24 @@ int dev_cdc_acm_send(uint8_t busid, const uint8_t *p, uint16_t len, uint8_t isbu
             while (ep_tx_busy_flag);
         }
     } else if (isbuffer == 1) {
-#ifdef CONFIG_CRUSB_CDC_TX_FIFO_ENABLE
+#if defined(CONFIG_CRUSB_CDC_TX_FIFO_ENABLE) && defined(CONFIG_BOARD_FREERTOS_ENABLE)
+        if (xSemaphoreTake(write_sem, 10) == pdTRUE) {
+            rsize = dfifocdc_write(&cdc_txfifo, &p[0], len);
+
+            if (rsize == 0 || ep_tx_busy_flag) {
+                xSemaphoreGive(write_sem);
+                return 0;
+            }
+
+            ep_tx_busy_flag = true;
+
+            fsize = dfifocdc_read(&cdc_txfifo, &cdc_wbuf[0], CDC_MAX_MPS);
+            usbd_ep_start_write(0, CDC_IN_EP, cdc_wbuf, fsize);
+            xSemaphoreGive(write_sem);
+        }
+#elif defined(CONFIG_CRUSB_CDC_TX_FIFO_ENABLE)
         rsize = dfifocdc_write(&cdc_txfifo, &p[0], len);
-        if (rsize == 0) return 0;
-        if (ep_tx_busy_flag) return 0;
+        if (rsize == 0 || ep_tx_busy_flag) return 0;
         ep_tx_busy_flag = true;
 
         fsize = dfifocdc_read(&cdc_txfifo, &cdc_wbuf[0], CDC_MAX_MPS);

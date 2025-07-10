@@ -4,14 +4,14 @@
 #include <stdint.h>
 
 #ifndef CONFIG_DEV_CDC_FIFO_BUFFER_LENGTH
-#define CONFIG_DEV_CDC_FIFO_BUFFER_LENGTH  (512)
+#define CONFIG_DEV_CDC_FIFO_BUFFER_LENGTH  (1024)
 #endif
 
 struct devfifo_cdc {
     uint8_t buf[CONFIG_DEV_CDC_FIFO_BUFFER_LENGTH];
     uint16_t size;
-    uint16_t in;
-    uint16_t out;
+    volatile uint16_t in;
+    volatile uint16_t out;
 };
 
 #ifdef __cplusplus

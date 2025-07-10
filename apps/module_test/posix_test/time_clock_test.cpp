@@ -88,6 +88,8 @@ void* p3_entry(void *p)
 #if POSIX_DELAY_METHOD == 2
         clock_gettime(0, &rqtp);
         rqtp.tv_sec += 1;
+        // if add nsec:
+        //     call utils_timespec_add(&cur, &add, &rqtp);
         int re = clock_nanosleep(0, TIMER_ABSTIME, &rqtp, NULL);
 #endif
 #if POSIX_DELAY_METHOD == 1
