@@ -4,12 +4,11 @@
 #include <uorb/uorb.h>
 
 #include <cerrno>
-#include <set>
 
 #include "base/condition_variable.h"
-#include "base/intrusive_list.h"
+#include "base/intrusive_list/forward_list.h"
 #include "base/mutex.h"
-#include "callback.h"
+#include "receiver_base.h"
 
 namespace uORBTest {
 class UnitTest;
@@ -21,12 +20,12 @@ class DeviceMaster;
 /**
  * Per-object device instance.
  */
-class DeviceNode : public ListNode<DeviceNode *>,
-                  private internal::Noncopyable {
+class DeviceNode {
   friend DeviceMaster;
 
-public:
-  // Publish a data to this node.
+ public:
+  UORB_NONCOPYABLE(DeviceNode);
+  // Publish data to this node.
   bool Publish(const void *data);
 
   void add_subscriber();
@@ -46,28 +45,24 @@ public:
     return IsSameWith(meta) && (instance_ == instance);
   }
 
-  inline bool IsSameWith(const orb_metadata &meta) const {
-    return &meta_ == &meta;
-  }
+  inline bool IsSameWith(const orb_metadata &meta) const { return &meta_ == &meta; }
 
   // add item to list of work items to schedule on node update
-  template <typename Callback>
-  bool RegisterCallback(Callback *callback) {
+  bool RegisterCallback(detail::ReceiverBase *callback) {
     if (!callback) {
       errno = EINVAL;
       return false;
     }
 
-    uorb::base::LockGuard<base::Mutex> lg(lock_);
-    uorb::DeviceNode::callbacks_.emplace(callback);
+    base::LockGuard<base::Mutex> lg(lock_);
+    receiver_list_.push_front(*callback);
     return true;
   }
 
   // remove item from list of work items
-  template <typename Callback>
-  bool UnregisterCallback(Callback *callback) {
+  bool UnregisterCallback(const detail::ReceiverBase *callback) {
     base::LockGuard<base::Mutex> lg(lock_);
-    return uorb::DeviceNode::callbacks_.erase(callback) != 0;
+    return receiver_list_.remove(*callback);
   }
 
   // Returns the number of updated data relative to the parameter 'generation'
@@ -92,7 +87,7 @@ public:
    */
   bool Copy(void *dst, unsigned *sub_generation) const;
 
-private:
+ private:
   friend uORBTest::UnitTest;
 
   const orb_metadata &meta_; /**< object metadata information */
@@ -100,7 +95,7 @@ private:
 
   uint8_t *data_{nullptr};    /**< allocated object buffer */
   const uint16_t queue_size_; /**< maximum number of elements in the queue */
-  unsigned generation_{0};    /**< object generation count */
+  std::atomic_uint32_t generation_{0};    /**< object generation count */
 
   mutable base::Mutex lock_{};
 
@@ -109,7 +104,8 @@ private:
   uint8_t publisher_count_{0};
   bool has_anonymous_publisher_{false};
 
-  std::set<detail::CallbackBase *> callbacks_;
+  intrusive_list::forward_list<detail::ReceiverBase, &detail::ReceiverBase::receiver_node> receiver_list_;
+  intrusive_list::forward_list_node device_list_node_{};
 
   DeviceNode(const struct orb_metadata &meta, uint8_t instance);
   ~DeviceNode();

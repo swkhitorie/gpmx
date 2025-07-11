@@ -20,7 +20,7 @@ class RwMutex {
     if (is_safe_) fncall(&mutex_);          \
   } while (0)
 
-public:
+ public:
 #ifdef PTHREAD_RWLOCK_INITIALIZER
   constexpr RwMutex() noexcept = default;
   ~RwMutex() = default;
@@ -46,7 +46,7 @@ public:
 
 #undef SAFE_PTHREAD_MUTEX
 
-private:
+ private:
 #ifdef PTHREAD_RWLOCK_INITIALIZER
   pthread_rwlock_t mutex_ = PTHREAD_RWLOCK_INITIALIZER;
   volatile bool is_safe_{true};
@@ -68,26 +68,26 @@ private:
  * ownership in the destructor.
  */
 class ReaderLockGuard {
-public:
+ public:
   explicit ReaderLockGuard(RwMutex &m) : mutex_(m) { mutex_.reader_lock(); }
   ~ReaderLockGuard() { mutex_.reader_unlock(); }
 
   ReaderLockGuard(const ReaderLockGuard &) = delete;
   ReaderLockGuard &operator=(const ReaderLockGuard &) = delete;
 
-private:
+ private:
   RwMutex &mutex_;
 };
 
 class WriterLockGuard {
-public:
+ public:
   explicit WriterLockGuard(RwMutex &m) : mutex_(m) { mutex_.lock(); }
   ~WriterLockGuard() { mutex_.unlock(); }
 
   WriterLockGuard(const WriterLockGuard &) = delete;
   WriterLockGuard &operator=(const WriterLockGuard &) = delete;
 
-private:
+ private:
   RwMutex &mutex_;
 };
 

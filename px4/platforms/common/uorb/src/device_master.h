@@ -1,10 +1,8 @@
 #pragma once
 
-#include <cstdint>
-#include <list>
-
-#include "base/intrusive_list.h"
+#include "base/intrusive_list/forward_list.h"
 #include "base/mutex.h"
+#include "device_node.h"
 #include "uorb/uorb.h"
 
 namespace uorb {
@@ -16,7 +14,7 @@ class DeviceMaster;
  * Master control device for uorb message device node.
  */
 class uorb::DeviceMaster {
-public:
+ public:
   /**
    * Method to get the singleton instance for the uorb::DeviceMaster.
    * @return DeviceMaster instance reference
@@ -34,8 +32,7 @@ public:
    * @return nullptr on error, and set errno to orb_errno. Otherwise returns a
    * DeviceNode that can be used to publish to the topic.
    */
-  DeviceNode *CreateAdvertiser(const orb_metadata &meta,
-                               unsigned int *instance);
+  DeviceNode *CreateAdvertiser(const orb_metadata &meta, unsigned int *instance);
 
   DeviceNode *OpenDeviceNode(const orb_metadata &meta, unsigned int instance);
 
@@ -45,14 +42,13 @@ public:
    */
   DeviceNode *GetDeviceNode(const orb_metadata &meta, uint8_t instance) const;
 
-private:
+ private:
   /**
    * Find a node give its name.
    * lock_ must already be held when calling this.
    * @return node if exists, nullptr otherwise
    */
-  DeviceNode *GetDeviceNodeLocked(const orb_metadata &meta,
-                                  uint8_t instance) const;
+  DeviceNode *GetDeviceNodeLocked(const orb_metadata &meta, uint8_t instance) const;
 
   // Private constructor, uorb::Manager takes care of its creation
   DeviceMaster() = default;
@@ -60,6 +56,6 @@ private:
 
   static DeviceMaster instance_;
 
-  List<DeviceNode *> node_list_{};
+  intrusive_list::forward_list<DeviceNode, &DeviceNode::device_list_node_> node_list_;
   mutable base::Mutex lock_{};
 };

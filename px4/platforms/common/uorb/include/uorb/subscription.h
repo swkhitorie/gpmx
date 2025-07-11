@@ -7,10 +7,10 @@
 namespace uorb {
 
 template <const orb_metadata &meta>
-class Subscription : internal::Noncopyable {
+class Subscription {
   using Type = typename msg::TypeMap<meta>::type;
 
-protected:
+ protected:
   const uint8_t instance_{0};
   orb_subscription_t *handle_{nullptr};
 
@@ -19,7 +19,9 @@ protected:
    */
   virtual bool Updated() { return Subscribed() && orb_check_update(handle_); }
 
-public:
+ public:
+  UORB_NONCOPYABLE(Subscription);
+
   /**
    * Constructor
    *
@@ -29,7 +31,7 @@ public:
    */
   explicit Subscription(uint8_t instance = 0) noexcept : instance_(instance) {}
 
-  ~Subscription() { handle_ &&orb_destroy_subscription(&handle_); }
+  virtual ~Subscription() { handle_ &&orb_destroy_subscription(&handle_); }
 
   bool Subscribed() {
     // check if already subscribed
@@ -61,11 +63,11 @@ template <const orb_metadata &T>
 class SubscriptionData : public Subscription<T> {
   using Type = typename msg::TypeMap<T>::type;
 
-public:
+ public:
   explicit SubscriptionData(uint8_t instance = 0) noexcept
       : Subscription<T>(instance) {}
 
-  ~SubscriptionData() = default;
+  ~SubscriptionData() override = default;
 
   using Subscription<T>::Update;
 
@@ -74,7 +76,7 @@ public:
 
   const Type &get() const { return data_; }
 
-private:
+ private:
   Type data_{};
 };
 

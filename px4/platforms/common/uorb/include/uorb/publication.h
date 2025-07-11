@@ -9,10 +9,11 @@ namespace uorb {
  * uORB publication wrapper class
  */
 template <const orb_metadata &meta>
-class Publication : internal::Noncopyable {
+class Publication {
   using Type = typename msg::TypeMap<meta>::type;
 
-public:
+ public:
+  UORB_NONCOPYABLE(Publication);
   Publication() noexcept = default;
   ~Publication() { handle_ &&orb_destroy_publication(&handle_); }
 
@@ -28,7 +29,7 @@ public:
     return handle_ && orb_publish(handle_, &data);
   }
 
-private:
+ private:
   orb_publication_t *handle_{nullptr};
 };
 
@@ -39,7 +40,7 @@ template <const orb_metadata &T>
 class PublicationData : public Publication<T> {
   using Type = typename msg::TypeMap<T>::type;
 
-public:
+ public:
   PublicationData() noexcept = default;
 
   Type &get() { return data_; }
@@ -51,7 +52,7 @@ public:
   // Publishes the embedded struct.
   bool Publish() { return Publication<T>::Publish(data_); }
 
-private:
+ private:
   Type data_{};
 };
 

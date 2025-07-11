@@ -90,7 +90,7 @@ namespace base {
 
 template <typename T>
 class atomic {
-public:
+ public:
 #ifdef __PX4_NUTTX
   // Ensure that all operations are lock-free, so that 'atomic' can be used from
   // IRQ handlers. This might not be required everywhere though.
@@ -181,10 +181,10 @@ public:
    */
   inline bool compare_exchange(T *expected, T num) {
     return __atomic_compare_exchange(&_value, expected, num, false,
-                                    __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+                                     __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
   }
 
-private:
+ private:
 #ifdef __PX4_QURT
   // It seems that __atomic_store  and __atomic_load are not supported on Qurt,
   // so the best that we can do is to use volatile.

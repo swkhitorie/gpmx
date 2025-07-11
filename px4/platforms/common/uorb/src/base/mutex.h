@@ -12,17 +12,17 @@
 
 #include "uorb/internal/noncopyable.h"
 
-namespace uorb {
-namespace base {
+namespace uorb::base {
 
 /// The standard Mutex type.
-class Mutex : internal::Noncopyable {
+class Mutex {
+  UORB_NONCOPYABLE(Mutex);
 #define SAFE_PTHREAD_MUTEX(fncall)          \
   do { /* run fncall if is_safe_ is true */ \
     if (is_safe_) fncall(&mutex_);          \
   } while (0)
 
-public:
+ public:
 #ifdef PTHREAD_MUTEX_INITIALIZER
   constexpr Mutex() noexcept = default;
   ~Mutex() = default;
@@ -33,19 +33,14 @@ public:
   }
   ~Mutex() noexcept { SAFE_PTHREAD_MUTEX(pthread_mutex_destroy); }
 #endif
-  Mutex(const Mutex &) = delete;
-  Mutex &operator=(const Mutex &) = delete;
-
   void lock() { SAFE_PTHREAD_MUTEX(pthread_mutex_lock); }
   void unlock() { SAFE_PTHREAD_MUTEX(pthread_mutex_unlock); }
 
-  bool try_lock() noexcept {
-    return is_safe_ ? 0 == pthread_mutex_trylock(&mutex_) : true;
-  }
+  bool try_lock() noexcept { return is_safe_ ? 0 == pthread_mutex_trylock(&mutex_) : true; }
 
   pthread_mutex_t *native_handle() noexcept { return &mutex_; }
 
-private:
+ private:
 #ifdef PTHREAD_MUTEX_INITIALIZER
   pthread_mutex_t mutex_ = PTHREAD_MUTEX_INITIALIZER;
   volatile bool is_safe_{true};
@@ -68,16 +63,16 @@ private:
  */
 template <typename MutexType = Mutex>
 class LockGuard {
-public:
+ public:
   explicit LockGuard(MutexType &m) : mutex_(m) { mutex_.lock(); }
   ~LockGuard() { mutex_.unlock(); }
 
   LockGuard(const LockGuard &) = delete;
   LockGuard &operator=(const LockGuard &) = delete;
 
-private:
+ private:
   MutexType &mutex_;
 };
 
-}  // namespace base
-}  // namespace uorb
+} // namespace uorb::base
+

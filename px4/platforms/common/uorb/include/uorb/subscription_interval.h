@@ -10,13 +10,13 @@ template <const orb_metadata &T>
 class SubscriptionInterval : public Subscription<T> {
   using Type = typename msg::TypeMap<T>::type;
 
-private:
+ private:
   template <typename Tp>
   constexpr Tp constrain(Tp val, Tp min_val, Tp max_val) const {
     return (val < min_val) ? min_val : ((val > max_val) ? max_val : val);
   }
 
-public:
+ public:
   /**
    * Constructor
    *
@@ -29,14 +29,14 @@ public:
                                 uint8_t instance = 0) noexcept
       : Subscription<T>(instance), interval_us_(interval_us) {}
 
-  ~SubscriptionInterval() = default;
+  ~SubscriptionInterval() override = default;
 
   /**
    * Check if there is a new update.
    * */
   bool Updated() override {
     return Subscription<T>::Updated() &&
-            (orb_elapsed_time_us(last_update_) >= interval_us_);
+           (orb_elapsed_time_us(last_update_) >= interval_us_);
   }
 
   /**
@@ -75,7 +75,7 @@ public:
   void set_interval_us(uint32_t interval) { interval_us_ = interval; }
   void set_interval_ms(uint32_t interval) { interval_us_ = interval * 1000; }
 
-protected:
+ protected:
   orb_abstime_us last_update_{0};  // last update in microseconds
   uint32_t interval_us_{0};        // maximum update interval in microseconds
 };

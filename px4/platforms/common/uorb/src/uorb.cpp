@@ -7,14 +7,12 @@
 
 #include <cerrno>
 
-#include "callback.h"
 #include "device_master.h"
 #include "device_node.h"
-#include "subscription_impl.h"
+#include "event_poll.h"
+#include "receiver_local.h"
 
-using uorb::DeviceMaster;
-using uorb::DeviceNode;
-using uorb::SubscriptionImpl;
+using namespace uorb;
 
 #define ORB_CHECK_TRUE(condition, error_code, error_action) \
   ({                                                        \
@@ -28,8 +26,7 @@ orb_publication_t *orb_create_publication(const struct orb_metadata *meta) {
   return orb_create_publication_multi(meta, nullptr);
 }
 
-orb_publication_t *orb_create_publication_multi(const struct orb_metadata *meta,
-                                                unsigned int *instance) {
+orb_publication_t *orb_create_publication_multi(const struct orb_metadata *meta, unsigned int *instance) {
   ORB_CHECK_TRUE(meta, EINVAL, return nullptr);
   auto &meta_ = *meta;
   auto &device_master = DeviceMaster::get_instance();
@@ -76,8 +73,7 @@ orb_subscription_t *orb_create_subscription(const struct orb_metadata *meta) {
   return orb_create_subscription_multi(meta, 0);
 }
 
-orb_subscription_t *orb_create_subscription_multi(
-    const struct orb_metadata *meta, unsigned instance) {
+orb_subscription_t *orb_create_subscription_multi(const struct orb_metadata *meta, unsigned instance) {
   ORB_CHECK_TRUE(meta, EINVAL, return nullptr);
 
   DeviceMaster &device_master = uorb::DeviceMaster::get_instance();
@@ -87,7 +83,7 @@ orb_subscription_t *orb_create_subscription_multi(
 
   // Create a subscriber, if it fails, we don't have to release device_node (it
   // only increases but not decreases)
-  auto *subscriber = new SubscriptionImpl(*dev);
+  auto *subscriber = new ReceiverLocal(*dev);
   ORB_CHECK_TRUE(subscriber, ENOMEM, return nullptr);
 
   return reinterpret_cast<orb_subscription_t *>(subscriber);
@@ -98,7 +94,7 @@ bool orb_destroy_subscription(orb_subscription_t **handle_ptr) {
 
   auto &subscription_handle = *handle_ptr;
 
-  delete reinterpret_cast<SubscriptionImpl *>(subscription_handle);
+  delete reinterpret_cast<ReceiverLocal *>(subscription_handle);
   subscription_handle = nullptr;  // Set the original pointer to null
 
   return true;
@@ -107,7 +103,7 @@ bool orb_destroy_subscription(orb_subscription_t **handle_ptr) {
 bool orb_copy(orb_subscription_t *handle, void *buffer) {
   ORB_CHECK_TRUE(handle && buffer, EINVAL, return false);
 
-  auto &sub = *reinterpret_cast<SubscriptionImpl *>(handle);
+  auto &sub = *reinterpret_cast<ReceiverLocal *>(handle);
 
   return sub.Copy(buffer);
 }
@@ -128,7 +124,7 @@ bool orb_copy_anonymous(const struct orb_metadata *meta, void *buffer) {
 bool orb_check_update(orb_subscription_t *handle) {
   ORB_CHECK_TRUE(handle, EINVAL, return false);
 
-  auto &sub = *reinterpret_cast<SubscriptionImpl *>(handle);
+  auto &sub = *reinterpret_cast<ReceiverLocal *>(handle);
 
   return sub.updates_available();
 }
@@ -155,8 +151,7 @@ unsigned int orb_group_count(const struct orb_metadata *meta) {
   return instance;
 }
 
-bool orb_get_topic_status(const struct orb_metadata *meta,
-                          unsigned int instance, struct orb_status *status) {
+bool orb_get_topic_status(const struct orb_metadata *meta, unsigned int instance, struct orb_status *status) {
   ORB_CHECK_TRUE(meta, EINVAL, return false);
 
   auto &master = DeviceMaster::get_instance();
@@ -177,47 +172,86 @@ bool orb_get_topic_status(const struct orb_metadata *meta,
 
 int orb_poll(struct orb_pollfd *fds, unsigned int nfds, int timeout_ms) {
   ORB_CHECK_TRUE(fds && nfds, EINVAL, return -1);
+  for (unsigned i = 0; i < nfds; ++i) {
+    ORB_CHECK_TRUE(fds[i].fd != nullptr, EINVAL, return -1);
+  }
 
-  int updated_num = 0;  // Number of new messages
-  uorb::SemaphoreCallback semaphore_callback;
+  int number_of_new_data = 0;
+
+  auto CheckDataUpdate = [&] {
+    number_of_new_data = 0;
+    for (unsigned i = 0; i < nfds; ++i) {
+      fds[i].revents = 0;
+      auto &item_sub = *reinterpret_cast<ReceiverLocal *>(fds[i].fd);
+      if (item_sub.updates_available()) {
+        fds[i].revents |= fds[i].events & POLLIN;
+        ++number_of_new_data;
+      }
+    }
+    return number_of_new_data > 0;
+  };
+
+  if (CheckDataUpdate()) return number_of_new_data;
+
+  uorb::base::LiteNotifier notifier;
+  for (unsigned i = 0; i < nfds; ++i) {
+    auto &item_sub = *reinterpret_cast<ReceiverLocal *>(fds[i].fd);
+    item_sub.SetNotifier(&notifier);
+  }
+
+  if (timeout_ms > 0) {
+    notifier.wait_for(timeout_ms, CheckDataUpdate);
+  } else if (timeout_ms < 0) {
+    notifier.wait(CheckDataUpdate);
+  }
 
   for (unsigned i = 0; i < nfds; ++i) {
-    auto &item = fds[i];
-    if (!item.fd) {
-      continue;
-    }
-
-    auto &item_sub = *reinterpret_cast<SubscriptionImpl *>(item.fd);
-    item_sub.RegisterCallback(&semaphore_callback);
-
-    if (item_sub.updates_available() > 0) {
-      ++updated_num;
-    }
+    auto &item_sub = *reinterpret_cast<ReceiverLocal *>(fds[i].fd);
+    item_sub.RemoveNotifier();
   }
 
-  // No new data, waiting for update
-  if (updated_num == 0) {
-    semaphore_callback.try_acquire_for(timeout_ms);
+  return number_of_new_data;
+}
 
-  } else {
-    updated_num = 0;
-  }
 
-  for (unsigned i = 0; i < nfds; ++i) {
-    auto &item = fds[i];
-    if (!item.fd) {
-      continue;
-    }
+orb_event_poll_t *orb_event_poll_create(void) {
+  auto *cpp_poll = new (std::nothrow) uorb::EventPoll();
+  return reinterpret_cast<orb_event_poll_t *>(cpp_poll);
+}
 
-    auto &item_sub = *reinterpret_cast<SubscriptionImpl *>(item.fd);
-    item_sub.UnregisterCallback(&semaphore_callback);
+bool orb_event_poll_destroy(orb_event_poll_t **handle_ptr) {
+  ORB_CHECK_TRUE(handle_ptr && *handle_ptr, EINVAL, return false);
+  auto *cpp_poll = reinterpret_cast<uorb::EventPoll *>(*handle_ptr);
+  delete cpp_poll;
+  *handle_ptr = nullptr;
+  return true;
+}
 
-    item.revents = 0;
-    if (item_sub.updates_available()) {
-      item.revents |= item.events & POLLIN;
-      ++updated_num;
-    }
-  }
+bool orb_event_poll_add(orb_event_poll_t *poll, orb_subscription_t *sub) {
+  ORB_CHECK_TRUE(poll && sub, EINVAL, return false);
+  auto *cpp_poll = reinterpret_cast<uorb::EventPoll *>(poll);
+  auto *receiver = reinterpret_cast<uorb::ReceiverLocal *>(sub);
+  cpp_poll->AddReceiver(*receiver);
+  return true;
+}
 
-  return updated_num;
+bool orb_event_poll_remove(orb_event_poll_t *poll, orb_subscription_t *sub) {
+  ORB_CHECK_TRUE(poll && sub, EINVAL, return false);
+  auto *cpp_poll = reinterpret_cast<uorb::EventPoll *>(poll);
+  auto *receiver = reinterpret_cast<uorb::ReceiverLocal *>(sub);
+  cpp_poll->RemoveReceiver(*receiver);
+  return true;
+}
+
+int orb_event_poll_wait(orb_event_poll_t *poll, orb_subscription_t *subs[], int max_subs, int timeout_ms) {
+  ORB_CHECK_TRUE(poll && subs && max_subs > 0, EINVAL, return -1);
+  auto *cpp_poll = reinterpret_cast<uorb::EventPoll *>(poll);
+  return cpp_poll->Wait(reinterpret_cast<uorb::ReceiverLocal **>(subs), max_subs, timeout_ms);
+}
+
+bool orb_event_poll_quit(orb_event_poll_t *poll) {
+  ORB_CHECK_TRUE(poll, EINVAL, return false);
+  auto *cpp_poll = reinterpret_cast<uorb::EventPoll *>(poll);
+  cpp_poll->Stop();
+  return true;
 }
