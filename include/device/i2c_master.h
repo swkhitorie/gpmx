@@ -17,6 +17,9 @@
 #define I2C_ADDR_7BIT          0x0010
 #define I2C_ADDR_10BIT         0x0011
 
+#define I2C_REG_SZ_8BIT        0x01
+#define I2C_REG_SZ_16BIT       0x02
+
 #define I2C_SPEED_STANDARD   100000  /* Standard speed (100Khz) */
 #define I2C_SPEED_FAST       400000  /* Fast speed     (400Khz) */
 #define I2C_SPEED_FAST_PLUS  1000000 /* Fast+ speed    (  1Mhz) */
@@ -31,7 +34,7 @@
 struct i2c_msg_s
 {
     uint16_t addr;       /* Slave address (7- or 10-bit) */
-    uint8_t reg_sz;
+    uint8_t reg_sz;      /* Register size (1byte or 2byte) */
     uint16_t flags;      /* See I2C_M_* definitions */
     uint8_t *xbuffer;     /* Buffer to be transferred */
     size_t xlength;

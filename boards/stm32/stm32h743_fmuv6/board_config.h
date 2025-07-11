@@ -132,6 +132,14 @@
 #define BOARD_RED_LED(on_true)            BOARD_IO_SET(GPIO_nLED_RED_PORT, \
                                                     GPIO_nLED_RED_PIN, !(on_true))
 
+/**
+ * Device Spi Name Macro
+ */
+#define DEV_SPIDEV_IMU_ACCEL_BMI055         (0x11)
+#define DEV_SPIDEV_IMU_GYRO_BMI055          (0x12)
+#define DEV_SPIDEV_IMU_ICM42688P            (0x13)
+
+
 #ifdef __cplusplus
     extern "C" {
 #endif

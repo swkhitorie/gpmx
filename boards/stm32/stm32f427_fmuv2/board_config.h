@@ -98,6 +98,14 @@
 #define BOARD_ADC_PERIPH_5V_OC  (!BOARD_IO_GET(GPIO_VDD_5V_HIPOWER_OC_PORT, GPIO_VDD_5V_HIPOWER_OC_PIN))
 #define BOARD_ADC_HIPOWER_5V_OC (!BOARD_IO_GET(GPIO_VDD_5V_PERIPH_OC_PORT, GPIO_VDD_5V_PERIPH_OC_PIN))
 
+/**
+ * Device Spi Name Macro
+ */
+#define DEV_SPIDEV_IMU_GYRO_L3GD20              (0x11)
+#define DEV_SPIDEV_IMU_ACCEL_MAG_LSM303D        (0x12)
+#define DEV_SPIDEV_IMU_MPU6000                  (0x13)
+#define DEV_SPIDEV_IMU_BARO_MS5611              (0x14)
+
 #ifdef __cplusplus
     extern "C" {
 #endif

@@ -1,10 +1,10 @@
 #include <device/spi.h>
 
-int spi_register(const char *path, struct spi_dev_s *dev)
-{
+// int spi_register(const char *path, struct spi_dev_s *dev)
+// {
 
-    return 0;
-}
+//     return 0;
+// }
 
 #if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SPI_TASKSYNC)
 

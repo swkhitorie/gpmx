@@ -72,9 +72,18 @@ struct up_spi_dev_s sensor_spi_dev =
     .priority_dmatx = 5,
     .enable_dmarx = true,
     .enable_dmatx = true,
-	/*            L3GD20 GYRO    LSM303D ACCEL+MAG         MPU6000      MS5611-01A      */
-    .devid = { [0] = 0x11,        [1] = 0x12,        [2] = 0x13,       [3] = 0x14,      },
-	.devcs = { [0] = {GPIOC, 13}, [1] = {GPIOC, 15}, [2] = {GPIOC, 2}, [3] = {GPIOD, 7},},
+    .devid = {
+        [0] = DEV_SPIDEV_IMU_GYRO_L3GD20,
+        [1] = DEV_SPIDEV_IMU_ACCEL_MAG_LSM303D,
+        [2] = DEV_SPIDEV_IMU_MPU6000,
+        [3] = DEV_SPIDEV_IMU_BARO_MS5611,
+    },
+	.devcs = {
+        [0] = {GPIOC, 13},
+        [1] = {GPIOC, 15},
+        [2] = {GPIOC, 2},
+        [3] = {GPIOD, 7},
+    },
 };
 
 uart_dev_t *dstdout;

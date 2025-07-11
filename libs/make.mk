@@ -4,6 +4,8 @@ FR_CSOURCES   +=  libs/device/dnode.c
 FR_CSOURCES   +=  libs/device/serial.c
 FR_CSOURCES   +=  libs/device/i2c_master.c
 FR_CSOURCES   +=  libs/device/spi.c
+FR_CPPSOURCES +=  libs/device/spi.cpp
+FR_CPPSOURCES +=  libs/device/ri2c.cpp
 
 ifeq (${CONFIG_MK_COMPILER},gcc)
 FR_CSOURCES   +=  libs/noneuse_syscall.c

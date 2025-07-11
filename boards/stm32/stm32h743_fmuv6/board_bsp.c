@@ -90,9 +90,16 @@ struct up_spi_dev_s sensor_spi_dev =
     .priority_dmatx = 5,
     .enable_dmarx = true,
     .enable_dmatx = true,
-	/*           BMI055-ACC   BMI-055 GYRO            ICM-42688 */
-    .devid = { [0] = 0x11,        [1] = 0x12,        [2] = 0x13,        },
-	.devcs = { [0] = {GPIOC, 15}, [1] = {GPIOC, 14}, [2] = {GPIOC, 13}, },
+    .devid = { 
+        [0] = DEV_SPIDEV_IMU_ACCEL_BMI055,
+        [1] = DEV_SPIDEV_IMU_GYRO_BMI055,
+        [2] = DEV_SPIDEV_IMU_ICM42688P,
+    },
+	.devcs = {
+        [0] = {GPIOC, 15},
+        [1] = {GPIOC, 14},
+        [2] = {GPIOC, 13},
+    },
 };
 
 /**************
