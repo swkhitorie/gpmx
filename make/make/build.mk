@@ -194,11 +194,10 @@ ${TARGET_DEST_FILENAME_BIN}: ${TARGET_DEST_ROOTDIR} ${TARGET_SRC_FILENAME_EXE} $
 	$(call MK_ECHO,Generating standard binary image)
 	$(call MK_TC_GENBIN,"${TARGET_SRC_FILENAME_EXE}","${TARGET_DEST_FILENAME_BIN}")
 
-# TARGET_BIN_MDK := ${SDK_ROOTDIR}/build/mdk/gpilot-v2/output/gpilot-v2.bin
 #
 # internal secondary targets
 #
-.SECONDARY: generatemk build postbuild clean distclean program debug
+.SECONDARY: generatemk build postbuild clean distclean program
 
 FORCE:
 
@@ -209,7 +208,7 @@ prebuild: ${TARGET_ROOTDIR} ${ASMOPTS_FILE} ${COPTS_FILE} ${LOPTS_FILE}
 build: ${TARGET_SRC_FILENAME_EXE}
 
 # apply default configuration target
-postbuild: ${TARGET_POSTBUILD} #${OZONE_PROJ}
+postbuild: ${TARGET_POSTBUILD}
 
 #
 # exported targets
@@ -227,18 +226,6 @@ distclean:
 program: ${TARGET_POSTBUILD}
 	$(call MK_ECHO,Programming image)
 	$(call MK_FWPROGRAM,@${TC_OPENOCD_PATH},${TC_OPENOCD_DEBUG_CFG},${TC_OPENOCD_CHIP_CFG},${TARGET_DEST_FILENAME_BIN},${PROJ_OPENOCD_LOAD_ADDR})
-
-upgrade: ${TARGET_POSTBUILD}
-ifeq (${MOD_FWUPG},)
-	$(call MK_ECHO,Upgrading image)
-	$(call MK_FWUPGRADE,${TARGET_DEST_FILENAME_UPG},${PROJ_BOARD_COM},${PROJ_BOARD_COMSPEED})
-else
-	$(call MK_ECHO,Upgrading off for this target)
-endif
-
-debug: ${OZONE_PROJ}
-	$(call MK_ECHO,Starting Ozone debugger)
-	${DBG_OZONE_EXE} ${OZONE_PROJ}
 
 rebuild:
 	${MAKE} clean
