@@ -7,7 +7,7 @@
 #define P2P_REQUEST_CONNECT_ARRAYLEN     (23)
 #define P2P_REQUEST_ALLOW_ARRAYLEN       (41)
 
-#define P2P_CONNECT_VERIFY_ARRAYLEN     (17)
+#define P2P_CONNECT_VERIFY_ARRAYLEN     (20)
 #define P2P_CONNECT_RESULT_ARRAYLEN     (18)
 
 typedef struct __req_connect {
@@ -30,14 +30,16 @@ typedef struct __connect_verify {
     uint8_t typid;            // 0x24
     uint8_t down_freq_idx;    // Sender -> Receiver
     uint8_t up_freq_idx;      // Receiver -> Sender
+    int16_t rssi;             // rssi from sender -> up rssi
+    int8_t snr;               // snr from sender -> up snr
     uint32_t seq;
     uint32_t rcv_auth_key;
 } connect_verify_t;
 
 typedef struct __connect_result {
     uint8_t typid;            // 0x22
-    int16_t rssi;
-    int8_t snr;
+    int16_t rssi;             // rssi from receiver -> down rssi
+    int8_t snr;               // snr from receiver -> down snr
     uint32_t seq;
     uint32_t snd_auth_key;
 } connect_ret_t;

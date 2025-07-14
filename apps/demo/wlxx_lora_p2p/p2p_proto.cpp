@@ -105,13 +105,15 @@ int encode_req_allow(uint8_t *p, req_allow_t *req_allow)
 int decode_connect_verify(rtcm_t *rtcm, connect_verify_t *con_verify)
 {
     int ret = 1;
-    int payload_len = 11;
+    int payload_len = 14;
 
     int typid = getbitu(rtcm->buff, 24, 8);
     con_verify->down_freq_idx = getbitu(rtcm->buff, 32, 8);
     con_verify->up_freq_idx = getbitu(rtcm->buff, 40, 8);
-    con_verify->seq = getbitu(rtcm->buff, 48, 32);
-    con_verify->rcv_auth_key = getbitu(rtcm->buff, 80, 32);
+    con_verify->rssi = getbits(rtcm->buff, 48, 16);
+    con_verify->snr = getbits(rtcm->buff, 64, 8);
+    con_verify->seq = getbitu(rtcm->buff, 72, 32);
+    con_verify->rcv_auth_key = getbitu(rtcm->buff, 104, 32);
     con_verify->typid = typid;
 
     if (typid == 0x24 && rtcm->len == (payload_len+3)) {
@@ -123,7 +125,7 @@ int decode_connect_verify(rtcm_t *rtcm, connect_verify_t *con_verify)
 
 int encode_connect_verify(uint8_t *p, connect_verify_t *con_verify)
 {
-    int payload_len = 11;
+    int payload_len = 14;
 
     p[0] = RTCM3PREAMB;
     p[1] = 0x00;
@@ -132,10 +134,12 @@ int encode_connect_verify(uint8_t *p, connect_verify_t *con_verify)
     setbitu(&p[0], 24, 8, 0x24);  // typeid
     setbitu(&p[0], 32, 8, con_verify->down_freq_idx);
     setbitu(&p[0], 40, 8, con_verify->up_freq_idx);
-    setbitu(&p[0], 48, 32, con_verify->seq);
-    setbitu(&p[0], 80, 32, con_verify->rcv_auth_key);
+    setbits(&p[0], 48, 16, con_verify->rssi);
+    setbits(&p[0], 64, 8, con_verify->snr);
+    setbitu(&p[0], 72, 32, con_verify->seq);
+    setbitu(&p[0], 104, 32, con_verify->rcv_auth_key);
 
-    setbitu(&p[0], 112, 24, 
+    setbitu(&p[0], 136, 24, 
         rtk_crc24q(&p[0], payload_len+3));
 
     return payload_len + 6;

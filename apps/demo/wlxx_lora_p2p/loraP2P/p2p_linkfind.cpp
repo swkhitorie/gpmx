@@ -25,13 +25,13 @@ static void p2p_linkfind_recv(p2p_obj_t *obj)
         break;
     case 0x02: {
             if (p2p_is_tx_done(obj)) {
-                while (Radio.GetStatus() != RF_IDLE);
+                p2p_wait_to_idle(obj);
 
                 rb_reset(&obj->rf_rxbuf);
-                Radio.Rx(0);
+                p2p_rx(obj, 0);
+
                 obj->sub_state = 0x03;
 
-                P2P_DEBUG("P2P Wait Link-Allow\n");
             }
         }
         break;
@@ -46,13 +46,17 @@ static void p2p_linkfind_recv(p2p_obj_t *obj)
                         if (obj->rf_rtcm.nbyte >= 3 && 
                             obj->rf_rtcm.len != (P2P_REQUEST_ALLOW_ARRAYLEN-3)) {
                             memset(&obj->rf_rtcm, 0, sizeof(rtcm_t));
+
                             P2P_DEBUG("RTCM Len ERROR in Allow\n");
+
                         }
                         break;
                     }
                 case -3: {
                         memset(&obj->rf_rtcm, 0, sizeof(rtcm_t));
+
                         P2P_DEBUG("CRC ERROR in Allow\n");
+
                         break;
                     }
                 case 0:  {
@@ -83,9 +87,13 @@ static void p2p_linkfind_recv(p2p_obj_t *obj)
                             p2p_state_to_link_established(obj);
                             return;
                         } else if (ret == 1) {
+
                             // P2P_DEBUG("Allow ERROR %d %d\n", ret, f_reqallow.typid);
+
                         } else if (ret == 0) {
+
                             // P2P_DEBUG("Allow Rcv Id Error\n");
+
                         }
                         memset(&obj->rf_rtcm, 0, sizeof(rtcm_t));
                         break;
@@ -128,13 +136,17 @@ static void p2p_linkfind_send(p2p_obj_t *obj)
                 case -2: {
                         if (obj->rf_rtcm.nbyte >= 3 && 
                             obj->rf_rtcm.len != (P2P_REQUEST_CONNECT_ARRAYLEN-3)) {
+
                             P2P_DEBUG("RTCM Len ERROR in Req\n");
+
                             memset(&obj->rf_rtcm, 0, sizeof(rtcm_t));
                         }
                         break;
                     }
                 case -3: {
+
                         P2P_DEBUG("RTCM CRC ERROR in Req\n");
+
                         memset(&obj->rf_rtcm, 0, sizeof(rtcm_t));
                         break;
                     }
@@ -144,7 +156,9 @@ static void p2p_linkfind_send(p2p_obj_t *obj)
                             if (obj->isbond) {
                                 if (!util_id_compare(&obj->id.uid_obj[0], &f_reqconnect.rcv_id[0])) {
                                     memset(&obj->rf_rtcm, 0, sizeof(rtcm_t));
+
                                     P2P_DEBUG("Rcv-ID wrong \r\n");
+
                                     return;
                                 } else {
                                     obj->id.rand_key_obj = f_reqconnect.rcv_key;
@@ -157,6 +171,7 @@ static void p2p_linkfind_send(p2p_obj_t *obj)
                                 obj->isbond = true;
 
                                 P2P_DEBUG("Rcv-Key %x %x\r\n", obj->id.rand_key_obj, obj->id.auth_key_obj);
+
                             }
 
                             obj->sub_state = 0x02;
@@ -166,6 +181,7 @@ static void p2p_linkfind_send(p2p_obj_t *obj)
                                 *((uint32_t *)&f_reqconnect.rcv_id[0]),
                                 *((uint32_t *)&f_reqconnect.rcv_id[4]),
                                 *((uint32_t *)&f_reqconnect.rcv_id[8]));
+
                         }
                         break;
                     }
@@ -182,14 +198,17 @@ static void p2p_linkfind_send(p2p_obj_t *obj)
             // send REQUEST_ALLOW
             f_reqallow.rcv_key = obj->id.rand_key_obj;
             f_reqallow.snd_key = obj->id.rand_key_board;
-            f_reqallow.down_freq_idx = obj->channelgrp.fdown_idx;
+            if (obj->status.seq > 0 && obj->p2p_mode == P2P_RAWACK_FHSS) {
+                f_reqallow.down_freq_idx = obj->channelgrp.down_freq_idx;
+            } else {
+                f_reqallow.down_freq_idx = obj->channelgrp.fdown_idx;
+            }
             f_reqallow.up_freq_idx = obj->channelgrp.fup_idx;
             util_id_set_to_array(&f_reqallow.snd_id[0], &obj->id.uid_board[0]);
             util_id_set_to_array(&f_reqallow.rcv_id[0], &obj->id.uid_obj[0]);
             rsz = encode_req_allow(&obj->rf_rtcm.buff[0], &f_reqallow);
 
-            Radio.Standby();
-            while (Radio.GetStatus() != RF_IDLE);
+            p2p_standby(obj);
 
             p2p_send(obj, &obj->rf_rtcm.buff[0], rsz);
 
@@ -198,9 +217,14 @@ static void p2p_linkfind_send(p2p_obj_t *obj)
         break;
     case 0x03: {
             if (p2p_is_tx_done(obj)) {
-                while (Radio.GetStatus() != RF_IDLE);
+                p2p_wait_to_idle(obj);
+
                 // switch to down channel, and ready
-                obj->channelgrp.current.freq = obj->channelgrp.downlist[obj->channelgrp.fdown_idx].freq;
+                if (obj->status.seq > 0 && obj->p2p_mode == P2P_RAWACK_FHSS) {
+                    obj->channelgrp.current.freq = obj->channelgrp.downlist[obj->channelgrp.down_freq_idx].freq;
+                } else {
+                    obj->channelgrp.current.freq = obj->channelgrp.downlist[obj->channelgrp.fdown_idx].freq;
+                }
 
                 P2P_DEBUG("Link-Find Completed \r\n");
 

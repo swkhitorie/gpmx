@@ -18,19 +18,22 @@
 
 #define P2P_VERSION_MAIN   (2)
 #define P2P_VERSION_SUB1   (1)
-#define P2P_VERSION_SUB2   (0)
+#define P2P_VERSION_SUB2   (2)
 
+/* p2p timestamp Interface, units in ms */
 #define P2P_TIMESTAMP_GET()        HAL_GetTick()
 
+/* p2p delay Interface, units in ms */
 #define P2P_TIME_DELAY(x)          HAL_Delay(x)
 
+/* p2p elapsed Interface, units in ms */
 #define P2P_ELAPSED_TIME(x)        board_elapsed_tick(x)
 
 /* include wait-connecting message TOA */
 #define P2P_WAIT_CONNECTING_TIMEOUT      (200)
 #define P2P_ACK_TIMEOUT                  (150)
 #define P2P_ACK_TIMEOUT_MAX_TRY_TIMES    (5)
-#define P2P_LINK_FAIL_TIMEOUT            (1500)
+#define P2P_LINK_FAIL_TIMEOUT            (1000)
 
 #define P2P_SEND_LBT_RSSI_THRESH         (-40)
 #define P2P_SEND_LBT_SENSE_TIME          (5)
@@ -55,6 +58,8 @@ typedef uint32_t (*authkey_generate)(uint32_t *uid, uint32_t key);
 typedef enum __region {
     LORA_REGION_EU868,           /* European band on 868MHz */
     LORA_REGION_US915,           /* North american band on 915MHz */
+
+    LORA_REGION_NUM,
 } region_t;
 
 typedef enum __p2p_role {
@@ -67,6 +72,8 @@ typedef enum __p2p_mode {
     P2P_RAW,
     P2P_RAWACK,
     P2P_RAWACK_FHSS,
+
+    P2P_MODE_NUM,
 } p2p_mode_t;
 
 typedef enum __p2p_state {
@@ -224,16 +231,9 @@ typedef struct __p2p_obj {
 extern "C" {
 #endif
 
-bool p2p_is_tx_done(p2p_obj_t *obj);
-
-int p2p_send(p2p_obj_t *obj, uint8_t *buffer, uint8_t size);
-
-int p2p_lbt_send(p2p_obj_t *obj, uint8_t *buffer, uint8_t size, 
-    int16_t rssiThresh, uint16_t unitms, uint8_t continonousTimes, uint32_t totalTimes);
-
-int p2p_cad_send(p2p_obj_t *obj, uint8_t *buffer, uint8_t size, 
-    uint16_t unitms, uint8_t continonousTimes, uint32_t totalTimes);
-
+/************************
+ * P2P Common Function
+ ************************/
 void p2p_objcallback_set(p2p_obj_t *obj);
 
 void p2p_setup(p2p_obj_t *obj, p2p_role_t role, p2p_mode_t mode,
@@ -241,6 +241,24 @@ void p2p_setup(p2p_obj_t *obj, p2p_role_t role, p2p_mode_t mode,
     uint32_t *id, uint32_t id_key, uint16_t fcl_bytes);
 
 void p2p_process(p2p_obj_t *obj);
+
+uint8_t p2p_channel_idx(p2p_obj_t *obj, uint32_t freq);
+
+void p2p_channelstate_reset(p2p_obj_t *obj);
+
+uint8_t p2p_downchannelnext(p2p_obj_t *obj, int16_t rssi, int8_t snr);
+
+uint8_t p2p_upchannelnext(p2p_obj_t *obj);
+
+void util_id_set_to_uid(uint32_t *dst, uint8_t *src);
+void util_id_set_to_array(uint8_t *dst, uint32_t *src);
+bool util_id_compare(uint32_t *a, uint8_t *b);
+bool util_id_empty(uint32_t *uid);
+int fcl_cal(p2p_obj_t *obj, int verify_sz);
+void fcl_sndbytes(p2p_obj_t *obj);
+bool p2p_ischannelbusy(p2p_obj_t *obj);
+void p2p_channel_cfg(channel_cfg_t *channel, uint32_t freq,
+        uint8_t bw, uint8_t sf, uint8_t cr, uint8_t power);
 
 /************************
  * SubG Running Mode  
@@ -257,28 +275,31 @@ void p2p_raw_ack_process(p2p_obj_t *obj);
 
 void p2p_raw_ackfhss_process(p2p_obj_t *obj);
 
-
 /************************
- * P2P module Function 
+ * P2P Interface
  ************************/
-void util_id_set_to_uid(uint32_t *dst, uint8_t *src);
-void util_id_set_to_array(uint8_t *dst, uint32_t *src);
-bool util_id_compare(uint32_t *a, uint8_t *b);
-bool util_id_empty(uint32_t *uid);
-int fcl_cal(p2p_obj_t *obj, int verify_sz);
-void fcl_sndbytes(p2p_obj_t *obj);
+void p2p_if_init(p2p_obj_t *obj, channel_cfg_t *channel);
 
-uint8_t p2p_channel_idx(p2p_obj_t *obj, uint32_t freq);
+void p2p_rx(p2p_obj_t *obj, uint32_t timeout);
 
-void p2p_radio_cfg(p2p_obj_t *obj, channel_cfg_t *channel);
+void p2p_standby(p2p_obj_t *obj);
 
-void p2p_channel_cfg(channel_cfg_t *channel, uint32_t freq,
-        uint8_t bw, uint8_t sf, uint8_t cr, uint8_t power);
+void p2p_setchannel(p2p_obj_t *obj, uint32_t freq);
+
+void p2p_wait_to_idle(p2p_obj_t *obj);
+
+bool p2p_is_tx_done(p2p_obj_t *obj);
+
+int p2p_send(p2p_obj_t *obj, uint8_t *buffer, uint8_t size);
+
+int p2p_lbt_send(p2p_obj_t *obj, uint8_t *buffer, uint8_t size, 
+    int16_t rssiThresh, uint16_t unitms, uint8_t continonousTimes, uint32_t totalTimes);
+
+int p2p_cad_send(p2p_obj_t *obj, uint8_t *buffer, uint8_t size, 
+    uint16_t unitms, uint8_t continonousTimes, uint32_t totalTimes);
 
 /* LBT(CAD) method: Channel Activity Detect */
 void p2p_start_cad(p2p_obj_t *obj);
-
-bool p2p_ischannelbusy(p2p_obj_t *obj);
 
 bool p2p_detectchannelfree(p2p_obj_t *obj, uint32_t freq, uint32_t timeout);
 
@@ -292,11 +313,6 @@ bool p2p_ischannelfree(p2p_obj_t *obj, uint32_t freq,
 bool p2p_scan_first_freechannel(p2p_obj_t *obj, int16_t rssiThresh, uint32_t unitScanTime,
     uint32_t freeContinuousTime, uint32_t totalScanTime);
 
-void p2p_channelstate_reset(p2p_obj_t *obj);
-
-uint8_t p2p_downchannelnext(p2p_obj_t *obj, int16_t rssi, int8_t snr);
-
-uint8_t p2p_upchannelnext(p2p_obj_t *obj);
 
 #ifdef __cplusplus
 }

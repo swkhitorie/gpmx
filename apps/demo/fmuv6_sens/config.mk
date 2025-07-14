@@ -1,5 +1,5 @@
 
-PROJ_NAME  :=  test_fmuv6_bsp
+PROJ_NAME  :=  fmuv6_sens
 PROJ_TC    :=  gae
 
 CONFIG_LINK_PRINTF_FLOAT:=y
@@ -69,8 +69,10 @@ PROJ_CDEFS += CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
 PROJ_CDEFS += CONFIG_BOARD_CRUSB_CDC_ACM_STDINOUT
 PROJ_CDEFS += CONFIG_CRUSB_CDC_TX_FIFO_ENABLE
 
-PROJ_CINCDIRS += apps/bsp_test/fmuv6_test/
-CPPSOURCES += apps/bsp_test/fmuv6_test/app_main.cpp
-CSOURCES += apps/bsp_test/fmuv6_test/icm42688_test.c
-CPPSOURCES += apps/bsp_test/fmuv6_test/IST8310.cpp
+APP_PROJ_DIR = apps/demo/fmuv6_sens
+
+PROJ_CINCDIRS += ${APP_PROJ_DIR}
+CPPSOURCES += ${APP_PROJ_DIR}/app_main.cpp
+CSOURCES += ${APP_PROJ_DIR}/icm42688_test.c
+CPPSOURCES += ${APP_PROJ_DIR}/IST8310.cpp
 

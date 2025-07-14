@@ -37,14 +37,14 @@ void p2p_raw_sender_process(p2p_obj_t *obj)
 void p2p_raw_receiver_process(p2p_obj_t *obj)
 {
     size_t rsz;
-    char tmp[50];
     switch (obj->sub_state) {
     case 0x11: {
             rsz = rb_read(&obj->rf_rxbuf, &obj->rf_read[0], obj->channelgrp.max_payload);
             if (rsz > 0) { 
                 (*obj->hp)(&obj->rf_read[0], rsz);
-                sprintf(tmp, "\r\n rssi: %d \r\n", obj->channelgrp.down_rssi);
-                // (*obj->hp)((uint8_t *)tmp, strlen(tmp));
+
+                P2P_DEBUG("rssi: %d\r\n", obj->channelgrp.down_rssi);
+
             }
             break;
         }

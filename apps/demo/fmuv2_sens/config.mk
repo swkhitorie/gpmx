@@ -1,5 +1,5 @@
 
-PROJ_NAME  :=  test_fmuv2_bsp
+PROJ_NAME  :=  fmuv2_sens
 PROJ_TC    :=  gae
 
 CONFIG_LINK_PRINTF_FLOAT:=y
@@ -75,7 +75,9 @@ PROJ_CDEFS += CONFIG_BOARD_CRUSB_CDC_ACM_STDINOUT
 PROJ_CDEFS += CONFIG_CRUSB_CDC_TX_FIFO_ENABLE
 PROJ_CDEFS += CONFIG_FMU_V2_USB_FS
 
-PROJ_CINCDIRS += apps/bsp_test/fmuv2_test/
-CPPSOURCES += apps/bsp_test/fmuv2_test/app_main.cpp
-CSOURCES += apps/bsp_test/fmuv2_test/l3gd20_test.c
+APP_PROJ_DIR = apps/demo/fmuv2_sens
+
+PROJ_CINCDIRS += ${APP_PROJ_DIR}
+CPPSOURCES += ${APP_PROJ_DIR}/app_main.cpp
+CSOURCES += ${APP_PROJ_DIR}/l3gd20_test.c
 

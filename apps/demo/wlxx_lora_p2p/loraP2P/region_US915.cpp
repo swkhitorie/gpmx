@@ -62,20 +62,38 @@ uint8_t region_us915_downchannelnext(p2p_obj_t *obj, int16_t rssi, int8_t snr)
     int cnt_down = 0;
     if (rssi < -90 || snr < -6) {
         obj->channelgrp.bad_list[8+obj->channelgrp.down_freq_idx] = 1;
+
+        P2P_DEBUG("fhss: down channel %d bad\r\n", obj->channelgrp.down_freq_idx);
+
     }
 
     do {
         obj->channelgrp.down_freq_idx = rand_lcg_seed_next(obj->channelgrp.downlen);
+        if (obj->channelgrp.downlist[obj->channelgrp.down_freq_idx].freq < 900) {
+
+            P2P_DEBUG("invalid freq: %d,%d\r\n", 
+                obj->channelgrp.down_freq_idx,
+                obj->channelgrp.downlist[obj->channelgrp.down_freq_idx].freq);
+
+        }
+
         cnt_down++;
         if (cnt_down >= obj->channelgrp.downlen) {
-            obj->channelgrp.down_freq_idx = rand_lcg_seed_next(0);
             region_us915_channelstate_reset(obj);
+            obj->channelgrp.down_freq_idx = rand_lcg_seed_next(obj->channelgrp.downlen);
+            if (obj->channelgrp.downlist[obj->channelgrp.down_freq_idx].freq < 900) {
+
+                P2P_DEBUG("invalid freq: %d,%d\r\n", 
+                    obj->channelgrp.down_freq_idx,
+                    obj->channelgrp.downlist[obj->channelgrp.down_freq_idx].freq);
+
+            }
+
             P2P_DEBUG("down channel all bad, reset \r\n");
+
             break;
         }
-        if (1 == obj->channelgrp.bad_list[8+obj->channelgrp.down_freq_idx]) {
-            obj->channelgrp.down_freq_idx = rand_lcg_seed_next(obj->channelgrp.downlen);
-        } else {
+        if (0 == obj->channelgrp.bad_list[8+obj->channelgrp.down_freq_idx]) {
             break;
         }
     } while(1);

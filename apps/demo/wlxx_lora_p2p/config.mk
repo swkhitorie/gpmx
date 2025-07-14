@@ -1,5 +1,5 @@
 
-PROJ_NAME  :=  nucleo_wl55jc_p2p
+PROJ_NAME  :=  lora_p2p_wlxx
 PROJ_TC    :=  gae
 
 CONFIG_LINK_PRINTF_FLOAT:=n
@@ -10,7 +10,7 @@ TARGET_POSTBUILD := ${TARGET_DEST_FILENAME_BIN}
 
 # board configuration
 MOD_ARCH = m4
-include ${SDK_ROOTDIR}/boards/stm32/stm32wle5_e77_900mbl/make.mk
+include ${SDK_ROOTDIR}/boards/stm32/stm32wl55_nucleo_wl55jc/make.mk
 #stm32wl55_nucleo_wl55jc
 #stm32wle5_e77_900mbl
 
@@ -22,18 +22,25 @@ CONFIG_MK_USE_FRMEM_METHOD=4
 CONFIG_MK_USE_FR_POSIX=n
 CONFIG_MK_USE_FS_FATFS=n
 CONFIG_MK_USE_LIB_CPP=n
-CONFIG_MK_USE_UORB=n
-CONFIG_MK_USE_HRT=n
 
 CONFIG_MK_USE_CRUSB=n
 CONFIG_MK_USE_CRUSB_CDC=n
 CONFIG_MK_CRUSB_IP=none
+
+CONFIG_MK_USE_PX4_TASKS=n
+CONFIG_MK_USE_PX4_HRT=n
+CONFIG_MK_USE_PX4_UORB=n
+CONFIG_MK_USE_PX4_WORKQUEUE=n
+CONFIG_MK_USE_PX4_LOG=n
+CONFIG_MK_USE_PX4_MODULE=n
+CONFIG_MK_USE_PX4_PERF_CNTER=n
 
 include ${SDK_ROOTDIR}/sched/make.mk
 include ${SDK_ROOTDIR}/mm/make.mk
 include ${SDK_ROOTDIR}/libs/make.mk
 include ${SDK_ROOTDIR}/include/make.mk
 include ${SDK_ROOTDIR}/usb/make.mk
+include ${SDK_ROOTDIR}/px4/make.mk
 CSOURCES      += ${FR_CSOURCES}
 CPPSOURCES    += ${FR_CPPSOURCES}
 PROJ_CINCDIRS += ${FR_CINCDIRS}
@@ -61,27 +68,31 @@ PROJ_CINCDIRS += ${FR_CINCDIRS}
 #####################################
 PROJ_CDEFS += CONFIG_BOARD_COM_STDINOUT
 
-PROJ_CINCDIRS += apps/bsp_test/wlxx_lora_p2p/
-PROJ_CINCDIRS += apps/bsp_test/wlxx_lora_p2p/loraP2P/
-PROJ_CINCDIRS += apps/bsp_test/wlxx_lora_p2p/rtklib/
+APP_PROJ_DIR = apps/demo/wlxx_lora_p2p
 
-CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/app_main.cpp
-CSOURCES += apps/bsp_test/wlxx_lora_p2p/ringbuffer.c
-CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/p2p_proto.cpp
-CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/rand_lcg_series.cpp
+PROJ_CINCDIRS += ${APP_PROJ_DIR}
+PROJ_CINCDIRS += ${APP_PROJ_DIR}/loraP2P/
+PROJ_CINCDIRS += ${APP_PROJ_DIR}/rtklib/
 
-CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/loraP2P/region_EU868.cpp
-CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/loraP2P/region_US915.cpp
-CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/loraP2P/p2p_common.cpp
-CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/loraP2P/p2p_modulefunc.cpp
+CPPSOURCES += ${APP_PROJ_DIR}/app_main.cpp
+CPPSOURCES += ${APP_PROJ_DIR}/ringbuffer.cpp
+CPPSOURCES += ${APP_PROJ_DIR}/p2p_proto.cpp
+CPPSOURCES += ${APP_PROJ_DIR}/rand_lcg_series.cpp
 
-CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/loraP2P/p2p_state.cpp
-CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/loraP2P/p2p_linkfind.cpp
-CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/loraP2P/p2p_raw.cpp
-CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/loraP2P/p2p_rawack.cpp
-CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/loraP2P/p2p_rawack_fhss.cpp
+CPPSOURCES += ${APP_PROJ_DIR}/rtklib/rtcm3.cpp
+CPPSOURCES += ${APP_PROJ_DIR}/rtklib/rtkcmn.cpp
+CPPSOURCES += ${APP_PROJ_DIR}/rtklib/rtk_basemsg.cpp
 
-CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/rtklib/rtcm3.cpp
-CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/rtklib/rtkcmn.cpp
-CPPSOURCES += apps/bsp_test/wlxx_lora_p2p/rtklib/rtk_basemsg.cpp
+CPPSOURCES += ${APP_PROJ_DIR}/loraP2P/region_EU868.cpp
+CPPSOURCES += ${APP_PROJ_DIR}/loraP2P/region_US915.cpp
+CPPSOURCES += ${APP_PROJ_DIR}/loraP2P/p2p_common.cpp
+CPPSOURCES += ${APP_PROJ_DIR}/loraP2P/p2p_if.cpp
+
+CPPSOURCES += ${APP_PROJ_DIR}/loraP2P/p2p_state.cpp
+CPPSOURCES += ${APP_PROJ_DIR}/loraP2P/p2p_linkfind.cpp
+CPPSOURCES += ${APP_PROJ_DIR}/loraP2P/p2p_raw.cpp
+CPPSOURCES += ${APP_PROJ_DIR}/loraP2P/p2p_rawack.cpp
+CPPSOURCES += ${APP_PROJ_DIR}/loraP2P/p2p_rawack_fhss.cpp
+
+
 

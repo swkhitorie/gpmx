@@ -12,16 +12,16 @@
 #define EU868_DEFAULT_TX_POWER                      16
 
 /* LoRaMac default down channel 1 */
-#define EU868_PING_SLOT_CHANNEL_FREQ                869525000
+#define EU868_PING_SLOT_CHANNEL_FREQ                864525000  // loraWan:869525000
 
 /* LoRaMac default up channel 1 */
-#define EU868_LC1                                   868100000
+#define EU868_LC1                                   865100000  // loraWan LC1: 868100000
 
 /* LoRaMac default up channel 2 */
-#define EU868_LC2                                   868300000
+#define EU868_LC2                                   865300000  // loraWan LC2: 868300000
 
 /* LoRaMac default up channel 3 */
-#define EU868_LC3                                   868500000
+#define EU868_LC3                                   865500000  // loraWan LC3: 868500000
 
 struct __channel_grp;
 typedef struct __channel_grp channel_grp_t;

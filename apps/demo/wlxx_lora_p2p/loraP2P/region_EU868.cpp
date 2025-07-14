@@ -16,7 +16,7 @@ static uint8_t eu868_p2p_upchannel_idx = 0xff;
     7	    867.90	    125 kHz	    SF7-SF12	    4/5 - 4/8	≤1%
     8*	    868.80	    125 kHz	    SF7-SF12	    4/5 - 4/8	≤0.1%
     9*	    869.525	    125 kHz	    SF7-SF12	    4/5 - 4/8	≤10%
-    *注：信道8-9为特殊应用信道（如Class B信标）
+    *注：信道8-9为特殊应用信道(如Class B信标)
 
     下行链路频率 (MHz) - 网关→设备
     类型	中心频率	带宽 (BW)	扩频因子 (SF)	编码率 (CR)
@@ -52,15 +52,17 @@ void region_eu868_init_default(channel_grp_t *param)
     p2p_channel_cfg(&param->ch_list[1], EU868_LC2, 1, 6, 1, 16);
     p2p_channel_cfg(&param->ch_list[2], EU868_LC3, 1, 6, 1, 16);
 
+    // loraWan: 867.1 867.3 ~ 867.9
     // 867.1Mhz ~ 867.9Mhz, duty cycle < 1%
-    p2p_channel_cfg(&param->ch_list[3], 867100000, 1, 6, 1, 16);
-    p2p_channel_cfg(&param->ch_list[4], 867300000, 1, 6, 1, 16);
-    p2p_channel_cfg(&param->ch_list[5], 867500000, 1, 6, 1, 16);
-    p2p_channel_cfg(&param->ch_list[6], 867700000, 1, 6, 1, 16);
-    p2p_channel_cfg(&param->ch_list[7], 867900000, 1, 6, 1, 16);
+    p2p_channel_cfg(&param->ch_list[3], 866100000, 1, 6, 1, 16);
+    p2p_channel_cfg(&param->ch_list[4], 866300000, 1, 6, 1, 16);
+    p2p_channel_cfg(&param->ch_list[5], 866500000, 1, 6, 1, 16);
+    p2p_channel_cfg(&param->ch_list[6], 866700000, 1, 6, 1, 16);
+    p2p_channel_cfg(&param->ch_list[7], 866900000, 1, 6, 1, 16);
 
+    // loraWan: 868.8
     //Class B channel, duty cycle < 0.1%
-    p2p_channel_cfg(&param->ch_list[8], 868800000, 1, 6, 1, 16);
+    p2p_channel_cfg(&param->ch_list[8], 863800000, 1, 6, 1, 16);
 
     param->list_num = 9;
 
@@ -85,22 +87,41 @@ void region_eu868_channelstate_reset(p2p_obj_t *obj)
 uint8_t region_eu868_downchannelnext(p2p_obj_t *obj, int16_t rssi, int8_t snr)
 {
     int cnt_down = 0;
-    if (rssi < -90 || snr < -4) {
+    if (rssi < -95 || snr < -5) {
         obj->channelgrp.bad_list[3+obj->channelgrp.down_freq_idx] = 1;
+
+        P2P_DEBUG("fhss: down channel %d bad\r\n", obj->channelgrp.down_freq_idx);
+
     }
 
     do {
         obj->channelgrp.down_freq_idx = rand_lcg_seed_next(obj->channelgrp.downlen);
+        if (obj->channelgrp.downlist[obj->channelgrp.down_freq_idx].freq < 800) {
+
+            P2P_DEBUG("invalid freq: %d,%d\r\n", 
+                obj->channelgrp.down_freq_idx,
+                obj->channelgrp.downlist[obj->channelgrp.down_freq_idx].freq);
+
+        }
         cnt_down++;
+
         if (cnt_down >= obj->channelgrp.downlen) {
-            obj->channelgrp.down_freq_idx = rand_lcg_seed_next(0);
             region_eu868_channelstate_reset(obj);
-            P2P_DEBUG("down channel all bad, reset \r\n");
+            obj->channelgrp.down_freq_idx = rand_lcg_seed_next(obj->channelgrp.downlen);
+            if (obj->channelgrp.downlist[obj->channelgrp.down_freq_idx].freq < 800) {
+
+                P2P_DEBUG("invalid freq: %d,%d\r\n", 
+                    obj->channelgrp.down_freq_idx,
+                    obj->channelgrp.downlist[obj->channelgrp.down_freq_idx].freq);
+
+            }
+
+            P2P_DEBUG("fhss: down channel all bad, reset \r\n");
+
             break;
         }
-        if (1 == obj->channelgrp.bad_list[3+obj->channelgrp.down_freq_idx]) {
-            obj->channelgrp.down_freq_idx = rand_lcg_seed_next(obj->channelgrp.downlen);
-        } else {
+
+        if (0 == obj->channelgrp.bad_list[3+obj->channelgrp.down_freq_idx]) {
             break;
         }
     } while(1);

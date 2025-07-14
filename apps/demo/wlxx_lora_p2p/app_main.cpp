@@ -16,7 +16,6 @@ static uint32_t p2p_authkey_generate(uint32_t *uid, uint32_t key);
 
 static uint16_t p2p_fcl_bytes = P2P_FLOWCONTROL_BYTES_ONESEC;
 
-//2025/07/01-15:54:26, completed
 int main(int argc, char *argv[])
 {
     board_init();
@@ -52,10 +51,10 @@ int main(int argc, char *argv[])
         &obj_p2p, 
         role_board,
         P2P_RAWACK_FHSS,
-        LORA_REGION_US915, 
-        handle_forward, 
+        LORA_REGION_EU868,
+        handle_forward,
         handle_auth_key,
-        boardid, 
+        boardid,
         rand_key,
         p2p_fcl_bytes
     );

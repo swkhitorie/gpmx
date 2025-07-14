@@ -18,6 +18,8 @@ void p2p_raw_ack_sender_process(p2p_obj_t *obj)
             con_verify.rcv_auth_key = obj->id.auth_key_obj;
             con_verify.down_freq_idx = 0;
             con_verify.up_freq_idx = 0;
+            con_verify.rssi = obj->channelgrp.up_rssi;
+            con_verify.snr = obj->channelgrp.up_snr;
             rsz = encode_connect_verify(&obj->rf_read[0], &con_verify);
 
             ssize = fcl_cal(obj, rsz); //obj->channelgrp.max_payload;
@@ -38,7 +40,9 @@ void p2p_raw_ack_sender_process(p2p_obj_t *obj)
                         P2P_SEND_LBT_SENSE_TIME, 
                         P2P_SEND_LBT_FREECNT_TIME,
                         P2P_SEND_LBT_TOTAL_TIME) == RADIO_STATUS_ERROR) {
+
                     P2P_DEBUG("Channel is too busy to send, please check Environment\r\n");
+
                     return;
                 }
                 // p2p_send(obj, &obj->rf_read[0], rsz+rsz2);
@@ -49,9 +53,11 @@ void p2p_raw_ack_sender_process(p2p_obj_t *obj)
         }
     case 0x12: {
             if (p2p_is_tx_done(obj)) {
-                while (Radio.GetStatus() != RF_IDLE);
+                p2p_wait_to_idle(obj);
+
                 rb_reset(&obj->rf_rxbuf);
-                Radio.Rx(0);
+
+                p2p_rx(obj, 0);
 
                 memset(&obj->rf_read, 0, 255);
                 obj->status.seq++;
@@ -75,13 +81,17 @@ void p2p_raw_ack_sender_process(p2p_obj_t *obj)
                         if (obj->rf_rtcm.nbyte >= 3 && 
                             obj->rf_rtcm.len != (P2P_CONNECT_RESULT_ARRAYLEN-3)) {
                             memset(&obj->rf_rtcm, 0, sizeof(rtcm_t));
+
                             P2P_DEBUG("RTCM Len ERROR in Result\n");
+
                         }
                         break;
                     }
                 case -3: {
                         memset(&obj->rf_rtcm, 0, sizeof(rtcm_t));
+
                         P2P_DEBUG("RTCM CRC ERROR in Result \n");
+
                         break;
                     }
                 case 0: {
@@ -92,16 +102,23 @@ void p2p_raw_ack_sender_process(p2p_obj_t *obj)
                             if ((obj->status.seq-con_ret.seq) == 1) {
                                 obj->status.nbytes_actual_snd += obj->status.nbytes_send;
                             } else {
+
                                 P2P_DEBUG("Unknown seq error\n");
+
                             }
 
+                            obj->channelgrp.down_rssi = con_ret.rssi;
+                            obj->channelgrp.down_snr = con_ret.snr;
                             obj->ack_timeout_cnter = 0;
                             obj->status.ack_completed_time = P2P_TIMESTAMP_GET() - obj->status.ack_timestamp;
                             obj->status.ack_wait_time = P2P_TIMESTAMP_GET() - obj->status.ack_wait_timestamp;
-                            P2P_DEBUG("Ack-tick:%d, urssi:%d, drssi:%d, usnr:%d, dsnr:%d, snd:%d, lost:%d, acktime:%d, ackwait:%d, lbt time:%d\r\n",
+
+                            P2P_DEBUG("d:(%03d.%03d) Ack:%d, urssi:%d, drssi:%d, usnr:%d, dsnr:%d, snd:%d, lost:%d, acktime:%d, ackwait:%d, lbt time:%d\r\n",
+                                obj->channelgrp.current.freq/1000000,
+                                (obj->channelgrp.current.freq/1000)%1000,
                                 con_ret.seq, 
-                                obj->channelgrp.up_rssi, con_ret.rssi,
-                                obj->channelgrp.up_snr, con_ret.snr,
+                                obj->channelgrp.up_rssi, obj->channelgrp.down_rssi,
+                                obj->channelgrp.up_snr, obj->channelgrp.down_snr,
                                 obj->status.nbytes_total_snd,
                                 obj->status.nbytes_total_snd-obj->status.nbytes_actual_snd,
                                 obj->status.ack_completed_time, obj->status.ack_wait_time,
@@ -113,10 +130,14 @@ void p2p_raw_ack_sender_process(p2p_obj_t *obj)
                             return;
 
                         } else if (ret == 1) {
+
                             // P2P_DEBUG("Allow ERROR %d %d\n", ret, f_reqallow.typid);
+
                         } else if (ret == 0) {
+
                             P2P_DEBUG("Ack AuthKey Error, %d %x %x\r\n", ret, 
                                 con_ret.snd_auth_key, obj->id.auth_key_board);
+
                         }
 
                         memset(&obj->rf_rtcm, 0, sizeof(rtcm_t));
@@ -131,6 +152,7 @@ void p2p_raw_ack_sender_process(p2p_obj_t *obj)
 
                 if (obj->ack_timeout_cnter > P2P_ACK_TIMEOUT_MAX_TRY_TIMES) {
                     obj->ack_timeout_cnter = 0;
+
                     P2P_DEBUG("Ack Link Error, Return to Find\r\n");
 
                     p2p_state_to_linkfind(obj);
@@ -146,8 +168,7 @@ void p2p_raw_ack_sender_process(p2p_obj_t *obj)
         }
         break;
     case 0x14: {
-            Radio.Standby();
-            while (Radio.GetStatus() != RF_IDLE);
+            p2p_standby(obj);
             obj->sub_state = 0x11;
         }
         break;
@@ -180,13 +201,17 @@ void p2p_raw_ack_receiver_process(p2p_obj_t *obj)
                         if (obj->rf_rtcm.nbyte >= 3 && 
                             obj->rf_rtcm.len != (P2P_CONNECT_VERIFY_ARRAYLEN-3)) {
                             memset(&obj->rf_rtcm, 0, sizeof(rtcm_t));
+
                             P2P_DEBUG("RTCM Len ERROR in Verify\n");
+
                         }
                         break;
                     }
                 case -3: {
                         memset(&obj->rf_rtcm, 0, sizeof(rtcm_t));
+
                         P2P_DEBUG("RTCM CRC ERROR in Verify\n");
+
                         break;
                     }
                 case 0: {
@@ -194,23 +219,41 @@ void p2p_raw_ack_receiver_process(p2p_obj_t *obj)
                         if (ret == 0 && con_verify.rcv_auth_key == obj->id.auth_key_board) {
 
                             if (obj->status.seq == 0) {
+                                // the first pack received
                                 obj->status.seq_lst = con_verify.seq;
                             }
                             obj->status.seq = con_verify.seq;
                             if ((con_verify.seq - obj->status.seq_lst) > 0) {
+                                // pack lost
                                 obj->status.pack_lost += (con_verify.seq - obj->status.seq_lst) - 1;
+                            } else if ((con_verify.seq - obj->status.seq_lst) == 0) {
+                                // the first pack received, do nothing
+                            } else {
+
+                                P2P_DEBUG("Seq Reset \r\n");
+
+                                // wtf: restart sender, then seq need restart
+                                obj->status.seq_lst = con_verify.seq;
+                                obj->status.seq = con_verify.seq;
                             }
 
+                            obj->channelgrp.up_rssi = con_verify.rssi;
+                            obj->channelgrp.up_snr = con_verify.snr;
+                            obj->channelgrp.down_freq_idx = con_verify.down_freq_idx;
                             obj->status.rcv_ack_timestamp = P2P_TIMESTAMP_GET();
                             obj->sub_state = 0x12;
 
                             memset(&obj->rf_rtcm, 0, sizeof(rtcm_t));
                             return;
                         } else if (ret == 1) {
+
                             // P2P_DEBUG("Allow ERROR %d %d\n", ret, f_reqallow.typid);
+
                         } else if (ret == 0) {
+
                             P2P_DEBUG("Verify Auth-Key Error, %d %x %x\r\n", ret, 
                                 con_verify.rcv_auth_key, obj->id.auth_key_board);
+
                         }
 
                         memset(&obj->rf_rtcm, 0, sizeof(rtcm_t));
@@ -230,6 +273,7 @@ void p2p_raw_ack_receiver_process(p2p_obj_t *obj)
             if (rsz > 0) {
                 // use  high efficient usart-dma
                 (*obj->hp)(&obj->rf_read[0], rsz);
+                obj->status.nbytes_total_recv += rsz;
                 obj->sub_state = 0x13;
             }
         }
@@ -242,26 +286,33 @@ void p2p_raw_ack_receiver_process(p2p_obj_t *obj)
             con_ret.seq = obj->status.seq;
             rsz = encode_connect_result(&obj->rf_rtcm.buff[0], &con_ret);
 
-            Radio.Standby();
-            while (Radio.GetStatus() != RF_IDLE);
+            p2p_standby(obj);
 
             p2p_send(obj, &obj->rf_rtcm.buff[0], rsz);
 
             obj->sub_state = 0x14;
             obj->status.seq_lst = obj->status.seq;
 
-            P2P_DEBUG("Ack:%d, lost:%d, handle-time(lst):%d\r\n", 
-                obj->status.seq, obj->status.pack_lost,
+            P2P_DEBUG("d:(%03d.%03d) Ack:%d, urssi:%d, drssi:%d, usnr:%d, dsnr:%d, rcv:%d, lost:%d, ack-time(lst):%d\r\n", 
+                obj->channelgrp.current.freq/1000000,
+                (obj->channelgrp.current.freq/1000)%1000,
+                obj->status.seq, 
+                obj->channelgrp.up_rssi, obj->channelgrp.down_rssi,
+                obj->channelgrp.up_snr, obj->channelgrp.down_snr,
+                obj->status.nbytes_total_recv,
+                obj->status.pack_lost,
                 obj->status.rcv_ack_time);
+
         }
         break;
     case 0x14: {
             // wait CONNECTION_RESULT send completed
             if (p2p_is_tx_done(obj)) {
+                p2p_wait_to_idle(obj);
 
-                while (Radio.GetStatus() != RF_IDLE);
                 rb_reset(&obj->rf_rxbuf);
-                Radio.Rx(0);
+
+                p2p_rx(obj, 0);
 
                 obj->status.rcv_ack_time = P2P_TIMESTAMP_GET() - obj->status.rcv_ack_timestamp;
                 obj->sub_state = 0x11;

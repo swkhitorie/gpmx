@@ -101,6 +101,10 @@ TC_COPTS:=\
   -w -Wno-invalid-source-encoding \
   -w -Wno-writable-strings
 
+ifneq (${CONFIG_C_STANDARD},)
+TC_COPTS += -std=${CONFIG_C_STANDARD}
+endif
+
 TC_CPPOPTS:=\
   -c                    \
   -ffunction-sections   \
@@ -112,6 +116,10 @@ TC_CPPOPTS:=\
   -w -Wno-macro-redefined  \
   -w -Wno-invalid-source-encoding \
   -w -Wno-writable-strings
+
+ifneq (${CONFIG_CXX_STANDARD},)
+TC_CPPOPTS += -std=${CONFIG_CXX_STANDARD}
+endif
 
 TC_DBG_COPTS:=
   # -g          \
@@ -126,11 +134,14 @@ TC_LIBOPTS:=\
   -W --no-cond-mismatch     \
   -Wl,--gc-sections         \
   --data-sections           \
-  --specs=nano.specs        \
   -lc                       \
   -lm                       \
-  -lnosys                   
-  #-nostartfiles             
+  -lnosys
+  #-nostartfiles 
+
+ifneq (${CONFIG_LIB_NOT_USE_NANOLIB},y)
+TC_LIBOPTS += --specs=nano.specs 
+endif
 
 ifeq (${CONFIG_LINK_PRINTF_FLOAT},y)
 TC_LIBOPTS += -u _printf_float 
