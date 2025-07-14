@@ -1,5 +1,5 @@
 
-PROJ_NAME  :=  test_fatfs
+PROJ_NAME  :=  fatfs_test
 PROJ_TC    :=  gae
 
 CONFIG_LINK_PRINTF_FLOAT:=y
@@ -77,9 +77,9 @@ PROJ_CDEFS += CONFIG_BOARD_MMCSD_ENABLE
 PROJ_CDEFS += CONFIG_BOARD_MMCSD_FATFS_SUPPORT
 PROJ_CDEFS += CONFIG_BOARD_MMCSD_INFO_CHECK
 
-PROJ_CINCDIRS += apps/module_test/fatfs_test/
-CPPSOURCES += apps/module_test/fatfs_test/app_main.cpp
-CPPSOURCES += apps/module_test/fatfs_test/app_fatfs_test.cpp
+PROJ_CINCDIRS += apps/fatfs_test/
+CPPSOURCES += apps/fatfs_test/app_main.cpp
+CPPSOURCES += apps/fatfs_test/app_fatfs_test.cpp
 
 PROJ_CINCDIRS += apps/app_fcli/
 CSOURCES += apps/app_fcli/app_cli.c
