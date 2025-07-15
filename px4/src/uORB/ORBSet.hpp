@@ -1,19 +1,6 @@
-@###############################################
-@#
-@# EmPy template for generating uORBTopics.hpp file
-@# for logging purposes
-@#
-@###############################################
-@# Start of Template
-@#
-@# Context:
-@#  - msgs (List) list of all msg files
-@#  - multi_topics (List) list of all multi-topic names
-@#  - ids (List) list of all RTPS msg ids
-@###############################################
 /****************************************************************************
  *
- *   Copyright (C) 2020 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2015 Mark Charlebois. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -44,33 +31,116 @@
  *
  ****************************************************************************/
 
-@{
-msg_names = [mn.replace(".msg", "") for mn in msgs]
-msgs_count = len(msg_names)
-msg_names_all = list(set(msg_names + multi_topics)) # set() filters duplicates
-msg_names_all.sort()
-msgs_count_all = len(msg_names_all)
-}@
-
 #pragma once
 
-#include <stddef.h>
+class ORBSet
+{
+public:
+	struct Node {
+		struct Node *next;
+		const char *node_name;
+	};
 
-#include <uORB/uORB.h>
+	ORBSet() :
+		_top(nullptr),
+		_end(nullptr)
+	{ }
+	~ORBSet()
+	{
+		while (_top != nullptr) {
+			unlinkNext(_top);
 
-static constexpr size_t ORB_TOPICS_COUNT{@(msgs_count_all)};
-static constexpr size_t orb_topics_count() { return ORB_TOPICS_COUNT; }
+			if (_top->next == nullptr) {
+				free((void *)_top->node_name);
+				free(_top);
+				_top = nullptr;
+			}
+		}
+	}
+	void insert(const char *node_name)
+	{
+		Node **p;
 
-/*
- * Returns array of topics metadata
- */
-extern const struct orb_metadata *const *orb_get_topics() __EXPORT;
+		if (_top == nullptr) {
+			p = &_top;
 
-enum class ORB_ID : uint8_t {
-@[for idx, msg_name in enumerate(msg_names_all)]@
-	@(msg_name) = @(idx),
-@[end for]
-	INVALID
+		} else {
+			p = &_end->next;
+		}
+
+		*p = (Node *)malloc(sizeof(Node));
+
+		if (_end) {
+			_end = _end->next;
+
+		} else {
+			_end = _top;
+		}
+
+		_end->next = nullptr;
+		_end->node_name = strdup(node_name);
+	}
+
+	bool find(const char *node_name)
+	{
+		Node *p = _top;
+
+		while (p) {
+			if (strcmp(p->node_name, node_name) == 0) {
+				return true;
+			}
+
+			p = p->next;
+		}
+
+		return false;
+	}
+
+	bool erase(const char *node_name)
+	{
+		Node *p = _top;
+
+		if (_top && (strcmp(_top->node_name, node_name) == 0)) {
+			p = _top->next;
+			free((void *)_top->node_name);
+			free(_top);
+			_top = p;
+
+			if (_top == nullptr) {
+				_end = nullptr;
+			}
+
+			return true;
+		}
+
+		while (p->next) {
+			if (strcmp(p->next->node_name, node_name) == 0) {
+				unlinkNext(p);
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+private:
+
+	void unlinkNext(Node *a)
+	{
+		Node *b = a->next;
+
+		if (b != nullptr) {
+			if (_end == b) {
+				_end = a;
+			}
+
+			a->next = b->next;
+			free((void *)b->node_name);
+			free(b);
+		}
+	}
+
+	Node *_top;
+	Node *_end;
 };
 
-const struct orb_metadata *get_orb_meta(ORB_ID id);

@@ -35,7 +35,23 @@ endif # CONFIG_MK_USE_HRT
 
 
 ifeq (${CONFIG_MK_USE_PX4_UORB},y)
-#include ${SDK_ROOTDIR}/libs/uorb_msgs/make.mk
+FR_CINCDIRS   +=  px4/build/
+FR_CPPSOURCES += $(subst ${SDK_ROOTDIR}/,,$(wildcard ${SDK_ROOTDIR}/px4/build/msg/topics_sources/*cpp))
+FR_CPPSOURCES +=  px4/src/lib/cdev/CDev.cpp
+FR_CPPSOURCES +=  px4/src/lib/cdev/cdev_platform.cpp
+FR_CINCDIRS   +=  px4/src/uORB
+FR_CPPSOURCES +=  px4/src/uORB/Subscription.cpp
+FR_CPPSOURCES +=  px4/src/uORB/uORB.cpp
+FR_CPPSOURCES +=  px4/src/uORB/uORBDeviceMaster.cpp
+FR_CPPSOURCES +=  px4/src/uORB/uORBDeviceNode.cpp
+FR_CPPSOURCES +=  px4/src/uORB/uORBMain.cpp
+FR_CPPSOURCES +=  px4/src/uORB/uORBManager.cpp
+FR_CPPSOURCES +=  px4/src/uORB/uORBUtils.cpp
+endif
+
+ifeq (${CONFIG_MK_USE_PX4_UORB},posix)
+FR_CINCDIRS   +=  px4/build/
+FR_CPPSOURCES += $(subst ${SDK_ROOTDIR}/,,$(wildcard ${SDK_ROOTDIR}/px4/build/msg/topics_sources/*cpp))
 FR_CINCDIRS   +=  px4/platforms/common/uorb/include
 FR_CINCDIRS   +=  px4/platforms/common/uorb/src
 FR_CPPSOURCES +=  px4/platforms/common/uorb/src/device_master.cpp

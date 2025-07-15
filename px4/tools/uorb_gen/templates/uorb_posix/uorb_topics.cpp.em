@@ -1,6 +1,6 @@
 @###############################################
 @#
-@# EmPy template for generating uORBTopics.hpp file
+@# EmPy template for generating uorb_topics.cc file
 @# for logging purposes
 @#
 @###############################################
@@ -13,7 +13,7 @@
 @###############################################
 /****************************************************************************
  *
- *   Copyright (C) 2020 PX4 Development Team. All rights reserved.
+ *   Copyright (C) 2013-2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -44,6 +44,8 @@
  *
  ****************************************************************************/
 
+#include <uorb/uorb.h>
+#include <uorb/topics/uorb_topics.h>
 @{
 msg_names = [mn.replace(".msg", "") for mn in msgs]
 msgs_count = len(msg_names)
@@ -51,26 +53,16 @@ msg_names_all = list(set(msg_names + multi_topics)) # set() filters duplicates
 msg_names_all.sort()
 msgs_count_all = len(msg_names_all)
 }@
-
-#pragma once
-
-#include <stddef.h>
-
-#include <uORB/uORB.h>
-
-static constexpr size_t ORB_TOPICS_COUNT{@(msgs_count_all)};
-static constexpr size_t orb_topics_count() { return ORB_TOPICS_COUNT; }
-
-/*
- * Returns array of topics metadata
- */
-extern const struct orb_metadata *const *orb_get_topics() __EXPORT;
-
-enum class ORB_ID : uint8_t {
-@[for idx, msg_name in enumerate(msg_names_all)]@
-	@(msg_name) = @(idx),
+@[for msg_name in msg_names]@
+#include <uorb/topics/@(msg_name).h>
 @[end for]
-	INVALID
-};
 
-const struct orb_metadata *get_orb_meta(ORB_ID id);
+const constexpr struct orb_metadata *const uorb_topics_list[] = {
+@[for idx, msg_name in enumerate(msg_names_all, 1)]@
+  &uorb::msg::@(msg_name)@[if idx != msgs_count_all],@[end if]
+@[end for]};
+
+const struct orb_metadata *const *orb_get_topics(size_t *size) {
+  if (size) *size = sizeof(uorb_topics_list)/sizeof(uorb_topics_list[0]);
+  return uorb_topics_list;
+}

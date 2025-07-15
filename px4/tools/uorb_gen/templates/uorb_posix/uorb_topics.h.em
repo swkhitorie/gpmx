@@ -56,21 +56,22 @@ msgs_count_all = len(msg_names_all)
 
 #include <stddef.h>
 
-#include <uORB/uORB.h>
+#include <uorb/uorb.h>
 
+#ifdef __cplusplus
 static constexpr size_t ORB_TOPICS_COUNT{@(msgs_count_all)};
 static constexpr size_t orb_topics_count() { return ORB_TOPICS_COUNT; }
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
  * Returns array of topics metadata
  */
-extern const struct orb_metadata *const *orb_get_topics() __EXPORT;
+const struct orb_metadata *const *orb_get_topics(size_t *size) __EXPORT;
 
-enum class ORB_ID : uint8_t {
-@[for idx, msg_name in enumerate(msg_names_all)]@
-	@(msg_name) = @(idx),
-@[end for]
-	INVALID
-};
-
-const struct orb_metadata *get_orb_meta(ORB_ID id);
+#ifdef __cplusplus
+}
+#endif

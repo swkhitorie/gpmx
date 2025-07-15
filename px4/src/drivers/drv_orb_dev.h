@@ -1,19 +1,6 @@
-@###############################################
-@#
-@# EmPy template for generating uORBTopics.hpp file
-@# for logging purposes
-@#
-@###############################################
-@# Start of Template
-@#
-@# Context:
-@#  - msgs (List) list of all msg files
-@#  - multi_topics (List) list of all multi-topic names
-@#  - ids (List) list of all RTPS msg ids
-@###############################################
 /****************************************************************************
  *
- *   Copyright (C) 2020 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2012-2015 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -44,33 +31,46 @@
  *
  ****************************************************************************/
 
-@{
-msg_names = [mn.replace(".msg", "") for mn in msgs]
-msgs_count = len(msg_names)
-msg_names_all = list(set(msg_names + multi_topics)) # set() filters duplicates
-msg_names_all.sort()
-msgs_count_all = len(msg_names_all)
-}@
+#ifndef _DRV_UORB_H
+#define _DRV_UORB_H
 
-#pragma once
+/**
+ * @file drv_orb_dev.h
+ *
+ * uORB published object driver.
+ */
 
-#include <stddef.h>
+#include <px4_platform_common/defines.h>
+#include <sys/types.h>
+#include <sys/ioctl.h>
+#include <stdint.h>
 
-#include <uORB/uORB.h>
-
-static constexpr size_t ORB_TOPICS_COUNT{@(msgs_count_all)};
-static constexpr size_t orb_topics_count() { return ORB_TOPICS_COUNT; }
+#define _ORBIOCBASE		(0x2600)
+#define _ORBIOC(_n)		(_PX4_IOC(_ORBIOCBASE, _n))
 
 /*
- * Returns array of topics metadata
+ * IOCTLs for individual topics.
  */
-extern const struct orb_metadata *const *orb_get_topics() __EXPORT;
 
-enum class ORB_ID : uint8_t {
-@[for idx, msg_name in enumerate(msg_names_all)]@
-	@(msg_name) = @(idx),
-@[end for]
-	INVALID
-};
+/** Check whether the topic has been updated since it was last read, sets *(bool *)arg */
+#define ORBIOCUPDATED		_ORBIOC(11)
 
-const struct orb_metadata *get_orb_meta(ORB_ID id);
+/** Set the minimum interval at which the topic can be seen to be updated for this subscription */
+#define ORBIOCSETINTERVAL	_ORBIOC(12)
+
+/** Get the global advertiser handle for the topic */
+#define ORBIOCGADVERTISER	_ORBIOC(13)
+
+/** Get the priority for the topic */
+#define ORBIOCGPRIORITY		_ORBIOC(14)
+
+/** Set the queue size of the topic */
+#define ORBIOCSETQUEUESIZE	_ORBIOC(15)
+
+/** Get the minimum interval at which the topic can be seen to be updated for this subscription */
+#define ORBIOCGETINTERVAL	_ORBIOC(16)
+
+/** Check whether the topic is advertised, sets *(unsigned long *)arg to 1 if advertised, 0 otherwise */
+#define ORBIOCISADVERTISED	_ORBIOC(17)
+
+#endif /* _DRV_UORB_H */

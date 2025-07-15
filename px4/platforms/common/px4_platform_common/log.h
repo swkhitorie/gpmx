@@ -69,6 +69,7 @@ __END_DECLS
 
 #include <inttypes.h>
 #include <stdint.h>
+#include <sys/cdefs.h>
 #include <stdio.h>
 #include <stdarg.h>
 

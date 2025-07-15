@@ -1,19 +1,6 @@
-@###############################################
-@#
-@# EmPy template for generating uORBTopics.hpp file
-@# for logging purposes
-@#
-@###############################################
-@# Start of Template
-@#
-@# Context:
-@#  - msgs (List) list of all msg files
-@#  - multi_topics (List) list of all multi-topic names
-@#  - ids (List) list of all RTPS msg ids
-@###############################################
 /****************************************************************************
  *
- *   Copyright (C) 2020 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2012-2019 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -44,33 +31,67 @@
  *
  ****************************************************************************/
 
-@{
-msg_names = [mn.replace(".msg", "") for mn in msgs]
-msgs_count = len(msg_names)
-msg_names_all = list(set(msg_names + multi_topics)) # set() filters duplicates
-msg_names_all.sort()
-msgs_count_all = len(msg_names_all)
-}@
-
-#pragma once
-
-#include <stddef.h>
-
-#include <uORB/uORB.h>
-
-static constexpr size_t ORB_TOPICS_COUNT{@(msgs_count_all)};
-static constexpr size_t orb_topics_count() { return ORB_TOPICS_COUNT; }
-
-/*
- * Returns array of topics metadata
+/**
+ * @file Subscription.cpp
+ *
  */
-extern const struct orb_metadata *const *orb_get_topics() __EXPORT;
 
-enum class ORB_ID : uint8_t {
-@[for idx, msg_name in enumerate(msg_names_all)]@
-	@(msg_name) = @(idx),
-@[end for]
-	INVALID
-};
+#include "Subscription.hpp"
+#include <px4_platform_common/defines.h>
 
-const struct orb_metadata *get_orb_meta(ORB_ID id);
+namespace uORB
+{
+
+bool Subscription::subscribe()
+{
+	// check if already subscribed
+	if (_node != nullptr) {
+		return true;
+	}
+
+	if (_orb_id != ORB_ID::INVALID) {
+
+		DeviceMaster *device_master = uORB::Manager::get_instance()->get_device_master();
+
+		if (device_master != nullptr) {
+
+			if (!device_master->deviceNodeExists(_orb_id, _instance)) {
+				return false;
+			}
+
+			uORB::DeviceNode *node = device_master->getDeviceNode(get_topic(), _instance);
+
+			if (node != nullptr) {
+				_node = node;
+				_node->add_internal_subscriber();
+
+				// If there were any previous publications, allow the subscriber to read them
+				const unsigned curr_gen = _node->published_message_count();
+				const uint8_t q_size = _node->get_queue_size();
+
+				if (q_size < curr_gen) {
+					_last_generation = curr_gen - q_size;
+
+				} else {
+					_last_generation = 0;
+				}
+
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+void Subscription::unsubscribe()
+{
+	if (_node != nullptr) {
+		_node->remove_internal_subscriber();
+	}
+
+	_node = nullptr;
+	_last_generation = 0;
+}
+
+} // namespace uORB

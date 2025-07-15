@@ -39,6 +39,20 @@
 
 #pragma once
 
+#include <px4_platform_common/log.h>
+
+#ifndef OK
+#define OK 0
+#endif
+
+#ifndef ERROR
+#define ERROR -1
+#endif
+
+#ifndef MAX_RAND
+#define MAX_RAND 32767
+#endif
+
 #define PX4_ERROR (-1)
 #define PX4_OK 0
 
@@ -46,6 +60,9 @@
 constexpr bool PX4_ISFINITE(float x) { return __builtin_isfinite(x); }
 constexpr bool PX4_ISFINITE(double x) { return __builtin_isfinite(x); }
 #endif /* __cplusplus */
+
+#define _IOC(type,nr)   ((type)|(nr))
+#define _PX4_IOC(x,y) _IOC(x,y)
 
 /* Math macro's for float literals. Do not use M_PI et al as they aren't
 * defined (neither C nor the C++ standard define math constants) */
