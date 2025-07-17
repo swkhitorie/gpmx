@@ -50,25 +50,6 @@ LIBHAL_CSRCS += hal_driver/stm32wlxx_hal_tim.c
 LIBHAL_CSRCS += hal_driver/stm32wlxx_hal_tim_ex.c
 endif
 
-ifeq ($(BSP_LIBCONFIG_STM32WL_SUBGHZ_PHY),y)
-LIBHAL_CINCDIRS += middleware
-LIBHAL_CSRCS += middleware/radio.c
-LIBHAL_CSRCS += middleware/radio_fw.c
-LIBHAL_CSRCS += middleware/radio_driver.c
-endif
-
-ifeq ($(BSP_LIBCONFIG_STM32WL_UTILITIES),y)
-LIBHAL_CINCDIRS += utilities
-LIBHAL_CSRCS += utilities/stm32_adv_trace.c
-LIBHAL_CSRCS += utilities/stm32_lpm.c
-LIBHAL_CSRCS += utilities/stm32_mem.c
-LIBHAL_CSRCS += utilities/stm32_seq.c
-LIBHAL_CSRCS += utilities/stm32_systime.c
-LIBHAL_CSRCS += utilities/stm32_timer.c
-LIBHAL_CSRCS += utilities/stm32_tiny_sscanf.c
-LIBHAL_CSRCS += utilities/stm32_tiny_vsnprintf.c
-endif
-
 ifeq ($(BSP_LIBCONFIG_STM32_HAL_RNG),y)
 LIBHAL_CSRCS += hal_driver/stm32wlxx_hal_rng.c
 LIBHAL_CSRCS += hal_driver/stm32wlxx_hal_rng_ex.c
@@ -77,4 +58,105 @@ endif
 ifeq ($(BSP_LIBCONFIG_STM32_HAL_CRC),y)
 LIBHAL_CSRCS += hal_driver/stm32wlxx_hal_crc.c
 LIBHAL_CSRCS += hal_driver/stm32wlxx_hal_crc_ex.c
+endif
+
+################################################################################
+#
+# Wlxx series utilities
+#
+################################################################################
+ifeq ($(BSP_LIBCONFIG_STM32WL_UTILITIES_TRACE),y)
+LIBHAL_CINCDIRS += utilities/trace
+LIBHAL_CSRCS += utilities/trace/stm32_adv_trace.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32WL_UTILITIES_SEQUENCER),y)
+LIBHAL_CINCDIRS += utilities/sequencer
+LIBHAL_CSRCS += utilities/sequencer/stm32_seq.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32WL_UTILITIES_TIMER),y)
+LIBHAL_CINCDIRS += utilities/timer
+LIBHAL_CSRCS += utilities/timer/stm32_timer.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32WL_UTILITIES_LPM),y)
+LIBHAL_CINCDIRS += utilities/lpm
+LIBHAL_CSRCS += utilities/lpm/stm32_lpm.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32WL_UTILITIES_MISC),y)
+LIBHAL_CINCDIRS += utilities/misc
+LIBHAL_CSRCS += utilities/misc/stm32_mem.c
+LIBHAL_CSRCS += utilities/misc/stm32_systime.c
+LIBHAL_CSRCS += utilities/misc/stm32_tiny_sscanf.c
+LIBHAL_CSRCS += utilities/misc/stm32_tiny_vsnprintf.c
+endif
+
+################################################################################
+#
+# Wlxx series Middleware
+#
+################################################################################
+ifeq ($(BSP_LIBCONFIG_STM32WL_MIDDLEWARE_SUBGHZ_PHY),y)
+LIBHAL_CINCDIRS += middleware/Subghz_Phy/
+LIBHAL_CINCDIRS += middleware/Subghz_Phy/radio_driver
+LIBHAL_CSRCS += middleware/Subghz_Phy/radio_driver/radio.c
+LIBHAL_CSRCS += middleware/Subghz_Phy/radio_driver/radio_fw.c
+LIBHAL_CSRCS += middleware/Subghz_Phy/radio_driver/radio_driver.c
+LIBHAL_CSRCS += middleware/Subghz_Phy/radio_driver/lr_fhss_mac.c
+LIBHAL_CSRCS += middleware/Subghz_Phy/radio_driver/wl_lr_fhss.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32WL_MIDDLEWARE_LORAWAN),y)
+LIBHAL_CINCDIRS += middleware/LoraWAN/crypto
+LIBHAL_CINCDIRS += middleware/LoraWAN/lmhandler
+LIBHAL_CINCDIRS += middleware/LoraWAN/lmhandler/Packages
+LIBHAL_CINCDIRS += middleware/LoraWAN/mac
+LIBHAL_CINCDIRS += middleware/LoraWAN/mac/Region
+LIBHAL_CINCDIRS += middleware/LoraWAN/utilities
+
+LIBHAL_CSRCS += middleware/LoraWAN/utilities/utilities.c
+
+LIBHAL_CSRCS += middleware/LoraWAN/crypto/cmac.c
+LIBHAL_CSRCS += middleware/LoraWAN/crypto/lorawan_aes.c
+LIBHAL_CSRCS += middleware/LoraWAN/crypto/soft-se.c
+
+LIBHAL_CSRCS += middleware/LoraWAN/mac/LoRaMac.c
+LIBHAL_CSRCS += middleware/LoraWAN/mac/LoRaMacAdr.c
+LIBHAL_CSRCS += middleware/LoraWAN/mac/LoRaMacClassB.c
+LIBHAL_CSRCS += middleware/LoraWAN/mac/LoRaMacCommands.c
+LIBHAL_CSRCS += middleware/LoraWAN/mac/LoRaMacConfirmQueue.c
+LIBHAL_CSRCS += middleware/LoraWAN/mac/LoRaMacCrypto.c
+LIBHAL_CSRCS += middleware/LoraWAN/mac/LoRaMacParser.c
+LIBHAL_CSRCS += middleware/LoraWAN/mac/LoRaMacSerializer.c
+
+LIBHAL_CSRCS += middleware/LoraWAN/mac/Region/Region.c
+LIBHAL_CSRCS += middleware/LoraWAN/mac/Region/RegionCommon.c
+LIBHAL_CSRCS += middleware/LoraWAN/mac/Region/RegionAS923.c
+LIBHAL_CSRCS += middleware/LoraWAN/mac/Region/RegionAU915.c
+LIBHAL_CSRCS += middleware/LoraWAN/mac/Region/RegionBaseUS.c
+LIBHAL_CSRCS += middleware/LoraWAN/mac/Region/RegionCN470.c
+LIBHAL_CSRCS += middleware/LoraWAN/mac/Region/RegionCN470A20.c
+LIBHAL_CSRCS += middleware/LoraWAN/mac/Region/RegionCN470A26.c
+LIBHAL_CSRCS += middleware/LoraWAN/mac/Region/RegionCN470B20.c
+LIBHAL_CSRCS += middleware/LoraWAN/mac/Region/RegionCN470B26.c
+LIBHAL_CSRCS += middleware/LoraWAN/mac/Region/RegionCN779.c
+LIBHAL_CSRCS += middleware/LoraWAN/mac/Region/RegionEU433.c
+LIBHAL_CSRCS += middleware/LoraWAN/mac/Region/RegionEU868.c
+LIBHAL_CSRCS += middleware/LoraWAN/mac/Region/RegionIN865.c
+LIBHAL_CSRCS += middleware/LoraWAN/mac/Region/RegionKR920.c
+LIBHAL_CSRCS += middleware/LoraWAN/mac/Region/RegionRU864.c
+LIBHAL_CSRCS += middleware/LoraWAN/mac/Region/RegionUS915.c
+
+LIBHAL_CSRCS += middleware/LoraWAN/lmhandler/LmHandler.c
+LIBHAL_CSRCS += middleware/LoraWAN/lmhandler/NvmDataMgmt.c
+LIBHAL_CSRCS += middleware/LoraWAN/lmhandler/Packages/LmhpCompliance.c
+LIBHAL_CSRCS += middleware/LoraWAN/lmhandler/Packages/LmhpPackagesRegistration.c
+
+# LIBHAL_CSRCS += middleware/LoraWAN/lmhandler/Packages/FragDecoder.c
+# LIBHAL_CSRCS += middleware/LoraWAN/lmhandler/Packages/LmhpFragmentation.c
+# LIBHAL_CSRCS += middleware/LoraWAN/lmhandler/Packages/LmhpClockSync.c
+# LIBHAL_CSRCS += middleware/LoraWAN/lmhandler/Packages/LmhpFirmwareManagement.c
+# LIBHAL_CSRCS += middleware/LoraWAN/lmhandler/Packages/LmhpRemoteMcastSetup.c
 endif

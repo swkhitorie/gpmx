@@ -20,10 +20,16 @@ BSP_LIBCONFIG_STM32_HAL_FLASH=n
 BSP_LIBCONFIG_STM32_HAL_BASTIM=n
 BSP_LIBCONFIG_STM32_HAL_I2C=n
 BSP_LIBCONFIG_STM32_HAL_SPI=n
-BSP_LIBCONFIG_STM32WL_SUBGHZ_PHY=y
-BSP_LIBCONFIG_STM32WL_UTILITIES=y
 BSP_LIBCONFIG_STM32_HAL_RNG=y
 BSP_LIBCONFIG_STM32_HAL_CRC=y
+
+BSP_LIBCONFIG_STM32WL_UTILITIES_MISC=y
+BSP_LIBCONFIG_STM32WL_UTILITIES_LPM=y
+BSP_LIBCONFIG_STM32WL_UTILITIES_SEQUENCER=y
+BSP_LIBCONFIG_STM32WL_UTILITIES_TRACE=y
+BSP_LIBCONFIG_STM32WL_UTILITIES_TIMER=y
+BSP_LIBCONFIG_STM32WL_MIDDLEWARE_SUBGHZ_PHY=y
+BSP_LIBCONFIG_STM32WL_MIDDLEWARE_LORAWAN=n
 
 # include all cubelibrary files and low level driver files
 include ${SDK_ROOTDIR}/boards/stm32/libs/bsp_libs_stm32.mk
@@ -42,22 +48,29 @@ BOARD_CSRCS += board_irq.c
 BOARD_CSRCS += board_rcc_init.c
 BOARD_CSRCS += board_init.c
 BOARD_CSRCS += board_bsp.c
-BOARD_CSRCS += board_radio.c
 BOARD_CSRCS += board_rand.c
 BOARD_CSRCS += board_crc.c
 BOARD_CSRCS += board_subghz.c
 
-BOARD_SUBGHZ_IF_INCDIRS += boards/stm32/stm32wl55_nucleo_wl55jc/subghz_utilities_if
-BOARD_SUBGHZ_IF_CSRCS += subghz_utilities_if/timer_if.c
-BOARD_SUBGHZ_IF_CSRCS += subghz_utilities_if/stm32_lpm_if.c
-BOARD_SUBGHZ_IF_CSRCS += subghz_utilities_if/stm32_adv_trace_if.c
-BOARD_SUBGHZ_IF_CSRCS += subghz_utilities_if/radio_board_if.c
+BOARD_MIDDLEWARE_SUBGHZ_IF_CSRCS += middleware_subghz_if/radio_board.c
+BOARD_MIDDLEWARE_SUBGHZ_IF_CSRCS += middleware_subghz_if/radio_board_if.c
+BOARD_MIDDLEWARE_SUBGHZ_IF_INCDIRS += boards/stm32/stm32wl55_nucleo_wl55jc/middleware_subghz_if
+
+# BOARD_MIDDLEWARE_LORAWAN_IF_CSRCS += middleware_lorawan_if/lora_info.c
+# BOARD_MIDDLEWARE_LORAWAN_IF_INCDIRS += boards/stm32/stm32wl55_nucleo_wl55jc/middleware_lorawan_if
+
+BOARD_UTILITIES_IF_CSRCS += utilities_if/stm32_adv_trace_if.c
+BOARD_UTILITIES_IF_CSRCS += utilities_if/stm32_lpm_if.c
+BOARD_UTILITIES_IF_CSRCS += utilities_if/timer_if.c
+BOARD_UTILITIES_IF_INCDIRS += boards/stm32/stm32wl55_nucleo_wl55jc/utilities_if
 
 BOARD_ASMSOURCES += nucleo_wl55jc_startup.s
 BOARD_LNK_FILE   += nucleo_wl55jc_linker.ld
 
+# TMPBOARD_LORAWAN_CSRCS = ${addprefix boards/stm32/stm32wl55_nucleo_wl55jc/,${BOARD_MIDDLEWARE_LORAWAN_IF_CSRCS}}
+TMPBOARD_SUBGHZ_CSRCS = ${addprefix boards/stm32/stm32wl55_nucleo_wl55jc/,${BOARD_MIDDLEWARE_SUBGHZ_IF_CSRCS}}
+TMPBOARD_UTILITIES_CSRCS = ${addprefix boards/stm32/stm32wl55_nucleo_wl55jc/,${BOARD_UTILITIES_IF_CSRCS}}
 TMPBOARD_CSRCS = ${addprefix boards/stm32/stm32wl55_nucleo_wl55jc/,${BOARD_CSRCS}}
-TMPBOARD_SUBGHZ_CSRCS = ${addprefix boards/stm32/stm32wl55_nucleo_wl55jc/,${BOARD_SUBGHZ_IF_CSRCS}}
 TMPBOARD_ASMSOURCES = ${addprefix boards/stm32/stm32wl55_nucleo_wl55jc/,${BOARD_ASMSOURCES}}
 TMPBOARD_LNK_FILE = ${addprefix boards/stm32/stm32wl55_nucleo_wl55jc/,${BOARD_LNK_FILE}}
 
@@ -67,6 +80,13 @@ TMPBOARD_LNK_FILE = ${addprefix boards/stm32/stm32wl55_nucleo_wl55jc/,${BOARD_LN
 PROJ_ENTRY_POINT        := Reset_Handler
 SCF_FILE                := ${TMPBOARD_LNK_FILE}
 PROJ_CDEFS              += ${BOARD_CDEFS}
-PROJ_CINCDIRS           += ${BOARD_SUBGHZ_IF_INCDIRS} boards/stm32/stm32wl55_nucleo_wl55jc 
-CSOURCES                += ${TMPBOARD_CSRCS} ${TMPBOARD_SUBGHZ_CSRCS}
-ASMSOURCES              := ${TMPBOARD_ASMSOURCES}
+
+PROJ_CINCDIRS          += ${BOARD_MIDDLEWARE_SUBGHZ_IF_INCDIRS} \
+                            ${BOARD_UTILITIES_IF_INCDIRS} \
+							boards/stm32/stm32wl55_nucleo_wl55jc
+
+CSOURCES          += ${TMPBOARD_CSRCS} \
+                            ${TMPBOARD_SUBGHZ_CSRCS} \
+							${TMPBOARD_UTILITIES_CSRCS}
+
+ASMSOURCES        := ${TMPBOARD_ASMSOURCES}
