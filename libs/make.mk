@@ -1,109 +1,109 @@
 
 # default simple device driver interface
-FR_CSOURCES   +=  libs/device/dnode.c
-FR_CSOURCES   +=  libs/device/serial.c
-FR_CSOURCES   +=  libs/device/i2c_master.c
-FR_CSOURCES   +=  libs/device/spi.c
-FR_CPPSOURCES +=  libs/device/spi.cpp
-FR_CPPSOURCES +=  libs/device/ri2c.cpp
+CSOURCES   +=  libs/device/dnode.c
+CSOURCES   +=  libs/device/serial.c
+CSOURCES   +=  libs/device/i2c_master.c
+CSOURCES   +=  libs/device/spi.c
+CPPSOURCES +=  libs/device/spi.cpp
+CPPSOURCES +=  libs/device/ri2c.cpp
 
-ifeq (${CONFIG_MK_COMPILER},gcc)
-FR_CSOURCES   +=  libs/noneuse_syscall.c
+ifeq (${MK_COMPILER},gcc)
+CSOURCES   +=  libs/noneuse_syscall.c
 endif
 
-ifeq (${CONFIG_MK_USE_LIB_CPP},y)
-FR_CINCDIRS   +=  libs/cpp
-FR_CPPSOURCES +=  libs/cpp/libxx_delete.cpp
-FR_CPPSOURCES +=  libs/cpp/libxx_delete_sized.cpp
-FR_CPPSOURCES +=  libs/cpp/libxx_deletea.cpp
-FR_CPPSOURCES +=  libs/cpp/libxx_deletea_sized.cpp
-FR_CPPSOURCES +=  libs/cpp/libxx_new.cpp
-FR_CPPSOURCES +=  libs/cpp/libxx_newa.cpp
-endif # end with CONFIG_MK_USE_LIB_CPP
+ifeq (${MK_USE_LIB_CPP},y)
+PROJ_CINCDIRS   +=  libs/cpp
+CPPSOURCES +=  libs/cpp/libxx_delete.cpp
+CPPSOURCES +=  libs/cpp/libxx_delete_sized.cpp
+CPPSOURCES +=  libs/cpp/libxx_deletea.cpp
+CPPSOURCES +=  libs/cpp/libxx_deletea_sized.cpp
+CPPSOURCES +=  libs/cpp/libxx_new.cpp
+CPPSOURCES +=  libs/cpp/libxx_newa.cpp
+endif # end with MK_USE_LIB_CPP
 
-ifeq (${CONFIG_MK_USE_FS_FATFS},y)
-FR_CINCDIRS += libs/fs/fat/
-FR_CSOURCES += libs/fs/fat/ff.c
-FR_CSOURCES += libs/fs/fat/diskio.c
-FR_CSOURCES += libs/fs/fat/ff_drv.c
-FR_CSOURCES += libs/fs/fat/ffsystem.c
-FR_CSOURCES += libs/fs/fat/ffunicode.c
-endif # end with CONFIG_MK_USE_FS_FATFS - y
+ifeq (${MK_USE_FS_FATFS},y)
+PROJ_CINCDIRS += libs/fs/fat/
+CSOURCES += libs/fs/fat/ff.c
+CSOURCES += libs/fs/fat/diskio.c
+CSOURCES += libs/fs/fat/ff_drv.c
+CSOURCES += libs/fs/fat/ffsystem.c
+CSOURCES += libs/fs/fat/ffunicode.c
+endif # end with MK_USE_FS_FATFS - y
 
-ifeq (${CONFIG_MK_USE_FS_FATFS},l)
-FR_CINCDIRS += libs/fs/fat/legacy
-FR_CSOURCES += libs/fs/fat/legacy/ff.c
-FR_CSOURCES += libs/fs/fat/legacy/diskio.c
-FR_CSOURCES += libs/fs/fat/legacy/ff_drv.c
-FR_CSOURCES += libs/fs/fat/legacy/option/syscall.c
-FR_CSOURCES += libs/fs/fat/legacy/option/unicode.c
-endif # end with CONFIG_MK_USE_FS_FATFS - l
+ifeq (${MK_USE_FS_FATFS},l)
+PROJ_CINCDIRS += libs/fs/fat/legacy
+CSOURCES += libs/fs/fat/legacy/ff.c
+CSOURCES += libs/fs/fat/legacy/diskio.c
+CSOURCES += libs/fs/fat/legacy/ff_drv.c
+CSOURCES += libs/fs/fat/legacy/option/syscall.c
+CSOURCES += libs/fs/fat/legacy/option/unicode.c
+endif # end with MK_USE_FS_FATFS - l
 
-ifeq (${CONFIG_MK_USE_FREERTOS},y)
+ifeq (${MK_USE_FREERTOS},y)
 
-ifeq (${CONFIG_MK_USE_FR_POSIX},y)
-FR_CSOURCES += libs/queue/dq_addafter.c
-FR_CSOURCES += libs/queue/dq_addbefore.c
-FR_CSOURCES += libs/queue/dq_addfirst.c
-FR_CSOURCES += libs/queue/dq_addlast.c
-FR_CSOURCES += libs/queue/dq_cat.c
-FR_CSOURCES += libs/queue/dq_count.c
-FR_CSOURCES += libs/queue/dq_rem.c
-FR_CSOURCES += libs/queue/dq_remfirst.c
-FR_CSOURCES += libs/queue/dq_remlast.c
-FR_CSOURCES += libs/queue/sq_addafter.c
-FR_CSOURCES += libs/queue/sq_addfirst.c
-FR_CSOURCES += libs/queue/sq_addlast.c
-FR_CSOURCES += libs/queue/sq_cat.c
-FR_CSOURCES += libs/queue/sq_count.c
-FR_CSOURCES += libs/queue/sq_rem.c
-FR_CSOURCES += libs/queue/sq_remafter.c
-FR_CSOURCES += libs/queue/sq_remfirst.c
-FR_CSOURCES += libs/queue/sq_remlast.c
+ifeq (${MK_USE_FR_POSIX},y)
+CSOURCES += libs/queue/dq_addafter.c
+CSOURCES += libs/queue/dq_addbefore.c
+CSOURCES += libs/queue/dq_addfirst.c
+CSOURCES += libs/queue/dq_addlast.c
+CSOURCES += libs/queue/dq_cat.c
+CSOURCES += libs/queue/dq_count.c
+CSOURCES += libs/queue/dq_rem.c
+CSOURCES += libs/queue/dq_remfirst.c
+CSOURCES += libs/queue/dq_remlast.c
+CSOURCES += libs/queue/sq_addafter.c
+CSOURCES += libs/queue/sq_addfirst.c
+CSOURCES += libs/queue/sq_addlast.c
+CSOURCES += libs/queue/sq_cat.c
+CSOURCES += libs/queue/sq_count.c
+CSOURCES += libs/queue/sq_rem.c
+CSOURCES += libs/queue/sq_remafter.c
+CSOURCES += libs/queue/sq_remfirst.c
+CSOURCES += libs/queue/sq_remlast.c
 
-FR_CSOURCES += libs/mqueue/mq_close.c
-FR_CSOURCES += libs/mqueue/mq_getattr.c
-FR_CSOURCES += libs/mqueue/mq_open.c
-FR_CSOURCES += libs/mqueue/mq_receive.c
-FR_CSOURCES += libs/mqueue/mq_send.c
-FR_CSOURCES += libs/mqueue/mq_timedreceive.c
-FR_CSOURCES += libs/mqueue/mq_timedsend.c
-FR_CSOURCES += libs/mqueue/mq_unlink.c
-FR_CSOURCES += libs/mqueue/prv_mqueue.c
+CSOURCES += libs/mqueue/mq_close.c
+CSOURCES += libs/mqueue/mq_getattr.c
+CSOURCES += libs/mqueue/mq_open.c
+CSOURCES += libs/mqueue/mq_receive.c
+CSOURCES += libs/mqueue/mq_send.c
+CSOURCES += libs/mqueue/mq_timedreceive.c
+CSOURCES += libs/mqueue/mq_timedsend.c
+CSOURCES += libs/mqueue/mq_unlink.c
+CSOURCES += libs/mqueue/prv_mqueue.c
 
-FR_CSOURCES += libs/pthread/pthread.c
-FR_CSOURCES += libs/pthread/pthread_attr.c
-FR_CSOURCES += libs/pthread/pthread_barrier.c
-FR_CSOURCES += libs/pthread/pthread_cond.c
-FR_CSOURCES += libs/pthread/pthread_mutex.c
-FR_CSOURCES += libs/pthread/sched.c
+CSOURCES += libs/pthread/pthread.c
+CSOURCES += libs/pthread/pthread_attr.c
+CSOURCES += libs/pthread/pthread_barrier.c
+CSOURCES += libs/pthread/pthread_cond.c
+CSOURCES += libs/pthread/pthread_mutex.c
+CSOURCES += libs/pthread/sched.c
 
-FR_CSOURCES += libs/semaphore/sem_destroy.c
-FR_CSOURCES += libs/semaphore/sem_getvalue.c
-FR_CSOURCES += libs/semaphore/sem_init.c
-FR_CSOURCES += libs/semaphore/sem_post.c
-FR_CSOURCES += libs/semaphore/sem_timedwait.c
-FR_CSOURCES += libs/semaphore/sem_trywait.c
-FR_CSOURCES += libs/semaphore/sem_wait.c
+CSOURCES += libs/semaphore/sem_destroy.c
+CSOURCES += libs/semaphore/sem_getvalue.c
+CSOURCES += libs/semaphore/sem_init.c
+CSOURCES += libs/semaphore/sem_post.c
+CSOURCES += libs/semaphore/sem_timedwait.c
+CSOURCES += libs/semaphore/sem_trywait.c
+CSOURCES += libs/semaphore/sem_wait.c
 
-FR_CSOURCES += libs/time/clock.c
-FR_CSOURCES += libs/time/clock_getres.c
-FR_CSOURCES += libs/time/clock_gettime.c
-FR_CSOURCES += libs/time/clock_nanosleep.c
-FR_CSOURCES += libs/time/clock_settime.c
-FR_CSOURCES += libs/time/lib_nanosleep.c
+CSOURCES += libs/time/clock.c
+CSOURCES += libs/time/clock_getres.c
+CSOURCES += libs/time/clock_gettime.c
+CSOURCES += libs/time/clock_nanosleep.c
+CSOURCES += libs/time/clock_settime.c
+CSOURCES += libs/time/lib_nanosleep.c
 
-FR_CSOURCES += libs/timer/prv_timer.c
-FR_CSOURCES += libs/timer/timer_create.c
-FR_CSOURCES += libs/timer/timer_delete.c
-FR_CSOURCES += libs/timer/timer_getoverrun.c
-FR_CSOURCES += libs/timer/timer_gettime.c
-FR_CSOURCES += libs/timer/timer_settime.c
+CSOURCES += libs/timer/prv_timer.c
+CSOURCES += libs/timer/timer_create.c
+CSOURCES += libs/timer/timer_delete.c
+CSOURCES += libs/timer/timer_getoverrun.c
+CSOURCES += libs/timer/timer_gettime.c
+CSOURCES += libs/timer/timer_settime.c
 
-FR_CSOURCES += libs/unistd/lib_sleep.c
-FR_CSOURCES += libs/unistd/lib_usleep.c
+CSOURCES += libs/unistd/lib_sleep.c
+CSOURCES += libs/unistd/lib_usleep.c
 
-FR_CSOURCES += libs/utils.c
-endif # end with CONFIG_MK_USE_FR_POSIX
+CSOURCES += libs/utils.c
+endif # end with MK_USE_FR_POSIX
 
-endif # end with CONFIG_MK_USE_FREERTOS
+endif # end with MK_USE_FREERTOS

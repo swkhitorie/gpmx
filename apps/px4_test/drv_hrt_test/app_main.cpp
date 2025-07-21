@@ -1,6 +1,9 @@
 #include <board_config.h>
 #include <stdio.h>
 #include <stdint.h>
+#include "FreeRTOS.h"
+#include "task.h"
+
 #include <drivers/drv_hrt.h>
 
 using namespace time_literals;
@@ -34,11 +37,17 @@ void hrt_call3(void *arg)
     printf("%.6f call 3 run | iscalled?:%d | arg: %.5f \r\n", now, hrt_called(&call3), *(double *)arg);
 }
 
-int main(int argc, char *argv[])
+void debug1(void *p)
 {
-    board_init();
-    board_bsp_init();
+    for (;;) {
+        // printf("debug1 : send \r\n");
+        vTaskDelay(100);
+    }
+}
 
+void g_start(void *p)
+{
+    board_bsp_init();
     hrt_init();
 
     //call1: delay 2s, period 1s
@@ -48,12 +57,19 @@ int main(int argc, char *argv[])
     hrt_call_at(&call2, 6_s+200_ms, hrt_call2, &call2_arg);
     hrt_call_after(&call3, 1_s, hrt_call3, &call3_arg);
 
-    uint32_t m = HAL_GetTick();
-    for (;;) {
-        if (HAL_GetTick() - m >= 100) {
-            m = HAL_GetTick();
-            // printf("hello bsp test, in irq?:%d, debug: %d\r\n", (__get_IPSR() != 0U), CONFIG_MACRO_DEBUG_NUM);
-            board_blue_led_toggle();
-        }
-    }
+    xTaskCreate(debug1, "debug1", 512, NULL, 3, NULL);
+
+    vTaskDelete(NULL);
+}
+
+int main(void)
+{
+    board_init();
+
+    taskENTER_CRITICAL(); 
+    xTaskCreate(g_start, "g_start", 256, NULL, 3, NULL);
+    taskEXIT_CRITICAL();
+
+    vTaskStartScheduler();
+    for (;;);
 }

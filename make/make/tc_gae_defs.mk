@@ -140,7 +140,9 @@ TC_LIBOPTS:=\
   #-nostartfiles 
 
 ifneq (${CONFIG_LIB_NOT_USE_NANOLIB},y)
-TC_LIBOPTS += --specs=nano.specs 
+TC_LIBOPTS += --specs=nano.specs
+else
+TC_LIBOPTS += --specs=nosys.specs
 endif
 
 ifeq (${CONFIG_LINK_PRINTF_FLOAT},y)

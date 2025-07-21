@@ -51,12 +51,12 @@ void board_bsp_init()
     __HAL_RCC_GPIOH_CLK_ENABLE();
 	BOARD_INIT_IOPORT(0, GPIO_nLED_BLUE_PORT, GPIO_nLED_BLUE_PIN, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_VERY_HIGH);
 
-    dregister("/com1", &com1_dev.dev);
+    dregister("/ttyS1", &com1_dev.dev);
 
     com1_dev.dev.ops->setup(&com1_dev.dev);
 
-    dstdout = dbind("/com1");
-    dstdin = dbind("/com1");
+    dstdout = dbind("/ttyS1");
+    dstdin = dbind("/ttyS1");
 
 #ifdef CONFIG_BOARD_MTD_QSPIFLASH_ENABLE
     board_mtd_init();
@@ -75,14 +75,19 @@ void board_bsp_init()
 #ifdef CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
     HAL_Delay(300);
     cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
-    HAL_Delay(600);  // wait cdc init completed
+    HAL_Delay(100);  // wait cdc init completed
 #endif
 }
 
-void board_blue_led_toggle()
+void board_led_toggle(uint8_t idx)
 {
-    int val = BOARD_IO_GET(GPIO_nLED_BLUE_PORT, GPIO_nLED_BLUE_PIN);
-    BOARD_IO_SET(GPIO_nLED_BLUE_PORT, GPIO_nLED_BLUE_PIN, !val);
+    switch (idx) {
+    case 0: {
+            int val = BOARD_IO_GET(GPIO_nLED_BLUE_PORT, GPIO_nLED_BLUE_PIN);
+            BOARD_IO_SET(GPIO_nLED_BLUE_PORT, GPIO_nLED_BLUE_PIN, !val);
+        }
+        break;
+    }
 }
 
 uint8_t buff_debug[256];
@@ -113,7 +118,11 @@ int _write(int file, char *ptr, int len)
     const int stdout_fileno = 1;
     const int stderr_fileno = 2;
     if (file == stdout_fileno) {
+#ifdef CONFIG_BOARD_COM_STDOUT_DMA
+        SERIAL_DMASEND(dstdout, ptr, len);
+#else
         SERIAL_SEND(dstdout, ptr, len);
+#endif
     }
     return len;
 }

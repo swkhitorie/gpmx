@@ -202,7 +202,11 @@ int _write(int file, char *ptr, int len)
     const int stdout_fileno = 1;
     const int stderr_fileno = 2;
     if (file == stdout_fileno) {
+#ifdef CONFIG_BOARD_COM_STDOUT_DMA
         SERIAL_DMASEND(_tty_log_out, ptr, len);
+#else
+        SERIAL_SEND(_tty_log_out, ptr, len);
+#endif
     }
     return len;
 }

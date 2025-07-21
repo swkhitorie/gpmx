@@ -28,6 +28,8 @@ include ${SDK_ROOTDIR}/boards/stm32/libs/bsp_libs_stm32.mk
 CSOURCES += ${LIB_CSRCS}
 PROJ_CINCDIRS += ${LIB_CINCDIRS}
 
+BOARD_BSP_PATH := boards/stm32/stm32f427_fmuv2
+
 #########################################################################
 # BSP macros, sources + asm + link files, includes, and entry address
 #########################################################################
@@ -47,16 +49,19 @@ BOARD_LNK_FILE   += fmuv2_lnk_script.ld
 BOARD_CDEFS += CONFIG_STM32_DMA_SPI1_RX
 BOARD_CDEFS += CONFIG_STM32_DMA_SPI1_TX
 
-TMPBOARD_CSRCS = ${addprefix boards/stm32/stm32f427_fmuv2/,${BOARD_CSRCS}}
-TMPBOARD_ASMSOURCES = ${addprefix boards/stm32/stm32f427_fmuv2/,${BOARD_ASMSOURCES}}
-TMPBOARD_LNK_FILE = ${addprefix boards/stm32/stm32f427_fmuv2/,${BOARD_LNK_FILE}}
+TMPBOARD_CSRCS = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_CSRCS}}
+TMPBOARD_ASMSOURCES = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_ASMSOURCES}}
+TMPBOARD_LNK_FILE = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_LNK_FILE}}
 
 #######################################
 # Add all setting to root make variable
 #######################################
+MOD_ARCH                 = m4
 PROJ_ENTRY_POINT        := Reset_Handler
 SCF_FILE                := ${TMPBOARD_LNK_FILE}
+
 PROJ_CDEFS              += ${BOARD_CDEFS}
-PROJ_CINCDIRS           += boards/stm32/stm32f427_fmuv2
+
+PROJ_CINCDIRS           += ${BOARD_BSP_PATH}
 CSOURCES                += ${TMPBOARD_CSRCS}
 ASMSOURCES              := ${TMPBOARD_ASMSOURCES}

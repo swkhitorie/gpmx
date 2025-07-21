@@ -1,10 +1,10 @@
 
-FR_CINCDIRS += include/
+PROJ_CINCDIRS += include/
 
-ifeq (${CONFIG_MK_USE_FREERTOS},y)
-FR_CINCDIRS += include/frtos
+ifeq (${MK_USE_FREERTOS},y)
+PROJ_CINCDIRS += include/frtos
 endif
 
-ifeq (${CONFIG_MK_USE_FR_POSIX},y)
-FR_CINCDIRS += include/posix
+ifeq (${MK_USE_FR_POSIX},y)
+PROJ_CINCDIRS += include/posix
 endif

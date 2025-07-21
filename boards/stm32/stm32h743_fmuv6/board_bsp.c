@@ -209,16 +209,20 @@ void board_bsp_init()
 #endif
 }
 
-void board_blue_led_toggle()
+void board_led_toggle(uint8_t idx)
 {
-    int val = BOARD_IO_GET(GPIO_nLED_BLUE_PORT, GPIO_nLED_BLUE_PIN);
-    BOARD_IO_SET(GPIO_nLED_BLUE_PORT, GPIO_nLED_BLUE_PIN, !val);
-}
-
-void board_red_led_toggle()
-{
-    int val = BOARD_IO_GET(GPIO_nLED_RED_PORT, GPIO_nLED_RED_PIN);
-    BOARD_IO_SET(GPIO_nLED_RED_PORT, GPIO_nLED_RED_PIN, !val);
+    switch (idx) {
+    case 0: {
+            int val = BOARD_IO_GET(GPIO_nLED_BLUE_PORT, GPIO_nLED_BLUE_PIN);
+            BOARD_IO_SET(GPIO_nLED_BLUE_PORT, GPIO_nLED_BLUE_PIN, !val);
+        }
+        break;
+    case 1: {
+            int val = BOARD_IO_GET(GPIO_nLED_RED_PORT, GPIO_nLED_RED_PIN);
+            BOARD_IO_SET(GPIO_nLED_RED_PORT, GPIO_nLED_RED_PIN, !val);
+        }
+        break;
+    }
 }
 
 void board_debug()
@@ -241,7 +245,11 @@ int _write(int file, char *ptr, int len)
     const int stdout_fileno = 1;
     const int stderr_fileno = 2;
     if (file == stdout_fileno) {
+#ifdef CONFIG_BOARD_COM_STDOUT_DMA
+        SERIAL_DMASEND(dstdout, ptr, len);
+#else
         SERIAL_SEND(dstdout, ptr, len);
+#endif
     }
     return len;
 }

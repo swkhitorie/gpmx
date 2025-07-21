@@ -36,6 +36,8 @@ include ${SDK_ROOTDIR}/boards/stm32/libs/bsp_libs_stm32.mk
 CSOURCES += ${LIB_CSRCS}
 PROJ_CINCDIRS += ${LIB_CINCDIRS}
 
+BOARD_BSP_PATH := boards/stm32/stm32wl55_nucleo_wl55jc
+
 #########################################################################
 # BSP macros, sources + asm + link files, includes, and entry address
 #########################################################################
@@ -54,36 +56,37 @@ BOARD_CSRCS += board_subghz.c
 
 BOARD_MIDDLEWARE_SUBGHZ_IF_CSRCS += middleware_subghz_if/radio_board.c
 BOARD_MIDDLEWARE_SUBGHZ_IF_CSRCS += middleware_subghz_if/radio_board_if.c
-BOARD_MIDDLEWARE_SUBGHZ_IF_INCDIRS += boards/stm32/stm32wl55_nucleo_wl55jc/middleware_subghz_if
+BOARD_MIDDLEWARE_SUBGHZ_IF_INCDIRS += ${BOARD_BSP_PATH}/middleware_subghz_if
 
 # BOARD_MIDDLEWARE_LORAWAN_IF_CSRCS += middleware_lorawan_if/lora_info.c
-# BOARD_MIDDLEWARE_LORAWAN_IF_INCDIRS += boards/stm32/stm32wl55_nucleo_wl55jc/middleware_lorawan_if
+# BOARD_MIDDLEWARE_LORAWAN_IF_INCDIRS += ${BOARD_BSP_PATH}/middleware_lorawan_if
 
 BOARD_UTILITIES_IF_CSRCS += utilities_if/stm32_adv_trace_if.c
 BOARD_UTILITIES_IF_CSRCS += utilities_if/stm32_lpm_if.c
 BOARD_UTILITIES_IF_CSRCS += utilities_if/timer_if.c
-BOARD_UTILITIES_IF_INCDIRS += boards/stm32/stm32wl55_nucleo_wl55jc/utilities_if
+BOARD_UTILITIES_IF_INCDIRS += ${BOARD_BSP_PATH}/utilities_if
 
 BOARD_ASMSOURCES += nucleo_wl55jc_startup.s
 BOARD_LNK_FILE   += nucleo_wl55jc_linker.ld
 
-# TMPBOARD_LORAWAN_CSRCS = ${addprefix boards/stm32/stm32wl55_nucleo_wl55jc/,${BOARD_MIDDLEWARE_LORAWAN_IF_CSRCS}}
-TMPBOARD_SUBGHZ_CSRCS = ${addprefix boards/stm32/stm32wl55_nucleo_wl55jc/,${BOARD_MIDDLEWARE_SUBGHZ_IF_CSRCS}}
-TMPBOARD_UTILITIES_CSRCS = ${addprefix boards/stm32/stm32wl55_nucleo_wl55jc/,${BOARD_UTILITIES_IF_CSRCS}}
-TMPBOARD_CSRCS = ${addprefix boards/stm32/stm32wl55_nucleo_wl55jc/,${BOARD_CSRCS}}
-TMPBOARD_ASMSOURCES = ${addprefix boards/stm32/stm32wl55_nucleo_wl55jc/,${BOARD_ASMSOURCES}}
-TMPBOARD_LNK_FILE = ${addprefix boards/stm32/stm32wl55_nucleo_wl55jc/,${BOARD_LNK_FILE}}
+# TMPBOARD_LORAWAN_CSRCS = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_MIDDLEWARE_LORAWAN_IF_CSRCS}}
+TMPBOARD_SUBGHZ_CSRCS = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_MIDDLEWARE_SUBGHZ_IF_CSRCS}}
+TMPBOARD_UTILITIES_CSRCS = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_UTILITIES_IF_CSRCS}}
+TMPBOARD_CSRCS = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_CSRCS}}
+TMPBOARD_ASMSOURCES = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_ASMSOURCES}}
+TMPBOARD_LNK_FILE = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_LNK_FILE}}
 
 #######################################
 # Add all setting to root make variable
 #######################################
+MOD_ARCH                 = m4
 PROJ_ENTRY_POINT        := Reset_Handler
 SCF_FILE                := ${TMPBOARD_LNK_FILE}
 PROJ_CDEFS              += ${BOARD_CDEFS}
 
 PROJ_CINCDIRS          += ${BOARD_MIDDLEWARE_SUBGHZ_IF_INCDIRS} \
                             ${BOARD_UTILITIES_IF_INCDIRS} \
-							boards/stm32/stm32wl55_nucleo_wl55jc
+							${BOARD_BSP_PATH}
 
 CSOURCES          += ${TMPBOARD_CSRCS} \
                             ${TMPBOARD_SUBGHZ_CSRCS} \

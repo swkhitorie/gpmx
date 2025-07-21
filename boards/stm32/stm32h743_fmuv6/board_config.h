@@ -155,9 +155,7 @@ void board_bsp_init();
 /*-------------- board bsp interface --------------*/
 void board_debug();
 
-void board_blue_led_toggle();
-
-void board_red_led_toggle();
+void board_led_toggle(uint8_t idx);
 
 #ifdef __cplusplus
 }

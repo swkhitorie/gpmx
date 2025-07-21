@@ -121,7 +121,7 @@ USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t cdc_wbuf[CDC_MAX_MPS];
 struct devfifo_cdc cdc_txfifo = {.in = 0, .out = 0, .size = 0};
 struct devfifo_cdc cdc_rxfifo = {.in = 0, .out = 0, .size = 0};
 #if defined(CONFIG_BOARD_FREERTOS_ENABLE)
-static SemaphoreHandle_t write_sem;
+static SemaphoreHandle_t tx_sem;
 #endif
 
 volatile bool ep_tx_busy_flag = false;
@@ -129,6 +129,7 @@ volatile bool ep_tx_busy_flag = false;
 static void usbd_event_handler(uint8_t busid, uint8_t event)
 {
     int fsize = 0;
+    
     switch (event) {
         case USBD_EVENT_RESET:
             break;
@@ -143,17 +144,18 @@ static void usbd_event_handler(uint8_t busid, uint8_t event)
         case USBD_EVENT_CONFIGURED:
             /* setup first out ep read transfer */
             usbd_ep_start_read(busid, CDC_OUT_EP, cdc_rbuf, CDC_MAX_MPS);
-#ifndef CONFIG_CRUSB_CDC_TX_FIFO_ENABLE
-            ep_tx_busy_flag = false;
-#else
             if (dfifocdc_size(&cdc_txfifo) > 0) {
                 fsize = dfifocdc_read(&cdc_txfifo, &cdc_wbuf[0], CDC_MAX_MPS);
                 usbd_ep_start_write(0, CDC_IN_EP, cdc_wbuf, fsize);
             } else {
                 ep_tx_busy_flag = false;
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+                BaseType_t h_pri;
+                xSemaphoreGiveFromISR(tx_sem, &h_pri);
+                portYIELD_FROM_ISR(h_pri);
+#endif
             }
             break;
-#endif
         case USBD_EVENT_SET_REMOTE_WAKEUP:
             break;
         case USBD_EVENT_CLR_REMOTE_WAKEUP:
@@ -174,20 +176,19 @@ void usbd_cdc_acm_bulk_in(uint8_t busid, uint8_t ep, uint32_t nbytes)
 {
     int fsize = 0;
 
-    if ((nbytes % usbd_get_ep_mps(busid, ep)) == 0 && nbytes) {
-        /* send zlp */
-        usbd_ep_start_write(busid, CDC_IN_EP, NULL, 0);
+    if (dfifocdc_size(&cdc_txfifo) > 0) {
+        fsize = dfifocdc_read(&cdc_txfifo, &cdc_wbuf[0], CDC_MAX_MPS);
+        usbd_ep_start_write(0, CDC_IN_EP, cdc_wbuf, fsize);
     } else {
-#ifndef CONFIG_CRUSB_CDC_TX_FIFO_ENABLE
         ep_tx_busy_flag = false;
-#else
-        if (dfifocdc_size(&cdc_txfifo) <= 0) {
-            ep_tx_busy_flag = false;
-            return;
-        } else {
-            fsize = dfifocdc_read(&cdc_txfifo, &cdc_wbuf[0], CDC_MAX_MPS);
-            usbd_ep_start_write(0, CDC_IN_EP, cdc_wbuf, fsize);
+        if ((nbytes % usbd_get_ep_mps(busid, ep)) == 0 && nbytes) {
+            /* send zlp */
+            usbd_ep_start_write(busid, CDC_IN_EP, NULL, 0);
         }
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+                BaseType_t h_pri;
+                xSemaphoreGiveFromISR(tx_sem, &h_pri);
+                portYIELD_FROM_ISR(h_pri);
 #endif
     }
 }
@@ -211,8 +212,8 @@ void cdc_acm_init(uint8_t busid, uintptr_t reg_base)
     ep_tx_busy_flag = true;
 
 #if defined(CONFIG_BOARD_FREERTOS_ENABLE)
-    write_sem = xSemaphoreCreateBinary();
-    xSemaphoreGive(write_sem);
+    tx_sem = xSemaphoreCreateBinary();
+    xSemaphoreGive(tx_sem);
 #endif
 
     dev_cdc_acm_init(busid, reg_base);
@@ -245,7 +246,6 @@ int dev_cdc_acm_send(uint8_t busid, const uint8_t *p, uint16_t len, uint8_t isbu
 
     if (isbuffer == 0) {
         for (fsize = len; fsize > 0;) {
-            while (ep_tx_busy_flag);
             ep_tx_busy_flag = true;
 
             if (fsize > CDC_MAX_MPS) {
@@ -265,26 +265,31 @@ int dev_cdc_acm_send(uint8_t busid, const uint8_t *p, uint16_t len, uint8_t isbu
             while (ep_tx_busy_flag);
         }
     } else if (isbuffer == 1) {
-#if defined(CONFIG_CRUSB_CDC_TX_FIFO_ENABLE) && defined(CONFIG_BOARD_FREERTOS_ENABLE)
-        if (xSemaphoreTake(write_sem, 10) == pdTRUE) {
-            rsize = dfifocdc_write(&cdc_txfifo, &p[0], len);
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+        if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
+            dfifocdc_write(&cdc_txfifo, &p[0], len);
+            return 0;
+        } else {
+            if (xSemaphoreTake(tx_sem, 10) == pdTRUE) {
 
-            if (rsize == 0 || ep_tx_busy_flag) {
-                xSemaphoreGive(write_sem);
-                return 0;
+                rsize = dfifocdc_write(&cdc_txfifo, &p[0], len);
+
+                if (rsize == 0 || ep_tx_busy_flag) {
+                    xSemaphoreGive(tx_sem);
+                    return 0;
+                }
+                ep_tx_busy_flag = true;
+
+                fsize = dfifocdc_read(&cdc_txfifo, &cdc_wbuf[0], CDC_MAX_MPS);
+                usbd_ep_start_write(0, CDC_IN_EP, cdc_wbuf, fsize);
             }
-
-            ep_tx_busy_flag = true;
-
-            fsize = dfifocdc_read(&cdc_txfifo, &cdc_wbuf[0], CDC_MAX_MPS);
-            usbd_ep_start_write(0, CDC_IN_EP, cdc_wbuf, fsize);
-            xSemaphoreGive(write_sem);
         }
-#elif defined(CONFIG_CRUSB_CDC_TX_FIFO_ENABLE)
+#else
         rsize = dfifocdc_write(&cdc_txfifo, &p[0], len);
-        if (rsize == 0 || ep_tx_busy_flag) return 0;
+        if (rsize == 0 || ep_tx_busy_flag) {
+            return 0;
+        }
         ep_tx_busy_flag = true;
-
         fsize = dfifocdc_read(&cdc_txfifo, &cdc_wbuf[0], CDC_MAX_MPS);
         usbd_ep_start_write(0, CDC_IN_EP, cdc_wbuf, fsize);
 #endif
@@ -314,7 +319,7 @@ int _write(int file, char *ptr, int len)
 {
     if (file == 1) {
         // file -> 0:stdin 1:stdout 2: stderr
-#ifdef CONFIG_CRUSB_CDC_TX_FIFO_ENABLE
+#ifdef CONFIG_CRUSB_CRUSB_CDC_ACM_STDOUT_BUFFER
         dev_cdc_acm_send(0, ptr, len, 1);
 #else
         dev_cdc_acm_send(0, ptr, len, 0);

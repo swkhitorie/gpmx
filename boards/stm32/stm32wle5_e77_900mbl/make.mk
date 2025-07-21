@@ -30,6 +30,8 @@ include ${SDK_ROOTDIR}/boards/stm32/libs/bsp_libs_stm32.mk
 CSOURCES += ${LIB_CSRCS}
 PROJ_CINCDIRS += ${LIB_CINCDIRS}
 
+BOARD_BSP_PATH := boards/stm32/stm32wle5_e77_900mbl
+
 #########################################################################
 # BSP macros, sources + asm + link files, includes, and entry address
 #########################################################################
@@ -47,7 +49,7 @@ BOARD_CSRCS += board_rand.c
 BOARD_CSRCS += board_crc.c
 BOARD_CSRCS += board_subghz.c
 
-BOARD_SUBGHZ_IF_INCDIRS += boards/stm32/stm32wle5_e77_900mbl/subghz_utilities_if
+BOARD_SUBGHZ_IF_INCDIRS += ${BOARD_BSP_PATH}//subghz_utilities_if
 BOARD_SUBGHZ_IF_CSRCS += subghz_utilities_if/timer_if.c
 BOARD_SUBGHZ_IF_CSRCS += subghz_utilities_if/stm32_lpm_if.c
 BOARD_SUBGHZ_IF_CSRCS += subghz_utilities_if/stm32_adv_trace_if.c
@@ -56,17 +58,20 @@ BOARD_SUBGHZ_IF_CSRCS += subghz_utilities_if/radio_board_if.c
 BOARD_ASMSOURCES += e77_900mbl_startup.s
 BOARD_LNK_FILE   += e77_900mbl_linker.ld
 
-TMPBOARD_CSRCS = ${addprefix boards/stm32/stm32wle5_e77_900mbl/,${BOARD_CSRCS}}
-TMPBOARD_SUBGHZ_CSRCS = ${addprefix boards/stm32/stm32wle5_e77_900mbl/,${BOARD_SUBGHZ_IF_CSRCS}}
-TMPBOARD_ASMSOURCES = ${addprefix boards/stm32/stm32wle5_e77_900mbl/,${BOARD_ASMSOURCES}}
-TMPBOARD_LNK_FILE = ${addprefix boards/stm32/stm32wle5_e77_900mbl/,${BOARD_LNK_FILE}}
+TMPBOARD_CSRCS = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_CSRCS}}
+TMPBOARD_SUBGHZ_CSRCS = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_SUBGHZ_IF_CSRCS}}
+TMPBOARD_ASMSOURCES = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_ASMSOURCES}}
+TMPBOARD_LNK_FILE = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_LNK_FILE}}
 
 #######################################
 # Add all setting to root make variable
 #######################################
+MOD_ARCH                 = m4
 PROJ_ENTRY_POINT        := Reset_Handler
 SCF_FILE                := ${TMPBOARD_LNK_FILE}
+
 PROJ_CDEFS              += ${BOARD_CDEFS}
-PROJ_CINCDIRS           += ${BOARD_SUBGHZ_IF_INCDIRS} boards/stm32/stm32wle5_e77_900mbl 
+
+PROJ_CINCDIRS           += ${BOARD_SUBGHZ_IF_INCDIRS} ${BOARD_BSP_PATH}
 CSOURCES                += ${TMPBOARD_CSRCS} ${TMPBOARD_SUBGHZ_CSRCS}
 ASMSOURCES              := ${TMPBOARD_ASMSOURCES}
