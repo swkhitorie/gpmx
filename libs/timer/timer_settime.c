@@ -16,7 +16,7 @@ int timer_settime(timer_t timerid, int flags, const struct itimerspec *value, st
     if (TIMESPEC_IS_NOT_ZERO(value->it_value)) {
         if((utils_validtimespec(&value->it_interval) == false) ||
         (utils_validtimespec(&value->it_value) == false)) {
-            // errno = EINVAL;
+            errno = EINVAL;
             ret = -1;
         }
     }

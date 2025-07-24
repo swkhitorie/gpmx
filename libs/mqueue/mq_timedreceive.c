@@ -13,14 +13,14 @@ ssize_t mq_timedreceive(mqd_t mqdes, char *msg_ptr, size_t msg_len, unsigned *ms
     (void)xSemaphoreTake((SemaphoreHandle_t)queue_listmutex, portMAX_DELAY);
 
     if (find_queue_inlist(NULL, NULL, mqdes) == pdFALSE) {
-        // errno = EBADF;
+        errno = EBADF;
         ret = -1;
     }
 
     if (ret == 0) {
         if (msg_len < (size_t)p->attr.mq_msgsize) {
             /* msg_len too small. */
-            // errno = EMSGSIZE;
+            errno = EMSGSIZE;
             ret = -1;
         }
     }
@@ -28,7 +28,7 @@ ssize_t mq_timedreceive(mqd_t mqdes, char *msg_ptr, size_t msg_len, unsigned *ms
     if (ret == 0) {
         cal_timeout_return = cal_ticktimeout(p->attr.mq_flags, abstime, &timeout_ticks);
         if( cal_timeout_return != 0 ) {
-            // errno = cal_timeout_return;
+            errno = cal_timeout_return;
             ret = -1;
         }
     }
@@ -40,10 +40,10 @@ ssize_t mq_timedreceive(mqd_t mqdes, char *msg_ptr, size_t msg_len, unsigned *ms
             /* If queue receive fails, set the appropriate errno. */
             if( p->attr.mq_flags & O_NONBLOCK ) {
                 /* Set errno to EAGAIN for nonblocking mq. */
-                // errno = EAGAIN;
+                errno = EAGAIN;
             } else {
                 /* Otherwise, set errno to ETIMEDOUT. */
-                // errno = ETIMEDOUT;
+                errno = ETIMEDOUT;
             }
             ret = -1;
         }

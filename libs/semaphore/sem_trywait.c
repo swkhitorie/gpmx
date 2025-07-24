@@ -10,8 +10,8 @@ int sem_trywait(sem_t *sem)
 
     ret = sem_timedwait( sem, &xTimeout );
 
-    //if ((ret == -1 ) && errno == ETIMEDOUT) {
-        // errno = EAGAIN;
-    //}
+    if ((ret == -1 ) && errno == ETIMEDOUT) {
+        errno = EAGAIN;
+    }
     return ret;
 }

@@ -25,7 +25,7 @@ void board_config_mmu()
 	// when isBufferable is MPU_ACCESS_BUFFERABLE, sd+fatfs can not read/write
 	// when isBufferable is MPU_ACCESS_NOT_BUFFERABLE, sd+fatfs is available
 	MPU_InitStruct.IsBufferable     = MPU_ACCESS_NOT_BUFFERABLE;
-	MPU_InitStruct.IsCacheable      = MPU_ACCESS_CACHEABLE;
+	MPU_InitStruct.IsCacheable      = MPU_ACCESS_NOT_CACHEABLE;  // to Enable Atomic Functions
 	MPU_InitStruct.IsShareable      = MPU_ACCESS_NOT_SHAREABLE;
 	MPU_InitStruct.Number           = MPU_REGION_NUMBER0;
 	MPU_InitStruct.TypeExtField     = MPU_TEX_LEVEL1;

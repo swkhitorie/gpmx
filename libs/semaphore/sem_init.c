@@ -9,7 +9,7 @@ int sem_init(sem_t *sem, int pshared, unsigned value)
     (void)pshared;
 
     if (value > SEM_VALUE_MAX) {
-        // errno = EINVAL;
+        errno = EINVAL;
         ret = -1;
     }
     p->val = (int)value;

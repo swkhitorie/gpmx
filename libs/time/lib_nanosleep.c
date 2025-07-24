@@ -12,7 +12,7 @@ int nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
     (void) rmtp;
 
     if (utils_validtimespec(rqtp) == false) {
-        // errno = EINVAL;
+        errno = EINVAL;
         ret = -1;
     }
 

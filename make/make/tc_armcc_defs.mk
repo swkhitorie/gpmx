@@ -33,6 +33,7 @@ TC_LINK:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/armlink.exe)
 TC_AR:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/armar.exe)
 TC_GENBIN:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/fromelf.exe)
 TC_SIZE:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/fromelf.exe -z)
+TC_DUMP:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/fromelf.exe)
 else
 TC_MAKEDEP:=${TC_PATH_BIN}/armcc -M --no_depend_system_headers
 TC_CC:=${TC_PATH_BIN}/armcc
@@ -42,6 +43,7 @@ TC_LINK:=${TC_PATH_BIN}/armlink
 TC_AR:=${TC_PATH_BIN}/armar
 TC_GENBIN:=${TC_PATH_BIN}/fromelf
 TC_SIZE:=${TC_PATH_BIN}/fromelf -z
+TC_DUMP:=${TC_PATH_BIN}/fromelf
 endif
 
 #
@@ -151,3 +153,8 @@ MK_TC_GENSCF=$(if $(and ${1},${2},${3}),@${TC_GENSCF} -E ${1} -o ${2} ${3})
 # 1 - input file
 # 2 - output file
 MK_TC_GENBIN=$(if $(and ${1},${2}),@${TC_GENBIN} -c --bin -o ${2} ${1})
+
+# command to disassembly output file
+# 1 - input file
+# 2 - output file
+MK_TC_DISASSEMBLY=$(if $(and ${1},${2}), @${TC_DUMP} -c -a ${1} -o ${2})

@@ -111,7 +111,7 @@ int uORB::DeviceMaster::advertise(const struct orb_metadata *meta, bool is_adver
 
 		/* if we didn't get a device, that's bad, free the path too */
 		if (node == nullptr) {
-			free((void *)devpath);
+			px4_free((void *)devpath);
 			return -ENOMEM;
 		}
 

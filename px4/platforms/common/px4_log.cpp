@@ -49,6 +49,23 @@ static constexpr const char *__px4_log_level_color[_PX4_LOG_LEVEL_PANIC + 1] {
 	PX4_ANSI_COLOR_RED     // PANIC
 };
 
+void px4_log_initialize(void)
+{
+	// assert(orb_log_message_pub == nullptr);
+
+	// /* we need to advertise with a valid message */
+	// struct log_message_s log_message;
+	// log_message.timestamp = hrt_absolute_time();
+	// log_message.severity = 6; //info
+	// strcpy((char *)log_message.text, "initialized uORB logging");
+
+	// orb_log_message_pub = orb_advertise_queue(ORB_ID(log_message), &log_message, 2);
+
+	// if (!orb_log_message_pub) {
+	// 	PX4_ERR("failed to advertise log_message");
+	// }
+}
+
 __EXPORT void px4_log_modulename(int level, const char *module_name, const char *fmt, ...)
 {
 	FILE *out = stdout;

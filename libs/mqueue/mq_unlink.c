@@ -12,7 +12,7 @@ int mq_unlink(const char *name)
     init_queuelist();
 
     if (validate_queuename(name, &name_size) == pdFALSE) {
-        // errno = EINVAL;
+        errno = EINVAL;
         ret = -1;
     }
 
@@ -26,7 +26,7 @@ int mq_unlink(const char *name)
                 p->pending_unlink = pdTRUE;
             }
         } else {
-            // errno = ENOENT;
+            errno = ENOENT;
             ret = -1;
         }
         (void)xSemaphoreGive((SemaphoreHandle_t)queue_listmutex);

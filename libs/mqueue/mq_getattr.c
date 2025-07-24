@@ -12,7 +12,7 @@ int mq_getattr(mqd_t mqdes, struct mq_attr *mqstat)
         p->attr.mq_curmsgs = (long)uxQueueMessagesWaiting(p->queue);
         *mqstat = p->attr;
     } else {
-        // errno = EBADF;
+        errno = EBADF;
         iStatus = -1;
     }
 

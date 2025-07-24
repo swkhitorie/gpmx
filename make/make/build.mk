@@ -193,6 +193,8 @@ ${TARGET_DEST_FILENAME_BIN}: ${TARGET_DEST_ROOTDIR} ${TARGET_SRC_FILENAME_EXE} $
 	$(call MK_CP,"${TARGET_SRC_FILENAME_LIST}","${TARGET_DEST_FILENAME_LIST}")
 	$(call MK_ECHO,Generating standard binary image)
 	$(call MK_TC_GENBIN,"${TARGET_SRC_FILENAME_EXE}","${TARGET_DEST_FILENAME_BIN}")
+	$(call MK_ECHO,Disassembly the binary image)
+	$(call MK_TC_DISASSEMBLY,"${TARGET_SRC_FILENAME_EXE}","${TARGET_SRC_FILENAME_DISASM}")
 
 #
 # internal secondary targets

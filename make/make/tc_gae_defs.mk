@@ -34,6 +34,7 @@ TC_LINK:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/$(TC_GCC_PREFIX)gcc.exe)
 TC_AR:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/$(TC_GCC_PREFIX)ar.exe)
 TC_GENBIN:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/$(TC_GCC_PREFIX)objcopy.exe)
 TC_SIZE:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/$(TC_GCC_PREFIX)size.exe)
+TC_DUMP:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/$(TC_GCC_PREFIX)objdump.exe)
 else
 TC_MAKEDEP:=${TC_PATH_BIN}/$(TC_GCC_PREFIX)gcc -MM
 TC_CC:=${TC_PATH_BIN}/$(TC_GCC_PREFIX)gcc
@@ -43,6 +44,7 @@ TC_LINK:=${TC_PATH_BIN}/$(TC_GCC_PREFIX)gcc
 TC_AR:=${TC_PATH_BIN}/$(TC_GCC_PREFIX)ar
 TC_GENBIN:=${TC_PATH_BIN}/$(TC_GCC_PREFIX)objcopy
 TC_SIZE:=${TC_PATH_BIN}/$(TC_GCC_PREFIX)size
+TC_DUMP:=${TC_PATH_BIN}/$(TC_GCC_PREFIX)objdump
 endif
 
 #
@@ -93,13 +95,15 @@ TC_COPTS:=\
   -c                    \
   -ffunction-sections   \
   -fdata-sections       \
+  -fstack-usage         \
   -${COMPILE_OPTIMIZE}  \
   -gdwarf-2             \
-  -MD                   \
   -w -Wno-empty-body       \
   -w -Wno-macro-redefined  \
   -w -Wno-invalid-source-encoding \
-  -w -Wno-writable-strings
+  -w -Wno-writable-strings \
+  --specs=nano.specs   \
+  -g3
 
 ifneq (${CONFIG_C_STANDARD},)
 TC_COPTS += -std=${CONFIG_C_STANDARD}
@@ -109,13 +113,15 @@ TC_CPPOPTS:=\
   -c                    \
   -ffunction-sections   \
   -fdata-sections       \
+  -fstack-usage         \
   -${COMPILE_OPTIMIZE}  \
   -gdwarf-2             \
-  -MD                   \
   -w -Wno-empty-body       \
   -w -Wno-macro-redefined  \
   -w -Wno-invalid-source-encoding \
-  -w -Wno-writable-strings
+  -w -Wno-writable-strings \
+  --specs=nano.specs     \
+  -g3
 
 ifneq (${CONFIG_CXX_STANDARD},)
 TC_CPPOPTS += -std=${CONFIG_CXX_STANDARD}
@@ -131,13 +137,12 @@ TC_CDEFS:=
 # Linker options
 TC_LIBOPTS:=\
   -W                        \
-  -W --no-cond-mismatch     \
-  -Wl,--gc-sections         \
+  -Wl,--gc-sections --static \
   --data-sections           \
   -lc                       \
   -lm                       \
-  -lnosys
-  #-nostartfiles 
+  --specs=nosys.specs
+
 
 ifneq (${CONFIG_LIB_NOT_USE_NANOLIB},y)
 TC_LIBOPTS += --specs=nano.specs
@@ -158,8 +163,10 @@ TC_SCFEXT:=ld
 
 # Linker libraries
 TC_LIBNAMES:=\
+  c                     \
   m                     \
   stdc++
+
 TC_LIBPREFIX:=lib
 TC_LIBSUFFIX:=gcc4x
 TC_LIBEXT:=a
@@ -191,3 +198,8 @@ MK_TC_GENSCF=$(if $(and ${1},${2},${3}),@${TC_GENSCF} -P -E ${1} -o ${2} ${3})
 # 1 - input file
 # 2 - output file
 MK_TC_GENBIN=$(if $(and ${1},${2}),@${TC_GENBIN} -O binary ${1} ${2})
+
+# command to disassembly output file
+# 1 - input file
+# 2 - output file
+MK_TC_DISASSEMBLY=$(if $(and ${1},${2}), @${TC_DUMP} -h -S ${1} > "${2}")

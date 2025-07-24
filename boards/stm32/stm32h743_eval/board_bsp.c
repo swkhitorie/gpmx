@@ -100,7 +100,6 @@ void board_debug()
         }
         printf("\r\n");
     }
-    board_blue_led_toggle();
 }
 
 #ifdef CONFIG_BOARD_COM_STDINOUT

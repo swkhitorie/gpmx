@@ -5,6 +5,8 @@
 #include <pthread.h>
 #include <sched.h>
 
+#include <visibility.h>
+
 #define SCHED_DEFAULT	SCHED_FIFO
 #define SCHED_PRIORITY_MAX sched_get_priority_max(SCHED_FIFO)
 #define SCHED_PRIORITY_MIN sched_get_priority_min(SCHED_FIFO)

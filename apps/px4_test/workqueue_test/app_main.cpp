@@ -35,12 +35,13 @@ int px4_app1_main(int argc, char *argv[])
 }
 
 // see https://github.com/PX4/PX4-Autopilot/tree/main/src/examples/work_item
-int main(void)
-{
-    board_init();
-    board_bsp_init();
 
+void* g_start(void *p)
+{
+    board_bsp_init();
     hrt_init();
+
+    pthread_setname_np(pthread_self(), "g_start");
 
     t_argv_list[0] = &cmd2[0];
     t_argv_list[1] = &cmd[0];
@@ -52,6 +53,26 @@ int main(void)
                                             SCHED_DEFAULT, SCHED_PRIORITY_MIN + 3, 
                                             4096, px4_app1_main, (char *const *)NULL);
 
+    return NULL;
+}
+
+int main(void)
+{
+    board_init();
+
+    pthread_t tid;
+    pthread_attr_t tmpattr = {
+        .stackaddr = NULL,
+        .stacksize = 2048*sizeof(StackType_t),
+        .inheritsched = SCHED_FIFO,
+        .schedparam = {
+            .sched_priority = 1,
+        },
+        .detachstate = PTHREAD_CREATE_DETACHED,
+    };
+    int rv = pthread_create(&tid, &tmpattr, &g_start, NULL);
+
     sched_start();
     for (;;);
 }
+

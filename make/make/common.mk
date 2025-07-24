@@ -92,6 +92,7 @@ endif
 # definitions for local folder target outputs
 TARGET_SRC_FILENAME_EXE    :=${TARGET_ROOTDIR}/${PROJ_NAME}.${TC_SUFFIX}
 TARGET_SRC_FILENAME_LIST   :=${TARGET_ROOTDIR}/${PROJ_NAME}.${MOD_LNKLSTEXT}
+TARGET_SRC_FILENAME_DISASM :=${TARGET_ROOTDIR}/${PROJ_NAME}.list
 
 # definitions for binary folder target outputs
 ifeq (${TARGET_POSTBUILD},)

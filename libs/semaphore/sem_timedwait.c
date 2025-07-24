@@ -32,9 +32,9 @@ int sem_timedwait(sem_t *sem, const struct timespec *abstime)
     } else {
         if (xSemaphoreTake((SemaphoreHandle_t) &p->sem, delay) != pdTRUE) {
             if( ret == 0 ) {
-                // errno = ETIMEDOUT;
+                errno = ETIMEDOUT;
             } else {
-                // errno = iStatus;
+                errno = ret;
             }
             ret = -1;
         } else {

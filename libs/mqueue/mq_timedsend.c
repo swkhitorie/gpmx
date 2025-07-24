@@ -13,14 +13,14 @@ int mq_timedsend( mqd_t mqdes, const char *msg_ptr, size_t msg_len, unsigned int
     (void)xSemaphoreTake((SemaphoreHandle_t)queue_listmutex, portMAX_DELAY);
 
     if (find_queue_inlist(NULL, NULL, mqdes) == pdFALSE) {
-        // errno = EBADF;
+        errno = EBADF;
         ret = -1;
     }
 
     if (ret == 0) {
         if (msg_len > (size_t)p->attr.mq_msgsize) {
             /* msg_len too large. */
-            // errno = EMSGSIZE;
+            errno = EMSGSIZE;
             ret = -1;
         }
     }
@@ -28,7 +28,7 @@ int mq_timedsend( mqd_t mqdes, const char *msg_ptr, size_t msg_len, unsigned int
     if (ret == 0) {
         cal_timeout_return = cal_ticktimeout( p->attr.mq_flags, abstime, &timeout_ticks);
         if (cal_timeout_return != 0) {
-            // errno = cal_timeout_return;
+            errno = cal_timeout_return;
             ret = -1;
         }
     }
@@ -39,7 +39,7 @@ int mq_timedsend( mqd_t mqdes, const char *msg_ptr, size_t msg_len, unsigned int
         send.size = msg_len;
         send.p = pvPortMalloc(msg_len);
         if (send.p == NULL) {
-            // errno = EMSGSIZE;
+            errno = EMSGSIZE;
             ret = -1;
         } else {
             (void)memcpy(send.p, msg_ptr, msg_len);
@@ -50,10 +50,10 @@ int mq_timedsend( mqd_t mqdes, const char *msg_ptr, size_t msg_len, unsigned int
         if (xQueueSend(p->queue, &send, timeout_ticks ) == pdFALSE ) {
             if (p->attr.mq_flags & O_NONBLOCK ) {
                 /* Set errno to EAGAIN for nonblocking mq. */
-                // errno = EAGAIN;
+                errno = EAGAIN;
             } else {
                 /* Otherwise, set errno to ETIMEDOUT. */
-                // errno = ETIMEDOUT;
+                errno = ETIMEDOUT;
             }
             vPortFree(send.p);
             ret = -1;

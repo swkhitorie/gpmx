@@ -8,6 +8,8 @@ CPPSOURCES +=  px4/platforms/px4_tasks.cpp
 CPPSOURCES +=  px4/platforms/common/module.cpp
 CPPSOURCES +=  px4/platforms/common/px4_log.cpp
 CPPSOURCES +=  px4/src/lib/perf/perf_counter.cpp
+CPPSOURCES +=  px4/src/lib/cdev/CDev.cpp
+CPPSOURCES +=  px4/src/lib/cdev/cdev_platform.cpp
 endif
 
 ifeq (${MK_USE_PX4_HRT},y)
@@ -36,12 +38,15 @@ CSOURCES += libs/queue/sq_remlast.c
 endif # MK_USE_FR_POSIX
 endif # MK_USE_HRT
 
+ifeq (${MK_USE_PX4_WORKQUEUE},y)
+CPPSOURCES +=  px4/platforms/common/px4_work_queue/ScheduledWorkItem.cpp
+CPPSOURCES +=  px4/platforms/common/px4_work_queue/WorkItem.cpp
+CPPSOURCES +=  px4/platforms/common/px4_work_queue/WorkItemSingleShot.cpp
+CPPSOURCES +=  px4/platforms/common/px4_work_queue/WorkQueue.cpp
+CPPSOURCES +=  px4/platforms/common/px4_work_queue/WorkQueueManager.cpp
+endif
 
 ifeq (${MK_USE_PX4_UORB},y)
-PROJ_CINCDIRS   +=  px4/build/
-CPPSOURCES += $(subst ${SDK_ROOTDIR}/,,$(wildcard ${SDK_ROOTDIR}/px4/build/msg/topics_sources/*cpp))
-CPPSOURCES +=  px4/src/lib/cdev/CDev.cpp
-CPPSOURCES +=  px4/src/lib/cdev/cdev_platform.cpp
 PROJ_CINCDIRS += px4/src/uORB
 CPPSOURCES +=  px4/src/uORB/Subscription.cpp
 CPPSOURCES +=  px4/src/uORB/uORB.cpp
@@ -50,6 +55,10 @@ CPPSOURCES +=  px4/src/uORB/uORBDeviceNode.cpp
 CPPSOURCES +=  px4/src/uORB/uORBMain.cpp
 CPPSOURCES +=  px4/src/uORB/uORBManager.cpp
 CPPSOURCES +=  px4/src/uORB/uORBUtils.cpp
+
+PROJ_CINCDIRS   +=  px4/build/
+CPPSOURCES += $(subst ${SDK_ROOTDIR}/,,$(wildcard ${SDK_ROOTDIR}/px4/build/msg/topics_sources/*cpp))
+
 endif
 
 ifeq (${MK_USE_PX4_UORB},posix)
@@ -62,10 +71,4 @@ CPPSOURCES +=  px4/platforms/common/uorb/src/device_node.cpp
 CPPSOURCES +=  px4/platforms/common/uorb/src/uorb.cpp
 endif
 
-ifeq (${MK_USE_PX4_WORKQUEUE},y)
-CPPSOURCES +=  px4/platforms/common/px4_work_queue/ScheduledWorkItem.cpp
-CPPSOURCES +=  px4/platforms/common/px4_work_queue/WorkItem.cpp
-CPPSOURCES +=  px4/platforms/common/px4_work_queue/WorkItemSingleShot.cpp
-CPPSOURCES +=  px4/platforms/common/px4_work_queue/WorkQueue.cpp
-CPPSOURCES +=  px4/platforms/common/px4_work_queue/WorkQueueManager.cpp
-endif
+

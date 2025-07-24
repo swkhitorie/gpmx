@@ -14,14 +14,14 @@ int timer_create(clockid_t clockid, FAR struct sigevent *evp, FAR timer_t *timer
     (void)clockid;
 
     if (evp == NULL || evp->sigev_notify == SIGEV_SIGNAL) {
-        // errno = ENOTSUP;
+        errno = ENOTSUP;
         ret = -1;
     }
 
     if (ret == 0) {
         p = pvPortMalloc(sizeof(timer_internal_t));
         if (p == NULL) {
-            // errno = EAGAIN;
+            errno = EAGAIN;
             ret = -1;
         }
     }

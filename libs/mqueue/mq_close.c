@@ -26,7 +26,7 @@ int mq_close(mqd_t mqdes)
             }
         }
     } else {
-        // errno = EBADF;
+        errno = EBADF;
         ret = -1;
     }
 

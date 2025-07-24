@@ -214,7 +214,7 @@ extern "C" {
 
 			} else {
 
-				const unsigned NAMELEN = 32;
+				const unsigned NAMELEN = 16;
 				char thread_name[NAMELEN] {};
 
 				PX4_WARN("%s: exceeded maximum number of file descriptors, accessing %s", thread_name, path);
@@ -339,7 +339,7 @@ extern "C" {
 		int count = 0;
 		int ret = -1;
 
-		const unsigned NAMELEN = 32;
+		const unsigned NAMELEN = 16;
 		char thread_name[NAMELEN] {};
 
 #ifndef __PX4_QURT
