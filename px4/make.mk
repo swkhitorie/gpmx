@@ -16,27 +16,27 @@ endif
 ifeq (${MK_USE_PX4_HRT},y)
 PROJ_CINCDIRS   +=  px4/platforms/hrt/
 CSOURCES   +=  px4/platforms/hrt/hrt.c
-ifeq (${MK_USE_FR_POSIX},n)
+ifeq (${MK_USE_POSIX},n)
 PROJ_CINCDIRS += px4/platforms/hrt/queue
-CSOURCES += libs/queue/dq_addafter.c
-CSOURCES += libs/queue/dq_addbefore.c
-CSOURCES += libs/queue/dq_addfirst.c
-CSOURCES += libs/queue/dq_addlast.c
-CSOURCES += libs/queue/dq_cat.c
-CSOURCES += libs/queue/dq_count.c
-CSOURCES += libs/queue/dq_rem.c
-CSOURCES += libs/queue/dq_remfirst.c
-CSOURCES += libs/queue/dq_remlast.c
-CSOURCES += libs/queue/sq_addafter.c
-CSOURCES += libs/queue/sq_addfirst.c
-CSOURCES += libs/queue/sq_addlast.c
-CSOURCES += libs/queue/sq_cat.c
-CSOURCES += libs/queue/sq_count.c
-CSOURCES += libs/queue/sq_rem.c
-CSOURCES += libs/queue/sq_remafter.c
-CSOURCES += libs/queue/sq_remfirst.c
-CSOURCES += libs/queue/sq_remlast.c
-endif # MK_USE_FR_POSIX
+CSOURCES += libs/libc/queue/dq_addafter.c
+CSOURCES += libs/libc/queue/dq_addbefore.c
+CSOURCES += libs/libc/queue/dq_addfirst.c
+CSOURCES += libs/libc/queue/dq_addlast.c
+CSOURCES += libs/libc/queue/dq_cat.c
+CSOURCES += libs/libc/queue/dq_count.c
+CSOURCES += libs/libc/queue/dq_rem.c
+CSOURCES += libs/libc/queue/dq_remfirst.c
+CSOURCES += libs/libc/queue/dq_remlast.c
+CSOURCES += libs/libc/queue/sq_addafter.c
+CSOURCES += libs/libc/queue/sq_addfirst.c
+CSOURCES += libs/libc/queue/sq_addlast.c
+CSOURCES += libs/libc/queue/sq_cat.c
+CSOURCES += libs/libc/queue/sq_count.c
+CSOURCES += libs/libc/queue/sq_rem.c
+CSOURCES += libs/libc/queue/sq_remafter.c
+CSOURCES += libs/libc/queue/sq_remfirst.c
+CSOURCES += libs/libc/queue/sq_remlast.c
+endif # MK_USE_POSIX
 endif # MK_USE_HRT
 
 ifeq (${MK_USE_PX4_WORKQUEUE},y)

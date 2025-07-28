@@ -15,14 +15,13 @@ TARGET_POSTBUILD := ${TARGET_DEST_FILENAME_BIN}
 include ${SDK_ROOTDIR}/boards/stm32/stm32h743_eval/make.mk
 
 # os and library config
-MK_CHIP_ARCH=${MOD_ARCH}
 MK_COMPILER=gcc
-MK_USE_FREERTOS=y
-MK_USE_FRMEM_METHOD=4
-MK_USE_FR_POSIX=y
-MK_USE_FS_FATFS=n
+MK_RTOS=frtos
+MK_MEM_METHOD=4
+MK_USE_POSIX=y
 MK_USE_LIB_CPP=y
 
+MK_USE_FS_FATFS=n
 MK_USE_CRUSB=n
 MK_USE_CRUSB_CDC=n
 MK_CRUSB_IP=none
@@ -31,13 +30,6 @@ MK_USE_PX4_HRT=y
 MK_USE_PX4_COMPONENT=y
 MK_USE_PX4_UORB=y
 MK_USE_PX4_WORKQUEUE=y
-
-include ${SDK_ROOTDIR}/include/make.mk
-include ${SDK_ROOTDIR}/sched/make.mk
-include ${SDK_ROOTDIR}/mm/make.mk
-include ${SDK_ROOTDIR}/libs/make.mk
-include ${SDK_ROOTDIR}/usb/make.mk
-include ${SDK_ROOTDIR}/px4/make.mk
 
 # app configuration
 PROJ_CDEFS += CONFIG_BOARD_FREERTOS_ENABLE
