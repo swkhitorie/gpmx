@@ -1,7 +1,7 @@
 #include "board_config.h"
 
 #ifdef CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
-void usb_dc_low_level_init(uint8_t busid)
+void HAL_PCD_MspInit(PCD_HandleTypeDef *hpcd)
 {
 	/* select usb clock -> PLL3Q 48M, from HSE */
     GPIO_InitTypeDef GPIO_InitStruct = { 0 };
@@ -35,16 +35,10 @@ void usb_dc_low_level_init(uint8_t busid)
     HAL_NVIC_EnableIRQ(OTG_FS_IRQn);
 }
 
-void usb_dc_low_level_deinit(uint8_t busid)
+void HAL_PCD_MspDeInit(PCD_HandleTypeDef *hpcd)
 {
     __HAL_RCC_USB_OTG_FS_CLK_DISABLE();
     HAL_GPIO_DeInit(GPIOA, GPIO_PIN_11|GPIO_PIN_12);
     HAL_NVIC_DisableIRQ(OTG_FS_IRQn);
-}
-
-void OTG_FS_IRQHandler(void)
-{
-    extern void USBD_IRQHandler(uint8_t busid);
-    USBD_IRQHandler(0);
 }
 #endif
