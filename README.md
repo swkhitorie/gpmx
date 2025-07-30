@@ -1,5 +1,7 @@
 GPM is a microcontroller project template that integrates open-source components
 
+## Directory Structure
+
 | Directory | Description                                                                   |
 | --------- | ----------------------------------------------------------------------------- |
 | boards    | Hardware Abstract Layer Re-Encapsulation based on the manufacturer's library |
@@ -8,6 +10,8 @@ GPM is a microcontroller project template that integrates open-source components
 | make      | Project makefiles and compile srcipts makefile                                |
 | kernel    | Rtos Kernel                                                                   |
 | px4       | Important components ported from PX4, such as uorb, workqueue, hrt.          |
+
+## Toolchain
 
 Edit Toolchain path in ./make/toolchain.sh:
 
@@ -24,12 +28,15 @@ compile:
 ./make/build.sh app_template -j2 -r
 ```
 
-support chip driver:
+## Integrate Peripheral Driver Support
 
-    stm32f1xx: usart, i2c, spi
+STM32 :
 
-    stm32f4xx: usart, i2c, spi
-
-    stm32h7xx: usart, i2c, spi
-
-    stm32wlxx: usart
+|           | F1           | F4 | H7 | WL |
+| --------- | ------------ | -- | -- | -- |
+| GPIO/EXTI | **√** | √ | √ | √ |
+| RTC       | ×           | √ | √ | × |
+| USART     | √           | √ | √ | √ |
+| I2C       | √           | √ | √ | × |
+| SPI       | √           | √ | √ | × |
+| CAN       | ×           | × | × | × |

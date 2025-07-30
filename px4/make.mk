@@ -1,23 +1,33 @@
 
 PROJ_CINCDIRS += px4/platforms/common/
 PROJ_CINCDIRS += px4/src/
+PROJ_CINCDIRS += px4/src/lib/
 PROJ_CINCDIRS += px4/src/include/
 PROJ_CINCDIRS += px4/src/modules/
 
 ifeq (${MK_USE_PX4_COMPONENT},y)
-CPPSOURCES +=  px4/platforms/px4_tasks.cpp
-CPPSOURCES +=  px4/platforms/common/module.cpp
-CPPSOURCES +=  px4/platforms/common/px4_log.cpp
 CPPSOURCES +=  px4/src/lib/perf/perf_counter.cpp
 CPPSOURCES +=  px4/src/lib/cdev/CDev.cpp
 CPPSOURCES +=  px4/src/lib/cdev/cdev_platform.cpp
+
+CPPSOURCES +=  px4/platforms/generic/px4_tasks.cpp
+CPPSOURCES +=  px4/platforms/common/module.cpp
+CPPSOURCES +=  px4/platforms/common/px4_log.cpp
+#CSOURCES +=  px4/platforms/common/px4_getopt.c
+
+endif
+
+ifeq (${MK_USE_PX4_I2CSPI_BUSES},y)
+CPPSOURCES +=  px4/platforms/common/spix.cpp
+CPPSOURCES +=  px4/platforms/common/i2c.cpp
+CPPSOURCES +=  px4/platforms/common/i2c_spi_buses.cpp
 endif
 
 ifeq (${MK_USE_PX4_HRT},y)
-PROJ_CINCDIRS   +=  px4/platforms/hrt/
-CSOURCES   +=  px4/platforms/hrt/hrt.c
+PROJ_CINCDIRS   +=  px4/platforms/generic/stm32
+CSOURCES   +=  px4/platforms/generic/stm32/hrt.c
 ifeq (${MK_USE_POSIX},n)
-PROJ_CINCDIRS += px4/platforms/hrt/queue
+PROJ_CINCDIRS += px4/platforms/generic/stm32/queue
 CSOURCES += libs/libc/queue/dq_addafter.c
 CSOURCES += libs/libc/queue/dq_addbefore.c
 CSOURCES += libs/libc/queue/dq_addfirst.c

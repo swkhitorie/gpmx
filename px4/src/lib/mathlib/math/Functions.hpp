@@ -172,4 +172,23 @@ const T gradual3(const T &value,
 	}
 }
 
+template<typename T>
+constexpr T negate(T value)
+{
+	return -value;
+}
+
+template<>
+constexpr int16_t negate<int16_t>(int16_t value)
+{
+	if (value == INT16_MAX) {
+		return INT16_MIN;
+
+	} else if (value == INT16_MIN) {
+		return INT16_MAX;
+	}
+
+	return -value;
+}
+
 } /* namespace math */

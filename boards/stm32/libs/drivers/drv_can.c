@@ -57,8 +57,8 @@ bool low_pinconfig(struct up_can_dev_s *dev)
 	}
 	
 	if (illegal != 0) {
-        low_gpio_setup(tx_pin->port, tx_pin->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDHIGH, tx_pin->alternate, NULL, 0);
-		low_gpio_setup(rx_pin->port, rx_pin->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDHIGH, rx_pin->alternate, NULL, 0);
+        low_gpio_setup(tx_pin->port, tx_pin->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDHIGH, tx_pin->alternate, NULL, NULL, 0);
+		low_gpio_setup(rx_pin->port, rx_pin->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDHIGH, rx_pin->alternate, NULL, NULL, 0);
 	} else {
 		return false;
 	}

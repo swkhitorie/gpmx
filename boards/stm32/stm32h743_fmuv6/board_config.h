@@ -17,6 +17,7 @@
 #include <stm32h7xx_hal.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <drv_gpio.h>
 
 #define APP_LOAD_ADDRESS      (0x08020000)
 #define HSE_VALUE             (16000000UL)
@@ -132,14 +133,6 @@
 #define BOARD_RED_LED(on_true)            BOARD_IO_SET(GPIO_nLED_RED_PORT, \
                                                     GPIO_nLED_RED_PIN, !(on_true))
 
-/**
- * Device Spi Name Macro
- */
-#define DEV_SPIDEV_IMU_ACCEL_BMI055         (0x11)
-#define DEV_SPIDEV_IMU_GYRO_BMI055          (0x12)
-#define DEV_SPIDEV_IMU_ICM42688P            (0x13)
-
-
 #ifdef __cplusplus
     extern "C" {
 #endif
@@ -157,8 +150,14 @@ void board_debug();
 
 void board_led_toggle(uint8_t idx);
 
+int board_gpiosetevent(uint32_t pinset, bool risingedge, bool fallingedge,
+                       bool event, io_exit_func func, void *arg);
+
 #ifdef __cplusplus
 }
 #endif
+
+#include <px4_board_config.h>
+#define px4_arch_gpiosetevent(pinset,r,f,e,fp,a)  board_gpiosetevent(pinset,r,f,e,fp,a)
 
 #endif

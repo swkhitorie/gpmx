@@ -188,8 +188,8 @@ bool low_pinsetup(struct i2c_master_s *dev, uint32_t mode)
 #endif
     };
 
-    low_gpio_setup(scl_port, scl_pin, mode, IO_NOPULL, IO_SPEEDHIGH, i2c_af[num-1], NULL, 0);
-    low_gpio_setup(sda_port, sda_pin, mode, IO_NOPULL, IO_SPEEDHIGH, i2c_af[num-1], NULL, 0);
+    low_gpio_setup(scl_port, scl_pin, mode, IO_NOPULL, IO_SPEEDHIGH, i2c_af[num-1], NULL, NULL, 0);
+    low_gpio_setup(sda_port, sda_pin, mode, IO_NOPULL, IO_SPEEDHIGH, i2c_af[num-1], NULL, NULL, 0);
 
     return true;
 }

@@ -148,10 +148,10 @@ bool low_pinconfig(struct spi_dev_s *dev)
 	}
 	
 	if (illegal != 0) {
-        // low_gpio_setup(nss_node->port, nss_node->pin_num, IOMODE_AFPP, IO_PULLUP, IO_SPEEDMAX, nss_node->alternate, NULL, 0);
-		low_gpio_setup(sck_node->port, sck_node->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDMAX, sck_node->alternate, NULL, 0);
-		low_gpio_setup(miso_node->port, miso_node->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDMAX, miso_node->alternate, NULL, 0);
-		low_gpio_setup(mosi_node->port, mosi_node->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDMAX, mosi_node->alternate, NULL, 0);
+        // low_gpio_setup(nss_node->port, nss_node->pin_num, IOMODE_AFPP, IO_PULLUP, IO_SPEEDMAX, nss_node->alternate, NULL, NULL, 0);
+		low_gpio_setup(sck_node->port, sck_node->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDMAX, sck_node->alternate, NULL, NULL, 0);
+		low_gpio_setup(miso_node->port, miso_node->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDMAX, miso_node->alternate, NULL, NULL, 0);
+		low_gpio_setup(mosi_node->port, mosi_node->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDMAX, mosi_node->alternate, NULL, NULL, 0);
 	}else {
 		return false;
 	}
@@ -164,13 +164,13 @@ bool low_pinconfig(struct spi_dev_s *dev)
         uint16_t       sck_pin[3] =  {   5,         13,          3    };
         uint16_t       miso_pin[3] = {   6,         14,          4    };
 		uint16_t       mosi_pin[3] = {   7,         15,          5    };
-		low_gpio_setup(spi_port[num-1], sck_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, 0);
-		low_gpio_setup(spi_port[num-1], mosi_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, 0);
-		low_gpio_setup(spi_port[num-1], miso_pin[num-1], IOMODE_INPUT, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, 0);
+		low_gpio_setup(spi_port[num-1], sck_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, NULL, 0);
+		low_gpio_setup(spi_port[num-1], mosi_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, NULL, 0);
+		low_gpio_setup(spi_port[num-1], miso_pin[num-1], IOMODE_INPUT, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, NULL, 0);
     } else if (pin_ncs == 1 && num == 1) {
-		low_gpio_setup(GPIOB, 3, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, 0);  //sck
-		low_gpio_setup(GPIOB, 4, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, 0);  //miso
-		low_gpio_setup(GPIOB, 5, IOMODE_INPUT, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, 0);  //mosi  
+		low_gpio_setup(GPIOB, 3, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, NULL, 0);  //sck
+		low_gpio_setup(GPIOB, 4, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, NULL, 0);  //miso
+		low_gpio_setup(GPIOB, 5, IOMODE_INPUT, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, NULL, 0);  //mosi  
     }
 	return true;
 #endif
@@ -183,9 +183,9 @@ bool low_pinconfig(struct spi_dev_s *dev)
 		uint16_t       mosi_pin[3] = {   7,         15,          5    };
         uint32_t       alternate[3] = {GPIO_AF5_SPI1, GPIO_AF5_SPI2, GPIO_AF6_SPI3};
 
-		low_gpio_setup(spi_port[num-1], sck_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1], NULL, 0);
-		low_gpio_setup(spi_port[num-1], mosi_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1], NULL, 0);
-		low_gpio_setup(spi_port[num-1], miso_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1], NULL, 0);
+		low_gpio_setup(spi_port[num-1], sck_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1], NULL, NULL, 0);
+		low_gpio_setup(spi_port[num-1], mosi_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1], NULL, NULL, 0);
+		low_gpio_setup(spi_port[num-1], miso_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1], NULL, NULL, 0);
     } else if (pin_ncs == 1) {
         GPIO_TypeDef *spi_port[3] =  { GPIOB,		GPIOB,      GPIOC };
         uint16_t       sck_pin[3] =  {   3,         10,          10   };
@@ -193,12 +193,12 @@ bool low_pinconfig(struct spi_dev_s *dev)
 		uint16_t       mosi_pin[3] = {   5,         3,          12    };
         uint32_t       alternate[3] = {GPIO_AF5_SPI1, GPIO_AF5_SPI2, GPIO_AF6_SPI3};
 
-		low_gpio_setup(spi_port[num-1], sck_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1], NULL, 0);
+		low_gpio_setup(spi_port[num-1], sck_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1], NULL, NULL, 0);
 		if (num == 2) {
 			spi_port[num-1] = GPIOC;
 		}
-		low_gpio_setup(spi_port[num-1], mosi_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1], NULL, 0);
-		low_gpio_setup(spi_port[num-1], miso_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1], NULL, 0);
+		low_gpio_setup(spi_port[num-1], mosi_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1], NULL, NULL, 0);
+		low_gpio_setup(spi_port[num-1], miso_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1], NULL, NULL, 0);
     }
 	return true;
 #endif

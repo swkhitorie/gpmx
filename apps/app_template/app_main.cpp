@@ -8,12 +8,11 @@ int main(int argc, char *argv[])
     board_bsp_init();
 
     uint32_t m = HAL_GetTick();
-
     for (;;) {
-        if (HAL_GetTick() - m >= 100) {
+        if (HAL_GetTick() - m >= 1) {
             m = HAL_GetTick();
 
-            printf("hello \r\n");
+            board_debug();
         }
     }
 }

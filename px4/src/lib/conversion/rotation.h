@@ -43,7 +43,7 @@
 
 #include "mathlib/mathlib.h"
 #include "matrix/matrix/math.hpp"
-#include "platform_defines.h"
+#include <px4_platform_common/defines.h>
 
 /**
  * Enum for board and external compass rotations.

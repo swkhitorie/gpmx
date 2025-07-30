@@ -41,6 +41,7 @@
 #include <px4_platform_common/tasks.h>
 #include <containers/BlockingList.hpp>
 #include <containers/BlockingQueue.hpp>
+#include <lib/drivers/device/Device.hpp>
 
 #include <unistd.h>
 #include <limits.h>
@@ -122,49 +123,49 @@ WorkQueueFindOrCreate(const wq_config_t &new_wq)
 	return wq;
 }
 
-// const wq_config_t &
-// device_bus_to_wq(uint32_t device_id_int)
-// {
-// 	union device::Device::DeviceId device_id;
-// 	device_id.devid = device_id_int;
+const wq_config_t &
+device_bus_to_wq(uint32_t device_id_int)
+{
+	union device::Device::DeviceId device_id;
+	device_id.devid = device_id_int;
 
-// 	const device::Device::DeviceBusType bus_type = device_id.devid_s.bus_type;
-// 	const uint8_t bus = device_id.devid_s.bus;
+	const device::Device::DeviceBusType bus_type = device_id.devid_s.bus_type;
+	const uint8_t bus = device_id.devid_s.bus;
 
-// 	if (bus_type == device::Device::DeviceBusType_I2C) {
-// 		switch (bus) {
-// 		case 0: return wq_configurations::DEV_I2C0;
+	if (bus_type == device::Device::DeviceBusType_I2C) {
+		switch (bus) {
+		case 0: return wq_configurations::DEV_I2C0;
 
-// 		case 1: return wq_configurations::DEV_I2C1;
+		case 1: return wq_configurations::DEV_I2C1;
 
-// 		case 2: return wq_configurations::DEV_I2C2;
+		case 2: return wq_configurations::DEV_I2C2;
 
-// 		case 3: return wq_configurations::DEV_I2C3;
+		case 3: return wq_configurations::DEV_I2C3;
 
-// 		case 4: return wq_configurations::DEV_I2C4;
-// 		}
+		case 4: return wq_configurations::DEV_I2C4;
+		}
 
-// 	} else if (bus_type == device::Device::DeviceBusType_SPI) {
-// 		switch (bus) {
-// 		case 0: return wq_configurations::DEV_SPI0;
+	} else if (bus_type == device::Device::DeviceBusType_SPI) {
+		switch (bus) {
+		case 0: return wq_configurations::DEV_SPI0;
 
-// 		case 1: return wq_configurations::DEV_SPI1;
+		case 1: return wq_configurations::DEV_SPI1;
 
-// 		case 2: return wq_configurations::DEV_SPI2;
+		case 2: return wq_configurations::DEV_SPI2;
 
-// 		case 3: return wq_configurations::DEV_SPI3;
+		case 3: return wq_configurations::DEV_SPI3;
 
-// 		case 4: return wq_configurations::DEV_SPI4;
+		case 4: return wq_configurations::DEV_SPI4;
 
-// 		case 5: return wq_configurations::DEV_SPI5;
+		case 5: return wq_configurations::DEV_SPI5;
 
-// 		case 6: return wq_configurations::DEV_SPI6;
-// 		}
-// 	}
+		case 6: return wq_configurations::DEV_SPI6;
+		}
+	}
 
-// 	// otherwise use high priority
-// 	return wq_configurations::hp_default;
-// };
+	// otherwise use high priority
+	return wq_configurations::hp_default;
+};
 
 const wq_config_t &
 serial_port_to_wq(const char *serial)

@@ -23,6 +23,13 @@ fi
 
 cd ${script_dir}/../
 
+current_dir=$(pwd)
+find_sub_path=$current_dir/apps/$app_subpath
+if [ ! -d ${find_sub_path} ];then
+    echo "APP directory:"${find_sub_path}"/ is not exist"
+    exit 1
+fi
+
 if [ ${make_rebuild} ]
 then
     if [ ${make_rebuild} == "-r" ]

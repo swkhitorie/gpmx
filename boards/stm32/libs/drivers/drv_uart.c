@@ -128,8 +128,8 @@ bool low_pinconfig(struct uart_dev_s *dev)
 	}
 
 	if (illegal != 0) {
-        low_gpio_setup(tx_pin->port, tx_pin->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDHIGH, tx_pin->alternate, NULL, 0);
-        low_gpio_setup(rx_pin->port, rx_pin->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDHIGH, rx_pin->alternate, NULL, 0);    
+        low_gpio_setup(tx_pin->port, tx_pin->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDHIGH, tx_pin->alternate, NULL, NULL, 0);
+        low_gpio_setup(rx_pin->port, rx_pin->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDHIGH, rx_pin->alternate, NULL, NULL, 0);    
 	}else {
 		return false;
 	}
@@ -144,8 +144,8 @@ bool low_pinconfig(struct uart_dev_s *dev)
         GPIO_TypeDef* rx_port[5] = { GPIOA,		GPIOA,      GPIOB,      GPIOC,      GPIOD};
         uint16_t       rx_pin[5] = {   10,        3,          11,        11,          2 };
 
-        low_gpio_setup(tx_port[num-1], tx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, 0);
-        low_gpio_setup(rx_port[num-1], rx_pin[num-1], IOMODE_INPUT,IO_NOPULL, IO_SPEEDHIGH, 0, NULL, 0); 
+        low_gpio_setup(tx_port[num-1], tx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, NULL, 0);
+        low_gpio_setup(rx_port[num-1], rx_pin[num-1], IOMODE_INPUT,IO_NOPULL, IO_SPEEDHIGH, 0, NULL, NULL, 0); 
     } else if (tx_selec == 1 && num <= 3) {
         GPIO_TypeDef *tx_port[3] = { GPIOB,		GPIOD,      GPIOD };
         uint16_t       tx_pin[3] = {   6,         5,          8   };
@@ -153,8 +153,8 @@ bool low_pinconfig(struct uart_dev_s *dev)
         GPIO_TypeDef* rx_port[3] = { GPIOB,		GPIOD,      GPIOD };
         uint16_t       rx_pin[3] = {   7,        6,          9,   };
 
-        low_gpio_setup(tx_port[num-1], tx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, 0);
-        low_gpio_setup(rx_port[num-1], rx_pin[num-1], IOMODE_INPUT,IO_NOPULL, IO_SPEEDHIGH, 0, NULL, 0); 
+        low_gpio_setup(tx_port[num-1], tx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, NULL, 0);
+        low_gpio_setup(rx_port[num-1], rx_pin[num-1], IOMODE_INPUT,IO_NOPULL, IO_SPEEDHIGH, 0, NULL, NULL, 0); 
     }
     return true;
 #endif
@@ -174,8 +174,8 @@ bool low_pinconfig(struct uart_dev_s *dev)
             GPIO_AF8_UART7, GPIO_AF8_UART8
 #endif
         };
-        low_gpio_setup(tx_port[num-1], tx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL, 0);
-        low_gpio_setup(rx_port[num-1], rx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL, 0); 
+        low_gpio_setup(tx_port[num-1], tx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL, NULL, 0);
+        low_gpio_setup(rx_port[num-1], rx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL, NULL, 0); 
     } else if (tx_selec == 1) {
         GPIO_TypeDef *tx_port[8] = { GPIOB,		GPIOD,      GPIOD, GPIOD,   GPIOB,  GPIOG,  GPIOE,  /*GPIOJ*/};
         uint16_t       tx_pin[8] = {   6,         5,          8,     1,      13,     14,     8,     8    };
@@ -191,8 +191,8 @@ bool low_pinconfig(struct uart_dev_s *dev)
 #endif
         };
 
-        low_gpio_setup(tx_port[num-1], tx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL, 0);
-        low_gpio_setup(rx_port[num-1], rx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL, 0); 
+        low_gpio_setup(tx_port[num-1], tx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL, NULL, 0);
+        low_gpio_setup(rx_port[num-1], rx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL, NULL, 0); 
     }
     return true;
 #endif
@@ -209,12 +209,12 @@ bool low_pinconfig(struct uart_dev_s *dev)
         uint16_t       rx_pin[8] = {   10,        3     };
         uint32_t      alternate[8] = { GPIO_AF7_USART1, GPIO_AF7_USART2 };
 
-        low_gpio_setup(tx_port[num-1], tx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL, 0);
-        low_gpio_setup(rx_port[num-1], rx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL, 0);
+        low_gpio_setup(tx_port[num-1], tx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL, NULL, 0);
+        low_gpio_setup(rx_port[num-1], rx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate[num-1], NULL, NULL, 0);
 
     } else if (tx_selec == 1 && num == 1) {
-        low_gpio_setup(GPIOB, 6, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, GPIO_AF7_USART1, NULL, 0);
-        low_gpio_setup(GPIOB, 7, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, GPIO_AF7_USART1, NULL, 0);
+        low_gpio_setup(GPIOB, 6, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, GPIO_AF7_USART1, NULL, NULL, 0);
+        low_gpio_setup(GPIOB, 7, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, GPIO_AF7_USART1, NULL, NULL, 0);
     }
     return true;
 #endif

@@ -77,6 +77,10 @@ void board_bsp_init()
     cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
     HAL_Delay(100);  // wait cdc init completed
 #endif
+
+    // low_rtc_setup();
+    // time_t init_now = 1753864831;
+    // low_rtc_set_time_stamp(init_now);
 }
 
 void board_led_toggle(uint8_t idx)
@@ -90,16 +94,51 @@ void board_led_toggle(uint8_t idx)
     }
 }
 
-uint8_t buff_debug[256];
+// uint8_t buff_debug[256];
+static uint32_t freq_cnt = 1;
 void board_debug()
 {
-    int size = SERIAL_RDBUF(dstdin, buff_debug, 256);
-    if (size > 0) {
-        for (int i = 0; i < size; i++) {
-            printf("%c", buff_debug[i]);
-        }
-        printf("\r\n");
+    if (++freq_cnt >= 100) {
+        freq_cnt = 1;
+
+        printf("test stm32h743_eval\r\n");
+        // struct timeval now;
+        // struct tm *tm_info;
+        // time_t now_ts = low_rtc_get_timeval(&now);
+        // tm_info = localtime(&now.tv_sec);
+
+        // printf("timestamp: %ld %ld \r\n", (int)now.tv_sec, (int)now.tv_usec);
+        // printf("utc: %d-%02d-%02d %d:%d:%d \r\n", 
+        //     tm_info->tm_year+1900, 
+        //     tm_info->tm_mon+1,
+        //     tm_info->tm_mday,
+        //     tm_info->tm_hour,
+        //     tm_info->tm_min,
+        //     tm_info->tm_sec);
     }
+
+    // int size = SERIAL_RDBUF(dstdin, buff_debug, 256);
+    // if (size > 0) {
+    //     for (int i = 0; i < size; i++) {
+    //         printf("%c", buff_debug[i]);
+    //     }
+    //     printf("\r\n");
+    // }
+}
+
+void board_rtc_setup()
+{
+    low_rtc_setup();
+}
+
+time_t board_rtc_get_timestamp(struct timeval *now)
+{
+    return low_rtc_get_timeval(now);
+}
+
+bool board_rtc_set_timestamp(time_t now)
+{
+    return low_rtc_set_time_stamp(now);
 }
 
 #ifdef CONFIG_BOARD_COM_STDINOUT

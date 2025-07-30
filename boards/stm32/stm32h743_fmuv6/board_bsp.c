@@ -6,6 +6,7 @@
 #include <device/serial.h>
 #include <device/i2c_master.h>
 #include <device/spi.h>
+#include <drivers/drv_sensor.h>
 
 /**************
  * GPS1 Serial port
@@ -91,9 +92,9 @@ struct up_spi_dev_s sensor_spi_dev =
     .enable_dmarx = true,
     .enable_dmatx = true,
     .devid = { 
-        [0] = DEV_SPIDEV_IMU_ACCEL_BMI055,
-        [1] = DEV_SPIDEV_IMU_GYRO_BMI055,
-        [2] = DEV_SPIDEV_IMU_ICM42688P,
+        [0] = DRV_ACC_DEVTYPE_BMI055,
+        [1] = DRV_GYR_DEVTYPE_BMI055,
+        [2] = DRV_IMU_DEVTYPE_ICM42688P,
     },
 	.devcs = {
         [0] = {GPIOC, 15},
@@ -228,6 +229,34 @@ void board_led_toggle(uint8_t idx)
 void board_debug()
 {
     board_blue_led_toggle();
+}
+
+int board_gpiosetevent(uint32_t pinset, bool risingedge, bool fallingedge,
+                       bool event, io_exit_func func, void *arg)
+{
+    GPIO_TypeDef *port = PIN_STPORT(pinset);
+    uint16_t pin = PIN_STPIN(pinset);
+    uint32_t mode;
+    uint32_t pull;
+
+    if (fallingedge && !risingedge) {
+
+        mode = IOMODE_IT_FALLING;
+        pull = IO_PULLUP;
+    } else if (!fallingedge && risingedge) {
+
+        mode = IOMODE_IT_RISING;
+        pull = IO_PULLDOWN;
+    } else if (fallingedge && risingedge) {
+
+        mode = IOMODE_IT_BOTH;
+        pull = IO_NOPULL;
+    } else {
+
+        // param error
+    }
+
+    low_gpio_setup(port, pin, mode, pull, IO_SPEEDHIGH, 0, func, arg, 1);
 }
 
 #ifdef CONFIG_BOARD_COM_STDINOUT

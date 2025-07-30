@@ -10,6 +10,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <drv_rtc.h>
+
 #define APP_LOAD_ADDRESS      (0x08000000)
 #define HSE_VALUE             (25000000UL)
 #define LSE_VALUE             (32768UL)
@@ -95,6 +97,12 @@ void board_init();
 void board_bsp_init();
 
 /*-------------- board bsp interface --------------*/
+void board_rtc_setup();
+
+time_t board_rtc_get_timestamp(struct timeval *now);
+
+bool board_rtc_set_timestamp(time_t now);
+
 void board_led_toggle(uint8_t idx);
 
 void board_debug();

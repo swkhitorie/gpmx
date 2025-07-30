@@ -4,6 +4,10 @@ LIBDRV_CINCDIRS += include
 LIBDRV_CSRCS += drv_gpio.c
 LIBDRV_CSRCS += drv_dma.c
 
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_RTC),y)
+LIBDRV_CSRCS += drv_rtc.c
+endif
+
 ifeq ($(BSP_LIBCONFIG_STM32_HAL_USART),y)
 LIBDRV_CSRCS += drv_uart.c
 endif
