@@ -28,11 +28,6 @@ compile:
 ./make/build.sh app_template -j2 -r
 ```
 
-## opensource software dependency
-
-|  |  |
-| - | - |
-
 ## integrate Peripheral Driver Support
 
 STM32 :
