@@ -1,0 +1,10 @@
+gpm is a microcontroller project template that integrates open-source components
+
+opensource software dependency:
+
+- FreeRTOSv10.2.1
+- RT-Thread Nanov4.1.1
+- FatFS r0.15a
+- LwIP v2.1.2
+- CherryUSB
+
