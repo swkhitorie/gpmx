@@ -60,3 +60,8 @@ LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_sd_ex.c
 LIBHAL_CSRCS += hal_driver/stm32h7xx_ll_sdmmc.c
 LIBHAL_CSRCS += hal_driver/stm32h7xx_ll_delayblock.c
 endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_ETH),y)
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_eth.c
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_eth_ex.c
+endif

@@ -1,9 +1,9 @@
 #include "drv_gpio.h"
 
 #define IRQ_LINE_NUM CONFIG_DRV_GPIO_EXTERNAL_IRQ_LINE_NUM
-struct gpio_pin_t *irq_pin_list[IRQ_LINE_NUM];
+struct gpio_pin_t irq_pin_list[IRQ_LINE_NUM];
 
-struct gpio_pin_t low_gpio_setup(
+struct gpio_pin_t stm32_gpio_setup(
     GPIO_TypeDef *port, uint32_t pin, uint32_t mode, 
     uint32_t pull, uint32_t speed, uint32_t alternate, 
     io_exit_func entry, void *arg, uint32_t priority)
@@ -54,41 +54,85 @@ struct gpio_pin_t low_gpio_setup(
         obj.arg = arg;
         HAL_NVIC_SetPriority(irqn_array[pin], priority, 0);
         HAL_NVIC_EnableIRQ(irqn_array[pin]);
-        irq_pin_list[pin] = &obj;
+        memcpy(&irq_pin_list[pin], &obj, sizeof(struct gpio_pin_t));
     }
 
     return obj;
 }
 
-void low_gpio_write(struct gpio_pin_t *obj, uint8_t val)
+void stm32_gpio_write(struct gpio_pin_t *obj, uint8_t val)
 {
     HAL_GPIO_WritePin(obj->port, obj->pin, val);
 }
 
-uint8_t low_gpio_read(struct gpio_pin_t *obj)
+uint8_t stm32_gpio_read(struct gpio_pin_t *obj)
 {
     return HAL_GPIO_ReadPin(obj->port, obj->pin);
+}
+
+bool stm32_gpioread(uint32_t pinset)
+{
+    GPIO_TypeDef *port = PIN_STPORT(pinset);
+    uint16_t pin = PIN_STPIN(pinset);
+
+    return HAL_GPIO_ReadPin(port, 1<<pin);
+}
+
+void stm32_gpiowrite(uint32_t pinset, bool value)
+{
+    GPIO_TypeDef *port = PIN_STPORT(pinset);
+    uint16_t pin = PIN_STPIN(pinset);
+
+    HAL_GPIO_WritePin(port, 1<<pin, value);
+}
+
+int stm32_gpiosetevent(uint32_t pinset, bool risingedge, bool fallingedge,
+                       bool event, io_exit_func func, void *arg, uint32_t priority)
+{
+    GPIO_TypeDef *port = PIN_STPORT(pinset);
+    uint16_t pin = PIN_NO(pinset); //PIN_STPIN(pinset);
+    uint32_t mode;
+    uint32_t pull;
+
+    if (fallingedge && !risingedge) {
+
+        mode = IOMODE_IT_FALLING;
+        pull = IO_PULLUP;
+    } else if (!fallingedge && risingedge) {
+
+        mode = IOMODE_IT_RISING;
+        pull = IO_PULLDOWN;
+    } else if (fallingedge && risingedge) {
+
+        mode = IOMODE_IT_BOTH;
+        pull = IO_NOPULL;
+    } else {
+
+        // param error
+    }
+
+    stm32_gpio_setup(port, pin, mode, pull, IO_SPEEDHIGH, 0, func, arg, priority);
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
     switch (GPIO_Pin) {
-    case GPIO_PIN_0:  irq_pin_list[0]->callback(irq_pin_list[0]->arg);  break;
-    case GPIO_PIN_1:  irq_pin_list[1]->callback(irq_pin_list[1]->arg);  break;
-    case GPIO_PIN_2:  irq_pin_list[2]->callback(irq_pin_list[2]->arg);  break;
-    case GPIO_PIN_3:  irq_pin_list[3]->callback(irq_pin_list[3]->arg);  break;
-    case GPIO_PIN_4:  irq_pin_list[4]->callback(irq_pin_list[4]->arg);  break;
-    case GPIO_PIN_5:  irq_pin_list[5]->callback(irq_pin_list[5]->arg);  break;
-    case GPIO_PIN_6:  irq_pin_list[6]->callback(irq_pin_list[6]->arg);  break;
-    case GPIO_PIN_7:  irq_pin_list[7]->callback(irq_pin_list[7]->arg);  break;
-    case GPIO_PIN_8:  irq_pin_list[8]->callback(irq_pin_list[8]->arg);  break;
-    case GPIO_PIN_9:  irq_pin_list[9]->callback(irq_pin_list[9]->arg);  break;
-    case GPIO_PIN_10:  irq_pin_list[10]->callback(irq_pin_list[10]->arg);  break;
-    case GPIO_PIN_11:  irq_pin_list[11]->callback(irq_pin_list[11]->arg);  break;
-    case GPIO_PIN_12:  irq_pin_list[12]->callback(irq_pin_list[12]->arg);  break;
-    case GPIO_PIN_13:  irq_pin_list[13]->callback(irq_pin_list[13]->arg);  break;
-    case GPIO_PIN_14:  irq_pin_list[14]->callback(irq_pin_list[14]->arg);  break;
-    case GPIO_PIN_15:  irq_pin_list[15]->callback(irq_pin_list[15]->arg);  break;
+    case GPIO_PIN_0:  irq_pin_list[0].callback(irq_pin_list[0].arg);  break;
+    case GPIO_PIN_1:  irq_pin_list[1].callback(irq_pin_list[1].arg);  break;
+    case GPIO_PIN_2:  irq_pin_list[2].callback(irq_pin_list[2].arg);  break;
+    case GPIO_PIN_3:  irq_pin_list[3].callback(irq_pin_list[3].arg);  break;
+    case GPIO_PIN_4:  irq_pin_list[4].callback(irq_pin_list[4].arg);  break;
+    case GPIO_PIN_5:  irq_pin_list[5].callback(irq_pin_list[5].arg);  break;
+    case GPIO_PIN_6:  irq_pin_list[6].callback(irq_pin_list[6].arg);  break;
+    case GPIO_PIN_7:  irq_pin_list[7].callback(irq_pin_list[7].arg);  break;
+    case GPIO_PIN_8:  irq_pin_list[8].callback(irq_pin_list[8].arg);  break;
+    case GPIO_PIN_9:  irq_pin_list[9].callback(irq_pin_list[9].arg);  break;
+    case GPIO_PIN_10:  irq_pin_list[10].callback(irq_pin_list[10].arg);  break;
+    case GPIO_PIN_11:  irq_pin_list[11].callback(irq_pin_list[11].arg);  break;
+    case GPIO_PIN_12:  irq_pin_list[12].callback(irq_pin_list[12].arg);  break;
+    case GPIO_PIN_13:  irq_pin_list[13].callback(irq_pin_list[13].arg);  break;
+    case GPIO_PIN_14:  irq_pin_list[14].callback(irq_pin_list[14].arg);  break;
+    case GPIO_PIN_15:  irq_pin_list[15].callback(irq_pin_list[15].arg);  break;
     }
 }
 

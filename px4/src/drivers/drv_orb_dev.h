@@ -42,7 +42,7 @@
 
 #include <px4_platform_common/defines.h>
 #include <sys/types.h>
-#include <sys/ioctl.h>
+// #include <sys/ioctl.h>
 #include <stdint.h>
 
 #define _ORBIOCBASE		(0x2600)

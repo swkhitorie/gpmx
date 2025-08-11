@@ -1,3 +1,5 @@
 #pragma once
 
-#include "gp_stm32/SPI.hpp"
+#include "gpdev/SPI.hpp"
+
+#include <board_config.h>

@@ -43,6 +43,9 @@ BOARD_CSRCS += board_usb.c
 BOARD_CSRCS += board_init.c
 BOARD_CSRCS += board_bsp.c
 
+BOARD_CPPSRCS += px4_i2c.cpp
+BOARD_CPPSRCS += px4_spi.cpp
+
 BOARD_ASMSOURCES += fmuv2_startup.s
 BOARD_LNK_FILE   += fmuv2_lnk_script.ld
 
@@ -50,6 +53,7 @@ BOARD_CDEFS += CONFIG_STM32_DMA_SPI1_RX
 BOARD_CDEFS += CONFIG_STM32_DMA_SPI1_TX
 
 TMPBOARD_CSRCS = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_CSRCS}}
+TMPBOARD_CPPSRCS = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_CPPSRCS}}
 TMPBOARD_ASMSOURCES = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_ASMSOURCES}}
 TMPBOARD_LNK_FILE = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_LNK_FILE}}
 
@@ -64,4 +68,5 @@ PROJ_CDEFS              += ${BOARD_CDEFS}
 
 PROJ_CINCDIRS           += ${BOARD_BSP_PATH}
 CSOURCES                += ${TMPBOARD_CSRCS}
+CPPSOURCES              += ${TMPBOARD_CPPSRCS}
 ASMSOURCES              := ${TMPBOARD_ASMSOURCES}

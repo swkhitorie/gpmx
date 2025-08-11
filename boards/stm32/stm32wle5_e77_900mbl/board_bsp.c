@@ -115,14 +115,15 @@ void board_bsp_init()
     HAL_Delay(200);
 
     /* LED Array */
-    low_gpio_setup(GPIOB, 3, IOMODE_OUTPP, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, 0);
-    low_gpio_setup(GPIOB, 4, IOMODE_OUTPP, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, 0);
+    LOW_INITPIN(GPIOB, 3, IOMODE_OUTPP, IO_NOPULL, IO_SPEEDHIGH);
+    LOW_INITPIN(GPIOB, 4, IOMODE_OUTPP, IO_NOPULL, IO_SPEEDHIGH);
 
     board_role = RADIO_BOARD_ROLE;
-    dregister("/com1", &com1_dev.dev);
-    dregister("/com2", &com2_dev.dev);
-    com2_dev.dev.ops->setup(&com2_dev.dev);
-    com1_dev.dev.ops->setup(&com1_dev.dev);
+    serial_register(&com1_dev.dev, 1);
+    serial_register(&com2_dev.dev, 2);
+
+    serial_bus_initialize(1);
+    serial_bus_initialize(2);
 
     switch (board_role) {
     case RADIO_BOARD_TRANSMITTER: {
@@ -153,10 +154,10 @@ void board_bsp_init()
 	}
 
 
-    _tty_log_out = dbind("/com2");
-    _tty_log_in = dbind("/com2");
-    _tty_msg_out = dbind("/com1");
-    _tty_msg_in = dbind("/com1");
+    _tty_log_out = serial_bus_get(2);
+    _tty_log_in = serial_bus_get(2);
+    _tty_msg_out = serial_bus_get(1);
+    _tty_msg_in = serial_bus_get(1);
 
     SERIAL_RXCLEAR(_tty_msg_in);
     SERIAL_RXCLEAR(_tty_log_in);
@@ -176,12 +177,12 @@ void board_led_toggle(int i)
     int val;
     switch (i) {
     case 0:
-        val = HAL_GPIO_ReadPin(GPIOB, 1<<4);
-        HAL_GPIO_WritePin(GPIOB, 1<<4, !val);
+        val = LOW_IOGET(GPIOB, 4);
+        LOW_IOSET(GPIOB, 4, !val);
         break;
     case 1:
-        val = HAL_GPIO_ReadPin(GPIOB, 1<<3);
-        HAL_GPIO_WritePin(GPIOB, 1<<3, !val);
+        val = LOW_IOGET(GPIOB, 3);
+        LOW_IOSET(GPIOB, 3, !val);
         break;
 
     }

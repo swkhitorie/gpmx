@@ -9,6 +9,9 @@
 #include "stm32f4xx_hal.h"
 #include <stdint.h>
 #include <stdbool.h>
+#include <drv_gpio.h>
+#include <device/i2c_master.h>
+#include <device/spi.h>
 
 #define APP_LOAD_ADDRESS      (0x08004000)
 #define HSE_VALUE             (24000000UL)
@@ -98,14 +101,6 @@
 #define BOARD_ADC_PERIPH_5V_OC  (!BOARD_IO_GET(GPIO_VDD_5V_HIPOWER_OC_PORT, GPIO_VDD_5V_HIPOWER_OC_PIN))
 #define BOARD_ADC_HIPOWER_5V_OC (!BOARD_IO_GET(GPIO_VDD_5V_PERIPH_OC_PORT, GPIO_VDD_5V_PERIPH_OC_PIN))
 
-/**
- * Device Spi Name Macro
- */
-#define DEV_SPIDEV_IMU_GYRO_L3GD20              (0x11)
-#define DEV_SPIDEV_IMU_ACCEL_MAG_LSM303D        (0x12)
-#define DEV_SPIDEV_IMU_MPU6000                  (0x13)
-#define DEV_SPIDEV_IMU_BARO_MS5611              (0x14)
-
 #ifdef __cplusplus
     extern "C" {
 #endif
@@ -123,8 +118,27 @@ void board_led_toggle();
 
 void board_debug();
 
+/*-------------- PX4 Layer interface --------------*/
+bool board_gpioread(uint32_t pinset);
+
+void board_gpiowrite(uint32_t pinset, bool value);
+
+int board_gpiosetevent(uint32_t pinset, bool risingedge, bool fallingedge,
+                       bool event, io_exit_func func, void *arg);
+
+struct i2c_master_s *board_i2cbus_initialize(int bus);
+
+struct spi_dev_s *board_spibus_initialize(int bus);
+
+int board_i2cbus_uninitialize(struct i2c_master_s *pdev);
+
 #ifdef __cplusplus
 }
 #endif
+
+#include <px4_arch/micro_hal.h>
+#include <px4_platform_common/board_common.h>
+#define PX4_NUMBER_I2C_BUSES    1
+#define SPI_BUS_MAX_BUS_ITEMS   2
 
 #endif

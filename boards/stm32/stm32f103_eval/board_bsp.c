@@ -48,14 +48,14 @@ uart_dev_t *dstdin;
 void board_bsp_init()
 {
     // wait all peripheral power on
-    HAL_Delay(200);
+    HAL_Delay(100);
 
-    dregister("/com1", &com1_dev.dev);
+    serial_register(&com1_dev.dev, 1);
 
-    com1_dev.dev.ops->setup(&com1_dev.dev);
+    serial_bus_initialize(1);
 
-    dstdout = dbind("/com1");
-    dstdin = dbind("/com1");
+    dstdout = serial_bus_get(1);
+    dstdin = serial_bus_get(1);
 }
 
 void board_debug()

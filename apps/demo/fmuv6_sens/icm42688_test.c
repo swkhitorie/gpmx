@@ -17,10 +17,12 @@ void icm42688_write_register(uint8_t addr, uint8_t data)
     uint8_t tx_buf[2] = {addr & ~0x80, data};
     uint8_t rx_buf[2] = {0xff, 0xff};
 
-    ret = SPI_SELECT(senpi,0x13,true);
+	SPI_LOCK(senpi, true);
+    ret = SPI_SELECT(senpi,0x26,true);
 	ret = SPI_EXCHANGE(senpi, &dx[0], NULL, 2);
 	//ret = SPI_SNDBLOCK(senpi,&dx[0],2);
-    ret = SPI_SELECT(senpi,0x13,false);
+    ret = SPI_SELECT(senpi,0x26,false);
+	SPI_LOCK(senpi, false);
 }
 
 void icm42688_read_register(uint8_t addr, uint8_t *buf, uint8_t len, int rwway)
@@ -32,10 +34,11 @@ void icm42688_read_register(uint8_t addr, uint8_t *buf, uint8_t len, int rwway)
     uint8_t tx_buf[2] = {addr | 0x80, 0x00};
     uint8_t rx_buf[2] = {0};
 
-    ret = SPI_SELECT(senpi,0x13,true);
+	SPI_LOCK(senpi, true);
+    ret = SPI_SELECT(senpi,0x26,true);
 	ret = SPI_EXCHANGE(senpi, tx_buf, rx_buf, 2);
-    ret = SPI_SELECT(senpi,0x13,false);
-
+    ret = SPI_SELECT(senpi,0x26,false);
+	SPI_LOCK(senpi, false);
 	buf[0] = rx_buf[1];
 }
 
@@ -43,7 +46,7 @@ void icm42688_init()
 {
 	uint8_t data;
 
-    senpi = dbind("/sensor_spi");
+    senpi = spi_bus_get(1);
     if (senpi == NULL) {
         printf("not get spi handle");
         return false;

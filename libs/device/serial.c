@@ -1,5 +1,41 @@
 #include <device/serial.h>
 
+#define SERIAL_DEVNAME_FMT    "/dev/ttyS%d"
+#define SERIAL_DEVNAME_FMTLEN (9 + 3 + 1)
+
+int serial_register(struct uart_dev_s *dev, int bus)
+{
+    int ret = 0;
+    char devname[SERIAL_DEVNAME_FMTLEN];
+    snprintf(devname, SERIAL_DEVNAME_FMTLEN, SERIAL_DEVNAME_FMT, bus);
+
+    ret = dregister(devname, dev);
+
+    return ret;
+}
+
+struct uart_dev_s* serial_bus_get(int bus)
+{
+    struct uart_dev_s *dev;
+    char devname[SERIAL_DEVNAME_FMTLEN];
+    snprintf(devname, SERIAL_DEVNAME_FMTLEN, SERIAL_DEVNAME_FMT, bus);
+
+    dev = dbind(devname);
+
+    return dev;
+}
+
+int serial_bus_initialize(int bus)
+{
+    struct uart_dev_s *dev = serial_bus_get(bus);
+
+    if (!dev) {
+        return -1;
+    }
+
+    return dev->ops->setup(dev);
+}
+
 uint16_t uart_buf_write(struct uart_buffer_s *obj, const uint8_t *p, uint16_t len)
 {
 	uint16_t i;

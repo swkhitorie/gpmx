@@ -7,6 +7,8 @@
 #include <device/i2c_master.h>
 #include <device/spi.h>
 
+#include <drivers/drv_sensor.h>
+
 /**************
  * TELEM1 Serial port
  **************/
@@ -73,10 +75,10 @@ struct up_spi_dev_s sensor_spi_dev =
     .enable_dmarx = true,
     .enable_dmatx = true,
     .devid = {
-        [0] = DEV_SPIDEV_IMU_GYRO_L3GD20,
-        [1] = DEV_SPIDEV_IMU_ACCEL_MAG_LSM303D,
-        [2] = DEV_SPIDEV_IMU_MPU6000,
-        [3] = DEV_SPIDEV_IMU_BARO_MS5611,
+        [0] = DRV_GYR_DEVTYPE_L3GD20,
+        [1] = DRV_IMU_DEVTYPE_LSM303D,
+        [2] = DRV_IMU_DEVTYPE_MPU6000,
+        [3] = DRV_BARO_DEVTYPE_MS5611,
     },
 	.devcs = {
         [0] = {GPIOC, 13},
@@ -127,12 +129,14 @@ void board_bsp_init()
     BOARD_IO_SET(GPIOC, 2, 1);
     BOARD_IO_SET(GPIOD, 7, 1);
 
-    dregister("/telem1", &telem1_serial_dev.dev);
-    dregister("/sensor_spi", &sensor_spi_dev.dev);
-    dstdout = dbind("/telem1");
-    dstdin = dbind("/telem1");
-	telem1_serial_dev.dev.ops->setup(&telem1_serial_dev.dev);
-	sensor_spi_dev.dev.ops->setup(&sensor_spi_dev.dev);
+    serial_register(&telem1_serial_dev.dev, 2);
+    spi_register(&sensor_spi_dev.dev, 1);
+
+    serial_bus_initialize(2);
+    spi_bus_initialize(1);
+
+    dstdout = serial_bus_get(2);
+    dstdin = serial_bus_get(2);
 
 #ifdef CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
     cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
@@ -148,6 +152,88 @@ void board_led_toggle()
 {
     int val = BOARD_IO_GET(GPIO_nLED_PORT, GPIO_nLED_PIN);
     BOARD_IO_SET(GPIO_nLED_PORT, GPIO_nLED_PIN, !val);
+}
+
+
+bool board_gpioread(uint32_t pinset)
+{
+    GPIO_TypeDef *port = PIN_STPORT(pinset);
+    uint16_t pin = PIN_STPIN(pinset);
+
+    return HAL_GPIO_ReadPin(port, 1<<pin);
+}
+
+void board_gpiowrite(uint32_t pinset, bool value)
+{
+    GPIO_TypeDef *port = PIN_STPORT(pinset);
+    uint16_t pin = PIN_STPIN(pinset);
+
+    HAL_GPIO_WritePin(port, 1<<pin, value);
+}
+
+int board_gpiosetevent(uint32_t pinset, bool risingedge, bool fallingedge,
+                       bool event, io_exit_func func, void *arg)
+{
+    GPIO_TypeDef *port = PIN_STPORT(pinset);
+    uint16_t pin = PIN_STPIN(pinset);
+    uint32_t mode;
+    uint32_t pull;
+
+    if (fallingedge && !risingedge) {
+
+        mode = IOMODE_IT_FALLING;
+        pull = IO_PULLUP;
+    } else if (!fallingedge && risingedge) {
+
+        mode = IOMODE_IT_RISING;
+        pull = IO_PULLDOWN;
+    } else if (fallingedge && risingedge) {
+
+        mode = IOMODE_IT_BOTH;
+        pull = IO_NOPULL;
+    } else {
+
+        // param error
+    }
+
+    low_gpio_setup(port, pin, mode, pull, IO_SPEEDHIGH, 0, func, arg, 1);
+}
+
+struct i2c_master_s *board_i2cbus_initialize(int bus)
+{
+    struct i2c_master_s *dev;
+    switch (bus) {
+    case 1:
+        dev = NULL;
+        break;
+    case 2:
+        dev = NULL;
+        break;
+    }
+
+    return dev;
+}
+
+int board_i2cbus_uninitialize(struct i2c_master_s *pdev)
+{
+    (void)pdev;
+
+    return 0;
+}
+
+struct spi_dev_s *board_spibus_initialize(int bus)
+{
+    struct spi_dev_s *dev;
+    switch (bus) {
+    case 1:
+        dev = NULL;
+        break;
+    case 2:
+        dev = NULL;
+        break;
+    }
+
+    return dev;
 }
 
 #ifdef CONFIG_BOARD_COM_STDINOUT

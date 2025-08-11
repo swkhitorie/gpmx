@@ -7,13 +7,12 @@ make_thread=$2
 make_rebuild=$3
 param_num=$#
 
-echo "path[gcc-arm ]:" ${armgcc_path}
-echo "path[openocd ]:" ${openocd_path}
-echo "path[armcc   ]:" ${armcc_path}
-echo "path[armclang]:" ${armclang_path}
+echo "Path[gcc-arm ]:" ${armgcc_path}
+echo "Path[armcc   ]:" ${armcc_path}
+echo "Path[armclang]:" ${armclang_path}
 
 if [ ${param_num} -lt 1 ]; then
-    echo "params error, usage: ./make/build.sh <app subpath> <make thread> <-r>"
+    echo "Params error, usage: ./make/build.sh <app subpath> <make thread> <-r>"
     exit 1
 fi
 
@@ -31,12 +30,12 @@ then
     if [ ${make_rebuild} == "-r" ]
     then
         ./make/clean.sh $1
-        echo "rebuilding..."
+        echo "Rebuilding..."
     else
-        echo "building..."
+        echo "Building..."
     fi
 else
-    echo "building..."
+    echo "Building..."
 fi
 
 make all ${make_thread} \
@@ -45,8 +44,7 @@ make all ${make_thread} \
     MAKE_TARGET_CLEANS=n \
     TC_PATH_INST_GCC=${armgcc_path} \
     TC_PATH_INST_ARMCC=${armcc_path} \
-    TC_PATH_INST_ARMCLANG=${armclang_path}\
-    TC_OPENOCD_PATH=${openocd_path}
+    TC_PATH_INST_ARMCLANG=${armclang_path}
 
 # make/build.sh test/app_bsp_test -j2 -r 
 

@@ -2,95 +2,31 @@
 
 static struct i2c_master_s *i2c_mlist[4] = {0, 0, 0, 0};
 
-static uint32_t low_h7_calculate_timing(uint32_t frequency);
+#if defined (DRV_BSP_H7)
+static uint32_t low_h7_set_clock(struct i2c_master_s *dev, uint32_t frequency, bool set);
+#endif
+
 static bool low_pinconfig(struct i2c_master_s *dev);
 static bool low_pinsetup(struct i2c_master_s *dev, uint32_t mode);
 static void low_config(struct i2c_master_s *dev);
 static void low_setup(struct i2c_master_s *dev);
-static int  low_transfer(struct i2c_master_s *dev);
-static int  low_transfer_it(struct i2c_master_s *dev);
+static int  low_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count);
 static void low_completed_irq(struct i2c_master_s *dev);
 static int low_reset(struct i2c_master_s *dev);
 
 static int up_setup(struct i2c_master_s *dev);
 static int up_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count);
-static int up_transferit(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count);
 static int up_reset(struct i2c_master_s *dev);
 const struct i2c_ops_s g_i2c_master_ops = 
 {
     .setup = up_setup,
-    .reset = up_reset,
     .transfer = up_transfer,
-    .transferit = up_transferit,
+    .reset = up_reset,
 };
 
 /****************************************************************************
  * Private Function
  ****************************************************************************/
-
-/************************************************************************************
- *   This function supports bus clock frequencies of:
- *
- *      1000Khz (Fast Mode+)
- *      400Khz  (Fast Mode)
- *      100Khz  (Standard Mode)
- *      10Khz   (Standard Mode)
- *
- *    PCLK1 >------|\   I2CCLK
- *   SYSCLK >------| |--------->
- *      HSI >------|/
- *
- *   HSI is the default and is always 16Mhz.
- ************************************************************************************/
-uint32_t low_h7_calculate_timing(uint32_t frequency) {
-    uint8_t presc;
-    uint8_t scl_delay;
-    uint8_t sda_delay;
-    uint8_t scl_h_period;
-    uint8_t scl_l_period;
-
-    /*  The Speed and timing calculation are based on the following
-       *  fI2CCLK = HSI and is 16Mhz
-       *  Analog filter is on,
-       *  Digital filter off
-       *  Rise Time is 120 ns and fall is 10ns
-       *  Mode is FastMode
-    */
-
-    if (frequency == 100000) {
-        presc        = 0;
-        scl_delay    = 5;
-        sda_delay    = 0;
-        scl_h_period = 61;
-        scl_l_period = 89;
-    } else if (frequency == 400000) {
-        presc        = 0;
-        scl_delay    = 3;
-        sda_delay    = 0;
-        scl_h_period = 6;
-        scl_l_period = 24;
-    } else if (frequency == 1000000) {
-        presc        = 0;
-        scl_delay    = 2;
-        sda_delay    = 0;
-        scl_h_period = 1;
-        scl_l_period = 5;
-    } else {
-        presc        = 7;
-        scl_delay    = 0;
-        sda_delay    = 0;
-        scl_h_period = 35;
-        scl_l_period = 162;
-    }
-    //503D59
-    uint32_t timingr =
-            (presc << 28) |
-            (scl_delay << 20) |
-            (sda_delay << 16) |
-            (scl_h_period << 8) |
-            (scl_l_period << 0);
-    return timingr;
-}
 
 bool low_pinconfig(struct i2c_master_s *dev)
 {
@@ -158,12 +94,18 @@ bool low_pinconfig(struct i2c_master_s *dev)
 	}
 	return true;
 #endif
-#if defined (DRV_BSP_F1) || defined (DRV_BSP_F4)
-    GPIO_TypeDef *scl_port[3]  = {GPIOB,   GPIOB,    GPIOA};
-    uint16_t      scl_pin[3]   = {6,       10,        8  };
 
-    GPIO_TypeDef *sda_port[3]  = {GPIOB,   GPIOB,    GPIOC};
-    uint16_t      sda_pin[3]   = {7,       11,        9, };
+#if defined (DRV_BSP_F1) || defined (DRV_BSP_F4)
+    GPIO_TypeDef *scl_port[2]  = {GPIOB,   GPIOB  };
+    uint16_t      scl_pin[2]   = {6,       10,    };
+
+    GPIO_TypeDef *sda_port[2]  = {GPIOB,   GPIOB  };
+    uint16_t      sda_pin[2]   = {7,       11,    };
+
+    if (num == 1 && pin_scl != 0) {
+        scl_pin[0] = 8;  // PB8
+        sda_pin[0] = 9;  // PB9
+    }
 
     priv->scl_port = scl_port[num-1];
     priv->sda_port = sda_port[num-1];
@@ -173,6 +115,166 @@ bool low_pinconfig(struct i2c_master_s *dev)
 #endif
 }
 
+/************************************************************************************
+ *   This function supports bus clock frequencies of:
+ *
+ *      1000Khz (Fast Mode+)
+ *      400Khz  (Fast Mode)
+ *      100Khz  (Standard Mode)
+ *      10Khz   (Standard Mode)
+ *
+ *    PCLK1 >------|\   I2CCLK
+ *   SYSCLK >------| |--------->
+ *      HSI >------|/
+ *
+ *   HSI is the default and is always 16Mhz.
+ ************************************************************************************/
+#if defined (DRV_BSP_H7)
+uint32_t low_h7_set_clock(struct i2c_master_s *dev, uint32_t frequency, bool set)
+{
+    uint8_t presc;
+    uint8_t scl_delay;
+    uint8_t sda_delay;
+    uint8_t scl_h_period;
+    uint8_t scl_l_period;
+    struct up_i2c_master_s *priv = dev->priv;
+
+    /*  The Speed and timing calculation are based on the following
+       *  fI2CCLK = HSI and is 16Mhz
+       *  Analog filter is on,
+       *  Digital filter off
+       *  Rise Time is 120 ns and fall is 10ns
+       *  Mode is FastMode
+    */
+
+    if (set) {
+        /* I2C peripheral must be disabled to update clocking configuration.
+        * This will SW reset the device.
+        */
+
+        MODIFY_REG(priv->hi2c.Instance->CR1, I2C_CR1_PE, 0);
+    }
+
+    if (frequency == 100000) {
+        presc        = 0;
+        scl_delay    = 5;
+        sda_delay    = 0;
+        scl_h_period = 61;
+        scl_l_period = 89;
+    } else if (frequency == 400000) {
+        presc        = 0;
+        scl_delay    = 3;
+        sda_delay    = 0;
+        scl_h_period = 6;
+        scl_l_period = 24;
+    } else if (frequency == 1000000) {
+        presc        = 0;
+        scl_delay    = 2;
+        sda_delay    = 0;
+        scl_h_period = 1;
+        scl_l_period = 5;
+    } else {
+        presc        = 7;
+        scl_delay    = 0;
+        sda_delay    = 0;
+        scl_h_period = 35;
+        scl_l_period = 162;
+    }
+    uint32_t timingr =
+            (presc << 28) |
+            (scl_delay << 20) |
+            (sda_delay << 16) |
+            (scl_h_period << 8) |
+            (scl_l_period << 0);
+
+    if (frequency != dev->cfg.frequency && set) {
+
+        priv->hi2c.Instance->TIMINGR = timingr & (0xF0FFFFFFU);
+        dev->cfg.frequency = frequency;
+    }
+
+    if (set) {
+        /* Enable I2C peripheral */
+
+        MODIFY_REG(priv->hi2c.Instance->CR1, 0, I2C_CR1_PE);
+    }
+
+    return timingr;
+}
+#endif
+
+#if defined (DRV_BSP_F1) || defined (DRV_BSP_F4)
+void low_i2c_set_clock(struct i2c_master_s *dev, uint32_t frequency)
+{
+    uint16_t cr1;
+    uint16_t ccr;
+    uint16_t trise;
+    uint16_t freqmhz;
+    uint16_t speed;
+    uint32_t pclk1 = HAL_RCC_GetPCLK1Freq();
+    struct up_i2c_master_s *priv = dev->priv;
+
+    if (frequency != dev->cfg.frequency) {
+
+        /* Disable the selected I2C periphera */
+        cr1 = priv->hi2c.Instance->CR1;
+        priv->hi2c.Instance->CR1 = cr1 & ~I2C_CR1_PE;
+
+        /* Update timing and control registers */
+        freqmhz = (uint16_t)(pclk1 / 1000000);
+        ccr = 0;
+
+        if (frequency <= 100000) {
+            /* Standard mode speed calculation */
+            speed = (uint16_t)(pclk1 / (frequency << 1));
+
+            /* The CCR fault must be >= 4 */
+            if (speed < 4) {
+                /* Set the minimum allowed value */
+                speed = 4;
+            }
+            ccr |= speed;
+            /* Set Maximum Rise Time for standard mode */
+            trise = freqmhz + 1;
+        } else {
+            /* (frequency <= 400000) */
+            /* Fast mode speed calculation with Tlow/Thigh = 16/9 */ 
+            if (priv->hi2c.Init.DutyCycle == I2C_DUTYCYCLE_16_9) {
+                /* Fast mode speed calculation with Tlow/Thigh = 2 */
+                speed = (uint16_t)(pclk1 / (frequency * 3));
+                /* Set fast speed bit */
+                ccr |= I2C_CCR_FS;
+            } else if (priv->hi2c.Init.DutyCycle == I2C_DUTYCYCLE_2) {
+                speed = (uint16_t)(pclk1 / (frequency * 25));
+                /* Set DUTY and fast speed bits */
+                ccr |= (I2C_CCR_DUTY | I2C_CCR_FS);
+            }
+            /* Verify that the CCR speed value is nonzero */
+            if (speed < 1) {
+                /* Set the minimum allowed value */
+                speed = 1;
+            }
+            ccr |= speed;
+            /* Set Maximum Rise Time for fast mode */
+            trise = (uint16_t)(((freqmhz * 300) / 1000) + 1);
+        }
+
+        /* Write the new values of the CCR and TRISE registers */
+        priv->hi2c.Instance->CCR = ccr;
+        priv->hi2c.Instance->TRISE = trise;
+
+        /* Bit 14 of OAR1 must be configured and kept at 1 */
+        priv->hi2c.Instance->OAR1 = (1<<14);
+
+        /* Re-enable the peripheral (or not) */
+        priv->hi2c.Instance->CR1 = cr1;
+
+        /* Save the new I2C frequency */
+        dev->cfg.frequency = frequency;
+    }
+}
+#endif
+
 bool low_pinsetup(struct i2c_master_s *dev, uint32_t mode)
 {
     struct up_i2c_master_s *priv = dev->priv;
@@ -181,6 +283,7 @@ bool low_pinsetup(struct i2c_master_s *dev, uint32_t mode)
     uint8_t sda_pin = priv->sda_pin;
     GPIO_TypeDef *scl_port = priv->scl_port;
     GPIO_TypeDef *sda_port = priv->sda_port;
+
     uint32_t i2c_af[4]    = {
         GPIO_AF4_I2C1, GPIO_AF4_I2C2, GPIO_AF4_I2C3, 
 #if (BSP_CHIP_RESOURCE_LEVEL > 4)
@@ -188,8 +291,8 @@ bool low_pinsetup(struct i2c_master_s *dev, uint32_t mode)
 #endif
     };
 
-    low_gpio_setup(scl_port, scl_pin, mode, IO_NOPULL, IO_SPEEDHIGH, i2c_af[num-1], NULL, NULL, 0);
-    low_gpio_setup(sda_port, sda_pin, mode, IO_NOPULL, IO_SPEEDHIGH, i2c_af[num-1], NULL, NULL, 0);
+    LOW_PERIPH_INITPIN(scl_port, scl_pin, mode, IO_NOPULL, IO_SPEEDHIGH, i2c_af[num-1]);
+    LOW_PERIPH_INITPIN(sda_port, sda_pin, mode, IO_NOPULL, IO_SPEEDHIGH, i2c_af[num-1]);
 
     return true;
 }
@@ -205,6 +308,7 @@ void low_config(struct i2c_master_s *dev)
         I2C4
 #endif
     };
+
 #if defined (DRV_BSP_H7)
     /* h7 series use HSI/4 --> 16MHZ */
     __HAL_RCC_HSI_CONFIG(RCC_HSI_DIV4);
@@ -228,10 +332,10 @@ void low_config(struct i2c_master_s *dev)
     priv->hi2c.Instance 			    = i2cx[num-1];
 #if defined (DRV_BSP_F1) || defined (DRV_BSP_F4)
     priv->hi2c.Init.DutyCycle = I2C_DUTYCYCLE_2;
-    priv->hi2c.Init.ClockSpeed = dev->clk_speed;    //100k, 400k
+    priv->hi2c.Init.ClockSpeed = dev->cfg.frequency;    //100k, 400k
 #endif
 #if defined (DRV_BSP_H7)
-    timing = low_h7_calculate_timing(dev->clk_speed);
+    timing = low_h7_set_clock(dev, dev->cfg.frequency, false);
     priv->hi2c.Init.Timing  = timing;  //constant: 0x20B0CCFF(h7b0) 0x00901954(h743)
 #endif
     priv->hi2c.Init.OwnAddress1      = 0;
@@ -284,79 +388,111 @@ void low_setup(struct i2c_master_s *dev)
 	HAL_NVIC_EnableIRQ(i2c_event_irq[num-1]);
 }
 
-int low_transfer(struct i2c_master_s *dev)
+int low_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
 {
-    int ret = 0xff;
+    int ret = 0x00;
     struct up_i2c_master_s *priv = dev->priv;
-    dev->msgi = 0;
+    struct i2c_msg_s *msg = msgs;
+    struct i2c_msg_s *next_msg = 0;
+    int num = count;
+    uint32_t mode = 0;
+    uint8_t next_flag = 0;
+    uint32_t timeout;
+    int i = 0;
 
-    for (; dev->msgi < dev->msgc; dev->msgi++) {
-        struct i2c_msg_s *msg = &dev->msgv[dev->msgi];
-        switch (msg->flags) {
-        case I2C_M_WRITE:
-            ret = HAL_I2C_Master_Transmit(&priv->hi2c, msg->addr, &msg->xbuffer[0], msg->xlength, 1000);
-            break;
-        case I2C_M_READ:
-            ret = HAL_I2C_Master_Receive(&priv->hi2c, msg->addr, &msg->rbuffer[0], msg->rlength, 1000);
-            break;
-        case I2C_REG_WRITE:
-            ret = HAL_I2C_Mem_Write(&priv->hi2c, msg->addr, msg->xbuffer[0], msg->reg_sz, 
-                                &msg->xbuffer[msg->reg_sz], msg->xlength - msg->reg_sz, 1000);
-            break;
-        case I2C_REG_READ:
-            ret = HAL_I2C_Mem_Read(&priv->hi2c, msg->addr, msg->xbuffer[0], msg->reg_sz, 
-                                &msg->rbuffer[0], msg->rlength, 1000);
-            break;
+    for (i = 0; i < (num - 1); i++) {
+        mode = 0;
+        msg = &msgs[i];
+        next_msg = &msgs[i + 1];
+        next_flag = next_msg->flags;
+        timeout = msg->length/8 + 5;
+
+        if (next_flag & I2C_M_NOSTART) {
+            if ((next_flag & I2C_M_READ) == (msg->flags & I2C_M_READ)) { 
+                /* The same mode, can use no start */
+                mode = I2C_FIRST_AND_NEXT_FRAME;
+            } else {
+                mode = I2C_LAST_FRAME_NO_STOP;
+            }
+        } else {
+            mode = I2C_LAST_FRAME_NO_STOP;
         }
-        if (ret != HAL_OK) {
-            priv->ts_ecnt++;
+
+        if (msg->flags & I2C_M_READ) {
+
+            ret = HAL_I2C_Master_Seq_Receive_IT(&priv->hi2c, (msg->addr<<1), msg->buffer, msg->length, mode);
+            if (ret != HAL_OK) {
+                goto out;
+            }
+            if (i2c_dev_transfer_wait(dev, timeout) != 0x00) {
+                goto out;
+            }
+        } else {
+
+            ret = HAL_I2C_Master_Seq_Transmit_IT(&priv->hi2c, (msg->addr<<1), msg->buffer, msg->length, mode);
+            if (ret != HAL_OK) {
+                goto out;
+            }
+            if (i2c_dev_transfer_wait(dev, timeout) != 0x00) {
+                goto out;
+            }
         }
     }
-    return ret;
-}
 
-int low_transfer_it(struct i2c_master_s *dev)
-{
-    int ret = 0xff;
-    struct up_i2c_master_s *priv = dev->priv;
-    if (dev->msgi < dev->msgc && dev->msgc != 0) {
-        struct i2c_msg_s *msg = &dev->msgv[dev->msgi];
-        dev->msgi++;
+    msg = &msgs[i];
+    timeout = msg->length/8 + 5;
 
-        switch (msg->flags) {
-        case I2C_M_WRITE:
-            ret = HAL_I2C_Master_Transmit_IT(&priv->hi2c, msg->addr, &msg->xbuffer[0], msg->xlength);
-            break;
-        case I2C_M_READ:
-            ret = HAL_I2C_Master_Receive_IT(&priv->hi2c, msg->addr, &msg->rbuffer[0], msg->rlength);
-            break;
-        case I2C_REG_WRITE:
-            ret = HAL_I2C_Mem_Write_IT(&priv->hi2c, msg->addr, msg->xbuffer[0], msg->reg_sz, 
-                                &msg->xbuffer[msg->reg_sz], msg->xlength - msg->reg_sz);
-            break;
-        case I2C_REG_READ:
-            ret = HAL_I2C_Mem_Read_IT(&priv->hi2c, msg->addr, msg->xbuffer[0], msg->reg_sz, 
-                                &msg->rbuffer[0], msg->rlength);
-            break;
-        }
+    if (msg->flags & I2C_M_NOSTOP) {
+        mode = I2C_LAST_FRAME_NO_STOP;
+    } else {
+        mode = I2C_LAST_FRAME;
+    }
+
+    if (msg->flags & I2C_M_READ) {
+
+        ret = HAL_I2C_Master_Seq_Receive_IT(&priv->hi2c,(msg->addr<<1), msg->buffer, msg->length, mode);
         if (ret != HAL_OK) {
-            priv->ts_ecnt++;
+            goto out;
         }
+        if (i2c_dev_transfer_wait(dev, timeout) != 0x00) {
+            goto out;
+        }
+    } else {
+
+        ret = HAL_I2C_Master_Seq_Transmit_IT(&priv->hi2c, (msg->addr<<1), msg->buffer, msg->length, mode);
+        if (ret != HAL_OK) {
+            goto out;
+        }
+        if (i2c_dev_transfer_wait(dev, timeout) != 0x00) {
+            goto out;
+        }
+    }
+    ret = num;
+    return ret;
+
+out:
+    if (priv->hi2c.ErrorCode == HAL_I2C_ERROR_AF) {
+        printf("I2C NACK Error now stoped \r\n");
+        /* Send stop signal to prevent bus lock-up */
+#if defined(DRV_BSP_H7)
+        priv->hi2c.Instance->CR1 |= I2C_IT_STOPI;
+#endif
+    }
+    if (priv->hi2c.ErrorCode == HAL_I2C_ERROR_BERR) {
+        printf("I2C BUS Error now stoped \r\n");
+#if defined(DRV_BSP_H7)
+        priv->hi2c.Instance->CR1 |= I2C_IT_STOPI;
+#else
+        priv->hi2c.Instance->CR1 |= I2C_CR1_STOP;
+#endif
+        ret=i-1;
     }
     return ret;
 }
 
 void low_completed_irq(struct i2c_master_s *dev)
 {
-    struct up_i2c_master_s *priv = dev->priv;
-
-    if (dev->msgi == dev->msgc) {
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_I2C_TASKSYNC)
-        xSemaphoreGive(dev->sem_isr);
-#endif
-    } else if (HAL_I2C_GetState(&priv->hi2c) == HAL_I2C_STATE_READY) {
-        low_transfer_it(dev);
-    }
+    i2c_dev_transfer_completed(dev);
 }
 
 int low_reset(struct i2c_master_s *dev)
@@ -374,16 +510,7 @@ int up_setup(struct i2c_master_s *dev)
 
     low_setup(dev);
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_I2C_TASKSYNC)
-    i2c_sem_init(dev);
-#endif
-
-    dev->msgc = 0;
-    dev->msgi = 0;
-    dev->msgv = NULL;
-    priv->state = 0;
     priv->ecnt = 0;
-    priv->ts_ecnt = 0;
     i2c_mlist[num-1] = dev;
     return 0;
 }
@@ -391,65 +518,13 @@ int up_setup(struct i2c_master_s *dev)
 int up_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
 {
     int ret = 0;
-    int ret2 = 0, timeout = 0;
-    if (count == 0) return 0;
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_I2C_TASKSYNC)
-    i2c_sem_wait(dev);
-#endif
-    dev->msgv = msgs;
-    dev->msgc = count;
-    dev->msgi = 0;
-
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_I2C_TASKSYNC)
-    ret = low_transfer_it(dev);
-
-    do {
-        if (xSemaphoreTake(dev->sem_isr, 1000) == pdTRUE) {
-            break;
-        } else {
-            timeout++;
-        }
-    } while (dev->msgi < dev->msgc && timeout < 10);
-
-    if (dev->msgi < dev->msgc) {
-        ret = 0xff;
+    if (i2c_dev_lock(dev) == 0x00) {
+        low_transfer(dev, msgs, count);
+        i2c_dev_unlock(dev);
     }
-#else
-    ret = low_transfer(dev);
-#endif
-
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_I2C_TASKSYNC)
-    i2c_sem_post(dev);
-#endif
 
     return ret;
-}
-
-int up_transferit(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
-{
-    int i = 0;
-    int timeout = 1000;
-    int timei;
-
-    for (timei = 0; timei < timeout; i++) {
-        if (dev->msgc == 0) {
-            break;
-        }
-
-        if (dev->msgc != 0 && dev->msgc == dev->msgi) {
-            break;
-        }
-    }
-
-    if (timei == timeout) {
-        return -1;
-    }
-
-    dev->msgv = msgs;
-    dev->msgc = count;
-    dev->msgi = 0;
-    return low_transfer_it(dev);
 }
 
 int up_reset(struct i2c_master_s *dev)
@@ -472,7 +547,7 @@ void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
     low_completed_irq(i2c_mlist[idx]);
 }
 
-void HAL_I2C_MemTxCpltCallback(I2C_HandleTypeDef *hi2c)
+void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
     uint8_t idx = 0;
     if (hi2c->Instance == I2C1)		    idx = 0;
@@ -481,19 +556,6 @@ void HAL_I2C_MemTxCpltCallback(I2C_HandleTypeDef *hi2c)
 #if (BSP_CHIP_RESOURCE_LEVEL > 4)
     else if (hi2c->Instance == I2C4)	idx = 3;
 #endif
-    low_completed_irq(i2c_mlist[idx]);
-}
-
-void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
-{
-    uint8_t idx = 0;
-    if (hi2c->Instance == I2C1)		    idx = 0;
-    else if (hi2c->Instance == I2C2)    idx = 1;
-    else if (hi2c->Instance == I2C3)	idx = 2;
-#if (BSP_CHIP_RESOURCE_LEVEL > 4)
-    else if (hi2c->Instance == I2C4)	idx = 3;
-#endif
-
     low_completed_irq(i2c_mlist[idx]);
 }
 

@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+
 #if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SERIAL_TASKSYNC)
 #include <FreeRTOS.h>
 #include <semphr.h>
@@ -100,7 +101,9 @@ typedef struct uart_dev_s uart_dev_t;
 extern "C"{
 #endif
 
-int uart_register(const char *path, uart_dev_t *dev);
+int                  serial_register(struct uart_dev_s *dev, int bus);
+struct uart_dev_s*   serial_bus_get(int bus);
+int                  serial_bus_initialize(int bus);
 
 uint16_t uart_buf_write(struct uart_buffer_s *obj, const uint8_t *p, uint16_t len);
 

@@ -42,14 +42,20 @@ uint8_t IST8310::register_read(Register reg)
     uint8_t cmd[2] {};
     cmd[0] = static_cast<uint8_t>(reg);
 
-    struct i2c_msg_s rmsg;
-    rmsg.flags = I2C_REG_READ;
-    rmsg.addr = _addr<<1; rmsg.reg_sz = 1;
-    rmsg.xbuffer = &cmd[0];
-    rmsg.xlength = 1;
-    rmsg.rbuffer = &cmd[1];
-    rmsg.rlength = 1;
-    int ret = I2C_TRANSFER(ops, &rmsg, 1);
+    struct i2c_msg_s msg[2];
+    msg[0].frequency = 100000;
+    msg[0].addr = _addr;
+    msg[0].buffer = &cmd[0];
+    msg[0].length = 1;
+    msg[0].flags = 0;
+
+    msg[1].frequency = 100000;
+    msg[1].addr = _addr;
+    msg[1].buffer = &cmd[1];
+    msg[1].length = 1;
+    msg[1].flags = I2C_M_READ;
+
+    int ret = I2C_TRANSFER(ops, msg, 2);
 
     return cmd[1];
 }
@@ -57,17 +63,23 @@ uint8_t IST8310::register_read(Register reg)
 void IST8310::register_reads(Register reg, uint8_t *buf, uint16_t sz)
 {
     int ret;
-    uint8_t cmdad;
-    cmdad = static_cast<uint8_t>(reg);
+    uint8_t cmd;
+    cmd = static_cast<uint8_t>(reg);
 
-    struct i2c_msg_s rxmsg;
-    rxmsg.flags = I2C_REG_READ;
-    rxmsg.addr = _addr<<1; rxmsg.reg_sz = 1;
-    rxmsg.xbuffer = &cmdad;
-    rxmsg.xlength = 1;
-    rxmsg.rbuffer = buf;
-    rxmsg.rlength = sz;
-    ret = I2C_TRANSFER(ops, &rxmsg, 1);
+    struct i2c_msg_s msg[2];
+    msg[0].frequency = 100000;
+    msg[0].addr = _addr;
+    msg[0].buffer = &cmd;
+    msg[0].length = 1;
+    msg[0].flags = 0;
+
+    msg[1].frequency = 100000;
+    msg[1].addr = _addr;
+    msg[1].buffer = buf;
+    msg[1].length = sz;
+    msg[1].flags = I2C_M_READ;
+
+    ret = I2C_TRANSFER(ops, msg, 2);
 }
 
 void IST8310::register_write(Register reg, uint8_t value)
@@ -77,13 +89,14 @@ void IST8310::register_write(Register reg, uint8_t value)
     cmd[0] = static_cast<uint8_t>(reg);
     cmd[1] = value;
 
-    struct i2c_msg_s wmsg;
-    wmsg.flags = I2C_REG_WRITE;
-    wmsg.addr = _addr<<1;
-    wmsg.reg_sz = 1;
-    wmsg.xbuffer = &cmd[0];
-    wmsg.xlength = 2;
-    ret = I2C_TRANSFER(ops, &wmsg, 1);
+    struct i2c_msg_s msg;
+    msg.frequency = 100000;
+    msg.addr = _addr;
+    msg.buffer = &cmd[0];
+    msg.length = 2;
+    msg.flags = 0;
+
+    ret = I2C_TRANSFER(ops, &msg, 1);
 }
 
 void IST8310::register_modify(Register reg, uint8_t setbits, uint8_t clearbits)
@@ -127,11 +140,12 @@ bool IST8310::reset()
     return true;
 }
 
+int WAI = 0;
 int IST8310::init()
 {
     const auto start_time = hrt_absolute_time();
 
-    ops = static_cast<struct i2c_master_s*>(dbind(ops_name));
+    ops = i2c_bus_get(4);
     ops_valid = (ops != nullptr);
 
     if (!ops_valid) return false;
@@ -144,9 +158,13 @@ int IST8310::init()
 
     reset();
 
-    const int WAI = register_read(Register::WAI);
+    WAI = register_read(Register::WAI);
 
-    if (WAI != Device_ID) return false;
+    if (WAI != Device_ID) {
+
+        printf("ID Check Failed\r\n");
+        return false;
+    }
 
     return config();
 }

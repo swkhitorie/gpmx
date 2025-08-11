@@ -19,6 +19,8 @@ static int up_lock(struct spi_dev_s *dev, bool lock);
 static int up_select(struct spi_dev_s *dev, uint32_t devid, bool selected);
 static int up_exchange(struct spi_dev_s *dev,
 	const void *txbuffer, void *rxbuffer, size_t nwords);
+static int up_exchangeblock(struct spi_dev_s *dev,
+	const void *txbuffer, void *rxbuffer, size_t nwords);
 static int up_sndblock(struct spi_dev_s *dev, const void *buffer, size_t nwords);
 static int up_recvblock(struct spi_dev_s *dev, void *buffer, size_t nwords);
 const struct spi_ops_s g_spi_ops = 
@@ -148,10 +150,10 @@ bool low_pinconfig(struct spi_dev_s *dev)
 	}
 	
 	if (illegal != 0) {
-        // low_gpio_setup(nss_node->port, nss_node->pin_num, IOMODE_AFPP, IO_PULLUP, IO_SPEEDMAX, nss_node->alternate, NULL, NULL, 0);
-		low_gpio_setup(sck_node->port, sck_node->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDMAX, sck_node->alternate, NULL, NULL, 0);
-		low_gpio_setup(miso_node->port, miso_node->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDMAX, miso_node->alternate, NULL, NULL, 0);
-		low_gpio_setup(mosi_node->port, mosi_node->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDMAX, mosi_node->alternate, NULL, NULL, 0);
+        // LOW_PERIPH_INITPIN(nss_node->port, nss_node->pin_num, IOMODE_AFPP, IO_PULLUP, IO_SPEEDMAX, nss_node->alternate);
+		LOW_PERIPH_INITPIN(sck_node->port, sck_node->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDMAX, sck_node->alternate);
+		LOW_PERIPH_INITPIN(miso_node->port, miso_node->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDMAX, miso_node->alternate);
+		LOW_PERIPH_INITPIN(mosi_node->port, mosi_node->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDMAX, mosi_node->alternate);
 	}else {
 		return false;
 	}
@@ -164,13 +166,13 @@ bool low_pinconfig(struct spi_dev_s *dev)
         uint16_t       sck_pin[3] =  {   5,         13,          3    };
         uint16_t       miso_pin[3] = {   6,         14,          4    };
 		uint16_t       mosi_pin[3] = {   7,         15,          5    };
-		low_gpio_setup(spi_port[num-1], sck_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, NULL, 0);
-		low_gpio_setup(spi_port[num-1], mosi_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, NULL, 0);
-		low_gpio_setup(spi_port[num-1], miso_pin[num-1], IOMODE_INPUT, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, NULL, 0);
+		LOW_PERIPH_INITPIN(spi_port[num-1], sck_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH);
+		LOW_PERIPH_INITPIN(spi_port[num-1], mosi_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH);
+		LOW_PERIPH_INITPIN(spi_port[num-1], miso_pin[num-1], IOMODE_INPUT, IO_NOPULL, IO_SPEEDHIGH);
     } else if (pin_ncs == 1 && num == 1) {
-		low_gpio_setup(GPIOB, 3, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, NULL, 0);  //sck
-		low_gpio_setup(GPIOB, 4, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, NULL, 0);  //miso
-		low_gpio_setup(GPIOB, 5, IOMODE_INPUT, IO_NOPULL, IO_SPEEDHIGH, 0, NULL, NULL, 0);  //mosi  
+		LOW_PERIPH_INITPIN(GPIOB, 3, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH);  //sck
+		LOW_PERIPH_INITPIN(GPIOB, 4, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH);  //miso
+		LOW_PERIPH_INITPIN(GPIOB, 5, IOMODE_INPUT, IO_NOPULL, IO_SPEEDHIGH);  //mosi  
     }
 	return true;
 #endif
@@ -183,9 +185,9 @@ bool low_pinconfig(struct spi_dev_s *dev)
 		uint16_t       mosi_pin[3] = {   7,         15,          5    };
         uint32_t       alternate[3] = {GPIO_AF5_SPI1, GPIO_AF5_SPI2, GPIO_AF6_SPI3};
 
-		low_gpio_setup(spi_port[num-1], sck_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1], NULL, NULL, 0);
-		low_gpio_setup(spi_port[num-1], mosi_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1], NULL, NULL, 0);
-		low_gpio_setup(spi_port[num-1], miso_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1], NULL, NULL, 0);
+		LOW_PERIPH_INITPIN(spi_port[num-1], sck_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1]);
+		LOW_PERIPH_INITPIN(spi_port[num-1], mosi_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1]);
+		LOW_PERIPH_INITPIN(spi_port[num-1], miso_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1]);
     } else if (pin_ncs == 1) {
         GPIO_TypeDef *spi_port[3] =  { GPIOB,		GPIOB,      GPIOC };
         uint16_t       sck_pin[3] =  {   3,         10,          10   };
@@ -193,12 +195,12 @@ bool low_pinconfig(struct spi_dev_s *dev)
 		uint16_t       mosi_pin[3] = {   5,         3,          12    };
         uint32_t       alternate[3] = {GPIO_AF5_SPI1, GPIO_AF5_SPI2, GPIO_AF6_SPI3};
 
-		low_gpio_setup(spi_port[num-1], sck_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1], NULL, NULL, 0);
+		LOW_PERIPH_INITPIN(spi_port[num-1], sck_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1]);
 		if (num == 2) {
 			spi_port[num-1] = GPIOC;
 		}
-		low_gpio_setup(spi_port[num-1], mosi_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1], NULL, NULL, 0);
-		low_gpio_setup(spi_port[num-1], miso_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1], NULL, NULL, 0);
+		LOW_PERIPH_INITPIN(spi_port[num-1], mosi_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1]);
+		LOW_PERIPH_INITPIN(spi_port[num-1], miso_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1]);
     }
 	return true;
 #endif
@@ -482,28 +484,22 @@ void low_irq(struct spi_dev_s *dev)
 void low_irq_dmatx(struct spi_dev_s *dev)
 {
 	struct up_spi_dev_s *priv = dev->priv;
-    priv->dmatx_ready = true;
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SPI_TASKSYNC)
+	dev->txresult = 0x01;
     spi_dmatxwakeup(dev);
-#endif
 }
 
 void low_irq_dmarx(struct spi_dev_s *dev)
 {
 	struct up_spi_dev_s *priv = dev->priv;
-    priv->dmarx_ready = true;
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SPI_TASKSYNC)
+    dev->rxresult = 0x01;
     spi_dmarxwakeup(dev);
-#endif
 }
 
 void low_irq_dmartx(struct spi_dev_s *dev)
 {
 	struct up_spi_dev_s *priv = dev->priv;
-    priv->dmartx_ready = true;
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SPI_TASKSYNC)
-    spi_dmartxwakeup(dev);
-#endif
+    dev->txresult = 0x01;
+	spi_dmatxwakeup(dev);
 }
 
 /****************************************************************************
@@ -512,9 +508,6 @@ void low_irq_dmartx(struct spi_dev_s *dev)
 int up_setup(struct spi_dev_s *dev)
 {
     low_setup(dev);
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SPI_TASKSYNC)
-    spi_sem_init(dev);
-#endif
     return 0;
 }
 
@@ -605,15 +598,7 @@ void up_setbits(struct spi_dev_s *dev, int nbits)
 
 int up_lock(struct spi_dev_s *dev, bool lock)
 {
-    int ret = 0xff;
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SPI_TASKSYNC)
-	if (lock) {
-        ret = xSemaphoreTake(dev->exclsem, 1000);
-	} else {
-        ret = xSemaphoreGive(dev->exclsem);
-	}
-#endif
-	return ret;
+	return spi_devlock(dev, lock);
 }
 
 int up_select(struct spi_dev_s *dev, uint32_t devid, bool selected)
@@ -631,56 +616,56 @@ int up_select(struct spi_dev_s *dev, uint32_t devid, bool selected)
 
 int up_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbuffer, size_t nwords)
 {
+    int ret = 0;
     struct up_spi_dev_s *priv = dev->priv;
+
 	// bug: when write sensor register data:
 	// call HAL_SPI_TransmitReceive_DMA(dev, {addr, data}, {0x00, 0x00}, 2), it can not work
 	// call HAL_SPI_Transmit_DMA(dev, {addr, data}, 2), it works
 	// ???
 
-    int ret = 0;
-	if (txbuffer == NULL && rxbuffer != NULL) {
-		priv->dmarx_ready = false;
+	if (!txbuffer && rxbuffer) {
+		dev->rxresult = 0x00;
 		ret = HAL_SPI_Receive_DMA(&priv->hspi, rxbuffer, nwords);
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SPI_TASKSYNC)
-        ret = spi_dmarxwait(dev, priv->dmarx_ready);
-#else
-        while(!priv->dmarx_ready);
-#endif
-	} else if (txbuffer != NULL && rxbuffer == NULL) {
-		priv->dmatx_ready = false;
+        ret = spi_dmarxwait(dev);
+	} else if (txbuffer && !rxbuffer) {
+		dev->txresult = 0x00;
 		ret = HAL_SPI_Transmit_DMA(&priv->hspi, txbuffer, nwords);
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SPI_TASKSYNC)
-        ret = spi_dmatxwait(dev, priv->dmatx_ready);
-#else
-        while(!priv->dmatx_ready);
-#endif
-	} else if (txbuffer != NULL && rxbuffer != NULL) {
-		priv->dmartx_ready = false;
-		int ret = HAL_SPI_TransmitReceive_DMA(&priv->hspi, txbuffer, rxbuffer, nwords);
-		//int ret = HAL_SPI_TransmitReceive(&priv->hspi, txbuffer, rxbuffer, nwords, 3000);
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SPI_TASKSYNC)
-        ret = spi_dmartxwait(dev, priv->dmartx_ready);
-#else
-        while(!priv->dmartx_ready);
-#endif
+        ret = spi_dmatxwait(dev);
+	} else if (txbuffer && rxbuffer) {
+		dev->txresult = 0x00;
+		ret = HAL_SPI_TransmitReceive_DMA(&priv->hspi, txbuffer, rxbuffer, nwords);
+        ret = spi_dmatxwait(dev);
 	}
 
 	return ret;
 }
 
+int up_exchangeblock(struct spi_dev_s *dev,
+	const void *txbuffer, void *rxbuffer, size_t nwords)
+{
+	int ret = 0;
+	struct up_spi_dev_s *priv = dev->priv;
+
+	ret = HAL_SPI_TransmitReceive(&priv->hspi, txbuffer, rxbuffer, nwords, 1000);
+	return ret;
+}
+
 int up_sndblock(struct spi_dev_s *dev, const void *buffer, size_t nwords)
 {
+	int ret = 0;
 	struct up_spi_dev_s *priv = dev->priv;
-	int ret = 0xff;
-	ret = HAL_SPI_Transmit(&priv->hspi, buffer, nwords, 5000);
+
+	ret = HAL_SPI_Transmit(&priv->hspi, buffer, nwords, 1000);
 	return ret;
 }
 
 int up_recvblock(struct spi_dev_s *dev, void *buffer, size_t nwords)
 {
+	int ret = 0;
 	struct up_spi_dev_s *priv = dev->priv;
-	int ret = 0xff;
-	ret = HAL_SPI_Receive(&priv->hspi, buffer, nwords, 5000);
+
+	ret = HAL_SPI_Receive(&priv->hspi, buffer, nwords, 1000);
 	return ret;
 }
 

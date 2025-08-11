@@ -12,10 +12,6 @@ ifeq ($(BSP_LIBCONFIG_STM32_HAL_USART),y)
 LIBDRV_CSRCS += drv_uart.c
 endif
 
-ifeq ($(BSP_LIBCONFIG_STM32_HAL_FLASH),y)
-LIBDRV_CSRCS += drv_flash.c
-endif
-
 ifeq ($(BSP_LIBCONFIG_STM32_HAL_I2C),y)
 LIBDRV_CSRCS += drv_i2c.c
 endif
@@ -30,4 +26,15 @@ endif
 
 ifeq ($(BSP_LIBCONFIG_STM32_HAL_MMCSD),y)
 LIBDRV_CSRCS += drv_mmcsd.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_FLASH),y)
+LIBDRV_CINCDIRS += include/flash
+ifeq (${BSP_LIBCONFIG_STM32_SERIES},BSP_STM32_H7)
+LIBDRV_CSRCS += drv_flash_h7.c
+endif
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_ETH_LEGACY),y)
+LIBDRV_CSRCS += drv_eth.c
 endif

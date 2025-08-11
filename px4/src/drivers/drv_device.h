@@ -41,7 +41,7 @@
 #define _DRV_DEVICE_H
 
 #include <stdint.h>
-#include <sys/ioctl.h>
+// #include <sys/ioctl.h>
 
 #include "drv_sensor.h"
 #include "drv_orb_dev.h"

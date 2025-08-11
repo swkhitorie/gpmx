@@ -26,10 +26,6 @@ struct up_spi_dev_s
     bool enable_dmatx;
     bool enable_dmarx;
 
-    volatile bool dmatx_ready;
-    volatile bool dmarx_ready;
-    volatile bool dmartx_ready;
-
     const uint32_t devid[CONFIG_SPI_ATTACH_CS_NUM];
     const struct {
         GPIO_TypeDef *port;   

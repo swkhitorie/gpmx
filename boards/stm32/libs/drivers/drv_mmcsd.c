@@ -1,5 +1,6 @@
 #include "drv_mmcsd.h"
 
+#if defined (DRV_BSP_H7)
 struct up_mmcsd_dev_s *mmcsd_list[2];
 
 /****************************************************************************
@@ -237,3 +238,5 @@ void SDMMC2_IRQHandler(void)
 {
     HAL_SD_IRQHandler(&mmcsd_list[1]->handle);
 }
+
+#endif

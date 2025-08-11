@@ -44,7 +44,7 @@ static void low_f1_bkp_update()
 }
 #endif
 
-bool low_config()
+bool low_stm32_rtc_config()
 {
     RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
 
@@ -55,8 +55,13 @@ bool low_config()
 #elif defined(BSP_RTC_USING_LSE)
     PeriphClkInitStruct.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
 #else
+#if defined(DRV_BSP_H7)
     PeriphClkInitStruct.RTCClockSelection = RCC_RTCCLKSOURCE_HSE_DIV32;
+#else
+    PeriphClkInitStruct.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
 #endif
+#endif
+
     HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct);
 
 #if defined(DRV_BSP_WL) || defined(DRV_BSP_G0)
@@ -99,7 +104,7 @@ bool low_config()
     return true;
 }
 
-bool low_rtc_setup()
+bool stm32_rtc_setup()
 {
 #if !defined(DRV_BSP_H7) && !defined(DRV_BSP_WL)
     __HAL_RCC_PWR_CLK_ENABLE();
@@ -123,7 +128,7 @@ bool low_rtc_setup()
 //     HAL_RCC_OscConfig(&RCC_OscInitStruct);
 // #endif
 
-    if (!low_config())
+    if (!low_stm32_rtc_config())
     {
         return false;
     }
@@ -131,7 +136,7 @@ bool low_rtc_setup()
     return true;
 }
 
-time_t low_rtc_get_timeval(struct timeval *tv)
+time_t stm32_rtc_get_timeval(struct timeval *tv)
 {
     RTC_TimeTypeDef RTC_TimeStruct = {0};
     RTC_DateTypeDef RTC_DateStruct = {0};
@@ -160,7 +165,24 @@ time_t low_rtc_get_timeval(struct timeval *tv)
     return tv->tv_sec;
 }
 
-bool low_rtc_set_time_stamp(time_t time_stamp)
+void stm32_rtc_get_tm(struct tm *now)
+{
+    RTC_TimeTypeDef RTC_TimeStruct = {0};
+    RTC_DateTypeDef RTC_DateStruct = {0};
+
+    HAL_RTC_GetTime(&RTC_Handler, &RTC_TimeStruct, RTC_FORMAT_BIN);
+    HAL_RTC_GetDate(&RTC_Handler, &RTC_DateStruct, RTC_FORMAT_BIN);
+
+    now->tm_sec  = RTC_TimeStruct.Seconds;
+    now->tm_min  = RTC_TimeStruct.Minutes;
+    now->tm_hour = RTC_TimeStruct.Hours;
+    now->tm_mday = RTC_DateStruct.Date;
+    now->tm_mon  = RTC_DateStruct.Month - 1;
+    now->tm_year = RTC_DateStruct.Year + 100;
+}
+
+
+bool stm32_rtc_set_time_stamp(time_t time_stamp)
 {
     RTC_TimeTypeDef RTC_TimeStruct = {0};
     RTC_DateTypeDef RTC_DateStruct = {0};

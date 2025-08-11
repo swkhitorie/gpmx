@@ -6,6 +6,7 @@
 #include <device/serial.h>
 #include <device/i2c_master.h>
 #include <device/spi.h>
+
 #include <drivers/drv_sensor.h>
 
 /**************
@@ -57,8 +58,11 @@ struct up_uart_dev_s gps1_serial_dev =
 struct up_i2c_master_s sensor_i2c_dev = 
 {
     .dev = {
-		.clk_speed = 400000,
-		.addr_mode = I2C_ADDR_7BIT,
+        .cfg = {
+            .address = 0,
+            .addrlen = 7,
+            .frequency = 400000,
+        },
         .ops       = &g_i2c_master_ops,
         .priv      = &sensor_i2c_dev,
     },
@@ -192,18 +196,18 @@ void board_bsp_init()
     BOARD_INIT_IOPORT(13, GPIOC, 15, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_VERY_HIGH);
     BOARD_INIT_IOPORT(14, GPIOD, 4, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_VERY_HIGH);
 
-    dregister("/gps_serial", &gps1_serial_dev.dev);
-    dregister("/sensor_i2c", &sensor_i2c_dev.dev);
-    dregister("/sensor_spi", &sensor_spi_dev.dev);
-    dregister("/fram_spi", &fram_spi_dev.dev);
+    serial_register(&gps1_serial_dev.dev, 1);
+    i2c_register(&sensor_i2c_dev.dev, 4);
+    spi_register(&sensor_spi_dev.dev, 1);
+    spi_register(&fram_spi_dev.dev, 2);
 
-	gps1_serial_dev.dev.ops->setup(&gps1_serial_dev.dev);
-    sensor_i2c_dev.dev.ops->setup(&sensor_i2c_dev.dev);
-    sensor_spi_dev.dev.ops->setup(&sensor_spi_dev.dev);
-	fram_spi_dev.dev.ops->setup(&fram_spi_dev.dev);
+    serial_bus_initialize(1);
+    i2c_bus_initialize(4);
+    spi_bus_initialize(1);
+    spi_bus_initialize(2);
 
-    dstdout = dbind("/gps_serial");
-    dstdin = dbind("/gps_serial");
+    dstdout = serial_bus_get(1);
+    dstdin = serial_bus_get(1);
 
 #ifdef CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
     cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
@@ -228,36 +232,89 @@ void board_led_toggle(uint8_t idx)
 
 void board_debug()
 {
-    board_blue_led_toggle();
+    board_led_toggle(0);
 }
 
-int board_gpiosetevent(uint32_t pinset, bool risingedge, bool fallingedge,
-                       bool event, io_exit_func func, void *arg)
-{
-    GPIO_TypeDef *port = PIN_STPORT(pinset);
-    uint16_t pin = PIN_STPIN(pinset);
-    uint32_t mode;
-    uint32_t pull;
+// bool board_gpioread(uint32_t pinset)
+// {
+//     GPIO_TypeDef *port = PIN_STPORT(pinset);
+//     uint16_t pin = PIN_STPIN(pinset);
 
-    if (fallingedge && !risingedge) {
+//     return HAL_GPIO_ReadPin(port, 1<<pin);
+// }
 
-        mode = IOMODE_IT_FALLING;
-        pull = IO_PULLUP;
-    } else if (!fallingedge && risingedge) {
+// void board_gpiowrite(uint32_t pinset, bool value)
+// {
+//     GPIO_TypeDef *port = PIN_STPORT(pinset);
+//     uint16_t pin = PIN_STPIN(pinset);
 
-        mode = IOMODE_IT_RISING;
-        pull = IO_PULLDOWN;
-    } else if (fallingedge && risingedge) {
+//     HAL_GPIO_WritePin(port, 1<<pin, value);
+// }
 
-        mode = IOMODE_IT_BOTH;
-        pull = IO_NOPULL;
-    } else {
+// int board_gpiosetevent(uint32_t pinset, bool risingedge, bool fallingedge,
+//                        bool event, io_exit_func func, void *arg)
+// {
+//     GPIO_TypeDef *port = PIN_STPORT(pinset);
+//     uint16_t pin = PIN_STPIN(pinset);
+//     uint32_t mode;
+//     uint32_t pull;
 
-        // param error
-    }
+//     if (fallingedge && !risingedge) {
 
-    low_gpio_setup(port, pin, mode, pull, IO_SPEEDHIGH, 0, func, arg, 1);
-}
+//         mode = IOMODE_IT_FALLING;
+//         pull = IO_PULLUP;
+//     } else if (!fallingedge && risingedge) {
+
+//         mode = IOMODE_IT_RISING;
+//         pull = IO_PULLDOWN;
+//     } else if (fallingedge && risingedge) {
+
+//         mode = IOMODE_IT_BOTH;
+//         pull = IO_NOPULL;
+//     } else {
+
+//         // param error
+//     }
+
+//     low_gpio_setup(port, pin, mode, pull, IO_SPEEDHIGH, 0, func, arg, 1);
+// }
+
+// struct i2c_master_s *board_i2cbus_initialize(int bus)
+// {
+//     struct i2c_master_s *dev;
+//     switch (bus) {
+//     case 1:
+//         dev = NULL;
+//         break;
+//     case 2:
+//         dev = NULL;
+//         break;
+//     }
+
+//     return dev;
+// }
+
+// int board_i2cbus_uninitialize(struct i2c_master_s *pdev)
+// {
+//     (void)pdev;
+
+//     return 0;
+// }
+
+// struct spi_dev_s *board_spibus_initialize(int bus)
+// {
+//     struct spi_dev_s *dev;
+//     switch (bus) {
+//     case 1:
+//         dev = NULL;
+//         break;
+//     case 2:
+//         dev = NULL;
+//         break;
+//     }
+
+//     return dev;
+// }
 
 #ifdef CONFIG_BOARD_COM_STDINOUT
 #include <string.h>

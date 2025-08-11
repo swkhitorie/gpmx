@@ -4,13 +4,10 @@
 
 #include <IST8310.hpp>
 #include <icm42688_test.h>
-#include "px_upload/px_upload.h"
 
 IST8310 mag("/sensor_i2c");
 int16_t data[3];
 
-upload_msg_t rst_msg;
-uint8_t ch;
 
 int main(int argc, char *argv[])
 {
@@ -19,7 +16,9 @@ int main(int argc, char *argv[])
 
     hrt_init();
 
-    mag.init();
+    // if (!mag.init()) {
+    //     printf("Mag init failed \r\n");
+    // }
 
     icm42688_init();
 
@@ -28,8 +27,8 @@ int main(int argc, char *argv[])
         if (HAL_GetTick() - m >= 100) {
             m = HAL_GetTick();
 
-            mag.run();
-            mag.print_status();
+            // mag.run();
+            // mag.print_status();
 
             icm42688_read(&data[0]);
             printf("[icm42688p] %d, %d, %d \r\n", data[0], data[1], data[2]);

@@ -19,10 +19,9 @@ struct up_i2c_master_s
     uint8_t priority_event;
     uint8_t priority_error;
 
-    I2C_HandleTypeDef hi2c;
-    uint8_t state;
     uint8_t ecnt;
-    uint8_t ts_ecnt;
+
+    I2C_HandleTypeDef hi2c;
     GPIO_TypeDef *scl_port;
     GPIO_TypeDef *sda_port;
     uint16_t scl_pin;

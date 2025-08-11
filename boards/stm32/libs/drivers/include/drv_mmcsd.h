@@ -1,6 +1,7 @@
 #ifndef DRV_MMCSD_H_
 #define DRV_MMCSD_H_
 
+#if defined (DRV_BSP_H7)
 #include <stdint.h>
 #include "drv_common.h"
 #include "drv_gpio.h"
@@ -53,6 +54,8 @@ uint8_t low_mmcsd_writes(struct up_mmcsd_dev_s *dev, uint32_t *p, uint32_t addr,
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif
 
 #endif

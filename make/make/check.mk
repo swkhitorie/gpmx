@@ -28,6 +28,16 @@ $(error Invalid empty arm gcc compiler path)
 endif
 endif
 
+ifeq (${TC_USE_PROGRAM},yes)
 ifeq (${TC_OPENOCD_PATH},)
 $(error Invalid empty openocd path)
+endif
+
+ifeq (${TC_OPENOCD_DEBUG_CFG_PATH},)
+$(error Invalid empty openocd interface path)
+endif
+
+ifeq (${TC_OPENOCD_CHIP_CFG_PATH},)
+$(error Invalid empty openocd target path)
+endif
 endif

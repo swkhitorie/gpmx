@@ -47,3 +47,11 @@ LIBHAL_CSRCS += hal_driver/stm32f4xx_hal_tim.c
 LIBHAL_CSRCS += hal_driver/stm32f4xx_hal_tim_ex.c
 endif
 
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_ETH),y)
+LIBHAL_CSRCS += hal_driver/stm32f4xx_hal_eth.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_ETH_LEGACY),y)
+LIBHAL_CINCDIRS += hal_driver/Legacy
+LIBHAL_CSRCS += hal_driver/Legacy/stm32f4xx_hal_eth.c
+endif

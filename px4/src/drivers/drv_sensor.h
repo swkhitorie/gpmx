@@ -42,7 +42,7 @@
 
 #include <px4_platform_common/defines.h>
 #include <stdint.h>
-#include <sys/ioctl.h>
+// #include <sys/ioctl.h>
 
 #include "drv_device.h"
 

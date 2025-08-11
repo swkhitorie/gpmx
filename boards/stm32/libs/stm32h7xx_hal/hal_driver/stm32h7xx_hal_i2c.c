@@ -430,6 +430,7 @@ static void I2C_ITAddrCplt(I2C_HandleTypeDef *hi2c, uint32_t ITFlags);
 static void I2C_ITMasterSeqCplt(I2C_HandleTypeDef *hi2c);
 static void I2C_ITSlaveSeqCplt(I2C_HandleTypeDef *hi2c);
 static void I2C_ITMasterCplt(I2C_HandleTypeDef *hi2c, uint32_t ITFlags);
+static void I2C_ITTransferCplt(I2C_HandleTypeDef *hi2c, uint32_t ITFlags);
 static void I2C_ITSlaveCplt(I2C_HandleTypeDef *hi2c, uint32_t ITFlags);
 static void I2C_ITListenCplt(I2C_HandleTypeDef *hi2c, uint32_t ITFlags);
 static void I2C_ITError(I2C_HandleTypeDef *hi2c, uint32_t ErrorCode);
@@ -443,6 +444,8 @@ static HAL_StatusTypeDef I2C_RequestMemoryRead(I2C_HandleTypeDef *hi2c, uint16_t
                                                uint32_t Tickstart);
 
 /* Private functions for I2C transfer IRQ handler */
+static HAL_StatusTypeDef I2C_Transfer_ISR_IT(struct __I2C_HandleTypeDef *hi2c, uint32_t ITFlags,
+                                           uint32_t ITSources);
 static HAL_StatusTypeDef I2C_Master_ISR_IT(struct __I2C_HandleTypeDef *hi2c, uint32_t ITFlags,
                                            uint32_t ITSources);
 static HAL_StatusTypeDef I2C_Mem_ISR_IT(struct __I2C_HandleTypeDef *hi2c, uint32_t ITFlags,
@@ -2770,6 +2773,293 @@ HAL_StatusTypeDef HAL_I2C_Mem_Read(I2C_HandleTypeDef *hi2c, uint16_t DevAddress,
     return HAL_BUSY;
   }
 }
+
+HAL_StatusTypeDef HAL_I2C_Master_Transfer(I2C_HandleTypeDef *hi2c, 
+                                          struct hal_i2c_msg_s *msgs, 
+                                          uint8_t msgc, 
+                                          uint32_t Timeout)
+{
+  uint32_t tickstart;
+  uint32_t xfer_mode = 0;
+
+  if (hi2c->State == HAL_I2C_STATE_READY)
+  {
+    if ((msgs == NULL) || (msgc == 0U))
+    {
+      hi2c->ErrorCode = HAL_I2C_ERROR_INVALID_PARAM;
+      return  HAL_ERROR;
+    }
+
+    /* Process Locked */
+    __HAL_LOCK(hi2c);
+
+    /* Init tickstart for timeout management*/
+    tickstart = HAL_GetTick();
+
+    if (I2C_WaitOnFlagUntilTimeout(hi2c, I2C_FLAG_BUSY, SET, I2C_TIMEOUT_BUSY, tickstart) != HAL_OK)
+    {
+      return HAL_ERROR;
+    }
+
+    hi2c->msgv = msgs;
+    hi2c->msgc = msgc;
+    hi2c->msgi = 0;
+
+    hi2c->State     = HAL_I2C_STATE_BUSY_TRANSFER;
+    hi2c->Mode      = HAL_I2C_MODE_TRANSFER;
+    hi2c->ErrorCode = HAL_I2C_ERROR_NONE;
+    hi2c->XferISR   = NULL;
+
+    for (hi2c->msgi = 0; hi2c->msgi < hi2c->msgc; hi2c->msgi++) {
+
+      xfer_mode = (hi2c->msgi < (hi2c->msgc-1)) ? I2C_SOFTEND_MODE : I2C_AUTOEND_MODE;
+      hi2c->maddr = hi2c->msgv[hi2c->msgi].addr;
+      hi2c->pBuffPtr = hi2c->msgv[hi2c->msgi].buffer;
+      hi2c->XferCount = hi2c->msgv[hi2c->msgi].length;
+      hi2c->mflags = hi2c->msgv[hi2c->msgi].flags;
+
+      if (hi2c->mflags & I2C_HAL_M_READ) {
+        if (hi2c->XferCount > MAX_NBYTE_SIZE) {
+          hi2c->XferSize = MAX_NBYTE_SIZE;
+          xfer_mode = I2C_RELOAD_MODE;
+          I2C_TransferConfig(hi2c, hi2c->maddr, (uint8_t)hi2c->XferSize, xfer_mode,
+                            I2C_GENERATE_START_READ);
+        } else {
+          hi2c->XferSize = hi2c->XferCount;
+          I2C_TransferConfig(hi2c, hi2c->maddr, (uint8_t)hi2c->XferSize, xfer_mode,
+                            I2C_GENERATE_START_READ);
+        }
+
+        do {
+
+          /* Wait until RXNE flag is set */
+          if (I2C_WaitOnFlagUntilTimeout(hi2c, I2C_FLAG_RXNE, RESET, Timeout, tickstart) != HAL_OK) {
+            return HAL_ERROR;
+          }
+
+          /* Read data from RXDR */
+          *hi2c->pBuffPtr = (uint8_t)hi2c->Instance->RXDR;
+
+          /* Increment Buffer pointer */
+          hi2c->pBuffPtr++;
+
+          hi2c->XferSize--;
+          hi2c->XferCount--;
+
+          if ((hi2c->XferCount != 0U) && (hi2c->XferSize == 0U))
+          {
+            /* Wait until TC flag is set */
+            if (I2C_WaitOnFlagUntilTimeout(hi2c, I2C_FLAG_TCR, RESET, Timeout, tickstart) != HAL_OK)
+            {
+              return HAL_ERROR;
+            }
+
+            if (hi2c->XferCount > MAX_NBYTE_SIZE) {
+              hi2c->XferSize = MAX_NBYTE_SIZE;
+              xfer_mode = I2C_RELOAD_MODE;
+              I2C_TransferConfig(hi2c, hi2c->maddr, (uint8_t) hi2c->XferSize, xfer_mode,
+                                I2C_NO_STARTSTOP);
+            } else {
+              hi2c->XferSize = hi2c->XferCount;
+              I2C_TransferConfig(hi2c, hi2c->maddr, (uint8_t)hi2c->XferSize, xfer_mode,
+                                I2C_NO_STARTSTOP);
+            }
+          }
+        } while (hi2c->XferCount > 0U);
+
+      } else {
+
+        if (hi2c->XferCount > MAX_NBYTE_SIZE) {
+          hi2c->XferSize = MAX_NBYTE_SIZE;
+          xfer_mode = I2C_RELOAD_MODE;
+          I2C_TransferConfig(hi2c, hi2c->maddr, (uint8_t)hi2c->XferSize, xfer_mode,
+                            I2C_GENERATE_START_WRITE);
+        } else {
+          hi2c->XferSize = hi2c->XferCount;
+          I2C_TransferConfig(hi2c, hi2c->maddr, (uint8_t)hi2c->XferSize, xfer_mode,
+                            I2C_GENERATE_START_WRITE);
+        }
+
+        do {
+          /* Wait until TXIS flag is set */
+          if (I2C_WaitOnTXISFlagUntilTimeout(hi2c, Timeout, tickstart) != HAL_OK) {
+            return HAL_ERROR + 4;
+          }
+
+          /* Write data to TXDR */
+          hi2c->Instance->TXDR = *hi2c->pBuffPtr;
+
+          /* Increment Buffer pointer */
+          hi2c->pBuffPtr++;
+
+          hi2c->XferCount--;
+          hi2c->XferSize--;
+
+          if ((hi2c->XferCount != 0U) && (hi2c->XferSize == 0U)) {
+            /* Wait until TCR flag is set */
+            if (I2C_WaitOnFlagUntilTimeout(hi2c, I2C_FLAG_TC, RESET, Timeout, tickstart) != HAL_OK)
+            {
+              return HAL_ERROR;
+            }
+
+            if (hi2c->XferCount > MAX_NBYTE_SIZE)
+            {
+              hi2c->XferSize = MAX_NBYTE_SIZE;
+              xfer_mode = I2C_RELOAD_MODE;
+              I2C_TransferConfig(hi2c, hi2c->maddr, (uint8_t)hi2c->XferSize, xfer_mode,
+                                I2C_NO_STARTSTOP);
+            }
+            else
+            {
+              hi2c->XferSize = hi2c->XferCount;
+              I2C_TransferConfig(hi2c, hi2c->maddr, (uint8_t)hi2c->XferSize, xfer_mode,
+                                I2C_NO_STARTSTOP);
+            }
+          }
+        } while (hi2c->XferCount > 0U);
+        if (xfer_mode != I2C_AUTOEND_MODE) {
+          if (I2C_WaitOnFlagUntilTimeout(hi2c, I2C_FLAG_TC, RESET, Timeout, tickstart) != HAL_OK)
+          {
+            return HAL_ERROR;
+          }
+        }
+      }
+    }
+
+    /* No need to Check TC flag, with AUTOEND mode the stop is automatically generated */
+    /* Wait until STOPF flag is reset */
+    if (I2C_WaitOnSTOPFlagUntilTimeout(hi2c, Timeout, tickstart) != HAL_OK)
+    {
+      return HAL_ERROR;
+    }
+
+    /* Clear STOP Flag */
+    __HAL_I2C_CLEAR_FLAG(hi2c, I2C_FLAG_STOPF);
+
+    /* Clear Configuration Register 2 */
+    I2C_RESET_CR2(hi2c);
+
+    hi2c->State = HAL_I2C_STATE_READY;
+    hi2c->Mode  = HAL_I2C_MODE_NONE;
+
+    /* Process Unlocked */
+    __HAL_UNLOCK(hi2c);
+
+    return HAL_OK;
+  }
+  else
+  {
+    return HAL_BUSY;
+  }
+}
+
+HAL_StatusTypeDef HAL_I2C_Master_Transfer_IT(I2C_HandleTypeDef *hi2c, 
+                                          struct hal_i2c_msg_s *msgs,
+                                          uint8_t msgc)
+{
+  uint32_t tickstart;
+  uint32_t xfermode = 0;
+
+  if (hi2c->State != HAL_I2C_STATE_READY) {
+    return HAL_BUSY;
+  }
+
+  if ((msgs == NULL) || (msgc == 0U)) {
+    hi2c->ErrorCode = HAL_I2C_ERROR_INVALID_PARAM;
+    return  HAL_ERROR;
+  }
+
+  if (__HAL_I2C_GET_FLAG(hi2c, I2C_FLAG_BUSY) == SET) {
+    return HAL_BUSY;
+  }
+
+  /* Process Locked */
+  __HAL_LOCK(hi2c);
+
+  hi2c->State       = HAL_I2C_STATE_BUSY_TRANSFER;
+  hi2c->Mode        = HAL_I2C_MODE_TRANSFER;
+  hi2c->ErrorCode   = HAL_I2C_ERROR_NONE;
+
+  hi2c->msgv = msgs;
+  hi2c->msgc = msgc;
+  hi2c->msgi = 0;
+
+  hi2c->XferOptions = I2C_NO_OPTION_FRAME;
+  hi2c->XferISR     = I2C_Transfer_ISR_IT;
+
+  hi2c->maddr = hi2c->msgv[hi2c->msgi].addr;
+  hi2c->pBuffPtr = hi2c->msgv[hi2c->msgi].buffer;
+  hi2c->XferCount = hi2c->msgv[hi2c->msgi].length;
+  hi2c->mflags = hi2c->msgv[hi2c->msgi].flags;
+
+  // printf("msg len: %u %u\r\n", hi2c->msgv[0].length, hi2c->msgv[1].length);
+  xfermode = (hi2c->msgi < (hi2c->msgc-1)) ? I2C_SOFTEND_MODE : I2C_AUTOEND_MODE;
+
+  if (hi2c->mflags & I2C_HAL_M_READ) {
+    if (hi2c->XferCount > MAX_NBYTE_SIZE) {
+      hi2c->XferSize = MAX_NBYTE_SIZE;
+      xfermode = I2C_RELOAD_MODE;
+    } else {
+      hi2c->XferSize = hi2c->XferCount;
+    }
+
+    /* Set NBYTES to write and reload if hi2c->XferCount > MAX_NBYTE_SIZE */
+    I2C_TransferConfig(hi2c, hi2c->maddr, (uint8_t)hi2c->XferSize, xfermode, I2C_GENERATE_START_READ);
+
+  } else {
+    if (hi2c->XferCount > MAX_NBYTE_SIZE) {
+      hi2c->XferSize = MAX_NBYTE_SIZE;
+      xfermode = I2C_RELOAD_MODE;
+    } else {
+      hi2c->XferSize = hi2c->XferCount;
+    }
+
+    /* Set NBYTES to write and reload if hi2c->XferCount > MAX_NBYTE_SIZE */
+    if (hi2c->XferSize > 0U) {
+      /* Preload TX register */
+      /* Write data to TXDR */
+      hi2c->Instance->TXDR = *hi2c->pBuffPtr;
+
+      /* Increment Buffer pointer */
+      hi2c->pBuffPtr++;
+
+      hi2c->XferCount--;
+      hi2c->XferSize--;
+
+      I2C_TransferConfig(hi2c, hi2c->maddr, (uint8_t)(hi2c->XferSize + 1U), xfermode,
+                         I2C_GENERATE_START_WRITE);
+    } else {
+      I2C_TransferConfig(hi2c, hi2c->maddr, (uint8_t)hi2c->XferSize, xfermode,
+                         I2C_GENERATE_START_WRITE);
+    }
+  }
+
+  /* Process Unlocked */
+  __HAL_UNLOCK(hi2c);
+
+  /* Note : The I2C interrupts must be enabled after unlocking current process
+            to avoid the risk of I2C interrupt handle execution before current
+            process unlock */
+
+  /* Enable ERR, TC, STOP, NACK, TXI interrupt */
+  /* possible to enable all of these */
+  /* I2C_IT_ERRI | I2C_IT_TCI | I2C_IT_STOPI | I2C_IT_NACKI |
+    I2C_IT_ADDRI | I2C_IT_RXI | I2C_IT_TXI */
+
+  if (hi2c->mflags & I2C_HAL_M_READ) {
+    I2C_Enable_IRQ(hi2c, I2C_XFER_RX_IT);
+  } else {
+    I2C_Enable_IRQ(hi2c, I2C_XFER_TX_IT);
+  }
+
+  return HAL_OK;
+}
+
+
+
+
+
+
 /**
   * @brief  Write an amount of data in non-blocking mode with Interrupt to a specific memory address
   * @param  hi2c Pointer to a I2C_HandleTypeDef structure that contains
@@ -4801,6 +5091,11 @@ __weak void HAL_I2C_MemTxCpltCallback(I2C_HandleTypeDef *hi2c)
    */
 }
 
+__weak void HAL_I2C_TransferCpltCallback(I2C_HandleTypeDef *hi2c)
+{
+  UNUSED(hi2c);
+}
+
 /**
   * @brief  Memory Rx Transfer completed callback.
   * @param  hi2c Pointer to a I2C_HandleTypeDef structure that contains
@@ -4909,6 +5204,161 @@ uint32_t HAL_I2C_GetError(const I2C_HandleTypeDef *hi2c)
 /**
   * @}
   */
+
+// static uint32_t debug_tit = 0x00;
+// static uint32_t rx_val = 0;
+// static uint32_t rx_addr = 0;
+static HAL_StatusTypeDef I2C_Transfer_ISR_IT(struct __I2C_HandleTypeDef *hi2c, uint32_t ITFlags,
+                                           uint32_t ITSources)
+{
+  uint32_t direction = I2C_GENERATE_START_WRITE;
+  uint32_t tmpITFlags = ITFlags;
+  uint32_t xfermode = 0;
+  uint32_t mem_addr;
+
+  /* Process Locked */
+  __HAL_LOCK(hi2c);
+
+  if ((I2C_CHECK_FLAG(tmpITFlags, I2C_FLAG_AF) != RESET) && \
+      (I2C_CHECK_IT_SOURCE(ITSources, I2C_IT_NACKI) != RESET))
+  {
+    /* Clear NACK Flag */
+    __HAL_I2C_CLEAR_FLAG(hi2c, I2C_FLAG_AF);
+
+    /* Set corresponding Error Code */
+    /* No need to generate STOP, it is automatically done */
+    /* Error callback will be send during stop flag treatment */
+    hi2c->ErrorCode |= HAL_I2C_ERROR_AF;
+
+    /* Flush TX register */
+    I2C_Flush_TXDR(hi2c);
+  }
+  else if ((I2C_CHECK_FLAG(tmpITFlags, I2C_FLAG_RXNE) != RESET) && \
+           (I2C_CHECK_IT_SOURCE(ITSources, I2C_IT_RXI) != RESET))
+  {
+    // debug_tit |= 0x80;
+
+    /* Remove RXNE flag on temporary variable as read done */
+    tmpITFlags &= ~I2C_FLAG_RXNE;
+
+    /* Read data from RXDR */
+    *hi2c->pBuffPtr = (uint8_t)hi2c->Instance->RXDR;
+
+    /* Increment Buffer pointer */
+    hi2c->pBuffPtr++;
+
+    hi2c->XferSize--;
+    hi2c->XferCount--;
+  }
+  else if ((I2C_CHECK_FLAG(tmpITFlags, I2C_FLAG_TXIS) != RESET) && \
+           (I2C_CHECK_IT_SOURCE(ITSources, I2C_IT_TXI) != RESET))
+  {
+    // debug_tit |= 0x40;
+
+    /* Write data to TXDR */
+    hi2c->Instance->TXDR = *hi2c->pBuffPtr;
+
+    /* Increment Buffer pointer */
+    hi2c->pBuffPtr++;
+
+    hi2c->XferSize--;
+    hi2c->XferCount--;
+  }
+  else if ((I2C_CHECK_FLAG(tmpITFlags, I2C_FLAG_TCR) != RESET) && \
+           (I2C_CHECK_IT_SOURCE(ITSources, I2C_IT_TCI) != RESET))
+  {
+    // debug_tit |= 0x20;
+
+    if ((hi2c->XferCount != 0U) && (hi2c->XferSize == 0U))
+    {
+      xfermode = (hi2c->msgi < (hi2c->msgc-1)) ? I2C_SOFTEND_MODE : I2C_AUTOEND_MODE;
+      mem_addr = hi2c->msgv[hi2c->msgi].addr;
+
+      if (hi2c->XferCount > MAX_NBYTE_SIZE)
+      {
+        hi2c->XferSize = MAX_NBYTE_SIZE;
+        xfermode = I2C_RELOAD_MODE;
+        I2C_TransferConfig(hi2c, (uint16_t)mem_addr, (uint8_t)hi2c->XferSize,
+                           xfermode, I2C_NO_STARTSTOP);
+      }
+      else
+      {
+        hi2c->XferSize = hi2c->XferCount;
+        I2C_TransferConfig(hi2c, (uint16_t)mem_addr, (uint8_t)hi2c->XferSize,
+                           xfermode, I2C_NO_STARTSTOP);
+      }
+    }
+    else
+    {
+      /* Wrong size Status regarding TCR flag event */
+      /* Call the corresponding callback to inform upper layer of End of Transfer */
+      I2C_ITError(hi2c, HAL_I2C_ERROR_SIZE);
+    }
+  }
+  else if ((I2C_CHECK_FLAG(tmpITFlags, I2C_FLAG_TC) != RESET) && \
+           (I2C_CHECK_IT_SOURCE(ITSources, I2C_IT_TCI) != RESET))
+  {
+    // debug_tit |= 0x10;
+
+    if (hi2c->mflags & I2C_HAL_M_READ) {
+      I2C_Disable_IRQ(hi2c, I2C_XFER_RX_IT);
+    } else {
+      I2C_Disable_IRQ(hi2c, I2C_XFER_TX_IT);
+    }
+
+    hi2c->msgi++;
+    hi2c->maddr = hi2c->msgv[hi2c->msgi].addr;
+    hi2c->mflags = hi2c->msgv[hi2c->msgi].flags;
+    hi2c->pBuffPtr = hi2c->msgv[hi2c->msgi].buffer;
+    hi2c->XferCount = hi2c->msgv[hi2c->msgi].length;
+    xfermode = (hi2c->msgi < (hi2c->msgc-1)) ? I2C_SOFTEND_MODE : I2C_AUTOEND_MODE;
+    mem_addr = hi2c->msgv[hi2c->msgi].addr;
+
+    if (hi2c->mflags & I2C_HAL_M_READ) {
+      direction = I2C_GENERATE_START_READ;
+      I2C_Enable_IRQ(hi2c, I2C_XFER_RX_IT);
+      // debug_tit |= 0x04;
+    } else {
+      direction = I2C_GENERATE_START_WRITE;
+      I2C_Enable_IRQ(hi2c, I2C_XFER_TX_IT);
+      // debug_tit |= 0x08;
+    }
+
+    if (hi2c->XferCount > MAX_NBYTE_SIZE) {
+      hi2c->XferSize = MAX_NBYTE_SIZE;
+      xfermode = I2C_RELOAD_MODE;
+      /* Set NBYTES to write and reload if hi2c->XferCount > MAX_NBYTE_SIZE and generate RESTART */
+      I2C_TransferConfig(hi2c, (uint16_t)mem_addr, (uint8_t)hi2c->XferSize,
+                         xfermode, direction);
+      // debug_tit |= 0x01;
+    } else {
+      hi2c->XferSize = hi2c->XferCount;
+
+      /* Set NBYTES to write and generate RESTART */
+      I2C_TransferConfig(hi2c, (uint16_t)mem_addr, (uint8_t)hi2c->XferSize,
+                         xfermode, direction);
+      // debug_tit |= 0x02;
+    }
+  }
+  else
+  {
+    /* Nothing to do */
+  }
+
+  if ((I2C_CHECK_FLAG(tmpITFlags, I2C_FLAG_STOPF) != RESET) && \
+      (I2C_CHECK_IT_SOURCE(ITSources, I2C_IT_STOPI) != RESET))
+  {
+    // printf("Irq Completed\r\n");
+
+    /* Call I2C Master complete process */
+    I2C_ITTransferCplt(hi2c, tmpITFlags);
+  }
+
+  /* Process Unlocked */
+  __HAL_UNLOCK(hi2c);
+
+  return HAL_OK;
+}
 
 /** @addtogroup I2C_Private_Functions
   * @{
@@ -6101,6 +6551,95 @@ static void I2C_ITSlaveSeqCplt(I2C_HandleTypeDef *hi2c)
 #else
     HAL_I2C_SlaveRxCpltCallback(hi2c);
 #endif /* USE_HAL_I2C_REGISTER_CALLBACKS */
+  }
+  else
+  {
+    /* Nothing to do */
+  }
+}
+
+static void I2C_ITTransferCplt(I2C_HandleTypeDef *hi2c, uint32_t ITFlags)
+{
+  uint32_t tmperror;
+  uint32_t tmpITFlags = ITFlags;
+  __IO uint32_t tmpreg;
+
+  /* Clear STOP Flag */
+  __HAL_I2C_CLEAR_FLAG(hi2c, I2C_FLAG_STOPF);
+
+  /* Disable Interrupts and Store Previous state */
+  if (hi2c->mflags & I2C_HAL_M_READ)
+  {
+    I2C_Disable_IRQ(hi2c, I2C_XFER_RX_IT);
+    // hi2c->PreviousState = I2C_STATE_MASTER_BUSY_TX;
+  }
+  else
+  {
+    I2C_Disable_IRQ(hi2c, I2C_XFER_TX_IT);
+    // hi2c->PreviousState = I2C_STATE_MASTER_BUSY_RX;
+  }
+
+  /* Clear Configuration Register 2 */
+  I2C_RESET_CR2(hi2c);
+
+  /* Reset handle parameters */
+  hi2c->XferISR       = NULL;
+  hi2c->XferOptions   = I2C_NO_OPTION_FRAME;
+
+  if (I2C_CHECK_FLAG(tmpITFlags, I2C_FLAG_AF) != RESET)
+  {
+    /* Clear NACK Flag */
+    __HAL_I2C_CLEAR_FLAG(hi2c, I2C_FLAG_AF);
+
+    /* Set acknowledge error code */
+    hi2c->ErrorCode |= HAL_I2C_ERROR_AF;
+  }
+
+  /* Fetch Last receive data if any */
+  if ((hi2c->State == HAL_I2C_STATE_ABORT) && (I2C_CHECK_FLAG(tmpITFlags, I2C_FLAG_RXNE) != RESET))
+  {
+    /* Read data from RXDR */
+    tmpreg = (uint8_t)hi2c->Instance->RXDR;
+    UNUSED(tmpreg);
+  }
+
+  /* Flush TX register */
+  I2C_Flush_TXDR(hi2c);
+
+  /* Store current volatile hi2c->ErrorCode, misra rule */
+  tmperror = hi2c->ErrorCode;
+
+  /* Call the corresponding callback to inform upper layer of End of Transfer */
+  if ((hi2c->State == HAL_I2C_STATE_ABORT) || (tmperror != HAL_I2C_ERROR_NONE))
+  {
+    /* Call the corresponding callback to inform upper layer of End of Transfer */
+    I2C_ITError(hi2c, hi2c->ErrorCode);
+  }
+  /* hi2c->State == HAL_I2C_STATE_BUSY_TX */
+  else if (hi2c->State == HAL_I2C_STATE_BUSY_TRANSFER)
+  {
+    hi2c->State = HAL_I2C_STATE_READY;
+    hi2c->PreviousState = I2C_STATE_NONE;
+
+    if (hi2c->Mode == HAL_I2C_MODE_TRANSFER)
+    {
+      hi2c->Mode = HAL_I2C_MODE_NONE;
+
+      /* Process Unlocked */
+      __HAL_UNLOCK(hi2c);
+
+      /* Call the corresponding callback to inform upper layer of End of Transfer */
+      HAL_I2C_TransferCpltCallback(hi2c);
+    }
+    else
+    {
+      hi2c->Mode = HAL_I2C_MODE_NONE;
+
+      /* Process Unlocked */
+      __HAL_UNLOCK(hi2c);
+
+      // do nothing
+    }
   }
   else
   {

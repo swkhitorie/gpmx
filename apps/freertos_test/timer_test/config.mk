@@ -11,7 +11,7 @@ CONFIG_LINK_SCANF_FLOAT:=n
 TARGET_POSTBUILD := ${TARGET_DEST_FILENAME_BIN}
 
 # board bsp config
-include ${SDK_ROOTDIR}/boards/stm32/stm32h743_eval/make.mk
+include ${SDK_ROOTDIR}/boards/stm32/stm32h743_fanke/make.mk
 
 # os and library config
 MK_COMPILER=gcc

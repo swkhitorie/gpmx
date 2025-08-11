@@ -27,6 +27,17 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "stm32h7xx_hal_def.h"
 
+#define I2C_HAL_M_READ           0x0001  /* Read data, from slave to master */
+
+struct hal_i2c_msg_s
+{
+  uint16_t addr;
+  uint16_t flags;  /* See I2C_HAL_M_READ definitions */
+  uint16_t length;  /* Length of the buffer in bytes */
+  uint8_t *buffer; /* Buffer to be transferred */
+  uint8_t __pad[0];
+};
+
 /** @addtogroup STM32H7xx_HAL_Driver
   * @{
   */
@@ -112,6 +123,7 @@ typedef enum
   HAL_I2C_STATE_BUSY              = 0x24U,   /*!< An internal process is ongoing            */
   HAL_I2C_STATE_BUSY_TX           = 0x21U,   /*!< Data Transmission process is ongoing      */
   HAL_I2C_STATE_BUSY_RX           = 0x22U,   /*!< Data Reception process is ongoing         */
+  HAL_I2C_STATE_BUSY_TRANSFER     = 0x30U,   
   HAL_I2C_STATE_LISTEN            = 0x28U,   /*!< Address Listen Mode is ongoing            */
   HAL_I2C_STATE_BUSY_TX_LISTEN    = 0x29U,   /*!< Address Listen Mode and Data Transmission
                                                  process is ongoing                         */
@@ -148,8 +160,8 @@ typedef enum
   HAL_I2C_MODE_NONE               = 0x00U,   /*!< No I2C communication on going             */
   HAL_I2C_MODE_MASTER             = 0x10U,   /*!< I2C communication is in Master Mode       */
   HAL_I2C_MODE_SLAVE              = 0x20U,   /*!< I2C communication is in Slave Mode        */
-  HAL_I2C_MODE_MEM                = 0x40U    /*!< I2C communication is in Memory Mode       */
-
+  HAL_I2C_MODE_MEM                = 0x40U,   /*!< I2C communication is in Memory Mode       */
+  HAL_I2C_MODE_TRANSFER           = 0x80U
 } HAL_I2C_ModeTypeDef;
 
 /**
@@ -219,6 +231,16 @@ typedef struct __I2C_HandleTypeDef
   __IO uint32_t              Devaddress;     /*!< I2C Target device address                 */
 
   __IO uint32_t              Memaddress;     /*!< I2C Target memory address                 */
+
+  __IO uint32_t maddr;
+
+  __IO uint32_t mflags;
+
+  __IO uint32_t msgc;
+
+  __IO uint32_t msgi;
+
+  __IO struct hal_i2c_msg_s *msgv;
 
 #if (USE_HAL_I2C_REGISTER_CALLBACKS == 1)
   void (* MasterTxCpltCallback)(struct __I2C_HandleTypeDef *hi2c);
@@ -633,6 +655,11 @@ HAL_StatusTypeDef HAL_I2C_Mem_Write(I2C_HandleTypeDef *hi2c, uint16_t DevAddress
                                     uint16_t MemAddSize, uint8_t *pData, uint16_t Size, uint32_t Timeout);
 HAL_StatusTypeDef HAL_I2C_Mem_Read(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint16_t MemAddress,
                                    uint16_t MemAddSize, uint8_t *pData, uint16_t Size, uint32_t Timeout);
+/** Not test Read first, Write after yet */
+HAL_StatusTypeDef HAL_I2C_Master_Transfer(I2C_HandleTypeDef *hi2c, 
+                                          struct hal_i2c_msg_s *msgs,
+                                          uint8_t msgv,
+                                          uint32_t Timeout);
 HAL_StatusTypeDef HAL_I2C_IsDeviceReady(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint32_t Trials,
                                         uint32_t Timeout);
 
@@ -647,7 +674,10 @@ HAL_StatusTypeDef HAL_I2C_Mem_Write_IT(I2C_HandleTypeDef *hi2c, uint16_t DevAddr
                                        uint16_t MemAddSize, uint8_t *pData, uint16_t Size);
 HAL_StatusTypeDef HAL_I2C_Mem_Read_IT(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint16_t MemAddress,
                                       uint16_t MemAddSize, uint8_t *pData, uint16_t Size);
-
+/** Not test Read first, Write after yet */
+HAL_StatusTypeDef HAL_I2C_Master_Transfer_IT(I2C_HandleTypeDef *hi2c, 
+                                          struct hal_i2c_msg_s *msgs,
+                                          uint8_t msgc);
 HAL_StatusTypeDef HAL_I2C_Master_Seq_Transmit_IT(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint8_t *pData,
                                                  uint16_t Size, uint32_t XferOptions);
 HAL_StatusTypeDef HAL_I2C_Master_Seq_Receive_IT(I2C_HandleTypeDef *hi2c, uint16_t DevAddress, uint8_t *pData,
@@ -697,6 +727,7 @@ void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef *hi2c);
 void HAL_I2C_AddrCallback(I2C_HandleTypeDef *hi2c, uint8_t TransferDirection, uint16_t AddrMatchCode);
 void HAL_I2C_ListenCpltCallback(I2C_HandleTypeDef *hi2c);
 void HAL_I2C_MemTxCpltCallback(I2C_HandleTypeDef *hi2c);
+void HAL_I2C_TransferCpltCallback(I2C_HandleTypeDef *hi2c);
 void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c);
 void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c);
 void HAL_I2C_AbortCpltCallback(I2C_HandleTypeDef *hi2c);

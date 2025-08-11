@@ -12,7 +12,7 @@ CONFIG_COMPILE_OPTIMIZE:=O1
 TARGET_POSTBUILD := ${TARGET_DEST_FILENAME_BIN}
 
 # board bsp config
-include ${SDK_ROOTDIR}/boards/stm32/stm32h743_eval/make.mk
+include ${SDK_ROOTDIR}/boards/stm32/stm32h743_fanke/make.mk
 
 # os and library config
 MK_COMPILER=gcc

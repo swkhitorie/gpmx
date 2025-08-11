@@ -20,7 +20,7 @@ BSP_LIBCONFIG_STM32_HAL_FLASH=n
 BSP_LIBCONFIG_STM32_HAL_BASTIM=n
 BSP_LIBCONFIG_STM32_HAL_I2C=y
 BSP_LIBCONFIG_STM32_HAL_SPI=y
-BSP_LIBCONFIG_STM32_HAL_QSPI=y
+BSP_LIBCONFIG_STM32_HAL_QSPI=n
 BSP_LIBCONFIG_STM32_HAL_MMCSD=y
 
 # include all cubelibrary files and low level driver files
@@ -43,8 +43,8 @@ BOARD_CSRCS += board_usb.c
 BOARD_CSRCS += board_init.c
 BOARD_CSRCS += board_bsp.c
 
-BOARD_CPPSRCS += px4_i2c.cpp
-BOARD_CPPSRCS += px4_spi.cpp
+# BOARD_CPPSRCS += px4_i2c.cpp
+# BOARD_CPPSRCS += px4_spi.cpp
 
 BOARD_ASMSOURCES += fmuv6_startup.s
 BOARD_LNK_FILE   += fmuv6_lnk_script.ld
@@ -70,5 +70,5 @@ PROJ_CDEFS              += ${BOARD_CDEFS}
 
 PROJ_CINCDIRS           += ${BOARD_BSP_PATH}
 CSOURCES                += ${TMPBOARD_CSRCS}
-CPPSOURCES              += ${TMPBOARD_CPPSRCS}
+#CPPSOURCES              += ${TMPBOARD_CPPSRCS}
 ASMSOURCES              := ${TMPBOARD_ASMSOURCES}
