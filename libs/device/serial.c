@@ -40,11 +40,10 @@ int serial_bus_initialize(int bus)
     /* This semaphore is used for signaling and, hence, should not have
     * priority inheritance enabled.
     */
-    dev->rxsem = xSemaphoreCreateBinary();
-    dev->txsem = xSemaphoreCreateBinary();
+    dev->xmitsem = xSemaphoreCreateBinary();
 
     xSemaphoreGive(dev->exclsem);
-	xSemaphoreGive(dev->txsem);
+	xSemaphoreGive(dev->xmitsem);
 #else
 
     dev->flag_excl = 0x01;
@@ -87,7 +86,7 @@ int serial_tx_wait(struct uart_dev_s *dev)
 	int ret = DTRUE;
 #if defined(CONFIG_BOARD_FREERTOS_ENABLE)
 
-    return xSemaphoreTake(dev->txsem, 0);
+    return xSemaphoreTake(dev->xmitsem, 0);
 #else
 
     if (dev->flag_tx != 0x01) {
@@ -104,7 +103,7 @@ void serial_tx_post(struct uart_dev_s *dev)
 #if defined(CONFIG_BOARD_FREERTOS_ENABLE)
 
     BaseType_t h_pri = pdFALSE;
-    xSemaphoreGiveFromISR(dev->txsem, &h_pri);
+    xSemaphoreGiveFromISR(dev->xmitsem, &h_pri);
     portYIELD_FROM_ISR(h_pri);
 #else
 

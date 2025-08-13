@@ -3,7 +3,7 @@
 
 #if defined(CONFIG_BOARD_FREERTOS_ENABLE)
 #include <FreeRTOS.h>
-#include <tasks.h>
+#include <task.h>
 #endif
 
 #include <board_config.h>

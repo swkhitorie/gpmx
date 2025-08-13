@@ -50,7 +50,7 @@ void board_bsp_init()
 {
     __HAL_RCC_GPIOH_CLK_ENABLE();
 
-    LOW_INITPIN(GPIO_nLED_BLUE_PORT, GPIO_nLED_BLUE_PIN, IOMODE_OUTPP, IO_NOPULL, IO_SPEEDHIGH);
+    LOW_INITPIN(GPIOH, 7, IOMODE_OUTPP, IO_NOPULL, IO_SPEEDHIGH);
 
     serial_register(&com1_dev.dev, 1);
 
@@ -86,8 +86,8 @@ void board_led_toggle(uint8_t idx)
 {
     switch (idx) {
     case 0: {
-            int val = LOW_IOGET(GPIO_nLED_BLUE_PORT, GPIO_nLED_BLUE_PIN);
-            LOW_IOSET(GPIO_nLED_BLUE_PORT, GPIO_nLED_BLUE_PIN, !val);
+            int val = LOW_IOGET(GPIOH, 7);
+            LOW_IOSET(GPIOH, 7, !val);
         }
         break;
     }

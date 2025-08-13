@@ -41,9 +41,6 @@
  * 
  */
 
-#define GPIO_nLED_BLUE_PORT   (GPIOH)
-#define GPIO_nLED_BLUE_PIN    (7)
-
 #define STM32_PLLCFG_PLL1M       (5)
 #define STM32_PLLCFG_PLL1N       (192) //160
 #define STM32_PLLCFG_PLL1P       (2)

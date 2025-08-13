@@ -6,6 +6,12 @@
 #include <string.h>
 #include <stdio.h>
 
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#include <FreeRTOS.h>
+#include <task.h>
+#include <semphr.h>
+#endif
+
 #define DTRUE      (1)
 #define DFALSE     (0)
 
