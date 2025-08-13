@@ -1,7 +1,7 @@
 
 PROJ_NAME  :=  lora_p2p_wlxx
 PROJ_TC    :=  gae
-APP_PROJ_DIR = apps/demo/wlxx_lora_p2p
+APP_PROJ_DIR = apps/wlxx_lora_p2p
 
 CONFIG_C_STANDARD:=gnu11
 CONFIG_CXX_STANDARD:=gnu++11

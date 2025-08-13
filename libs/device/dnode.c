@@ -1,11 +1,6 @@
 #include <device/dnode.h>
 #include <string.h>
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
-#include <FreeRTOS.h>
-#include <task.h>
-#endif
-
 #include <board_config.h>
 
 #ifndef CONFIG_DRIVER_DEVICE_NODE_NUM
