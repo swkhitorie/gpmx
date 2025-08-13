@@ -56,7 +56,6 @@ void gnss_time_debug2(time_t t1)
         (uint32_t)t1+1);
 }
 
-
 void pps_pulse_irq()
 {
     sync_pps.pps_cnt++;

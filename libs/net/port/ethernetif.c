@@ -186,9 +186,9 @@ int eth_device_init_with_flag(struct eth_device *dev, const char *name, uint16_t
         ip4_addr_t ipaddr, netmask, gw;
 
 #if !LWIP_DHCP
-        ipaddr.addr = inet_addr("192.168.75.34");
-        gw.addr = inet_addr("192.168.75.1");
-        netmask.addr = inet_addr("255.255.255.0");
+        ipaddr.addr = inet_addr(LWIP_ETHERNET_DEFAULT_IP);
+        gw.addr = inet_addr(LWIP_ETHERNET_DEFAULT_GATEWAY);
+        netmask.addr = inet_addr(LWIP_ETHERNET_DEFAULT_MASK);
 #else
         IP4_ADDR(&ipaddr, 0, 0, 0, 0);
         IP4_ADDR(&gw, 0, 0, 0, 0);
@@ -196,7 +196,7 @@ int eth_device_init_with_flag(struct eth_device *dev, const char *name, uint16_t
 #endif
         netif_add(netif, &ipaddr, &netmask, &gw, dev, eth_netif_device_init, ethernet_input);
 
-        printf("localhost ip:%ld.%ld.%ld.%ld\n\n",  \
+        NETIF_LOG("[netif] localhost ip:%ld.%ld.%ld.%ld\n\n",  \
             ((netif->ip_addr.addr)&0x000000ff),       \
             (((netif->ip_addr.addr)&0x0000ff00)>>8),  \
             (((netif->ip_addr.addr)&0x00ff0000)>>16), \

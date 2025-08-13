@@ -154,50 +154,41 @@ void board_bsp_init()
 
     i2c_bus_initialize(1);
 
+    can_bus_initialize(2);
+
     stm32_rtc_setup();
 
     stm32_gpiosetevent(GET_PINHAL(GPIOC, 10), true, false, true, gnss_pps_irq, NULL, 4);
 
     hw_stm32_eth_init();
-
-    can_bus_initialize(2);
-    // can2_dev.dev.cd_ops->co_setup(&can2_dev.dev);
 }
-
-struct can_msg_s msg_test = {
-    .cm_hdr = {
-        .ch_dlc = 8,
-        .ch_extid = 0,
-        .ch_id = 0x12,
-        .ch_rtr = 0,
-    },
-};
 
 void board_debug()
 {
     board_led_toggle(1);
 
-    memset(&msg_test, 0, sizeof(struct can_msg_s));
-    msg_test.cm_hdr.ch_dlc = 8;
-    msg_test.cm_hdr.ch_id = 0x11;
-    for (int i = 0; i < 8; i++) {
-        msg_test.cm_data[i] = 40+i;
-    }
+    // struct can_msg_s msg_test;
+    // memset(&msg_test, 0, sizeof(struct can_msg_s));
+    // msg_test.cm_hdr.ch_dlc = 8;
+    // msg_test.cm_hdr.ch_id = 0x11;
+    // for (int i = 0; i < 8; i++) {
+    //     msg_test.cm_data[i] = 40+i;
+    // }
 
-    can2_dev.dev.cd_ops->co_send(&can2_dev.dev, &msg_test);
+    // can2_dev.dev.cd_ops->co_send(&can2_dev.dev, &msg_test);
 
-    printf("send msg\r\n");
+    // printf("send msg\r\n");
 
-    struct can_msg_s aamsg;
-    if (can_rxfifo_get(&can2_dev.dev.cd_rxfifo, &aamsg) == DTRUE) {
-        printf("rcv dlc:%d, rtr/dtr:%d, std/ext:%d, id:%x ",
-            aamsg.cm_hdr.ch_dlc, aamsg.cm_hdr.ch_rtr, aamsg.cm_hdr.ch_extid,
-            aamsg.cm_hdr.ch_id);
-        for (int i = 0; i < 8; i++) {
-            printf("%x ", aamsg.cm_data[i]);
-        }
-        printf("\r\n");
-    }
+    // struct can_msg_s aamsg;
+    // if (can_rxfifo_get(&can2_dev.dev.cd_rxfifo, &aamsg) == DTRUE) {
+    //     printf("rcv dlc:%d, rtr/dtr:%d, std/ext:%d, id:%x ",
+    //         aamsg.cm_hdr.ch_dlc, aamsg.cm_hdr.ch_rtr, aamsg.cm_hdr.ch_extid,
+    //         aamsg.cm_hdr.ch_id);
+    //     for (int i = 0; i < 8; i++) {
+    //         printf("%x ", aamsg.cm_data[i]);
+    //     }
+    //     printf("\r\n");
+    // }
 
     // struct tm now;
     // stm32_rtc_get_tm(&now);

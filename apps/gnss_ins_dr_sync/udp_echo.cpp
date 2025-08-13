@@ -39,13 +39,11 @@ static char *dbg_buffer= "We get a data\n";
 void udp_echo_demo_init(void)
 {
     struct udp_pcb *udpecho_pcb;
-    /* 新建一个控制块*/      
+
     udpecho_pcb = udp_new();    
 
-    /* 绑定端口号 */
     udp_bind(udpecho_pcb, IP_ADDR_ANY, UDP_ECHO_PORT);
-    
-    /* 注册接收数据回调函数 */
+
     udp_recv(udpecho_pcb, udp_demo_callback, (void *)dbg_buffer);
 }
 

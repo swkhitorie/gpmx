@@ -10,18 +10,34 @@
 #include "rtcm_rcver.h"
 
 #include "mpu6050.h"
+
 #include "udp_echo.h"
+#include "udp_transfer.h"
 #include "lwip/timeouts.h"
 
+/** RTCM Parse Process */
 static uart_dev_t *rtkin;
 static uint8_t rtkc;
 
-static float ins[6];
+/** Sensor IMU Data */
+static float imu_ins[6];
+
+/** rtcm buffer for GNSS Module */
+static uint8_t buff_rtcmrcv[1024];
+static uint16_t buff_rtcmrcvlen = 0;
+
+/** rtcm buffer for IMU */
+static uint8_t buff_imu[64];
+static uint16_t buff_imulen = 0;
+
+/** Debug */
+static uint8_t buff_eth[512];
 
 void gnss_pps_irq(void *p) 
 {
     pps_pulse_irq();
-    // printf("[%lu] pps come\r\n", HAL_GetTick());
+
+    printf("[%lu] pps pulse come\r\n", HAL_GetTick());
 }
 
 int main(int argc, char *argv[])
@@ -31,27 +47,54 @@ int main(int argc, char *argv[])
 
     rtkin = serial_bus_get(3);
 
-    // if (0 == mpu6050_init()) {
-    //     printf("imu init success \r\n");
-    // }
+    if (0 == mpu6050_init()) {
+        printf("[imu] mpu init success \r\n");
+    }
 
     // udp_echo_demo_init();
+    udp_transfer_init();
 
-    uint32_t m = HAL_GetTick();
+    uint32_t m1 = HAL_GetTick();
+    uint32_t m2 = HAL_GetTick();
+
     for (;;) {
 
         // int sz = SERIAL_RDBUF(rtkin, &rtkc, 1);
         // if (sz > 0) {
-        //     rtcm_rcv_process(rtkc);
+        //     if (rtcm_rcv_process(rtkc, buff_rtcmrcv, &buff_rtcmrcvlen) == 1) {
+        //         // udp_transfer_raw(buff_rtcmrcv, buff_rtcmrcvlen);
+        //     }
         // }
 
-        if (HAL_GetTick() - m >= 100) {
-            m = HAL_GetTick();
-            // mpu6050_read(ins);
-            board_debug();
+        if (HAL_GetTick() - m2 >= 100) {
+            m2 = HAL_GetTick();
+            mpu6050_read(imu_ins);
+
+            // rtcm_imu_t rimu;
+            // struct timeval tv;
+            // rimu.now = board_rtc_get_timeval(&tv);
+            // rimu.subsec = hrt_absolute_time()%1000000;
+            // rimu.accx = (int32_t)(imu_ins[0]*1e3f);
+            // rimu.accy = (int32_t)(imu_ins[1]*1e3f);
+            // rimu.accz = (int32_t)(imu_ins[2]*1e3f);
+            // rimu.gyrox = (int32_t)(imu_ins[3]*1e3f);
+            // rimu.gyroy = (int32_t)(imu_ins[4]*1e3f);
+            // rimu.gyroz = (int32_t)(imu_ins[5]*1e3f);
+            // buff_imulen = rtcm_imu_encode(buff_imu, &rimu);
+            // udp_transfer_raw(buff_imu, buff_imulen);
+
+            sprintf((char*)buff_eth, "%.3f, %.3f, %.3f, %.3f, %.3f, %.3f\r\n",
+                imu_ins[0], imu_ins[1], imu_ins[2], imu_ins[3], imu_ins[4], imu_ins[5]);
+            udp_transfer_raw(buff_eth, strlen((const char*)buff_eth));
         }
 
-        // sys_check_timeouts();
+        if (HAL_GetTick() - m1 >= 500) {
+            m1 = HAL_GetTick();
+            board_led_toggle(1);
+        }
+
+        // lwip timeout task core
+        sys_check_timeouts();
     }
 }
 
