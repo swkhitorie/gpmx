@@ -4,10 +4,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SERIAL_TASKSYNC)
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
 #include <FreeRTOS.h>
 #include <semphr.h>
 #endif
+
+#include "dnode.h"
 
 #define SERIAL_DMASEND(d,m,c) ((d)->ops->dmasend(d,m,c))
 
@@ -57,11 +59,7 @@ struct uart_ops_s
 
 struct uart_dev_s {
 
-    /* State data */
-    bool tx_ready;
-    bool rx_available;
-
-    /* Setting data */
+    /* Config data */
     int baudrate;
     unsigned char wordlen;
     unsigned char stopbitlen;
@@ -75,8 +73,8 @@ struct uart_dev_s {
     struct uart_dmaxfer_s dmatx;  /* Describes transmit DMA transfer */
     struct uart_dmaxfer_s dmarx;  /* Describes receive DMA transfer */
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SERIAL_TASKSYNC)
-    SemaphoreHandle_t  mutex;     /* Prevent devices from being occupied by multiple threads */
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+    SemaphoreHandle_t  exclsem;     /* Prevent devices from being occupied by multiple threads */
     /**
      * Asynch Bus:
      * serial poll send: xmitsem can protect poll send action
@@ -88,6 +86,10 @@ struct uart_dev_s {
      */
     SemaphoreHandle_t  xmitsem;
     SemaphoreHandle_t  recvsem;
+#else
+    volatile uint32_t flag_excl;
+
+    volatile uint32_t flag_tx;
 #endif
 
     /* Driver interface */
@@ -105,11 +107,17 @@ int                  serial_register(struct uart_dev_s *dev, int bus);
 struct uart_dev_s*   serial_bus_get(int bus);
 int                  serial_bus_initialize(int bus);
 
-uint16_t uart_buf_write(struct uart_buffer_s *obj, const uint8_t *p, uint16_t len);
+int  serial_dev_lock(struct uart_dev_s *dev);
+int  serial_dev_unlock(struct uart_dev_s *dev);
 
-uint16_t uart_buf_read(struct uart_buffer_s *obj, uint8_t *p, uint16_t len);
+int  serial_tx_wait(struct uart_dev_s *dev);
 
-void uart_buf_clear(struct uart_buffer_s *obj);
+/** serial tx sem/flag post in irq(dma/txirq) */
+void serial_tx_post(struct uart_dev_s *dev);
+
+uint16_t serial_buf_write(struct uart_buffer_s *obj, const uint8_t *p, uint16_t len);
+uint16_t serial_buf_read(struct uart_buffer_s *obj, uint8_t *p, uint16_t len);
+void     serial_buf_clear(struct uart_buffer_s *obj);
 
 #if defined(__cplusplus)
 }

@@ -38,3 +38,7 @@ endif
 ifeq ($(BSP_LIBCONFIG_STM32_HAL_ETH_LEGACY),y)
 LIBDRV_CSRCS += drv_eth.c
 endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_CAN)$(BSP_LIBCONFIG_STM32_HAL_CAN_LEGACY),y)
+LIBDRV_CSRCS += drv_can.c
+endif

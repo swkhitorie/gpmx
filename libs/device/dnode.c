@@ -1,11 +1,22 @@
 #include <device/dnode.h>
 #include <string.h>
 
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#include <FreeRTOS.h>
+#include <tasks.h>
+#endif
+
+#include <board_config.h>
+
+#ifndef CONFIG_DRIVER_DEVICE_NODE_NUM
+#define CONFIG_DRIVER_DEVICE_NODE_NUM    (20)
+#endif
+
 static uint16_t _dev_len = CONFIG_DRIVER_DEVICE_NODE_NUM;
 
 static struct dnode _dev_list[CONFIG_DRIVER_DEVICE_NODE_NUM];
 
-bool dregister(const char *name, void *dev)
+bool dn_register(const char *name, void *dev)
 {
     int i = 0;
     int j = 0;
@@ -28,7 +39,7 @@ bool dregister(const char *name, void *dev)
     return (i != _dev_len);
 }
 
-void *dbind(const char *name)
+void *dn_bind(const char *name)
 {
     int i = 0;
     for (; i < _dev_len; i++) {
@@ -41,3 +52,29 @@ void *dbind(const char *name)
     return NULL;
 }
 
+uint32_t dn_timems()
+{
+    uint32_t tms;
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+    tms = xTaskGetTickCount() * portTICK_PERIOD_MS;
+#else
+
+#if defined (USE_HAL_DRIVER)
+    tms = HAL_GetTick();
+#else 
+    tms = 0;
+#endif
+
+#endif
+    return tms;
+}
+
+void dn_disable_irq()
+{
+    __disable_irq();
+}
+
+void dn_enable_irq()
+{
+    __enable_irq();
+}

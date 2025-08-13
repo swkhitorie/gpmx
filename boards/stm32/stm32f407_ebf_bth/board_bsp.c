@@ -2,9 +2,11 @@
 #include <drv_uart.h>
 #include <drv_i2c.h>
 #include <drv_rtc.h>
+#include <drv_can.h>
 #include <device/dnode.h>
 #include <device/serial.h>
 #include <device/i2c_master.h>
+#include <device/can.h>
 
 /* COM1 */
 uint8_t com1_dma_rxbuff[128];
@@ -107,6 +109,23 @@ struct up_i2c_master_s i2c1_dev =
     .priority_error = 5,
 };
 
+struct up_can_dev_s can2_dev = {
+    .dev = {
+        .cd_status = 0,
+        .cd_baud = 1000000,
+        .cd_mode = {
+            .bm_loopback = 0,
+            .bm_silent = 0,
+        },
+        .cd_ops = &g_can_master_ops,
+        .cd_priv = &can2_dev,
+    },
+    .id = 2,
+    .pin_tx = 1,
+    .pin_rx = 0,
+    .priority = 1,
+};
+
 uart_dev_t *dstdout;
 uart_dev_t *dstdin;
 
@@ -125,6 +144,8 @@ void board_bsp_init()
 
     i2c_register(&i2c1_dev.dev, 1);
 
+    can_register(&can2_dev.dev, 2);
+
     serial_bus_initialize(1);
     serial_bus_initialize(3);
 
@@ -138,11 +159,45 @@ void board_bsp_init()
     stm32_gpiosetevent(GET_PINHAL(GPIOC, 10), true, false, true, gnss_pps_irq, NULL, 4);
 
     hw_stm32_eth_init();
+
+    can_bus_initialize(2);
+    // can2_dev.dev.cd_ops->co_setup(&can2_dev.dev);
 }
+
+struct can_msg_s msg_test = {
+    .cm_hdr = {
+        .ch_dlc = 8,
+        .ch_extid = 0,
+        .ch_id = 0x12,
+        .ch_rtr = 0,
+    },
+};
 
 void board_debug()
 {
     board_led_toggle(1);
+
+    memset(&msg_test, 0, sizeof(struct can_msg_s));
+    msg_test.cm_hdr.ch_dlc = 8;
+    msg_test.cm_hdr.ch_id = 0x11;
+    for (int i = 0; i < 8; i++) {
+        msg_test.cm_data[i] = 40+i;
+    }
+
+    can2_dev.dev.cd_ops->co_send(&can2_dev.dev, &msg_test);
+
+    printf("send msg\r\n");
+
+    struct can_msg_s aamsg;
+    if (can_rxfifo_get(&can2_dev.dev.cd_rxfifo, &aamsg) == DTRUE) {
+        printf("rcv dlc:%d, rtr/dtr:%d, std/ext:%d, id:%x ",
+            aamsg.cm_hdr.ch_dlc, aamsg.cm_hdr.ch_rtr, aamsg.cm_hdr.ch_extid,
+            aamsg.cm_hdr.ch_id);
+        for (int i = 0; i < 8; i++) {
+            printf("%x ", aamsg.cm_data[i]);
+        }
+        printf("\r\n");
+    }
 
     // struct tm now;
     // stm32_rtc_get_tm(&now);

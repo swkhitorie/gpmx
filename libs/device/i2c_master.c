@@ -29,7 +29,7 @@ int i2c_register(struct i2c_master_s *dev, int bus)
     char devname[I2C_DEVNAME_FMTLEN];
     snprintf(devname, I2C_DEVNAME_FMTLEN, I2C_DEVNAME_FMT, bus);
 
-    ret = dregister(devname, dev);
+    ret = dn_register(devname, dev);
 
     return ret;
 }
@@ -40,7 +40,7 @@ struct i2c_master_s *i2c_bus_get(int bus)
     char devname[I2C_DEVNAME_FMTLEN];
     snprintf(devname, I2C_DEVNAME_FMTLEN, I2C_DEVNAME_FMT, bus);
 
-    dev = dbind(devname);
+    dev = dn_bind(devname);
 
     return dev;
 }
@@ -53,7 +53,8 @@ int i2c_bus_initialize(int bus)
         return -1;
     }
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_I2C_TASKSYNC)
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+
     dev->sem_excl = xSemaphoreCreateBinary();
 
     /* This semaphore is used for signaling and, hence, should not have
@@ -62,6 +63,7 @@ int i2c_bus_initialize(int bus)
     dev->sem_isr = xSemaphoreCreateBinary();
     xSemaphoreGive(dev->sem_excl);
 #else
+
     dev->flag_excl = 0x01;
     dev->flag_isr = 0x00;
 #endif
@@ -71,52 +73,58 @@ int i2c_bus_initialize(int bus)
 
 int i2c_dev_lock(struct i2c_master_s *dev)
 {
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_I2C_TASKSYNC)
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+
     return xSemaphoreTake(dev->sem_excl, 1000);
 #else
+
     if (dev->flag_excl == 0x01) {
         dev->flag_excl = 0x00;
-        return 0;
+        return DTRUE;
     } else {
-        return 1;
+        return DFALSE;
     }
 #endif
 }
 
 int i2c_dev_unlock(struct i2c_master_s *dev)
 {
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_I2C_TASKSYNC)
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+
     return xSemaphoreGive(dev->sem_excl);
 #else
+
     dev->flag_excl = 0x01;
-    return 0;
+    return DTRUE;
 #endif
 }
 
 int i2c_dev_transfer_wait(struct i2c_master_s *dev, uint32_t timeout)
 {
-    int ret = 0;
-    uint32_t gtimeout = timeout*1000*1000;
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_I2C_TASKSYNC)
-    int ret;
+    int ret = DTRUE;
+
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+
     do {
         /* Take the semaphore (perhaps waiting) */
         ret = xSemaphoreTake(dev->sem_isr, 1000);
     } while (ret == pdFALSE);
+
     return ret;
 #else
-    uint32_t time_cnt = 0;
+
+    uint32_t timeout_ms = 20;
+    uint32_t time_start = dn_timems();
     do {
         if (dev->flag_isr == 0x01) {
             dev->flag_isr = 0x00;
-            ret = 0;
+            ret = DTRUE;
             break;
         }
-        time_cnt++;
-    } while (time_cnt <= gtimeout);
+    } while ((dn_timems() - time_start) <= timeout_ms);
 
-    if (time_cnt > gtimeout) {
-        ret = 1;
+    if ((dn_timems() - time_start) > timeout_ms) {
+        ret = DFALSE;
     } 
 #endif
 
@@ -125,12 +133,14 @@ int i2c_dev_transfer_wait(struct i2c_master_s *dev, uint32_t timeout)
 
 int i2c_dev_transfer_completed(struct i2c_master_s *dev)
 {
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_I2C_TASKSYNC)
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+
     BaseType_t h_pri;
     xSemaphoreGiveFromISR(dev->sem_isr, &h_pri);
     portYIELD_FROM_ISR(h_pri);
 #else
+
     dev->flag_isr = 0x01;
-    return 0;
+    return DTRUE;
 #endif
 }

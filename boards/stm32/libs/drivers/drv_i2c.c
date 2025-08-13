@@ -3,32 +3,32 @@
 static struct i2c_master_s *i2c_mlist[4] = {0, 0, 0, 0};
 
 #if defined (DRV_BSP_H7)
-static uint32_t low_h7_set_clock(struct i2c_master_s *dev, uint32_t frequency, bool set);
+static uint32_t _i2c_h7_set_clock(struct i2c_master_s *dev, uint32_t frequency, bool set);
 #endif
 
-static bool low_pinconfig(struct i2c_master_s *dev);
-static bool low_pinsetup(struct i2c_master_s *dev, uint32_t mode);
-static void low_config(struct i2c_master_s *dev);
-static void low_setup(struct i2c_master_s *dev);
-static int  low_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count);
-static void low_completed_irq(struct i2c_master_s *dev);
-static int low_reset(struct i2c_master_s *dev);
+static bool _i2c_pinconfig(struct i2c_master_s *dev);
+static bool _i2c_pinsetup(struct i2c_master_s *dev, uint32_t mode);
+static void _i2c_config(struct i2c_master_s *dev);
+static void _i2c_setup(struct i2c_master_s *dev);
+static int  _i2c_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count);
+static void _i2c_completed_irq(struct i2c_master_s *dev);
+static int  _i2c_eset(struct i2c_master_s *dev);
 
-static int up_setup(struct i2c_master_s *dev);
-static int up_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count);
-static int up_reset(struct i2c_master_s *dev);
+static int up_i2c_setup(struct i2c_master_s *dev);
+static int up_i2c_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count);
+static int up_i2c_reset(struct i2c_master_s *dev);
 const struct i2c_ops_s g_i2c_master_ops = 
 {
-    .setup = up_setup,
-    .transfer = up_transfer,
-    .reset = up_reset,
+    .setup = up_i2c_setup,
+    .transfer = up_i2c_transfer,
+    .reset = up_i2c_reset,
 };
 
 /****************************************************************************
  * Private Function
  ****************************************************************************/
 
-bool low_pinconfig(struct i2c_master_s *dev)
+bool _i2c_pinconfig(struct i2c_master_s *dev)
 {
     struct up_i2c_master_s *priv = dev->priv;
     uint8_t num = priv->id;
@@ -130,7 +130,7 @@ bool low_pinconfig(struct i2c_master_s *dev)
  *   HSI is the default and is always 16Mhz.
  ************************************************************************************/
 #if defined (DRV_BSP_H7)
-uint32_t low_h7_set_clock(struct i2c_master_s *dev, uint32_t frequency, bool set)
+uint32_t _i2c_h7_set_clock(struct i2c_master_s *dev, uint32_t frequency, bool set)
 {
     uint8_t presc;
     uint8_t scl_delay;
@@ -204,7 +204,7 @@ uint32_t low_h7_set_clock(struct i2c_master_s *dev, uint32_t frequency, bool set
 #endif
 
 #if defined (DRV_BSP_F1) || defined (DRV_BSP_F4)
-void low_i2c_set_clock(struct i2c_master_s *dev, uint32_t frequency)
+void _i2c_set_clock(struct i2c_master_s *dev, uint32_t frequency)
 {
     uint16_t cr1;
     uint16_t ccr;
@@ -275,7 +275,7 @@ void low_i2c_set_clock(struct i2c_master_s *dev, uint32_t frequency)
 }
 #endif
 
-bool low_pinsetup(struct i2c_master_s *dev, uint32_t mode)
+bool _i2c_pinsetup(struct i2c_master_s *dev, uint32_t mode)
 {
     struct up_i2c_master_s *priv = dev->priv;
     uint8_t num = priv->id;
@@ -297,7 +297,7 @@ bool low_pinsetup(struct i2c_master_s *dev, uint32_t mode)
     return true;
 }
 
-void low_config(struct i2c_master_s *dev)
+void _i2c_config(struct i2c_master_s *dev)
 {
     struct up_i2c_master_s *priv = dev->priv;
     uint8_t num = priv->id;
@@ -327,7 +327,7 @@ void low_config(struct i2c_master_s *dev)
     HAL_RCCEx_PeriphCLKConfig(&i2c_clk_init);
 #endif
 
-    low_pinconfig(dev);
+    _i2c_pinconfig(dev);
 
     priv->hi2c.Instance 			    = i2cx[num-1];
 #if defined (DRV_BSP_F1) || defined (DRV_BSP_F4)
@@ -335,7 +335,7 @@ void low_config(struct i2c_master_s *dev)
     priv->hi2c.Init.ClockSpeed = dev->cfg.frequency;    //100k, 400k
 #endif
 #if defined (DRV_BSP_H7)
-    timing = low_h7_set_clock(dev, dev->cfg.frequency, false);
+    timing = _i2c_h7_set_clock(dev, dev->cfg.frequency, false);
     priv->hi2c.Init.Timing  = timing;  //constant: 0x20B0CCFF(h7b0) 0x00901954(h743)
 #endif
     priv->hi2c.Init.OwnAddress1      = 0;
@@ -346,7 +346,7 @@ void low_config(struct i2c_master_s *dev)
     priv->hi2c.Init.NoStretchMode    = I2C_NOSTRETCH_DISABLE;
 }
 
-void low_setup(struct i2c_master_s *dev)
+void _i2c_setup(struct i2c_master_s *dev)
 {
     struct up_i2c_master_s *priv = dev->priv;
     uint8_t num = priv->id;
@@ -374,8 +374,8 @@ void low_setup(struct i2c_master_s *dev)
 	default: break;
 	}
 
-    low_config(dev);
-    low_pinsetup(dev, IOMODE_AFOD);
+    _i2c_config(dev);
+    _i2c_pinsetup(dev, IOMODE_AFOD);
 
     HAL_I2C_Init(&priv->hi2c);
 #if defined (DRV_BSP_H7)
@@ -388,7 +388,7 @@ void low_setup(struct i2c_master_s *dev)
 	HAL_NVIC_EnableIRQ(i2c_event_irq[num-1]);
 }
 
-int low_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
+int _i2c_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
 {
     int ret = 0x00;
     struct up_i2c_master_s *priv = dev->priv;
@@ -424,7 +424,7 @@ int low_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
             if (ret != HAL_OK) {
                 goto out;
             }
-            if (i2c_dev_transfer_wait(dev, timeout) != 0x00) {
+            if (i2c_dev_transfer_wait(dev, timeout) != DTRUE) {
                 goto out;
             }
         } else {
@@ -433,7 +433,7 @@ int low_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
             if (ret != HAL_OK) {
                 goto out;
             }
-            if (i2c_dev_transfer_wait(dev, timeout) != 0x00) {
+            if (i2c_dev_transfer_wait(dev, timeout) != DTRUE) {
                 goto out;
             }
         }
@@ -454,7 +454,7 @@ int low_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
         if (ret != HAL_OK) {
             goto out;
         }
-        if (i2c_dev_transfer_wait(dev, timeout) != 0x00) {
+        if (i2c_dev_transfer_wait(dev, timeout) != DTRUE) {
             goto out;
         }
     } else {
@@ -463,7 +463,7 @@ int low_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
         if (ret != HAL_OK) {
             goto out;
         }
-        if (i2c_dev_transfer_wait(dev, timeout) != 0x00) {
+        if (i2c_dev_transfer_wait(dev, timeout) != DTRUE) {
             goto out;
         }
     }
@@ -490,12 +490,12 @@ out:
     return ret;
 }
 
-void low_completed_irq(struct i2c_master_s *dev)
+void _i2c_completed_irq(struct i2c_master_s *dev)
 {
     i2c_dev_transfer_completed(dev);
 }
 
-int low_reset(struct i2c_master_s *dev)
+int _i2c_reset(struct i2c_master_s *dev)
 {
     return 0;
 }
@@ -503,33 +503,35 @@ int low_reset(struct i2c_master_s *dev)
 /****************************************************************************
  * Public Function Interface 
  ****************************************************************************/
-int up_setup(struct i2c_master_s *dev)
+int up_i2c_setup(struct i2c_master_s *dev)
 {
     struct up_i2c_master_s *priv = dev->priv;
     uint8_t num = priv->id;
 
-    low_setup(dev);
+    _i2c_setup(dev);
 
     priv->ecnt = 0;
     i2c_mlist[num-1] = dev;
     return 0;
 }
 
-int up_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
+int up_i2c_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
 {
     int ret = 0;
 
-    if (i2c_dev_lock(dev) == 0x00) {
-        low_transfer(dev, msgs, count);
-        i2c_dev_unlock(dev);
+    if (i2c_dev_lock(dev) != DTRUE) {
+        return 1;
     }
+
+    _i2c_transfer(dev, msgs, count);
+    i2c_dev_unlock(dev);
 
     return ret;
 }
 
-int up_reset(struct i2c_master_s *dev)
+int up_i2c_reset(struct i2c_master_s *dev)
 {
-    return low_reset(dev);
+    return _i2c_reset(dev);
 }
 
 /****************************************************************************
@@ -544,7 +546,7 @@ void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
 #if (BSP_CHIP_RESOURCE_LEVEL > 4)
     else if (hi2c->Instance == I2C4)	idx = 3;
 #endif
-    low_completed_irq(i2c_mlist[idx]);
+    _i2c_completed_irq(i2c_mlist[idx]);
 }
 
 void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
@@ -556,7 +558,7 @@ void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
 #if (BSP_CHIP_RESOURCE_LEVEL > 4)
     else if (hi2c->Instance == I2C4)	idx = 3;
 #endif
-    low_completed_irq(i2c_mlist[idx]);
+    _i2c_completed_irq(i2c_mlist[idx]);
 }
 
 void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c)

@@ -5,10 +5,12 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SPI_TASKSYNC)
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
 #include <FreeRTOS.h>
 #include <semphr.h>
 #endif
+
+#include "dnode.h"
 
 /****************************************************************************
  * Name: SPI_LOCK
@@ -294,7 +296,7 @@ struct spi_dev_s
     enum spi_mode_e mode;
     uint8_t nbits;
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SPI_TASKSYNC)
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
     SemaphoreHandle_t  rxsem;    /* Wait for RX DMA to complete */
     SemaphoreHandle_t  txsem;    /* Wait for TX DMA to complete */
 

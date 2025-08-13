@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
     //     printf("imu init success \r\n");
     // }
 
-    udp_echo_demo_init();
+    // udp_echo_demo_init();
 
     uint32_t m = HAL_GetTick();
     for (;;) {
@@ -45,13 +45,13 @@ int main(int argc, char *argv[])
         //     rtcm_rcv_process(rtkc);
         // }
 
-        if (HAL_GetTick() - m >= 1000) {
+        if (HAL_GetTick() - m >= 100) {
             m = HAL_GetTick();
             // mpu6050_read(ins);
             board_debug();
         }
 
-        sys_check_timeouts();
+        // sys_check_timeouts();
     }
 }
 

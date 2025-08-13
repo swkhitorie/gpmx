@@ -9,6 +9,8 @@
 #endif
 #include <device/serial.h>
 
+#define DRV_UART_PERIPHAL_NUM   CONFIG_UART_PERIPHAL_NUM
+
 struct up_uart_dev_s
 {
     struct uart_dev_s dev;   /* Generic UART device */
@@ -27,8 +29,8 @@ struct up_uart_dev_s
     DMA_HandleTypeDef rxdma;
 };
 
-#define DRV_UART_PERIPHAL_NUM   CONFIG_UART_PERIPHAL_NUM
 extern const struct uart_ops_s g_uart_ops;
+
 extern struct uart_dev_s *g_uart_list[DRV_UART_PERIPHAL_NUM];
 
 #endif

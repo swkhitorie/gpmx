@@ -9,7 +9,7 @@ int serial_register(struct uart_dev_s *dev, int bus)
     char devname[SERIAL_DEVNAME_FMTLEN];
     snprintf(devname, SERIAL_DEVNAME_FMTLEN, SERIAL_DEVNAME_FMT, bus);
 
-    ret = dregister(devname, dev);
+    ret = dn_register(devname, dev);
 
     return ret;
 }
@@ -20,7 +20,7 @@ struct uart_dev_s* serial_bus_get(int bus)
     char devname[SERIAL_DEVNAME_FMTLEN];
     snprintf(devname, SERIAL_DEVNAME_FMTLEN, SERIAL_DEVNAME_FMT, bus);
 
-    dev = dbind(devname);
+    dev = dn_bind(devname);
 
     return dev;
 }
@@ -33,14 +33,98 @@ int serial_bus_initialize(int bus)
         return -1;
     }
 
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+
+    dev->exclsem = xSemaphoreCreateBinary();
+
+    /* This semaphore is used for signaling and, hence, should not have
+    * priority inheritance enabled.
+    */
+    dev->rxsem = xSemaphoreCreateBinary();
+    dev->txsem = xSemaphoreCreateBinary();
+
+    xSemaphoreGive(dev->exclsem);
+	xSemaphoreGive(dev->txsem);
+#else
+
+    dev->flag_excl = 0x01;
+	dev->flag_tx = 0x01;
+#endif
+
     return dev->ops->setup(dev);
 }
 
-uint16_t uart_buf_write(struct uart_buffer_s *obj, const uint8_t *p, uint16_t len)
+int serial_dev_lock(struct uart_dev_s *dev)
+{
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+
+    return xSemaphoreTake(dev->exclsem, 1000);
+#else
+
+    if (dev->flag_excl == 0x01) {
+        dev->flag_excl = 0x00;
+        return DTRUE;
+    } else {
+        return DFALSE;
+    }
+#endif
+}
+
+int serial_dev_unlock(struct uart_dev_s *dev)
+{
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+
+    return xSemaphoreGive(dev->exclsem);
+#else
+
+    dev->flag_excl = 0x01;
+    return DTRUE;
+#endif
+}
+
+int serial_tx_wait(struct uart_dev_s *dev)
+{
+	int ret = DTRUE;
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+
+    return xSemaphoreTake(dev->txsem, 0);
+#else
+
+    if (dev->flag_tx != 0x01) {
+		return DFALSE;
+	}
+    dev->flag_tx = 0x00;
+    return DTRUE;
+#endif
+}
+
+void serial_tx_post(struct uart_dev_s *dev)
+{
+	int ret = DTRUE;
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+
+    BaseType_t h_pri = pdFALSE;
+    xSemaphoreGiveFromISR(dev->txsem, &h_pri);
+    portYIELD_FROM_ISR(h_pri);
+#else
+
+    dev->flag_tx = 0x01;
+#endif
+}
+
+uint16_t serial_buf_write(struct uart_buffer_s *obj, const uint8_t *p, uint16_t len)
 {
 	uint16_t i;
 	uint16_t wlen = 0;
 	uint16_t rssize = 0;
+
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+
+    vPortEnterCritical();
+#else
+
+    dn_disable_irq();
+#endif
 
 	rssize = obj->capacity - obj->size;
 	if (rssize >= len) {
@@ -58,13 +142,29 @@ uint16_t uart_buf_write(struct uart_buffer_s *obj, const uint8_t *p, uint16_t le
         obj->size++;
 	}
 
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+
+    vPortExitCritical();
+#else
+
+    dn_enable_irq();
+#endif
+
 	return wlen;
 }
 
-uint16_t uart_buf_read(struct uart_buffer_s *obj, uint8_t *p, uint16_t len)
+uint16_t serial_buf_read(struct uart_buffer_s *obj, uint8_t *p, uint16_t len)
 {
 	uint16_t i;
 	uint16_t rlen = 0;
+
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+
+    vPortEnterCritical();
+#else
+
+    dn_disable_irq();
+#endif
 
 	if (obj->size >= len) {
 		rlen = len;
@@ -81,21 +181,40 @@ uint16_t uart_buf_read(struct uart_buffer_s *obj, uint8_t *p, uint16_t len)
         obj->size--;
 	}
 
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+
+    vPortExitCritical();
+#else
+
+    dn_enable_irq();
+#endif
+
 	return rlen;
 }
 
-void uart_buf_clear(struct uart_buffer_s *obj)
+void serial_buf_clear(struct uart_buffer_s *obj)
 {
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+
+    vPortEnterCritical();
+#else
+
+    dn_disable_irq();
+#endif
+
 	for (int i = 0; i < obj->capacity; i++) {
 		obj->buffer[i] = 0;
 	}
 	obj->size = 0;
 	obj->in = 0;
 	obj->out = 0;
+
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+
+    vPortExitCritical();
+#else
+
+    dn_enable_irq();
+#endif
 }
 
-int uart_register(const char *path, uart_dev_t *dev)
-{
-
-	return 0;
-}

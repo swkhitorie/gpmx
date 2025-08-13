@@ -2,44 +2,44 @@
 
 struct spi_dev_s *g_spi_list[DRV_SPI_PERIPHAL_NUM];
 
-static bool low_pinconfig(struct spi_dev_s *dev);
-static void low_dmatx_setup(struct spi_dev_s *dev);
-static void low_dmarx_setup(struct spi_dev_s *dev);
-static void low_setup(struct spi_dev_s *dev);
-static void low_irq(struct spi_dev_s *dev);
-static void low_irq_dmatx(struct spi_dev_s *dev);
-static void low_irq_dmarx(struct spi_dev_s *dev);
-static void low_irq_dmartx(struct spi_dev_s *dev);
+static bool _spi_pinconfig(struct spi_dev_s *dev);
+static void _spi_dmatx_setup(struct spi_dev_s *dev);
+static void _spi_dmarx_setup(struct spi_dev_s *dev);
+static void _spi_setup(struct spi_dev_s *dev);
+static void _spi_irq(struct spi_dev_s *dev);
+static void _spi_irq_dmatx(struct spi_dev_s *dev);
+static void _spi_irq_dmarx(struct spi_dev_s *dev);
+static void _spi_irq_dmartx(struct spi_dev_s *dev);
 
-static int up_setup(struct spi_dev_s *dev);
-static uint32_t up_setfrequency(struct spi_dev_s *dev, uint32_t frequency);
-static void up_setmode(struct spi_dev_s *dev, enum spi_mode_e mode);
-static void up_setbits(struct spi_dev_s *dev, int nbits);
-static int up_lock(struct spi_dev_s *dev, bool lock);
-static int up_select(struct spi_dev_s *dev, uint32_t devid, bool selected);
-static int up_exchange(struct spi_dev_s *dev,
+static int up_spi_setup(struct spi_dev_s *dev);
+static uint32_t up_spi_setfrequency(struct spi_dev_s *dev, uint32_t frequency);
+static void up_spi_setmode(struct spi_dev_s *dev, enum spi_mode_e mode);
+static void up_spi_setbits(struct spi_dev_s *dev, int nbits);
+static int up_spi_lock(struct spi_dev_s *dev, bool lock);
+static int up_spi_select(struct spi_dev_s *dev, uint32_t devid, bool selected);
+static int up_spi_exchange(struct spi_dev_s *dev,
 	const void *txbuffer, void *rxbuffer, size_t nwords);
-static int up_exchangeblock(struct spi_dev_s *dev,
+static int up_spi_exchangeblock(struct spi_dev_s *dev,
 	const void *txbuffer, void *rxbuffer, size_t nwords);
-static int up_sndblock(struct spi_dev_s *dev, const void *buffer, size_t nwords);
-static int up_recvblock(struct spi_dev_s *dev, void *buffer, size_t nwords);
+static int up_spi_sndblock(struct spi_dev_s *dev, const void *buffer, size_t nwords);
+static int up_spi_recvblock(struct spi_dev_s *dev, void *buffer, size_t nwords);
 const struct spi_ops_s g_spi_ops = 
 {
-    .setup = up_setup,
-    .setfrequency = up_setfrequency,
-	.setmode = up_setmode,
-	.setbits = up_setbits,
-	.lock = up_lock,
-	.select = up_select,
-	.exchange = up_exchange,
-	.sndblock = up_sndblock,
-	.recvblock = up_recvblock,
+    .setup = up_spi_setup,
+    .setfrequency = up_spi_setfrequency,
+	.setmode = up_spi_setmode,
+	.setbits = up_spi_setbits,
+	.lock = up_spi_lock,
+	.select = up_spi_select,
+	.exchange = up_spi_exchange,
+	.sndblock = up_spi_sndblock,
+	.recvblock = up_spi_recvblock,
 };
 
 /****************************************************************************
  * Private Function
  ****************************************************************************/
-bool low_pinconfig(struct spi_dev_s *dev)
+bool _spi_pinconfig(struct spi_dev_s *dev)
 {
     struct up_spi_dev_s *priv = dev->priv;
     uint8_t num = priv->id;
@@ -206,7 +206,7 @@ bool low_pinconfig(struct spi_dev_s *dev)
 #endif
 }
 
-void low_dmatx_setup(struct spi_dev_s *dev)
+void _spi_dmatx_setup(struct spi_dev_s *dev)
 {
     struct up_spi_dev_s *priv = dev->priv;
     uint8_t num = priv->id;
@@ -283,7 +283,7 @@ void low_dmatx_setup(struct spi_dev_s *dev)
 	HAL_NVIC_EnableIRQ(spi_txdma_irq[num-1]);
 }
 
-void low_dmarx_setup(struct spi_dev_s *dev)
+void _spi_dmarx_setup(struct spi_dev_s *dev)
 {
     struct up_spi_dev_s *priv = dev->priv;
     uint8_t num = priv->id;
@@ -360,7 +360,7 @@ void low_dmarx_setup(struct spi_dev_s *dev)
 	HAL_NVIC_EnableIRQ(spi_rxdma_irq[num-1]);
 }
 
-void low_setup(struct spi_dev_s *dev)
+void _spi_setup(struct spi_dev_s *dev)
 {
     struct up_spi_dev_s *priv = dev->priv;
     uint8_t num = priv->id;
@@ -393,7 +393,7 @@ void low_setup(struct spi_dev_s *dev)
 #endif
 	}
 
-	low_pinconfig(dev);	
+	_spi_pinconfig(dev);	
 
 	SPI_TypeDef *spi_instance[6] = {
 		SPI1, SPI2, 
@@ -464,10 +464,10 @@ void low_setup(struct spi_dev_s *dev)
 	__HAL_SPI_ENABLE(&priv->hspi);
 
     if (priv->enable_dmarx) {
-        low_dmarx_setup(dev);
+        _spi_dmarx_setup(dev);
     }
     if (priv->enable_dmatx) {
-        low_dmatx_setup(dev);
+        _spi_dmatx_setup(dev);
     }
 	HAL_NVIC_SetPriority(spi_irq_array[num-1], priv->priority, 0);
 	HAL_NVIC_EnableIRQ(spi_irq_array[num-1]);
@@ -475,27 +475,27 @@ void low_setup(struct spi_dev_s *dev)
 	g_spi_list[num-1] = dev;
 }
 
-void low_irq(struct spi_dev_s *dev)
+void _spi_irq(struct spi_dev_s *dev)
 {
 	struct up_spi_dev_s *priv = dev->priv;
 	HAL_SPI_IRQHandler(&priv->hspi);
 }
 
-void low_irq_dmatx(struct spi_dev_s *dev)
+void _spi_irq_dmatx(struct spi_dev_s *dev)
 {
 	struct up_spi_dev_s *priv = dev->priv;
 	dev->txresult = 0x01;
     spi_dmatxwakeup(dev);
 }
 
-void low_irq_dmarx(struct spi_dev_s *dev)
+void _spi_irq_dmarx(struct spi_dev_s *dev)
 {
 	struct up_spi_dev_s *priv = dev->priv;
     dev->rxresult = 0x01;
     spi_dmarxwakeup(dev);
 }
 
-void low_irq_dmartx(struct spi_dev_s *dev)
+void _spi_irq_dmartx(struct spi_dev_s *dev)
 {
 	struct up_spi_dev_s *priv = dev->priv;
     dev->txresult = 0x01;
@@ -505,13 +505,13 @@ void low_irq_dmartx(struct spi_dev_s *dev)
 /****************************************************************************
  * Public Function Interface 
  ****************************************************************************/
-int up_setup(struct spi_dev_s *dev)
+int up_spi_setup(struct spi_dev_s *dev)
 {
-    low_setup(dev);
+    _spi_setup(dev);
     return 0;
 }
 
-uint32_t up_setfrequency(struct spi_dev_s *dev, uint32_t frequency)
+uint32_t up_spi_setfrequency(struct spi_dev_s *dev, uint32_t frequency)
 {
     struct up_spi_dev_s *priv = dev->priv;
 #if defined (DRV_BSP_H7)
@@ -525,7 +525,7 @@ uint32_t up_setfrequency(struct spi_dev_s *dev, uint32_t frequency)
 	return 0;
 }
 
-void up_setmode(struct spi_dev_s *dev, enum spi_mode_e mode)
+void up_spi_setmode(struct spi_dev_s *dev, enum spi_mode_e mode)
 {
     struct up_spi_dev_s *priv = dev->priv;
 #if defined (DRV_BSP_H7)
@@ -566,7 +566,7 @@ void up_setmode(struct spi_dev_s *dev, enum spi_mode_e mode)
 
 }
 
-void up_setbits(struct spi_dev_s *dev, int nbits)
+void up_spi_setbits(struct spi_dev_s *dev, int nbits)
 {
     struct up_spi_dev_s *priv = dev->priv;
 #if defined (DRV_BSP_H7)
@@ -596,12 +596,12 @@ void up_setbits(struct spi_dev_s *dev, int nbits)
 #endif
 }
 
-int up_lock(struct spi_dev_s *dev, bool lock)
+int up_spi_lock(struct spi_dev_s *dev, bool lock)
 {
 	return spi_devlock(dev, lock);
 }
 
-int up_select(struct spi_dev_s *dev, uint32_t devid, bool selected)
+int up_spi_select(struct spi_dev_s *dev, uint32_t devid, bool selected)
 {
     struct up_spi_dev_s *priv = dev->priv;
 	int i = 0;
@@ -614,7 +614,7 @@ int up_select(struct spi_dev_s *dev, uint32_t devid, bool selected)
 	return 1;
 }
 
-int up_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbuffer, size_t nwords)
+int up_spi_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbuffer, size_t nwords)
 {
     int ret = 0;
     struct up_spi_dev_s *priv = dev->priv;
@@ -641,7 +641,7 @@ int up_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbuffer, siz
 	return ret;
 }
 
-int up_exchangeblock(struct spi_dev_s *dev,
+int up_spi_exchangeblock(struct spi_dev_s *dev,
 	const void *txbuffer, void *rxbuffer, size_t nwords)
 {
 	int ret = 0;
@@ -651,7 +651,7 @@ int up_exchangeblock(struct spi_dev_s *dev,
 	return ret;
 }
 
-int up_sndblock(struct spi_dev_s *dev, const void *buffer, size_t nwords)
+int up_spi_sndblock(struct spi_dev_s *dev, const void *buffer, size_t nwords)
 {
 	int ret = 0;
 	struct up_spi_dev_s *priv = dev->priv;
@@ -660,7 +660,7 @@ int up_sndblock(struct spi_dev_s *dev, const void *buffer, size_t nwords)
 	return ret;
 }
 
-int up_recvblock(struct spi_dev_s *dev, void *buffer, size_t nwords)
+int up_spi_recvblock(struct spi_dev_s *dev, void *buffer, size_t nwords)
 {
 	int ret = 0;
 	struct up_spi_dev_s *priv = dev->priv;
@@ -686,7 +686,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     else if (hspi->Instance == SPI6)	idx = 5;
 #endif
 
-    low_irq_dmartx(g_spi_list[idx]);
+    _spi_irq_dmartx(g_spi_list[idx]);
 }
 
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
@@ -702,7 +702,7 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
     else if (hspi->Instance == SPI6)	idx = 5;
 #endif
 
-    low_irq_dmatx(g_spi_list[idx]);
+    _spi_irq_dmatx(g_spi_list[idx]);
 }
 
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
@@ -718,37 +718,37 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
     else if (hspi->Instance == SPI6)	idx = 5;
 #endif
 
-    low_irq_dmarx(g_spi_list[idx]);
+    _spi_irq_dmarx(g_spi_list[idx]);
 }
 
 void SPI1_IRQHandler(void)
 {
-	low_irq(g_spi_list[0]);
+	_spi_irq(g_spi_list[0]);
 }
 
 void SPI2_IRQHandler(void)
 {
-	low_irq(g_spi_list[1]);
+	_spi_irq(g_spi_list[1]);
 }
 
 #if (BSP_CHIP_RESOURCE_LEVEL > 1)
 void SPI3_IRQHandler(void)
 {
-	low_irq(g_spi_list[2]);
+	_spi_irq(g_spi_list[2]);
 }
 
 void SPI4_IRQHandler(void)
 {
-	low_irq(g_spi_list[3]);
+	_spi_irq(g_spi_list[3]);
 }
 
 void SPI5_IRQHandler(void)
 {
-	low_irq(g_spi_list[4]);
+	_spi_irq(g_spi_list[4]);
 }
 
 void SPI6_IRQHandler(void)
 {
-	low_irq(g_spi_list[5]);
+	_spi_irq(g_spi_list[5]);
 }
 #endif

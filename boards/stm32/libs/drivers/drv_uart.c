@@ -2,36 +2,36 @@
 
 struct uart_dev_s *g_uart_list[DRV_UART_PERIPHAL_NUM];
 
-static bool low_pinconfig(struct uart_dev_s *dev);
-static void low_dmatx_setup(struct uart_dev_s *dev);
-static void low_dmarx_setup(struct uart_dev_s *dev);
-static void low_setup(struct uart_dev_s *dev);
-static void low_irq(struct uart_dev_s *dev);
-static void low_irq_dmatx(struct uart_dev_s *dev);
-static void low_irq_dmarx(struct uart_dev_s *dev);
+static bool _usart_pinconfig(struct uart_dev_s *dev);
+static void _usart_dmatx_setup(struct uart_dev_s *dev);
+static void _usart_dmarx_setup(struct uart_dev_s *dev);
+static void _usart_setup(struct uart_dev_s *dev);
+static void _usart_irq(struct uart_dev_s *dev);
+static void _usart_irq_dmatx(struct uart_dev_s *dev);
+static void _usart_irq_dmarx(struct uart_dev_s *dev);
 
-static int  up_setup(struct uart_dev_s *dev);
-static bool up_txready(struct uart_dev_s *dev);
-static bool up_rxavailable(struct uart_dev_s *dev);
-static int  up_dmasend(struct uart_dev_s *dev, const uint8_t *p, uint16_t len);
-static int  up_send(struct uart_dev_s *dev, const uint8_t *p, uint16_t len);
-static int  up_readbuf(struct uart_dev_s *dev, uint8_t *p, uint16_t len);
-static void up_rxclear(struct uart_dev_s *dev);
+static int  up_usart_setup(struct uart_dev_s *dev);
+static bool up_usart_txready(struct uart_dev_s *dev);
+static bool up_usart_rxavailable(struct uart_dev_s *dev);
+static int  up_usart_dmasend(struct uart_dev_s *dev, const uint8_t *p, uint16_t len);
+static int  up_usart_send(struct uart_dev_s *dev, const uint8_t *p, uint16_t len);
+static int  up_usart_readbuf(struct uart_dev_s *dev, uint8_t *p, uint16_t len);
+static void up_usart_rxclear(struct uart_dev_s *dev);
 const struct uart_ops_s g_uart_ops = 
 {
-    .setup = up_setup,
-    .txready = up_txready,
-    .rxavailable = up_rxavailable,
-    .dmasend = up_dmasend,
-    .send = up_send,
-    .readbuf = up_readbuf,
-    .rxclear = up_rxclear,
+    .setup = up_usart_setup,
+    .txready = up_usart_txready,
+    .rxavailable = up_usart_rxavailable,
+    .dmasend = up_usart_dmasend,
+    .send = up_usart_send,
+    .readbuf = up_usart_readbuf,
+    .rxclear = up_usart_rxclear,
 };
 
 /****************************************************************************
  * Private Function
  ****************************************************************************/
-bool low_pinconfig(struct uart_dev_s *dev)
+bool _usart_pinconfig(struct uart_dev_s *dev)
 {
     struct up_uart_dev_s *priv = dev->priv;
     uint8_t num = priv->id;
@@ -220,7 +220,7 @@ bool low_pinconfig(struct uart_dev_s *dev)
 #endif
 }
 
-void low_dmatx_setup(struct uart_dev_s *dev)
+void _usart_dmatx_setup(struct uart_dev_s *dev)
 {
     struct up_uart_dev_s *priv = dev->priv;
     uint8_t num = priv->id;
@@ -335,7 +335,7 @@ void low_dmatx_setup(struct uart_dev_s *dev)
     HAL_NVIC_EnableIRQ(uart_txdma_irq[num-1]);
 }
 
-void low_dmarx_setup(struct uart_dev_s *dev)
+void _usart_dmarx_setup(struct uart_dev_s *dev)
 {
     struct up_uart_dev_s *priv = dev->priv;
     uint8_t num = priv->id;
@@ -457,7 +457,7 @@ void low_dmarx_setup(struct uart_dev_s *dev)
     HAL_UART_Receive_DMA(&priv->com, dev->dmarx.buffer, dev->dmarx.capacity/2);
 }
 
-void low_setup(struct uart_dev_s *dev)
+void _usart_setup(struct uart_dev_s *dev)
 {
     struct up_uart_dev_s *priv = dev->priv;
     uint8_t num = priv->id;
@@ -487,7 +487,7 @@ void low_setup(struct uart_dev_s *dev)
 #endif // End With Define BSP_CHIP_RESOURCE_LEVEL
     };
 
-    low_pinconfig(dev);
+    _usart_pinconfig(dev);
 
 	switch (num) {
         case 1:	__HAL_RCC_USART1_CLK_ENABLE();	break;
@@ -557,21 +557,20 @@ void low_setup(struct uart_dev_s *dev)
     HAL_UARTEx_DisableFifoMode(&priv->com);
 #endif
     if (priv->enable_dmarx) {
-        low_dmarx_setup(dev);
+        _usart_dmarx_setup(dev);
     }
     if (priv->enable_dmatx) {
-        low_dmatx_setup(dev);
+        _usart_dmatx_setup(dev);
     }
 	HAL_NVIC_SetPriority(uart_irq_array[num-1], priv->priority, 0);
 	HAL_NVIC_EnableIRQ(uart_irq_array[num-1]);
 
 	__HAL_UART_ENABLE_IT(&priv->com, UART_IT_IDLE);
-    dev->tx_ready = true;
 
     g_uart_list[num-1] = dev;
 }
 
-void low_irq(struct uart_dev_s *dev)
+void _usart_irq(struct uart_dev_s *dev)
 {
     struct up_uart_dev_s *priv = dev->priv;
 	__HAL_UART_DISABLE_IT(&priv->com, UART_IT_ERR);
@@ -588,7 +587,6 @@ void low_irq(struct uart_dev_s *dev)
 #endif  // End With Define DRV_BSP_G0 and DRV_BSP_H7 and DRV_BSP_WL
         if (dev->dmarx.capacity != 0) {
             HAL_UART_AbortReceive(&priv->com);
-            dev->rx_available = false;
             uint16_t rxlen = dev->dmarx.capacity/2 - __HAL_DMA_GET_COUNTER(priv->com.hdmarx);
 #if defined (DRV_BSP_H7)
             /* save SRAM(DMA) data to D-Cache data */
@@ -597,52 +595,42 @@ void low_irq(struct uart_dev_s *dev)
             if (dev->dmarx.halflag == 0) {
                 HAL_UART_Receive_DMA(&priv->com, dev->dmarx.buffer + dev->dmarx.capacity/2, dev->dmarx.capacity/2);
                 dev->dmarx.halflag = 1;
-                uart_buf_write(&dev->recv, &dev->dmarx.buffer[0], rxlen);
+                serial_buf_write(&dev->recv, &dev->dmarx.buffer[0], rxlen);
             } else if (dev->dmarx.halflag == 1) {
                 HAL_UART_Receive_DMA(&priv->com, dev->dmarx.buffer, dev->dmarx.capacity/2);
                 dev->dmarx.halflag = 0;
-                uart_buf_write(&dev->recv, dev->dmarx.buffer + dev->dmarx.capacity/2, rxlen);
+                serial_buf_write(&dev->recv, dev->dmarx.buffer + dev->dmarx.capacity/2, rxlen);
             }
-            dev->rx_available = true;
         }
 	}
-	
+
 	/* Call HAL function for other UART IRQ (such as TC IRQ and RXNE IRQ) */
 	HAL_UART_IRQHandler(&priv->com); 
 }
 
-void low_irq_dmatx(struct uart_dev_s *dev)
+void _usart_irq_dmatx(struct uart_dev_s *dev)
 {
     struct up_uart_dev_s *priv = dev->priv;
     uint32_t len = dev->xmit.size;
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SERIAL_TASKSYNC)
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-#endif
 
     if (len > 0) {
         if(len > dev->dmatx.capacity) 
             len = dev->dmatx.capacity;
-        uart_buf_read(&dev->xmit, &dev->dmatx.buffer[0], len);
-        dev->tx_ready = false;
+        serial_buf_read(&dev->xmit, &dev->dmatx.buffer[0], len);
 #if defined (DRV_BSP_H7)
             /* save SRAM(DMA) data to D-Cache data */
             SCB_InvalidateDCache_by_Addr((uint32_t *)&dev->dmatx.buffer[0], dev->dmatx.capacity);
 #endif
         HAL_UART_Transmit_DMA(&priv->com, &dev->dmatx.buffer[0], len);
     } else {
-        dev->tx_ready = true;
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SERIAL_TASKSYNC)
-        xSemaphoreGiveFromISR(dev->xmitsem, &xHigherPriorityTaskWoken);
-        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-#endif
+        serial_tx_post(dev);
     }
 }
 
-void low_irq_dmarx(struct uart_dev_s *dev)
+void _usart_irq_dmarx(struct uart_dev_s *dev)
 {
     struct up_uart_dev_s *priv = dev->priv;
     HAL_UART_AbortReceive(&priv->com);
-    dev->rx_available = false;
 #if defined (DRV_BSP_H7)
     /* save SRAM(DMA) data to D-Cache data */
     SCB_InvalidateDCache_by_Addr((uint32_t *)&dev->dmarx.buffer[0], dev->dmarx.capacity);
@@ -650,57 +638,53 @@ void low_irq_dmarx(struct uart_dev_s *dev)
     if (dev->dmarx.halflag == 0) {
         HAL_UART_Receive_DMA(&priv->com, dev->dmarx.buffer + dev->dmarx.capacity/2, dev->dmarx.capacity/2);
         dev->dmarx.halflag = 1;
-        uart_buf_write(&dev->recv, &dev->dmarx.buffer[0], dev->dmarx.capacity/2);
+        serial_buf_write(&dev->recv, &dev->dmarx.buffer[0], dev->dmarx.capacity/2);
     } else if (dev->dmarx.halflag == 1) {
         HAL_UART_Receive_DMA(&priv->com, dev->dmarx.buffer, dev->dmarx.capacity/2);
         dev->dmarx.halflag = 0;
-        uart_buf_write(&dev->recv, dev->dmarx.buffer + dev->dmarx.capacity/2, dev->dmarx.capacity/2);
+        serial_buf_write(&dev->recv, dev->dmarx.buffer + dev->dmarx.capacity/2, dev->dmarx.capacity/2);
     }
-    dev->rx_available = true;
 }
 
 /****************************************************************************
  * Public Function Interface 
  ****************************************************************************/
-int up_setup(struct uart_dev_s *dev) 
+int up_usart_setup(struct uart_dev_s *dev) 
 {
-    low_setup(dev);
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SERIAL_TASKSYNC)
-    dev->xmitsem = xSemaphoreCreateBinary();
-    dev->recvsem = xSemaphoreCreateBinary();
-    xSemaphoreGive(dev->xmitsem);
-    xSemaphoreGive(dev->recvsem);
-#endif
+    int ret = 0;
+    _usart_setup(dev);
+    return 0;
 }
 
-bool up_txready(struct uart_dev_s *dev)
+bool up_usart_txready(struct uart_dev_s *dev)
 {
-    return dev->tx_ready;
+    return true; // dev->tx_ready;
 }
 
-bool up_rxavailable(struct uart_dev_s *dev)
+bool up_usart_rxavailable(struct uart_dev_s *dev)
 {
-    return dev->rx_available;
+    return true; // dev->rx_available;
 }
 
-int up_dmasend(struct uart_dev_s *dev, const uint8_t *p, uint16_t len)
+int up_usart_dmasend(struct uart_dev_s *dev, const uint8_t *p, uint16_t len)
 {
     struct up_uart_dev_s *priv = dev->priv;
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SERIAL_TASKSYNC)
-    if (xSemaphoreTake(dev->xmitsem, 5000) != pdTRUE) {
-        return 0;
+    if (serial_dev_lock(dev) != DTRUE) {
+        return 1;
     }
-#endif
 
-    uart_buf_write(&dev->xmit, &p[0], len);
-    if (!dev->tx_ready) return false;
-    dev->tx_ready = false;
+    serial_buf_write(&dev->xmit, &p[0], len);
+
+    if (serial_tx_wait(dev) != DTRUE) {
+        serial_dev_unlock(dev);
+        return 1;
+    }
 
     if (dev->dmatx.capacity != 0) {
         uint16_t bufsize = (uint32_t)dev->xmit.size;
         bufsize = (bufsize <= dev->dmatx.capacity) ? bufsize : dev->dmatx.capacity;
-        uart_buf_read(&dev->xmit, &dev->dmatx.buffer[0], bufsize);
+        serial_buf_read(&dev->xmit, &dev->dmatx.buffer[0], bufsize);
     #if defined (DRV_BSP_H7)
         /* save SRAM(DMA) data to D-Cache data */
         SCB_InvalidateDCache_by_Addr((uint32_t *)&dev->dmatx.buffer[0], dev->dmatx.capacity);
@@ -711,42 +695,36 @@ int up_dmasend(struct uart_dev_s *dev, const uint8_t *p, uint16_t len)
         // bug
         HAL_UART_Transmit_IT(&priv->com, &dev->xmit.buffer[0], bufsize);
     }
+
+    serial_dev_unlock(dev);
     return len;
 }
 
-int up_send(struct uart_dev_s *dev, const uint8_t *p, uint16_t len)
+int up_usart_send(struct uart_dev_s *dev, const uint8_t *p, uint16_t len)
 {
+    int ret = 0;
     struct up_uart_dev_s *priv = dev->priv;
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SERIAL_TASKSYNC)
-    if (xSemaphoreTake(dev->xmitsem, 5000) != pdTRUE) {
-        return 0;
+
+    if (serial_dev_lock(dev) != DTRUE) {
+        return 1;
     }
-#endif
+
     HAL_UART_Transmit(&priv->com, (uint8_t *)p, len, 3000);
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SERIAL_TASKSYNC)
-    xSemaphoreGive(dev->xmitsem);
-#endif
-    return len;
+    serial_dev_unlock(dev);
+
+    return ret;
 }
 
-int up_readbuf(struct uart_dev_s *dev, uint8_t *p, uint16_t len)
+int up_usart_readbuf(struct uart_dev_s *dev, uint8_t *p, uint16_t len)
 {
     int sz = 0;
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SERIAL_TASKSYNC)
-    if (xSemaphoreTake(dev->recvsem, 5000) != pdTRUE) {
-        return 0;
-    }
-#endif
-    sz = uart_buf_read(&dev->recv, p, len);
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_SERIAL_TASKSYNC)
-    xSemaphoreGive(dev->recvsem);
-#endif
+    sz = serial_buf_read(&dev->recv, p, len);
     return sz;
 }
 
-void up_rxclear(struct uart_dev_s *dev)
+void up_usart_rxclear(struct uart_dev_s *dev)
 {
-    uart_buf_clear(&dev->recv);
+    serial_buf_clear(&dev->recv);
 }
 
 /****************************************************************************
@@ -770,7 +748,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 #endif
 #endif
 
-    low_irq_dmatx(g_uart_list[idx]);
+    _usart_irq_dmatx(g_uart_list[idx]);
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
@@ -791,23 +769,23 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 #endif
 #endif
 
-    low_irq_dmarx(g_uart_list[idx]);
+    _usart_irq_dmarx(g_uart_list[idx]);
 }
 
 void USART1_IRQHandler(void)
 {
-    low_irq(g_uart_list[0]);
+    _usart_irq(g_uart_list[0]);
 }
 
 void USART2_IRQHandler(void)
 {	
-    low_irq(g_uart_list[1]);
+    _usart_irq(g_uart_list[1]);
 }
 
 #if (BSP_CHIP_RESOURCE_LEVEL > 0)
 void USART3_IRQHandler(void)
 {	
-    low_irq(g_uart_list[2]);
+    _usart_irq(g_uart_list[2]);
 }
 #endif
 
@@ -815,26 +793,26 @@ void USART3_IRQHandler(void)
 
 void UART4_IRQHandler(void)
 {	
-    low_irq(g_uart_list[3]);
+    _usart_irq(g_uart_list[3]);
 }
 
 void UART5_IRQHandler(void)
 {
-    low_irq(g_uart_list[4]);
+    _usart_irq(g_uart_list[4]);
 }
 
 void USART6_IRQHandler(void)
 {
-    low_irq(g_uart_list[5]);
+    _usart_irq(g_uart_list[5]);
 }
 
 void UART7_IRQHandler(void)
 {
-    low_irq(g_uart_list[6]);
+    _usart_irq(g_uart_list[6]);
 }
 
 void UART8_IRQHandler(void)
 {
-    low_irq(g_uart_list[7]);
+    _usart_irq(g_uart_list[7]);
 }
 #endif  // End With Define BSP_CHIP_RESOURCE_LEVEL

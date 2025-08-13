@@ -65,3 +65,8 @@ ifeq ($(BSP_LIBCONFIG_STM32_HAL_ETH),y)
 LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_eth.c
 LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_eth_ex.c
 endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_CAN),y)
+LIBHAL_CSRCS += hal_driver/stm32h7xx_hal_fdcan.c
+endif
+

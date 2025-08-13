@@ -10,6 +10,7 @@
 #include <device/spi.h>
 
 #define CONFIG_SPI_ATTACH_CS_NUM   4
+#define DRV_SPI_PERIPHAL_NUM  CONFIG_SPI_PERIPHAL_NUM
 
 struct up_spi_dev_s
 {
@@ -37,8 +38,8 @@ struct up_spi_dev_s
     DMA_HandleTypeDef rxdma;
 };
 
-#define DRV_SPI_PERIPHAL_NUM  CONFIG_SPI_PERIPHAL_NUM
 extern const struct spi_ops_s g_spi_ops;
+
 extern struct spi_dev_s *g_spi_list[DRV_SPI_PERIPHAL_NUM];
 
 #endif

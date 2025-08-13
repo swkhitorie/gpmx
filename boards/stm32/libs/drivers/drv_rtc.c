@@ -44,7 +44,7 @@ static void low_f1_bkp_update()
 }
 #endif
 
-bool low_stm32_rtc_config()
+bool hw_stm32_rtc_config()
 {
     RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
 
@@ -128,7 +128,7 @@ bool stm32_rtc_setup()
 //     HAL_RCC_OscConfig(&RCC_OscInitStruct);
 // #endif
 
-    if (!low_stm32_rtc_config())
+    if (!hw_stm32_rtc_config())
     {
         return false;
     }

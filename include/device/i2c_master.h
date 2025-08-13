@@ -5,10 +5,12 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_I2C_TASKSYNC)
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
 #include <FreeRTOS.h>
 #include <semphr.h>
 #endif
+
+#include "dnode.h"
 
 /* I2C address calculation.  Convert 7- and 10-bit address to 8-bit and
  * 16-bit read/write address
@@ -164,7 +166,7 @@ struct i2c_msg_s
 
 struct i2c_master_s
 {
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_I2C_TASKSYNC)
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
   SemaphoreHandle_t  sem_excl;    /* Mutual exclusion semaphore */
   SemaphoreHandle_t  sem_isr;     /* Interrupt wait semaphore */
 #else
