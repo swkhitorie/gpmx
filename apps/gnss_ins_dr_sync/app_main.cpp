@@ -6,10 +6,12 @@
 #include <device/serial.h>
 #include <rtkcmn.h>
 
+#include "imu/mpu6050.h"
+
 #include "gnss_pps_sync.h"
 #include "rtcm_rcver.h"
 
-#include "mpu6050.h"
+#include "canspeed_obd.h"
 
 #include "udp_echo.h"
 #include "udp_transfer.h"
@@ -33,6 +35,9 @@ static uint16_t buff_imulen = 0;
 /** Debug */
 static uint8_t buff_eth[512];
 
+/** OBD Data */
+static uint32_t speed_obd = 0;
+
 void gnss_pps_irq(void *p) 
 {
     pps_pulse_irq();
@@ -47,22 +52,27 @@ int main(int argc, char *argv[])
 
     rtkin = serial_bus_get(3);
 
-    if (0 == mpu6050_init()) {
+    if (0 == mpu6050_init(1)) {
         printf("[imu] mpu init success \r\n");
     }
 
     // udp_echo_demo_init();
     udp_transfer_init();
 
+    obd_bus_init();
+
     uint32_t m1 = HAL_GetTick();
     uint32_t m2 = HAL_GetTick();
+    uint32_t m3 = HAL_GetTick();
 
     for (;;) {
+
+        obd_rx_speed_detect();
 
         // int sz = SERIAL_RDBUF(rtkin, &rtkc, 1);
         // if (sz > 0) {
         //     if (rtcm_rcv_process(rtkc, buff_rtcmrcv, &buff_rtcmrcvlen) == 1) {
-        //         // udp_transfer_raw(buff_rtcmrcv, buff_rtcmrcvlen);
+        //         udp_transfer_raw(buff_rtcmrcv, buff_rtcmrcvlen);
         //     }
         // }
 
@@ -86,6 +96,13 @@ int main(int argc, char *argv[])
             sprintf((char*)buff_eth, "%.3f, %.3f, %.3f, %.3f, %.3f, %.3f\r\n",
                 imu_ins[0], imu_ins[1], imu_ins[2], imu_ins[3], imu_ins[4], imu_ins[5]);
             udp_transfer_raw(buff_eth, strlen((const char*)buff_eth));
+        }
+
+        if (HAL_GetTick() - m3 >= 25) {
+            m3 = HAL_GetTick();
+            obd_request_speed();
+
+            speed_obd = obd_read_speed();
         }
 
         if (HAL_GetTick() - m1 >= 500) {

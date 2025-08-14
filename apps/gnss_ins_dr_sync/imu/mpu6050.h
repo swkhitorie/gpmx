@@ -89,7 +89,7 @@
 extern "C" {
 #endif
 
-int mpu6050_init(void);
+int mpu6050_init(int busn);
 
 int mpu6050_read(float *data);
 

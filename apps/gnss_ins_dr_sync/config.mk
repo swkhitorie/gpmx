@@ -47,19 +47,17 @@ PROJ_CDEFS += CONFIG_BOARD_COM_STDOUT_DMA
 # PROJ_CDEFS += LWIP_ETHERNET_DEFAULT_MASK=\"255.255.255.0\"
 
 PROJ_CINCDIRS += ${APP_PROJ_DIR}
-PROJ_CINCDIRS += ${APP_PROJ_DIR}/../rtklib
-PROJ_CINCDIRS += ${APP_PROJ_DIR}/imu
-
-CPPSOURCES += ${APP_PROJ_DIR}/../rtklib/rtcm3.cpp
-CPPSOURCES += ${APP_PROJ_DIR}/../rtklib/rtcm3_st.cpp
-CPPSOURCES += ${APP_PROJ_DIR}/../rtklib/rtkcmn.cpp
 
 CPPSOURCES += ${APP_PROJ_DIR}/app_main.cpp
-
 CPPSOURCES += ${APP_PROJ_DIR}/gnss_pps_sync.cpp
 CPPSOURCES += ${APP_PROJ_DIR}/rtcm_rcver.cpp
-CPPSOURCES += ${APP_PROJ_DIR}/imu/mpu6050.cpp
-
 CPPSOURCES += ${APP_PROJ_DIR}/udp_echo.cpp
 CPPSOURCES += ${APP_PROJ_DIR}/udp_transfer.cpp
+CPPSOURCES += ${APP_PROJ_DIR}/canspeed_obd.cpp
+CPPSOURCES += ${APP_PROJ_DIR}/imu/mpu6050.cpp
+
+PROJ_CINCDIRS += apps/rtklib
+CPPSOURCES += apps/rtklib/rtcm3.cpp
+CPPSOURCES += apps/rtklib/rtcm3_st.cpp
+CPPSOURCES += apps/rtklib/rtkcmn.cpp
 

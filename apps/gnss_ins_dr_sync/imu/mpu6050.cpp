@@ -66,10 +66,10 @@ static void i2c_register_reads(uint8_t reg, uint8_t *buf, uint16_t sz)
     ret = I2C_TRANSFER(bus, msg, 2);
 }
 
-int mpu6050_init()
+int mpu6050_init(int busn)
 {
     int ret = 0;
-    bus = i2c_bus_get(1);
+    bus = i2c_bus_get(busn);
 
     if (!bus) {
         return -1;
