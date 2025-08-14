@@ -1,15 +1,19 @@
 GPM is a microcontroller project template that integrates open-source components
 
+### gpmx Architecture
+
+![gpmx_platform](./gpmx.png)
+
 ## directory Structure
 
-| Directory | Description                                                                   |
-| --------- | ----------------------------------------------------------------------------- |
-| boards    | Hardware Abstract Layer Re-Encapsulation based on the manufacturer's library |
-| include   | Header files of components, Kernel                                            |
-| libs      | Sources files of components, (fatfs, usb, posix...)                          |
-| make      | Project makefiles and compile srcipts makefile                                |
-| kernel    | Rtos Kernel                                                                   |
-| px4       | Important components ported from PX4, such as uorb, workqueue, hrt.          |
+| Directory | Description                     |
+| --------- | ------------------------------- |
+| boards    | chip library and boards support |
+| include   | components header files         |
+| libs      | components souces files         |
+| make      | build makefiles and srcipts     |
+| kernel    | kernel of rtos                  |
+| px4       | px4 sdk layer, and modules      |
 
 ## toolchain
 
