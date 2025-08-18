@@ -50,13 +50,17 @@ int rtcm_rcv_process(uint8_t c, uint8_t *rp, uint16_t *rlen)
 
 int rtcm_imu_encode(uint8_t *p, rtcm_imu_t *rimu)
 {
-    int payload_len = 36;
+    int payload_len = 40;
     int idx = 14+10;
+    uint32_t *pt = (uint32_t *)&rimu->now;
+
     p[0] = RTCM3PREAMB;
     p[1] = 0x00;
     setbitu(&p[0], 14, 10, payload_len);
+    setbitu(&p[0], idx, 32, 0x20);   idx+=32;
 
-    setbits(&p[0], idx, 64, rimu->now);     idx+=64;
+    setbitu(&p[0], idx, 32, pt[0]);     idx+=32;
+    setbitu(&p[0], idx, 32, pt[1]);     idx+=32;
     setbitu(&p[0], idx, 32, rimu->subsec);  idx+=32;
     setbits(&p[0], idx, 32, rimu->accx);    idx+=32;
     setbits(&p[0], idx, 32, rimu->accy);    idx+=32;
@@ -73,13 +77,17 @@ int rtcm_imu_encode(uint8_t *p, rtcm_imu_t *rimu)
 
 int rtcm_speed_encode(uint8_t *p, rtcm_speed_t *rspeed)
 {
-    int payload_len = 16;
+    int payload_len = 20;
     int idx = 14+10;
+    uint32_t *pt = (uint32_t *)&rspeed->now;
+
     p[0] = RTCM3PREAMB;
     p[1] = 0x00;
     setbitu(&p[0], 14, 10, payload_len);
+    setbitu(&p[0], idx, 32, 0x30);   idx+=32;
 
-    setbits(&p[0], idx, 64, rspeed->now);           idx+=64;
+    setbitu(&p[0], idx, 32, pt[0]);     idx+=32;
+    setbitu(&p[0], idx, 32, pt[1]);     idx+=32;
     setbitu(&p[0], idx, 32, rspeed->subsec);        idx+=32;
     setbitu(&p[0], idx, 32, rspeed->vehicle_speed); idx+=32;
 

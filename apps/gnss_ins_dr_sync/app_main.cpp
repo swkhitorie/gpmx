@@ -109,9 +109,10 @@ int main(int argc, char *argv[])
             speed_obd = obd_read_speed();
 
             rtcm_speed_t rspeed;
+            struct timeval tv;
             rspeed.now = board_rtc_get_timeval(&tv);
             rspeed.subsec = hrt_absolute_time()%1000000;
-            rspeed.vehicle_speed = rspeed;
+            rspeed.vehicle_speed = speed_obd;
             buff_speedlen = rtcm_speed_encode(buff_speed, &rspeed);
             udp_transfer_raw(buff_speed, buff_speedlen);
 

@@ -8,7 +8,7 @@ then
     armgcc_path=~/__toolchain/gcc-arm-none-eabi-10.3-2021.10
     openocd_path=~/__toolchain/xpack-openocd-0.12.0-6/
     armcc_path=~/
-    armclang_path=~/
+    armclang_path=~/__toolchain/arm_clang_6.24/
 else
     armgcc_path=
     openocd_path=

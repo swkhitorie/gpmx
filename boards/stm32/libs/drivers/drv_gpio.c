@@ -1,5 +1,5 @@
 #include "drv_gpio.h"
-
+#include <string.h>
 #define IRQ_LINE_NUM CONFIG_DRV_GPIO_EXTERNAL_IRQ_LINE_NUM
 struct gpio_pin_t irq_pin_list[IRQ_LINE_NUM];
 
@@ -112,6 +112,8 @@ int stm32_gpiosetevent(uint32_t pinset, bool risingedge, bool fallingedge,
     }
 
     stm32_gpio_setup(port, pin, mode, pull, IO_SPEEDHIGH, 0, func, arg, priority);
+
+    return 0;
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
