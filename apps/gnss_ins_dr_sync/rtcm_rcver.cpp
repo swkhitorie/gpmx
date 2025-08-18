@@ -70,3 +70,21 @@ int rtcm_imu_encode(uint8_t *p, rtcm_imu_t *rimu)
 
     return payload_len + 6;
 }
+
+int rtcm_speed_encode(uint8_t *p, rtcm_speed_t *rspeed)
+{
+    int payload_len = 16;
+    int idx = 14+10;
+    p[0] = RTCM3PREAMB;
+    p[1] = 0x00;
+    setbitu(&p[0], 14, 10, payload_len);
+
+    setbits(&p[0], idx, 64, rspeed->now);           idx+=64;
+    setbitu(&p[0], idx, 32, rspeed->subsec);        idx+=32;
+    setbitu(&p[0], idx, 32, rspeed->vehicle_speed); idx+=32;
+
+    setbitu(&p[0], idx, 24, 
+        rtk_crc24q(&p[0], payload_len+3));
+
+    return payload_len + 6;
+}

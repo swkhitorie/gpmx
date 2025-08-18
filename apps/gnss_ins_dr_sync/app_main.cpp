@@ -6,7 +6,7 @@
 #include <device/serial.h>
 #include <rtkcmn.h>
 
-#include "imu/mpu6050.h"
+#include "mpu6050.h"
 
 #include "gnss_pps_sync.h"
 #include "rtcm_rcver.h"
@@ -31,6 +31,10 @@ static uint16_t buff_rtcmrcvlen = 0;
 /** rtcm buffer for IMU */
 static uint8_t buff_imu[64];
 static uint16_t buff_imulen = 0;
+
+/** rtcm buffer for VehicleSpeed */
+static uint8_t buff_speed[64];
+static uint16_t buff_speedlen = 0;
 
 /** Debug */
 static uint8_t buff_eth[512];
@@ -69,40 +73,49 @@ int main(int argc, char *argv[])
 
         obd_rx_speed_detect();
 
-        // int sz = SERIAL_RDBUF(rtkin, &rtkc, 1);
-        // if (sz > 0) {
-        //     if (rtcm_rcv_process(rtkc, buff_rtcmrcv, &buff_rtcmrcvlen) == 1) {
-        //         udp_transfer_raw(buff_rtcmrcv, buff_rtcmrcvlen);
-        //     }
-        // }
+        int sz = SERIAL_RDBUF(rtkin, &rtkc, 1);
+        if (sz > 0) {
+            if (rtcm_rcv_process(rtkc, buff_rtcmrcv, &buff_rtcmrcvlen) == 1) {
+                udp_transfer_raw(buff_rtcmrcv, buff_rtcmrcvlen);
+            }
+        }
 
         if (HAL_GetTick() - m2 >= 100) {
             m2 = HAL_GetTick();
             mpu6050_read(imu_ins);
 
-            // rtcm_imu_t rimu;
-            // struct timeval tv;
-            // rimu.now = board_rtc_get_timeval(&tv);
-            // rimu.subsec = hrt_absolute_time()%1000000;
-            // rimu.accx = (int32_t)(imu_ins[0]*1e3f);
-            // rimu.accy = (int32_t)(imu_ins[1]*1e3f);
-            // rimu.accz = (int32_t)(imu_ins[2]*1e3f);
-            // rimu.gyrox = (int32_t)(imu_ins[3]*1e3f);
-            // rimu.gyroy = (int32_t)(imu_ins[4]*1e3f);
-            // rimu.gyroz = (int32_t)(imu_ins[5]*1e3f);
-            // buff_imulen = rtcm_imu_encode(buff_imu, &rimu);
-            // udp_transfer_raw(buff_imu, buff_imulen);
+            rtcm_imu_t rimu;
+            struct timeval tv;
+            rimu.now = board_rtc_get_timeval(&tv);
+            rimu.subsec = hrt_absolute_time()%1000000;
+            rimu.accx = (int32_t)(imu_ins[0]*1e3f);
+            rimu.accy = (int32_t)(imu_ins[1]*1e3f);
+            rimu.accz = (int32_t)(imu_ins[2]*1e3f);
+            rimu.gyrox = (int32_t)(imu_ins[3]*1e3f);
+            rimu.gyroy = (int32_t)(imu_ins[4]*1e3f);
+            rimu.gyroz = (int32_t)(imu_ins[5]*1e3f);
+            buff_imulen = rtcm_imu_encode(buff_imu, &rimu);
+            udp_transfer_raw(buff_imu, buff_imulen);
 
-            sprintf((char*)buff_eth, "%.3f, %.3f, %.3f, %.3f, %.3f, %.3f\r\n",
-                imu_ins[0], imu_ins[1], imu_ins[2], imu_ins[3], imu_ins[4], imu_ins[5]);
-            udp_transfer_raw(buff_eth, strlen((const char*)buff_eth));
+            // printf("[imu] %.3f, %.3f, %.3f, %.3f, %.3f, %.3f\r\n",
+            //     imu_ins[0], imu_ins[1], imu_ins[2], 
+            //     imu_ins[3], imu_ins[4], imu_ins[5]);
+
         }
 
         if (HAL_GetTick() - m3 >= 25) {
             m3 = HAL_GetTick();
             obd_request_speed();
-
             speed_obd = obd_read_speed();
+
+            rtcm_speed_t rspeed;
+            rspeed.now = board_rtc_get_timeval(&tv);
+            rspeed.subsec = hrt_absolute_time()%1000000;
+            rspeed.vehicle_speed = rspeed;
+            buff_speedlen = rtcm_speed_encode(buff_speed, &rspeed);
+            udp_transfer_raw(buff_speed, buff_speedlen);
+
+            // printf("[obd] speed:%d\r\n", speed_obd);
         }
 
         if (HAL_GetTick() - m1 >= 500) {

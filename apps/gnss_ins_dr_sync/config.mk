@@ -54,10 +54,12 @@ CPPSOURCES += ${APP_PROJ_DIR}/rtcm_rcver.cpp
 CPPSOURCES += ${APP_PROJ_DIR}/udp_echo.cpp
 CPPSOURCES += ${APP_PROJ_DIR}/udp_transfer.cpp
 CPPSOURCES += ${APP_PROJ_DIR}/canspeed_obd.cpp
-CPPSOURCES += ${APP_PROJ_DIR}/imu/mpu6050.cpp
 
-PROJ_CINCDIRS += apps/rtklib
-CPPSOURCES += apps/rtklib/rtcm3.cpp
-CPPSOURCES += apps/rtklib/rtcm3_st.cpp
-CPPSOURCES += apps/rtklib/rtkcmn.cpp
+PROJ_CINCDIRS += apps/src/libs/rtklib
+PROJ_CINCDIRS += apps/src/drivers/mpu6050
+
+CPPSOURCES += apps/src/libs/rtklib/rtcm3.cpp
+CPPSOURCES += apps/src/libs/rtklib/rtcm3_st.cpp
+CPPSOURCES += apps/src/libs/rtklib/rtkcmn.cpp
+CPPSOURCES += apps/src/drivers/mpu6050/mpu6050.cpp
 

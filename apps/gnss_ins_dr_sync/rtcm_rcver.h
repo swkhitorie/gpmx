@@ -16,6 +16,13 @@ typedef struct __rtcm_imu {
     int32_t gyroz;
 } rtcm_imu_t;
 
+typedef struct __rtcm_speed {
+    time_t now;
+    uint32_t subsec;
+
+    uint32_t vehicle_speed;
+} rtcm_speed_t;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -23,6 +30,8 @@ extern "C" {
 int rtcm_rcv_process(uint8_t c, uint8_t *rp, uint16_t *rlen);
 
 int rtcm_imu_encode(uint8_t *p, rtcm_imu_t *rimu);
+
+int rtcm_speed_encode(uint8_t *p, rtcm_speed_t *rspeed);
 
 #ifdef __cplusplus
 }

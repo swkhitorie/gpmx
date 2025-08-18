@@ -25,7 +25,7 @@ void obd_request_speed()
     msg_test.cm_hdr.ch_dlc = 8;
     msg_test.cm_data[0] = 0x02;
     msg_test.cm_data[1] = 0x01;
-    msg_test.cm_data[2] = 0x0d;
+    msg_test.cm_data[2] = 0x0D;
     msg_test.cm_data[3] = 0x00;
     msg_test.cm_data[4] = 0x00;
     msg_test.cm_data[5] = 0x00;
@@ -41,8 +41,7 @@ void obd_rx_speed_detect()
     if (can_rxfifo_get(&obdbus->cd_rxfifo, &rmsg) == DTRUE &&
         rmsg.cm_hdr.ch_id == 0x7E8) {
 
-        vehicle_speed = (int8_t)((rmsg.cm_data[0])>>24)&0xFF;
-        printf("obd speed get: %d\r\n", vehicle_speed);
+        vehicle_speed = (int8_t)(rmsg.cm_data[3]);  // byte3 [2]: 0D
     }
 }
 
