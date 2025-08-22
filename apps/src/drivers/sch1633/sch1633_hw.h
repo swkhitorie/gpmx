@@ -5,8 +5,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #define AVG_FACTOR  1      // SCH1 sample averaging
+
+#define SCH1633_ADAPT_PLATFORM    1
 
 #define FILTER_RATE         30.0f       // Hz, LPF1 Nominal Cut-off Frequency (-3dB).
 #define FILTER_ACC12        30.0f

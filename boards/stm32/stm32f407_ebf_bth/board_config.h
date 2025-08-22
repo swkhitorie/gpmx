@@ -2,9 +2,13 @@
 #define BOARD_CONFIG_H_
 
 /** 
- * Simple STM32F407VET6 Board Config Header File
- * HSE 8MHz
- * verified stm32 driver: uart/i2c
+ * Simple STM32F407VET6 Embedded fire-v2
+ * HSE 25MHz
+ * 
+ * BASE     tty2 -> PD6(Rx Pin, Connect to GNSS TX)
+ * ROVER    tty3 -> PB11(Rx Pin, Connect to GNSS TX) + PE2 (PPS Pin)
+ * SPI IMU  spidev1 -> PB3 PB4 PB5 PC6(CS) PE3(IO1)
+ * 
  */
 #include <stm32f4xx_hal.h>
 #include <stdint.h>
@@ -60,6 +64,9 @@
 #define STM32_APB2_TIM9_CLKIN   (2*STM32_PCLK2_FREQUENCY)
 #define STM32_APB2_TIM10_CLKIN  (2*STM32_PCLK2_FREQUENCY)
 #define STM32_APB2_TIM11_CLKIN  (2*STM32_PCLK2_FREQUENCY)
+
+#define DRV_FLASH_DEVTYPE_W25Q     0x90
+#define DRV_MODULE_DEVTYPE_USR     0xa0
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,11 +1,3 @@
-#include "lwip/netif.h"
-#include "lwip/ip.h"
-#include "lwip/tcp.h"
-#include "lwip/init.h"
-#include "lwip/udp.h"
-#include "lwip/pbuf.h"
-#include "netif/etharp.h"
-
 #include "udp_transfer.h"
 
 #include <stdio.h>	
@@ -15,16 +7,27 @@ static struct udp_pcb *udp_tpcb;
 static ip_addr_t target_ip;
 static uint16_t target_port;
 static bool is_bind_target = false;
+static uint32_t request_tick = 0;
 
 static void udp_empty_callback(void *arg, struct udp_pcb *upcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
 {
     pbuf_free(p);
 
-    is_bind_target = true;
-    target_port = port;
-    memcpy(&target_ip, addr, sizeof(ip_addr_t));
+    if (!strcmp((const char *)p->payload, "READY")) {
+        printf("[eth] success to link \r\n");
+        is_bind_target = true;
+    } else {
+        printf("[eth] ready msg error \r\n");
+    }
+}
 
-    printf("[udp] record host ip:%ld.%ld.%ld,%ld, port:%d\r\n",
+void udp_set_target_ip_port(ip_addr_t addr, uint16_t port)
+{
+    // is_bind_target = true;
+    target_port = port;
+    memcpy(&target_ip, &addr, sizeof(ip_addr_t));
+
+    printf("[eth] record host ip:%ld.%ld.%ld,%ld, port:%d\r\n",
         (target_ip.addr&0x000000ff),
         ((target_ip.addr&0x0000ff00)>>8),
         ((target_ip.addr&0x00ff0000)>>16),
@@ -40,7 +43,22 @@ void udp_transfer_init(void)
     udp_recv(udp_tpcb, udp_empty_callback, NULL);
 }
 
-int  udp_transfer_raw(const uint8_t *p, uint16_t len)
+void udp_request()
+{
+    const char msg[] = "REQUEST";
+
+    if (UDP_TRANSFER_TIMESTAMP() - request_tick >= 500) {
+        request_tick = UDP_TRANSFER_TIMESTAMP();
+
+        if (!is_bind_target) {
+            printf("[eth] request link\r\n");
+            udp_transfer_raw((const uint8_t *)&msg[0], 7);
+        }
+    }
+}
+
+
+int udp_transfer_raw_control(const uint8_t *p, uint16_t len)
 {
     int ret = 0;
 
@@ -65,3 +83,26 @@ int  udp_transfer_raw(const uint8_t *p, uint16_t len)
 
     return ret;
 }
+
+int udp_transfer_raw(const uint8_t *p, uint16_t len)
+{
+    int ret = 0;
+
+    struct pbuf *q = NULL;
+
+    q = pbuf_alloc(PBUF_TRANSPORT, len, PBUF_RAM);
+    if(!q) {
+        printf("[udp] out of PBUF_RAM\n");
+        ret = 1;
+        return ret;
+    }
+
+    memset(q->payload, 0 , q->len);
+    memcpy(q->payload, p, len);
+
+    udp_sendto(udp_tpcb, q, &target_ip, target_port);
+    pbuf_free(q);
+
+    return ret;
+}
+

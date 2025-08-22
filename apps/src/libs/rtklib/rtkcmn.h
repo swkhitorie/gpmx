@@ -11,6 +11,10 @@
 
 #include "rtcm3_st.h"
 
+#ifndef RTCM3_FRAME_MAX_BUFFER_LEN
+#define RTCM3_FRAME_MAX_BUFFER_LEN      (1200)
+#endif
+
 #define RTCM3PREAMB (0xD3)
 
 #define SYS_NONE    0x00                /* navigation system: none */
@@ -33,7 +37,7 @@ typedef struct __rtcm_t {        /* RTCM control struct type */
     int nbyte;          /* number of bytes in message buffer */ 
     int nbit;           /* number of bits in word buffer */ 
     int len;            /* message length (bytes) */
-    unsigned char buff[1200]; /* message buffer */
+    unsigned char buff[RTCM3_FRAME_MAX_BUFFER_LEN]; /* message buffer */
 
     int sys;
     int sync;

@@ -1561,7 +1561,7 @@ static void RadioStartCad( void )
                             IRQ_RADIO_NONE,
                             IRQ_RADIO_NONE );
 
-    SUBGRF_SetCadParams(LORA_CAD_02_SYMBOL, 22, 10, LORA_CAD_ONLY, 0);
+    SUBGRF_SetCadParams(LORA_CAD_02_SYMBOL, 22, 10, LORA_CAD_ONLY, 0xff);
 
     SUBGRF_SetCad( );
 }

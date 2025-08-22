@@ -26,7 +26,7 @@
  * Simple gpio use macro:
  */
 #define LOW_IOGET(port, pin)  HAL_GPIO_ReadPin(port, 1<<pin)
-#define LOW_IOSET(port, pin, val)  HAL_GPIO_WritePin(port, 1<<pin, val)
+#define LOW_IOSET(port, pin, val)  HAL_GPIO_WritePin(port, 1<<pin, (GPIO_PinState)val)
 #define LOW_INITPIN(port, pin, mode, pull, speed) \
         do { \
             __HAL_RCC_##port##_CLK_ENABLE(); \

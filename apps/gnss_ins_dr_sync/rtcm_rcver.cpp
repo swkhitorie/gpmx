@@ -1,12 +1,14 @@
 #include "rtcm_rcver.h"
 #include <board_config.h>
 
-static rtcm_t rtkmsg = {0};
-int rtcm_rcv_process(uint8_t c, uint8_t *rp, uint16_t *rlen)
+static rtcm_t rtk_rover = {0};
+static rtcm_t rtk_base = {0};
+int rtcm_rover_process(uint8_t c, uint8_t *rp, uint16_t *rlen)
 {
     int rf = 0;
+    rtcm_t *msg = &rtk_rover;
 
-    int rt = input_rtcm3(&rtkmsg, c);
+    int rt = input_rtcm3(msg, c);
     switch (rt) {
     case -1: rf = 2; break;
     case -2: rf = 3; break;
@@ -14,11 +16,11 @@ int rtcm_rcv_process(uint8_t c, uint8_t *rp, uint16_t *rlen)
     case 0: {
             gnss_first_msg_handle();
 
-            rt = decode_rtcm3(&rtkmsg);
+            rt = decode_rtcm3(msg);
 
             if (rt == 21) {
                 // use ST-EPVT for timestamp
-                gnss_timestamp_get_start_calib(rtkmsg.st.now.time);
+                gnss_timestamp_get_start_calib(msg->st.now.time);
             }
 
             if (rt == 21) {
@@ -26,21 +28,21 @@ int rtcm_rcv_process(uint8_t c, uint8_t *rp, uint16_t *rlen)
 
                 printf("[%d] EPVT quality:%d, sat:%d, satv:%d, id:%d, tow:%d, now:%d.%03d\r\n", 
                     HAL_GetTick(), 
-                    rtkmsg.st.quality, rtkmsg.st.sat_use, rtkmsg.st.sat_view, rtkmsg.st.time_id,
-                    rtkmsg.st.epoch_time, (uint32_t)rtkmsg.st.now.time, (int)rtkmsg.st.now.sec);
+                    msg->st.quality, msg->st.sat_use, msg->st.sat_view, msg->st.time_id,
+                    msg->st.epoch_time, (uint32_t)msg->st.now.time, (int)msg->st.now.sec);
 
                 printf("timestamp compare: %u, %u\r\n",
                     (uint32_t)board_rtc_get_timeval(&vt),
-                    (uint32_t)rtkmsg.st.now.time);
+                    (uint32_t)msg->st.now.time);
 
-                if (rtkmsg.bds_time_sync == SYS_CMP) {
-                    printf("bds now: %u \r\n", (uint32_t)rtkmsg.bds_now);
+                if (msg->bds_time_sync == SYS_CMP) {
+                    printf("bds now: %u \r\n", (uint32_t)msg->bds_now);
                 }
             }
 
             rf = 1;
-            memcpy(rp, &rtkmsg.buff[0], rtkmsg.len+3);
-            *rlen = rtkmsg.len+3;
+            memcpy(rp, &msg->buff[0], msg->len+3);
+            *rlen = msg->len+3;
             break;
         }
     }
@@ -48,6 +50,33 @@ int rtcm_rcv_process(uint8_t c, uint8_t *rp, uint16_t *rlen)
     return rf;
 }
 
+int rtcm_base_process(uint8_t c, uint8_t *rp, uint16_t *rlen)
+{
+    int rf = 0;
+    rtcm_t *msg = &rtk_base;
+
+    int rt = input_rtcm3(msg, c);
+    switch (rt) {
+    case -1: rf = 2; break;
+    case -2: rf = 3; break;
+    case -3: rf = 4; break;
+    case 0: {
+            memcpy(rp, &msg->buff[0], msg->len+3);
+            *rlen = msg->len+3;
+
+            rf = 1;
+            break;
+        }
+    }
+
+    return rf;
+}
+
+
+
+/****************************************************************************
+ * User RTCM Frame Encode
+ ****************************************************************************/
 int rtcm_imu_encode(uint8_t *p, rtcm_imu_t *rimu)
 {
     int payload_len = 40;

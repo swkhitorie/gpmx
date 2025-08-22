@@ -32,6 +32,7 @@ const struct spi_ops_s g_spi_ops =
 	.lock = up_spi_lock,
 	.select = up_spi_select,
 	.exchange = up_spi_exchange,
+	.exchangeblock = up_spi_exchangeblock,
 	.sndblock = up_spi_sndblock,
 	.recvblock = up_spi_recvblock,
 };

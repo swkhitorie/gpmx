@@ -29,7 +29,9 @@ typedef struct __rtcm_speed {
 extern "C" {
 #endif
 
-int rtcm_rcv_process(uint8_t c, uint8_t *rp, uint16_t *rlen);
+int rtcm_rover_process(uint8_t c, uint8_t *rp, uint16_t *rlen);
+
+int rtcm_base_process(uint8_t c, uint8_t *rp, uint16_t *rlen);
 
 int rtcm_imu_encode(uint8_t *p, rtcm_imu_t *rimu);
 

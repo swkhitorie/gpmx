@@ -1,11 +1,13 @@
 #include <board_config.h>
 #include <drv_uart.h>
 #include <drv_i2c.h>
+#include <drv_spi.h>
 #include <drv_rtc.h>
 #include <drv_can.h>
 #include <device/dnode.h>
 #include <device/serial.h>
 #include <device/i2c_master.h>
+#include <device/spi.h>
 #include <device/can.h>
 
 /* COM1 */
@@ -44,6 +46,46 @@ struct up_uart_dev_s com1_dev = {
     .priority = 3,
     .priority_dmarx = 3,
     .priority_dmatx = 2,
+    .enable_dmarx = true,
+    .enable_dmatx = true,
+};
+
+/* COM2 */
+uint8_t com2_dma_rxbuff[1024*4];
+uint8_t com2_dma_txbuff[256];
+uint8_t com2_txbuff[256];
+uint8_t com2_rxbuff[1024*4];
+struct up_uart_dev_s com2_dev = {
+    .dev = {
+        .baudrate = 460800,
+        .wordlen = 8,
+        .stopbitlen = 1,
+        .parity = 'n',
+        .recv = {
+            .capacity = 1024*4,
+            .buffer = com2_rxbuff,
+        },
+        .xmit = {
+            .capacity = 256,
+            .buffer = com2_txbuff,
+        },
+        .dmarx = {
+            .capacity = 1024*4,
+            .buffer = com2_dma_rxbuff,
+        },
+        .dmatx = {
+            .capacity = 256,
+            .buffer = com2_dma_txbuff,
+        },
+        .ops       = &g_uart_ops,
+        .priv      = &com2_dev,
+    },
+    .id = 2, //usart2
+    .pin_tx = 1, //PD5
+    .pin_rx = 0, //PD6
+    .priority = 2,
+    .priority_dmarx = 2,
+    .priority_dmatx = 5,
     .enable_dmarx = true,
     .enable_dmatx = true,
 };
@@ -109,6 +151,38 @@ struct up_i2c_master_s i2c1_dev =
     .priority_error = 5,
 };
 
+/**************
+ * Sensor SPI --- W25Q128JV
+ **************/
+struct up_spi_dev_s spi1_dev = 
+{
+    .dev = {
+		.frequency = SPI_BAUDRATEPRESCALER_32,
+		.mode = SPIDEV_MODE0,
+		.nbits = 16,
+        .ops       = &g_spi_ops,
+        .priv      = &spi1_dev,
+    },
+    .id = 1, //SPI1
+	.pin_ncs = 1, //remap
+	.pin_sck = 1, //PB3
+	.pin_miso = 1, //PB4
+	.pin_mosi = 1, //PB5
+    .priority = 4,
+    .priority_dmarx = 5,
+    .priority_dmatx = 5,
+    .enable_dmarx = true,
+    .enable_dmatx = true,
+    .devid = {
+        [0] = DRV_FLASH_DEVTYPE_W25Q,
+        [1] = DRV_MODULE_DEVTYPE_USR,
+    },
+	.devcs = {
+        [0] = {GPIOG, 6},
+        [1] = {GPIOC, 6},
+    },
+};
+
 struct up_can_dev_s can2_dev = {
     .dev = {
         .cd_status = 0,
@@ -131,34 +205,44 @@ uart_dev_t *dstdin;
 
 void board_bsp_init()
 {
+    /** RGB LED */
     LOW_INITPIN(GPIOF, 6, IOMODE_OUTPP, IO_NOPULL, IO_SPEEDHIGH);
     LOW_INITPIN(GPIOF, 7, IOMODE_OUTPP, IO_NOPULL, IO_SPEEDHIGH);
     LOW_INITPIN(GPIOF, 8, IOMODE_OUTPP, IO_NOPULL, IO_SPEEDHIGH);
+
+    /** SPI CS */
+    LOW_INITPIN(GPIOG, 6, IOMODE_OUTPP, IO_PULLUP, IO_SPEEDHIGH);
+    LOW_INITPIN(GPIOC, 6, IOMODE_OUTPP, IO_PULLUP, IO_SPEEDHIGH);
+    LOW_IOSET(GPIOG, 6, 1);
 
     LOW_IOSET(GPIOF, 6, 1);
     LOW_IOSET(GPIOF, 7, 1);
     LOW_IOSET(GPIOF, 8, 1);
 
     serial_register(&com1_dev.dev, 1);
+    serial_register(&com2_dev.dev, 2);
     serial_register(&com3_dev.dev, 3);
 
     i2c_register(&i2c1_dev.dev, 1);
-
+    spi_register(&spi1_dev, 1);
     can_register(&can2_dev.dev, 2);
 
     serial_bus_initialize(1);
+    serial_bus_initialize(2);
     serial_bus_initialize(3);
 
     dstdout = serial_bus_get(1);
     dstdin = serial_bus_get(1);
 
     i2c_bus_initialize(1);
+    spi_bus_initialize(1);
 
     can_bus_initialize(2);
 
     stm32_rtc_setup();
 
-    stm32_gpiosetevent(GET_PINHAL(GPIOC, 10), true, false, true, gnss_pps_irq, NULL, 4);
+    /** GNSS Module PPS Irq pin */
+    stm32_gpiosetevent(GET_PINHAL(GPIOE, 2), true, false, true, gnss_pps_irq, NULL, 4);
 
     hw_stm32_eth_init();
 }
