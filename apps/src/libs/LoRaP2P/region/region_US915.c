@@ -25,6 +25,7 @@
 
 void region_us915_init_default(struct __channel_grp *grp)
 {
+#if (!defined(LORAP2P_SAVE)) || (defined(P2P_REGION_US915) && defined(LORAP2P_SAVE))
     int i = 0;
 
     // Ping Channel
@@ -51,19 +52,23 @@ void region_us915_init_default(struct __channel_grp *grp)
 
     grp->dw_list = &grp->ch_list[8];
     grp->dw_ch_len = grp->grp_ch_len - 8;
+#endif
 }
 
 void region_us915_channelstate_reset(struct __channel_grp *grp)
 {
+#if (!defined(LORAP2P_SAVE)) || (defined(P2P_REGION_US915) && defined(LORAP2P_SAVE))
     int i = 0;
 
     for (i = 0; i < grp->grp_ch_len; i++) {
         grp->bad_list[i] = 0;
     }
+#endif
 }
 
 uint8_t region_us915_downchannelnext(struct __channel_grp *grp, int16_t rssi, int8_t snr)
 {
+#if (!defined(LORAP2P_SAVE)) || (defined(P2P_REGION_US915) && defined(LORAP2P_SAVE))
     int cnt_down = 0;
     if (rssi < -90 || snr < -6) {
         grp->bad_list[8 + grp->dw_fq_idx] = 1;
@@ -84,11 +89,16 @@ uint8_t region_us915_downchannelnext(struct __channel_grp *grp, int16_t rssi, in
         }
     } while(1);
 
+#endif
+
     return 0;
 }
 
 uint8_t region_us915_upchannelnext(struct __channel_grp *grp)
 {
+#if (!defined(LORAP2P_SAVE)) || (defined(P2P_REGION_US915) && defined(LORAP2P_SAVE))
     // as ping channel, use fixed up channel
+#endif
+
     return 0;
 }

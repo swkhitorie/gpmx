@@ -158,9 +158,10 @@ time_t stm32_rtc_get_timeval(struct timeval *tv)
     tv->tv_sec = mktime(&tm_new); //timegm(&tm_new);
 #endif
 
-#if defined(DRV_BSP_H7)
-    tv->tv_usec = (255.0 - stm32_rtc_get_subsecond() * 1.0) / 256.0 * 1000.0 * 1000.0;
-#endif
+//#if defined(DRV_BSP_H7)
+    // tv->tv_usec = (255.0 - stm32_rtc_get_subsecond() * 1.0) / 256.0 * 1000.0 * 1000.0;
+    tv->tv_usec = (255.0 - RTC_TimeStruct.SubSeconds * 1.0) / 256.0 * 1000.0 * 1000.0;
+//#endif
 
     return tv->tv_sec;
 }

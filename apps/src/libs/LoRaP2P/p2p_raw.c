@@ -11,6 +11,7 @@
  ****************************************************************************/
 void p2p_raw_sender_process(struct __p2p_obj *obj)
 {
+#if (!defined(LORAP2P_SAVE)) || (defined(LORAP2P_SAVE) && defined(P2P_ROLE_MASTER) && defined(P2P_MODE_RAW))
     size_t rsz;
     switch (obj->_substate) {
     case 0x11: {
@@ -29,6 +30,8 @@ void p2p_raw_sender_process(struct __p2p_obj *obj)
         }
     default: break;
     }
+#endif
+
 }
 
 /****************************************************************************
@@ -36,6 +39,7 @@ void p2p_raw_sender_process(struct __p2p_obj *obj)
  ****************************************************************************/
 void p2p_raw_receiver_process(struct __p2p_obj *obj)
 {
+#if (!defined(LORAP2P_SAVE)) || (defined(LORAP2P_SAVE) && defined(P2P_ROLE_SLAVE) && defined(P2P_MODE_RAW))
     size_t rsz;
     switch (obj->_substate) {
     case 0x11: {
@@ -54,13 +58,28 @@ void p2p_raw_receiver_process(struct __p2p_obj *obj)
         }
     default: break;
     }
+#endif
 }
 
 void p2p_raw_process(struct __p2p_obj *obj)
 {
+
+#if !defined(LORAP2P_SAVE)
     if (obj->_role == P2P_SENDER) {
         p2p_raw_sender_process(obj);
     } else if (obj->_role == P2P_RECEIVER) {
         p2p_raw_receiver_process(obj);
     }
+#else
+
+#if defined(P2P_ROLE_SLAVE) && defined(P2P_MODE_RAW)
+    p2p_raw_receiver_process(obj);
+#endif
+
+#if defined(P2P_ROLE_MASTER) && defined(P2P_MODE_RAW)
+    p2p_raw_sender_process(obj);
+#endif
+
+#endif
+
 }

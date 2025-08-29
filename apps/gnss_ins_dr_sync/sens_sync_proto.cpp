@@ -40,7 +40,7 @@ int sens_sync_proto_parser(struct __sens_sync_proto *proto, uint8_t val)
     proto->buff[proto->nbyte++] = val;
 
     if (proto->nbyte==4) {
-        proto->len=proto->buff[2] | (proto->buff[3] << 8);
+        proto->len=(uint16_t)proto->buff[2] | ((uint16_t)proto->buff[3] << 8);
     }
 
     if (proto->nbyte<3||proto->nbyte<proto->len+5) {
@@ -108,10 +108,10 @@ int sens_sync_encode_base(struct __sens_sync_proto *proto, const uint8_t *payloa
 
 
 int sens_sync_encode_imu(struct __sens_sync_proto *proto, time_t now, uint32_t subsec, uint32_t id, 
-    int32_t accx, int32_t accy, int32_t accz, int32_t gyrox, int32_t gyroy, int32_t gyroz)
+    int32_t accx, int32_t accy, int32_t accz, int32_t gyrox, int32_t gyroy, int32_t gyroz, uint32_t seq)
 {
     int i = 0;
-    uint16_t msglen = 40;
+    uint16_t msglen = 44;
     uint8_t *msgpayload = &proto->buff[SENS_SYNC_PROTO_PAYLOADIDX];
     uint8_t *plen = (uint8_t *)&msglen;
     proto->len = msglen;
@@ -130,6 +130,7 @@ int sens_sync_encode_imu(struct __sens_sync_proto *proto, time_t now, uint32_t s
     memcpy(&msgpayload[28], &gyrox, 4);
     memcpy(&msgpayload[32], &gyroy, 4);
     memcpy(&msgpayload[36], &gyroz, 4);
+    memcpy(&msgpayload[40], &seq, 4);
 
     proto->buff[proto->len+4] = sens_sync_proto_checksum(proto->buff, proto->len+4);
 
@@ -137,22 +138,23 @@ int sens_sync_encode_imu(struct __sens_sync_proto *proto, time_t now, uint32_t s
 }
 
 int sens_sync_encode_wheelspd(struct __sens_sync_proto *proto, time_t now, uint32_t subsec,
-    uint32_t speed)
+    uint32_t speed, uint32_t seq)
 {
     int i = 0;
-    uint16_t msglen = 16;
+    uint16_t msglen = 20;
     uint8_t *msgpayload = &proto->buff[SENS_SYNC_PROTO_PAYLOADIDX];
     uint8_t *plen = (uint8_t *)&msglen;
     proto->len = msglen;
 
     proto->buff[0] = SENS_SYNC_PROTO_HEADER;
-    proto->buff[1] = SENS_MSGID_IMU;
+    proto->buff[1] = SENS_MSGID_WHEELSPEED;
     proto->buff[2] = plen[0];
     proto->buff[3] = plen[1];
 
     memcpy(&msgpayload[0], &now, 8);
     memcpy(&msgpayload[8], &subsec, 4);
     memcpy(&msgpayload[12], &speed, 4);
+    memcpy(&msgpayload[16], &seq, 4);
 
     proto->buff[proto->len+4] = sens_sync_proto_checksum(proto->buff, proto->len+4);
 
@@ -181,7 +183,7 @@ int sens_sync_decode_base(struct __sens_sync_proto *proto, uint8_t **payload, ui
 }
 
 int sens_sync_decode_imu(struct __sens_sync_proto *proto, time_t *now, uint32_t *subsec, uint32_t *id, 
-    int32_t *accx, int32_t *accy, int32_t *accz, int32_t *gyrox, int32_t *gyroy, int32_t *gyroz)
+    int32_t *accx, int32_t *accy, int32_t *accz, int32_t *gyrox, int32_t *gyroy, int32_t *gyroz, uint32_t *seq)
 {
     uint8_t *msgpayload = &proto->buff[SENS_SYNC_PROTO_PAYLOADIDX];
 
@@ -197,17 +199,20 @@ int sens_sync_decode_imu(struct __sens_sync_proto *proto, time_t *now, uint32_t 
     *gyroy = *((int32_t *)&msgpayload[32]);
     *gyroz = *((int32_t *)&msgpayload[36]);
 
+    *seq = *((int32_t *)&msgpayload[40]);
+
     return 0;
 }
 
 int sens_sync_decode_wheelspd(struct __sens_sync_proto *proto, time_t *now, uint32_t *subsec,
-    uint32_t *speed)
+    uint32_t *speed, uint32_t *seq)
 {
     uint8_t *msgpayload = &proto->buff[SENS_SYNC_PROTO_PAYLOADIDX];
 
     *now = *((time_t *)&msgpayload[0]);
     *subsec = *((uint32_t *)&msgpayload[8]);
     *speed = *((uint32_t *)&msgpayload[12]);
+    *seq = *((int32_t *)&msgpayload[16]);
 
     return 0;
 }

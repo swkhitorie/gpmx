@@ -4,10 +4,10 @@
 #include <device/serial.h>
 
 /* COM1 */
-uint8_t com1_dma_rxbuff[256];
+uint8_t com1_dma_rxbuff[4096];
 uint8_t com1_dma_txbuff[256];
 uint8_t com1_txbuff[512];
-uint8_t com1_rxbuff[512];
+uint8_t com1_rxbuff[2048];
 struct up_uart_dev_s com1_dev = {
     .dev = {
         .baudrate = 115200,
@@ -15,7 +15,7 @@ struct up_uart_dev_s com1_dev = {
         .stopbitlen = 1,
         .parity = 'n',
         .recv = {
-            .capacity = 512,
+            .capacity = 2048,
             .buffer = com1_rxbuff,
         },
         .xmit = {
@@ -23,7 +23,7 @@ struct up_uart_dev_s com1_dev = {
             .buffer = com1_txbuff,
         },
         .dmarx = {
-            .capacity = 256,
+            .capacity = 4096,
             .buffer = com1_dma_rxbuff,
         },
         .dmatx = {
@@ -93,27 +93,9 @@ void board_led_toggle(uint8_t idx)
     }
 }
 
-static uint32_t freq_cnt = 1;
 void board_debug()
 {
-    if (++freq_cnt >= 100) {
-        freq_cnt = 1;
-
-        // printf("test stm32h743_eval\r\n");
-        // struct timeval now;
-        // struct tm *tm_info;
-        // time_t now_ts = stm32_rtc_get_timeval(&now);
-        // tm_info = localtime(&now.tv_sec);
-
-        // printf("timestamp: %ld %ld \r\n", (int)now.tv_sec, (int)now.tv_usec);
-        // printf("utc: %d-%02d-%02d %d:%d:%d \r\n", 
-        //     tm_info->tm_year+1900, 
-        //     tm_info->tm_mon+1,
-        //     tm_info->tm_mday,
-        //     tm_info->tm_hour,
-        //     tm_info->tm_min,
-        //     tm_info->tm_sec);
-    }
+    board_led_toggle(0);
 }
 
 void board_rtc_setup()

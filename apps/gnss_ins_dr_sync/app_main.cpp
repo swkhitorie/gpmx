@@ -19,6 +19,7 @@
 #include "lwip/timeouts.h"
 
 #include "sens_sync_proto.h"
+#include "ringbuffer.h"
 
 #ifndef UP_UDP_IP
 #define UP_UDP_IP "192.168.75.34"
@@ -29,11 +30,13 @@
 #endif
 
 __attribute__((section(".ccmram"))) struct __sens_sync_proto sens_sync;
+__attribute__((section(".ccmram"))) struct __prbuf rbuffer;
+__attribute__((section(".ccmram"))) static uint8_t rmem[1024*2];
 
 static uart_dev_t *rtk_rover_port;
 static uart_dev_t *rtk_base_port;
-static uint8_t rtk_rover_c;
-static uint8_t rtk_base_c;
+static uint8_t rtk_rover_c = 0;
+static uint8_t rtk_base_c = 0;
 static uint8_t buff_rover[1024];
 static uint16_t buff_roverlen = 0;
 static uint8_t buff_base[1024];
@@ -42,9 +45,11 @@ static uint16_t buff_baselen = 0;
 static float imu_ins[6];
 static uint8_t buff_imu[64];
 static uint16_t buff_imulen = 0;
+static uint32_t imu_seq = 0;
 
 static uint8_t buff_speed[64];
 static uint16_t buff_speedlen = 0;
+static uint32_t spd_seq = 0;
 
 /** Debug */
 static uint8_t buff_eth[512];
@@ -110,6 +115,8 @@ void imu_init()
 
 int main(int argc, char *argv[])
 {
+    int rbuf_sz = 0;
+
     board_init();
     board_bsp_init();
 
@@ -130,6 +137,10 @@ int main(int argc, char *argv[])
     uint32_t m2 = HAL_GetTick();
     uint32_t m3 = HAL_GetTick();
 
+    prb_reset(&rbuffer);
+
+    printf("gnss_ins_dr_sync start \r\n");
+
     for (;;) {
 
         udp_request();
@@ -142,7 +153,15 @@ int main(int argc, char *argv[])
         if (sz > 0) {
             if (rtcm_rover_process(rtk_rover_c, buff_rover, &buff_roverlen) == 1) {
                 int rover_len = sens_sync_encode_rover(&sens_sync, (const uint8_t *)&buff_rover[0], buff_roverlen);
-                udp_transfer_raw_control(sens_sync.buff, rover_len);
+                // udp_transfer_raw_control(sens_sync.buff, rover_len);
+                prb_write(&rbuffer, sens_sync.buff, rover_len);
+                memset(sens_sync.buff, 0, 1024*5);
+
+                // printf("ROVER: ");
+                // for (int i = 0; i < buff_roverlen; i++) {
+                //     printf("%02X ", buff_rover[i]);
+                // }
+                // printf("\r\n");
             }
         }
 
@@ -150,12 +169,21 @@ int main(int argc, char *argv[])
         int sz2 = SERIAL_RDBUF(rtk_base_port, &rtk_base_c, 1);
         if (sz2 > 0) {
             if (rtcm_base_process(rtk_base_c, buff_base, &buff_baselen) == 1) {
-                int base_len = sens_sync_encode_rover(&sens_sync, (const uint8_t *)&buff_base[0], buff_baselen);
-                udp_transfer_raw_control(sens_sync.buff, base_len);
+                int base_len = sens_sync_encode_base(&sens_sync, (const uint8_t *)&buff_base[0], buff_baselen);
+                // udp_transfer_raw_control(sens_sync.buff, base_len);
+                prb_write(&rbuffer, sens_sync.buff, base_len);
+                memset(sens_sync.buff, 0, 1024*5);
+
+                // printf("BASE: ");
+                // for (int i = 0; i < buff_baselen; i++) {
+                //     printf("%02X ", buff_base[i]);
+                // }
+                // printf("\r\n");
+
             }
         }
 
-        if (HAL_GetTick() - m2 >= 20) {
+        if (HAL_GetTick() - m2 >= 2) {
             m2 = HAL_GetTick();
 
             // mpu6050_read(imu_ins);
@@ -165,44 +193,67 @@ int main(int argc, char *argv[])
             SCH1_getStatus(&SCH1_Status);
 
             struct timeval tv;
+            time_t timestamp = board_rtc_get_timeval(&tv);
+            uint32_t subsec = gnss_subsec_get(&tv);
+            imu_seq++;
             int imu_len = sens_sync_encode_imu(&sens_sync, 
-                board_rtc_get_timeval(&tv), 
-                hrt_absolute_time()%1000000,
+                timestamp, 
+                subsec,
                 SENS_IMU_ID_SCH1633,
                 (int32_t)(SCH1_ret_data.Acc1[AXIS_X]*1e3f),
                 (int32_t)(SCH1_ret_data.Acc1[AXIS_Y]*1e3f),
                 (int32_t)(SCH1_ret_data.Acc1[AXIS_Z]*1e3f),
                 (int32_t)(SCH1_ret_data.Rate1[AXIS_X]*1e3f),
                 (int32_t)(SCH1_ret_data.Rate1[AXIS_Y]*1e3f),
-                (int32_t)(SCH1_ret_data.Rate1[AXIS_Z]*1e3f));
+                (int32_t)(SCH1_ret_data.Rate1[AXIS_Z]*1e3f),
+                imu_seq);
 
-            udp_transfer_raw_control(sens_sync.buff, imu_len);
+            prb_write(&rbuffer, sens_sync.buff, imu_len);
+            // udp_transfer_raw_control(sens_sync.buff, imu_len);
 
-            // printf("[imu] %.3f, %.3f, %.3f, %.3f, %.3f, %.3f\r\n",
-            //     imu_ins[0], imu_ins[1], imu_ins[2], 
-            //     imu_ins[3], imu_ins[4], imu_ins[5]);
+            memset(sens_sync.buff, 0, 1024*5);
+            // printf("[imu] %d raw encode, %d\r\n", HAL_GetTick(), imu_seq);
+            // printf("[imu]seq:%d, time:%d,%06d\r\n",
+            //     imu_seq,
+            //     (uint32_t)timestamp,
+            //     subsec);
 
-            // printf("$IMURAW,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f\r\n",
-            //     SCH1_ret_data.Rate1[AXIS_X], SCH1_ret_data.Rate1[AXIS_Y], SCH1_ret_data.Rate1[AXIS_Z],
-            //     SCH1_ret_data.Acc1[AXIS_X], SCH1_ret_data.Acc1[AXIS_Y], SCH1_ret_data.Acc1[AXIS_Z],
-			// 	HAL_GetTick()/1e3f);
+            // printf("[imu]seq:%d, time:%d,%06d, data:%.6f,%.6f,%.6f,%.6f,%.6f,%.6f\r\n",imu_seq,
+            //     (uint32_t)timestamp,
+            //     subsec,
+            //     SCH1_ret_data.Rate1[AXIS_X], 
+            //     SCH1_ret_data.Rate1[AXIS_Y], 
+            //     SCH1_ret_data.Rate1[AXIS_Z],
+            //     SCH1_ret_data.Acc1[AXIS_X], 
+            //     SCH1_ret_data.Acc1[AXIS_Y], 
+            //     SCH1_ret_data.Acc1[AXIS_Z]);
         }
 
-        if (HAL_GetTick() - m3 >= 25) {
+        if (HAL_GetTick() - m3 >= 20) {
             m3 = HAL_GetTick();
             obd_request_speed();
             speed_obd = obd_read_speed();
 
             struct timeval tv;
-
+            time_t timestamp = board_rtc_get_timeval(&tv);
+            uint32_t subsec = gnss_subsec_get(&tv);
+            spd_seq++;
             int spd_len = sens_sync_encode_wheelspd(&sens_sync, 
-                board_rtc_get_timeval(&tv), 
-                hrt_absolute_time()%1000000,
-                speed_obd);
+                timestamp, 
+                subsec,
+                speed_obd,
+                spd_seq);
 
-            udp_transfer_raw_control(sens_sync.buff, spd_len);
+            prb_write(&rbuffer, sens_sync.buff, spd_len);
+            // udp_transfer_raw_control(sens_sync.buff, spd_len);
 
-            // printf("[obd] speed:%d\r\n", speed_obd);
+            // printf("[obd]seq:%d, time:%d,%06d, data:%d\r\n",spd_seq, 
+            //     (uint32_t)timestamp,
+            //     subsec,
+            //     speed_obd);
+
+            memset(sens_sync.buff, 0, 1024*5);
+            // printf("[odo] %d raw encode, %d\r\n", HAL_GetTick(), spd_seq);
         }
 
         if (HAL_GetTick() - m1 >= 500) {
@@ -212,6 +263,15 @@ int main(int argc, char *argv[])
 
         // lwip timeout task core
         sys_check_timeouts();
+
+        rbuf_sz = prb_read(&rbuffer, rmem, 2*1024);
+        if (rbuf_sz > 0) {
+            udp_transfer_raw_control(rmem, rbuf_sz);
+            // for (int i = 0; i < rbuf_sz; i++) {
+            //     printf("%02X ", rmem[i]);
+            // }
+        }
+
     }
 }
 

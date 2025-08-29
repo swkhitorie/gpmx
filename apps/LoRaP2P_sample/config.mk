@@ -57,6 +57,7 @@ CSOURCES += apps/src/libs/LoRaP2P/p2p_linkfind.c
 CSOURCES += apps/src/libs/LoRaP2P/p2p_raw.c
 CSOURCES += apps/src/libs/LoRaP2P/p2p_rawack.c
 CSOURCES += apps/src/libs/LoRaP2P/p2p_rawack_fhss.c
+CSOURCES += apps/src/libs/LoRaP2P/p2p_pconfig.c
 
 
 

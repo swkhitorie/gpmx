@@ -103,6 +103,11 @@ ${TARGET_DEST_ROOTDIR}:
 ##################################
 # Targets section - Via files
 ##################################
+${SCF_FILE_NAME}: ${CONFIG_FILE} ${SCF_TEMPLATE_FILE_NAME} ${DEFSINCLIST}
+	$(call MK_ECHO,Generating scatter file for ${PROJ_TC} builder)
+	$(call MK_RMFILE,${SCF_FILE_NAME})
+	$(call MK_TC_GENSCF,"${SCF_TEMPLATE_FILE_NAME}","${SCF_FILE_NAME}",${SCF_DEFS})
+
 ${ASMOPTS_FILE}: ${CONFIG_FILE} ${LIST_DEFSINC} ${PROJ_MAKEFILE}
 	$(call MK_ECHO,Generating assembler via file for ${PROJ_TC} builder)
 	$(call MK_RMFILE,${ASMOPTS_FILE})
@@ -174,7 +179,7 @@ ${OBJS_FOLDER}/%.o: %.s ${ASMOPTS_FILE}
 #
 # Executable target
 #
-${TARGET_SRC_FILENAME_EXE}: ${LOPTS_FILE} ${OBJS_FOLDER} ${PROJ_OBJS} ${LOPTS_FILE}
+${TARGET_SRC_FILENAME_EXE}: ${LOPTS_FILE} ${SCF_FILE_NAME} ${OBJS_FOLDER} ${PROJ_OBJS} ${LOPTS_FILE}
 	$(call MK_ECHO,Linking to $(subst ${SDK_ROOTDIR}/,,$@))
 	@${TC_LINK} -o $@ ${PROJ_OBJS} \
 	${LINK_ADEP} \
@@ -220,6 +225,7 @@ clean:
 	$(call MK_RMFILE,${PROJ_OBJS})
 	$(call MK_RMFILE,${TARGET_SRC_FILENAME_EXE})
 	$(call MK_RMFILE,${TARGET_SRC_FILENAME_LIST})
+	$(call MK_RMFILE,${SCF_FILE_NAME})
 
 distclean:
 	$(call MK_ECHO,Executing distclean on target ${PROJ_NAME})

@@ -28,6 +28,7 @@ void OnTxDone() {
 }
 
 void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t LoraSnr_FskCfo) {
+    uint8_t ant_idx = _p2p_lnk->ant_now;
 
     if (_p2p_lnk->_role == P2P_SENDER) {
         _p2p_lnk->_up_ch_rssi = rssi;
@@ -37,25 +38,30 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t LoraSnr_FskC
         _p2p_lnk->_dw_ch_snr = LoraSnr_FskCfo;
     }
 
+    for (int i = 0; i < P2P_ANTENNA_ARRAY_RSSI_LEN - 1; i++) {
+        _p2p_lnk->ant_rssi[ant_idx][i+1] = _p2p_lnk->ant_rssi[ant_idx][i];
+    }
+    _p2p_lnk->ant_rssi[ant_idx][0] = rssi;
+
     if (size > 0) {
         prb_write(&_p2p_lnk->_prbuf, payload, size);
     }
 }
 
 void OnTxTimeout() {
-    p2p_warning("Tx Timeout\r\n");
+    p2p_error("Tx Timeout\r\n");
     _p2p_lnk->hw.tx_timeout_cnt++;
     _p2p_lnk->hw.tx_timeout_occur = true;
 }
 
 void OnRxTimeout() {
-    p2p_warning("Rx Timeout/Head Error\r\n");
+    p2p_error("Rx Timeout/Head Error\r\n");
     _p2p_lnk->hw.rx_timeout_cnt++;
     _p2p_lnk->hw.rx_timeout_occur = true;
 }
 
 void OnRxError() {
-    p2p_warning("Rx CRC Error\r\n");
+    p2p_error("Rx CRC Error\r\n");
     _p2p_lnk->hw.rx_crc_error_cnt++;
     _p2p_lnk->hw.rx_crc_error_occur = true;
 }
@@ -107,6 +113,11 @@ void p2p_set_standby(struct __p2p_obj *obj)
 void p2p_set_channel(struct __p2p_obj *obj, uint32_t freq)
 {
     Radio.SetChannel(freq);
+}
+
+void p2p_set_power(struct __p2p_obj *obj, uint8_t power)
+{
+
 }
 
 void p2p_rx(struct __p2p_obj *obj, uint32_t timeout)
@@ -296,8 +307,6 @@ bool p2p_cad_scan_first_free_channel(struct __p2p_obj *obj, uint32_t unitScanTim
             i_scan++;
         }
     }
-
-    p2p_debug("WTF Error: NO Free Channel\r\n");
 
     return false;
 }

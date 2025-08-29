@@ -43,6 +43,9 @@ int rtcm_rover_process(uint8_t c, uint8_t *rp, uint16_t *rlen)
             rf = 1;
             memcpy(rp, &msg->buff[0], msg->len+3);
             *rlen = msg->len+3;
+
+            msg->nbyte = msg->len = 0;
+            memset(msg->buff, 0, RTCM3_FRAME_MAX_BUFFER_LEN);
             break;
         }
     }
@@ -65,6 +68,9 @@ int rtcm_base_process(uint8_t c, uint8_t *rp, uint16_t *rlen)
             *rlen = msg->len+3;
 
             rf = 1;
+
+            msg->nbyte = msg->len = 0;
+            memset(msg->buff, 0, RTCM3_FRAME_MAX_BUFFER_LEN);
             break;
         }
     }

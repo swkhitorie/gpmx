@@ -3,7 +3,7 @@
 static uint8_t p2p_proto_checksum(const uint8_t *p, uint8_t len)
 {
     uint8_t i = 0;
-    uint8_t sum;
+    uint8_t sum = 0;
     for (i = 0; i < len; i++) {
         sum += p[i];
     }
@@ -14,14 +14,18 @@ static uint8_t p2p_proto_checksum(const uint8_t *p, uint8_t len)
 int p2p_proto_decode(struct __p2p_proto *proto)
 {
     int ret = 0;
-    uint8_t msg_id = proto->buff[1];
+    uint8_t msg_id = proto->buff[2];
 
     switch (msg_id) {
-    case P2P_REQ_CONNECT:    return (proto->len==P2P_FLEN_REQ_CONNECT)?msg_id:-4;
-    case P2P_REQ_ALLOW:      return (proto->len==P2P_FLEN_REQ_ALLOW)?msg_id:-4;
-    case P2P_CONNECT_ACK:    return (proto->len==P2P_FLEN_CONNECT_ACK)?msg_id:-4;
-    case P2P_CONNECT_DATAHEAD: 
-        return (proto->len > P2P_FLEN_CONNECT_DATAHEADER)?msg_id:-4;
+    case P2P_ID_ANTENNA_TEST:   return (proto->len==P2P_FLEN_ANTENNA_TEST)?msg_id:-4;
+    case P2P_ID_REQ_CONNECT:    return (proto->len==P2P_FLEN_REQ_CONNECT)?msg_id:-4;
+    case P2P_ID_REQ_ALLOW:      return (proto->len==P2P_FLEN_REQ_ALLOW)?msg_id:-4;
+
+    case P2P_ID_CONNECT_ACK:    return (proto->len==P2P_FLEN_CONNECT_ACK)?msg_id:-4;
+    case P2P_ID_CONNECT_DATAHEAD:     return (proto->len > P2P_FLEN_CONNECT_DATAHEADER)?msg_id:-4;
+
+    case P2P_ID_CONFIG_ACK:    return (proto->len==P2P_FLEN_CONFIG_ACK)?msg_id:-4;
+    case P2P_ID_CONFIG_DATAHEAD:     return (proto->len > P2P_FLEN_CONFIG_DATAHEADER)?msg_id:-4;
     }
 
     return -5;
@@ -38,8 +42,8 @@ int p2p_proto_parser(struct __p2p_proto *proto, uint8_t val)
 
     proto->buff[proto->nbyte++] = val;
 
-    if (proto->nbyte==3) {
-        proto->len=proto->buff[2];
+    if (proto->nbyte==2) {
+        proto->len=proto->buff[1];
     }
 
     if (proto->nbyte<3||proto->nbyte<proto->len+4) {
@@ -79,9 +83,9 @@ int encode_req_connect(struct __p2p_proto *proto, struct __p2p_req_connect *msg)
     uint8_t *payload = &proto->buff[P2P_PROTO_PAYLOAD_IDX];
 
     proto->buff[0] = P2P_PROTO_HEADER;
-    proto->buff[1] = P2P_REQ_CONNECT;
-    proto->buff[2] = P2P_FLEN_REQ_CONNECT;
-    proto->len = proto->buff[2];
+    proto->buff[1] = P2P_FLEN_REQ_CONNECT;
+    proto->buff[2] = P2P_ID_REQ_CONNECT;
+    proto->len = proto->buff[1];
 
     uint8_t *key = (uint8_t *)(&msg->rcv_key);
     for (i = 0; i < 12; i++) {
@@ -128,9 +132,9 @@ int encode_req_allow(struct __p2p_proto *proto, struct __p2p_req_allow *msg)
     uint8_t *payload = &proto->buff[P2P_PROTO_PAYLOAD_IDX];
 
     proto->buff[0] = P2P_PROTO_HEADER;
-    proto->buff[1] = P2P_REQ_ALLOW;
-    proto->buff[2] = P2P_FLEN_REQ_ALLOW;
-    proto->len = proto->buff[2];
+    proto->buff[1] = P2P_FLEN_REQ_ALLOW;
+    proto->buff[2] = P2P_ID_REQ_ALLOW;
+    proto->len = proto->buff[1];
 
     uint8_t *rcv_key = (uint8_t *)(&msg->rcv_key);
     uint8_t *snd_key = (uint8_t *)(&msg->snd_key);
@@ -165,10 +169,11 @@ int decode_connect_ack(struct __p2p_proto *proto, struct __p2p_connect_ack *msg)
     uint8_t *payload = &proto->buff[P2P_PROTO_PAYLOAD_IDX];
 
     int16_t *rssi = (int16_t *)&payload[1];
-    uint32_t *seq = (uint32_t *)&payload[3];
-    uint32_t *snd_auth_key = (uint32_t *)&payload[7];
+    uint32_t *seq = (uint32_t *)&payload[4];
+    uint32_t *snd_auth_key = (uint32_t *)&payload[8];
 
     msg->snr = payload[0];
+    msg->magic_num = payload[3];
     msg->rssi = *rssi;
     msg->seq = *seq;
     msg->snd_auth_key = *snd_auth_key;
@@ -184,24 +189,26 @@ int encode_connect_ack(struct __p2p_proto *proto, struct __p2p_connect_ack *msg)
     uint8_t *rssi = (uint8_t *)(&msg->rssi);
 
     proto->buff[0] = P2P_PROTO_HEADER;
-    proto->buff[1] = P2P_CONNECT_ACK;
-    proto->buff[2] = P2P_FLEN_CONNECT_ACK;
-    proto->len = proto->buff[2];
+    proto->buff[1] = P2P_FLEN_CONNECT_ACK;
+    proto->buff[2] = P2P_ID_CONNECT_ACK;
+    proto->len = proto->buff[1];
 
     payload[0] = msg->snr;
 
     payload[1] = rssi[0];
     payload[2] = rssi[1];
 
-    payload[3] = seq[0];
-    payload[4] = seq[1];
-    payload[5] = seq[2];
-    payload[6] = seq[3];
+    payload[3] = msg->magic_num;
 
-    payload[7] = snd_auth_key[0];
-    payload[8] = snd_auth_key[1];
-    payload[9] = snd_auth_key[2];
-    payload[10] = snd_auth_key[3];
+    payload[4] = seq[0];
+    payload[5] = seq[1];
+    payload[6] = seq[2];
+    payload[7] = seq[3];
+
+    payload[8] = snd_auth_key[0];
+    payload[9] = snd_auth_key[1];
+    payload[10] = snd_auth_key[2];
+    payload[11] = snd_auth_key[3];
 
     proto->buff[proto->len+3] = p2p_proto_checksum(proto->buff, proto->len+3);
 
@@ -221,8 +228,9 @@ int decode_connect_data(struct __p2p_proto *proto, struct __p2p_connect_datahead
     msg->snr = msg_payload[10];
     msg->dw_fq_idx = msg_payload[11];
     msg->up_fq_idx = msg_payload[12];
+    msg->magic_num = msg_payload[13];
 
-    *payload = &msg_payload[13];
+    *payload = &msg_payload[14];
 
     *len = proto->len - P2P_FLEN_CONNECT_DATAHEADER;
 
@@ -238,9 +246,9 @@ int encode_connect_data(struct __p2p_proto *proto, struct __p2p_connect_datahead
     uint8_t *rssi = (uint8_t *)(&msg->rssi);
 
     proto->buff[0] = P2P_PROTO_HEADER;
-    proto->buff[1] = P2P_CONNECT_DATAHEAD;
-    proto->buff[2] = P2P_FLEN_CONNECT_DATAHEADER+len;
-    proto->len = proto->buff[2];
+    proto->buff[1] = P2P_FLEN_CONNECT_DATAHEADER+len;
+    proto->buff[2] = P2P_ID_CONNECT_DATAHEAD;
+    proto->len = proto->buff[1];
 
     msg_payload[0] = seq[0];
     msg_payload[1] = seq[1];
@@ -258,13 +266,146 @@ int encode_connect_data(struct __p2p_proto *proto, struct __p2p_connect_datahead
     msg_payload[10] = msg->snr;
     msg_payload[11] = msg->dw_fq_idx;
     msg_payload[12] = msg->up_fq_idx;
+    msg_payload[13] = msg->magic_num;
 
     for (i = 0; i < len; i++) {
-        msg_payload[13+i] = payload[i];
+        msg_payload[14+i] = payload[i];
     }
 
     proto->buff[proto->len+3] = p2p_proto_checksum(proto->buff, proto->len+3);
 
     return P2P_FLEN_CONNECT_DATAHEADER+len+4;
 }
+
+int decode_antenna_test(struct __p2p_proto *proto, struct __p2p_antenna_test *msg)
+{
+    uint8_t *payload = &proto->buff[P2P_PROTO_PAYLOAD_IDX];
+
+    msg->tag = payload[0];
+
+    return P2P_PROTO_TRUE;
+}
+
+int encode_antenna_test(struct __p2p_proto *proto, struct __p2p_antenna_test *msg)
+{
+    uint8_t *payload = &proto->buff[P2P_PROTO_PAYLOAD_IDX];
+
+    proto->buff[0] = P2P_PROTO_HEADER;
+    proto->buff[1] = P2P_FLEN_ANTENNA_TEST;
+    proto->buff[2] = P2P_ID_ANTENNA_TEST;
+    proto->len = proto->buff[1];
+
+    payload[0] = msg->tag;
+
+    proto->buff[proto->len+3] = p2p_proto_checksum(proto->buff, proto->len+3);
+
+    return P2P_FLEN_ANTENNA_TEST + 4;
+}
+
+int decode_config_ack(struct __p2p_proto *proto, struct __p2p_config_ack *msg)
+{
+    uint8_t *payload = &proto->buff[P2P_PROTO_PAYLOAD_IDX];
+
+    uint32_t *snd_auth_key = (uint32_t *)&payload[0];
+    uint32_t *cmd_ret = (uint32_t *)&payload[4];
+
+    msg->magic_num = payload[8];
+    msg->snd_auth_key = *snd_auth_key;
+    msg->cmd_ret = *cmd_ret;
+
+    return P2P_PROTO_TRUE;
+}
+
+int encode_config_ack(struct __p2p_proto *proto, struct __p2p_config_ack *msg)
+{
+    uint8_t *payload = &proto->buff[P2P_PROTO_PAYLOAD_IDX];
+    uint8_t *snd_auth_key = (uint8_t *)(&msg->snd_auth_key);
+    uint8_t *cmd_ret = (uint8_t *)(&msg->cmd_ret);
+
+    proto->buff[0] = P2P_PROTO_HEADER;
+    proto->buff[1] = P2P_FLEN_CONFIG_ACK;
+    proto->buff[2] = P2P_ID_CONFIG_ACK;
+    proto->len = proto->buff[1];
+
+    payload[0] = snd_auth_key[0];
+    payload[1] = snd_auth_key[1];
+    payload[2] = snd_auth_key[2];
+    payload[3] = snd_auth_key[3];
+
+    payload[4] = cmd_ret[0];
+    payload[5] = cmd_ret[1];
+    payload[6] = cmd_ret[2];
+    payload[7] = cmd_ret[3];
+
+    payload[8] = msg->magic_num;
+
+    proto->buff[proto->len+3] = p2p_proto_checksum(proto->buff, proto->len+3);
+
+    return P2P_FLEN_CONFIG_ACK + 4;
+}
+
+int decode_config_data(struct __p2p_proto *proto, struct __p2p_config_datahead *msg, uint8_t **payload, uint8_t *len)
+{
+    uint8_t *msg_payload = &proto->buff[P2P_PROTO_PAYLOAD_IDX];
+    uint32_t *rcv_auth_key = (uint32_t *)&msg_payload[0];
+
+    msg->rcv_auth_key = *rcv_auth_key;
+    msg->magic_num = msg_payload[4];
+    msg->dev_type = msg_payload[5];
+    msg->cmd_type = msg_payload[6];
+
+    *payload = &msg_payload[7];
+
+    *len = proto->len - P2P_FLEN_CONFIG_DATAHEADER;
+
+    printf("%02X,\r\n", msg->magic_num);
+    return P2P_PROTO_TRUE;
+}
+
+int encode_config_data(struct __p2p_proto *proto, struct __p2p_config_datahead *msg, uint8_t *payload, uint8_t len)
+{
+    uint8_t i = 0;
+    uint8_t *msg_payload = &proto->buff[P2P_PROTO_PAYLOAD_IDX];
+    uint8_t *rcv_auth_key = (uint8_t *)(&msg->rcv_auth_key);
+
+    proto->buff[0] = P2P_PROTO_HEADER;
+    proto->buff[1] = P2P_FLEN_CONFIG_DATAHEADER+len;
+    proto->buff[2] = P2P_ID_CONFIG_DATAHEAD;
+    proto->len = proto->buff[1];
+
+    msg_payload[0] = rcv_auth_key[0];
+    msg_payload[1] = rcv_auth_key[1];
+    msg_payload[2] = rcv_auth_key[2];
+    msg_payload[3] = rcv_auth_key[3];
+
+    msg_payload[4] = msg->magic_num;
+    msg_payload[5] = msg->dev_type;
+    msg_payload[6] = msg->cmd_type;
+
+    for (i = 0; i < len; i++) {
+        msg_payload[7+i] = payload[i];
+    }
+
+    proto->buff[proto->len+3] = p2p_proto_checksum(proto->buff, proto->len+3);
+
+    return P2P_FLEN_CONFIG_DATAHEADER+len+4;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

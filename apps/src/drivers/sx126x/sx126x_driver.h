@@ -2,7 +2,7 @@
 #define SX126X_DRIVER_H
 
 #include <stdint.h>
-#include <math.h>
+// #include <math.h>
 #include "sx126x_hal.h"
 
 #define  LSD4RFC_2L714N10      1
@@ -17,10 +17,9 @@
 #define SX1262                                      2
 #define SX1268                                      3
 
-
-#define XTAL_FREQ                                   ( double )32000000
-#define FREQ_DIV                                    ( double )pow( 2.0, 25.0 )
-#define FREQ_STEP                                   ( double )( XTAL_FREQ / FREQ_DIV )
+#define XTAL_FREQ                                   ( float )32000000.0f
+#define FREQ_DIV                                    ( float )33554432.0f //( double )pow( 2.0, 25.0 ) //33554432
+#define FREQ_STEP                                   ( float )( XTAL_FREQ / FREQ_DIV )
 
 
 #define LOWDATARATEOPTIMIZE_ON                       0x01
@@ -476,9 +475,9 @@ extern float G_TsXms;          //symbol period, units in ms
 extern "C" {
 #endif
 
-void sx126x_wakeup();
-RadioOperatingModes_t sx126x_get_opmode();
-void sx126x_check_ready();
+void sx126x_wakeup(void);
+RadioOperatingModes_t sx126x_get_opmode(void);
+void sx126x_check_ready(void);
 void sx126x_write_cmd(RadioCommands_t cmd, uint8_t *p, uint16_t size);
 void sx126x_read_cmd(RadioCommands_t cmd, uint8_t *p, uint16_t size);
 void sx126x_write_registers(uint16_t addr, uint8_t *p, uint16_t size);
@@ -490,47 +489,47 @@ void sx126x_read_buffer(uint8_t offset, uint8_t *p, uint8_t size);
 void sx126x_write_fifo(uint8_t *p, uint8_t size);
 void sx126x_read_fifo(uint8_t *p, uint8_t size);
 
-void sx126x_reset();
+void sx126x_reset(void);
 void sx126x_set_sleep(SleepParams_t sleepConfig);
-void sx126x_sleep();
+void sx126x_sleep(void);
 void sx126x_set_standby(RadioStandbyModes_t standbyConfig);
 void sx126x_set_packet_type(RadioPacketTypes_t packetType);
 void sx126x_set_regulator_mode(RadioRegulatorMode_t mode);
 void sx126x_set_buffer_base_address(uint8_t txBaseAddress, uint8_t rxBaseAddress);
 void sx126x_calibrate(CalibrationParams_t calibParam);
-void sx126x_calibrate_error();
+void sx126x_calibrate_error(void);
 void sx126x_calibrate_image(uint32_t freq);
 tSX126xError sx126x_set_rf_freq(uint32_t freq);
 void sx126x_set_dio_irq_params(uint16_t irqMask, uint16_t dio1Mask, uint16_t dio2Mask, uint16_t dio3Mask);
 void sx126x_set_paconnfig(uint8_t paDutyCycle, uint8_t hpMax, uint8_t deviceSel, uint8_t paLut);
 void sx126x_set_tx_params(int8_t power, RadioRampTimes_t rampTime);
 void sx126x_set_rf_tx_power(int8_t power);
-void sx126x_set_lora_modulation_params();
-void sx126x_set_lora_packet_param();
+void sx126x_set_lora_modulation_params(void);
+void sx126x_set_lora_packet_param(void);
 void sx126x_set_stop_rx_timer_on_preamble_detect(bool enable);
 void sx126x_set_lora_symbol_num_timeout(uint8_t SymbNum);
 
-bool lora_config_check();
-tSX126xError sx126x_lora_init();
+bool lora_config_check(void);
+tSX126xError sx126x_lora_init(void);
 
 void sx126x_clear_irq_status(uint16_t irq);
-uint16_t sx126x_get_irq_status();
-RadioError_t sx126x_get_device_errors();
-void sx126x_clear_device_errors();
-void sx126x_clear_timeout_event();
+uint16_t sx126x_get_irq_status(void);
+RadioError_t sx126x_get_device_errors(void);
+void sx126x_clear_device_errors(void);
+void sx126x_clear_timeout_event(void);
 void sx126x_set_dio2_as_rfswitch_ctrl(uint8_t enable);
 void sx126x_set_dio3_as_tcxo_ctrl(RadioTcxoCtrlVoltage_t tcxoVoltage, uint32_t timeout);
-RadioStatus_t sx126x_get_status();
-int8_t sx126x_get_rssi();
+RadioStatus_t sx126x_get_status(void);
+int8_t sx126x_get_rssi(void);
 void sx126x_get_rxbuffer_status(uint8_t *payloadLength);
 void sx126x_get_packet_status(S_LoRaPara *pktStatus);
-void sx126x_set_fs();
+void sx126x_set_fs(void);
 void sx126x_set_tx(uint32_t timeout);
 void sx126x_set_rx(uint32_t timeout);
 void sx126x_send_payload(uint8_t *payload, uint8_t size, uint32_t timeout);
 void sx126x_tx_packet(uint8_t *data);
 
-void lsd_rf_rx_mode();
+void lsd_rf_rx_mode(void);
 void lsd_rf_send_packet(uint8_t *cbuf);
 
 void sx126x_start_rx(uint32_t timeout);
@@ -542,23 +541,25 @@ void sx126x_rx_packet(uint8_t *cbuf);
  ****************************************************************************/
 void sx126x_set_cad_params(RadioLoRaCadSymbols_t cadSymbolNum, uint8_t cadDetPeak, 
     uint8_t cadDetMin, RadioCadExitModes_t cadExitMode, uint32_t cadTimeout);
-void sx126x_set_cad();
-void sx126x_cad_sample();
-void sx126x_cad_init();
-void sx126x_wor_init();
+void sx126x_set_cad(void);
+void sx126x_cad_sample(void);
+void sx126x_cad_init(void);
+void sx126x_wor_init(void);
 void sx126x_wor_execute(uint8_t cclen);
 void sx126x_awake(uint8_t*cbuf, uint16_t Preamble_Length);
-void sx126x_wor_exit();
+void sx126x_wor_exit(void);
 
 
 
 /****************************************************************************
  * sx126x user irq callback 
  ****************************************************************************/
-void sx126x_tx_done_callback();
+void sx126x_tx_done_callback(void);
 
 void sx126x_rx_done_callback(uint8_t *payload, uint16_t size, 
     int16_t lastpack_rssi, int16_t aver_rssi, int16_t snr);
+
+void sx126x_cad_done_callback(uint8_t detected);
 
 #ifdef __cplusplus
 }

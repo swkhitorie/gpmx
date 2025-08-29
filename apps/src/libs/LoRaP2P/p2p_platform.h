@@ -19,6 +19,8 @@
 /* p2p elapsed Interface, units in ms */
 #define P2P_ELAPSED_TIME(x)        board_elapsed_tick(x)
 
+#define p2p_debug(...)
+
 #define p2p_info(...) do {\
     printf("[%d.%03d] ", P2P_TIMESTAMP_GET()/1000, P2P_TIMESTAMP_GET()%1000); \
     if(obj->_role == P2P_SENDER) printf("SENDER "); \
@@ -28,7 +30,7 @@
 
 #define p2p_warning(...) printf(__VA_ARGS__)
 
-#define p2p_debug(...)
+#define p2p_error(...) printf(__VA_ARGS__)
 
 /** Forward declaration */
 struct __p2p_obj;
@@ -62,6 +64,8 @@ bool p2p_is_tx_done(struct __p2p_obj *obj);
 void p2p_set_standby(struct __p2p_obj *obj);
 
 void p2p_set_channel(struct __p2p_obj *obj, uint32_t freq);
+
+void p2p_set_power(struct __p2p_obj *obj, uint8_t power);
 
 void p2p_rx(struct __p2p_obj *obj, uint32_t timeout);
 

@@ -33,7 +33,6 @@ static uint8_t usr_rx_continous_mode = 0x00;
  ****************************************************************************/
 void sx126x_wakeup()
 {
-    uint8_t datasnd[2] = {RADIO_GET_STATUS, 0x00};
     sx126x_hal_nss_set(0);
     sx126x_hal_exchange_byte(RADIO_GET_STATUS);
     sx126x_hal_exchange_byte(0x00);
@@ -331,7 +330,7 @@ tSX126xError sx126x_set_rf_freq(uint32_t freq)
 
     sx126x_calibrate_image(freq);
 
-    freq_cal = (uint32_t)((double)freq / (double)FREQ_STEP);
+    freq_cal = (uint32_t)((float)freq / (float)FREQ_STEP);
     buf[0] = (uint8_t)((freq_cal >> 24) & 0xFF);
     buf[1] = (uint8_t)((freq_cal >> 16) & 0xFF);
     buf[2] = (uint8_t)((freq_cal >> 8) & 0xFF);
@@ -911,6 +910,32 @@ void sx126x_rx_packet(uint8_t *cbuf)
 /****************************************************************************
  * CAD Function 
  ****************************************************************************/
+/*
+
+cadSymbolNum:表示用来检测CAD信号的符号数，影响功耗及CAD误判率，数字越大，功耗越大，误判率越低；
+cadDetPeak：
+cadDetMin：这个两个参数设置和灵敏度有关，受影响于SF和BW；
+cadExitMode:CAD_ONLY\CAD_RX 指执行完CAD后进入的状态；
+cadTimeout:指CAD完成后如果进入RX，执行RX的时间；
+
+对于cadSymbolNum、cadDetPeak、cadExitMode这几个参数推荐有下：
+1、按照通信成功率最佳推荐：
+  SF   	 cadSymbolNum 				cadDetPeak				cadExitMode			CAD Consumption(nAh)
+	7		LORA_CAD_02_SYMBOL				22				10					2.84				
+	8		LORA_CAD_02_SYMBOL				22				10					5.75
+	9		LORA_CAD_04_SYMBOL				23				10					20.44
+	10		LORA_CAD_04_SYMBOL				24				10					41.36
+	11		LORA_CAD_04_SYMBOL				25				10					134.55
+
+2、按照通信成功率兼容考虑消耗最最佳推荐：
+ SF   	 cadSymbolNum 				cadDetPeak				cadExitMode			CAD Consumption(nAh)
+	7		LORA_CAD_02_SYMBOL				22				10					2.84				
+	8		LORA_CAD_02_SYMBOL				22				10					5.75
+	9		LORA_CAD_02_SYMBOL				24				10					11.7
+	10		LORA_CAD_02_SYMBOL				25				10					23.86
+	11		LORA_CAD_02_SYMBOL				26				10					48.79
+
+*/
 void sx126x_set_cad_params(RadioLoRaCadSymbols_t cadSymbolNum, uint8_t cadDetPeak, 
     uint8_t cadDetMin, RadioCadExitModes_t cadExitMode, uint32_t cadTimeout)
 {
@@ -926,7 +951,7 @@ void sx126x_set_cad_params(RadioLoRaCadSymbols_t cadSymbolNum, uint8_t cadDetPea
 
     sx126x_write_cmd(RADIO_SET_CADPARAMS, buf, 5);
 }
-
+ 
 void sx126x_set_cad()
 {
     sx126x_write_cmd(RADIO_SET_CAD, 0, 0);
@@ -938,6 +963,7 @@ void sx126x_cad_sample()
     // 或者低温运行时sleep状态切换过来时出现PLL Lock，XoscStart等错误现象，导致RF无法工作；
 	sx126x_calibrate_error();	
 	sx126x_set_standby(STDBY_RC);
+    // sx126x_clear_irq_status(IRQ_RADIO_ALL);
     sx126x_set_cad();
 }
 
@@ -955,7 +981,7 @@ void sx126x_cad_init()
 	sx126x_clear_irq_status(IRQ_RADIO_ALL);
 
 	sx126x_set_dio_irq_params(IRQ_CAD_DONE|IRQ_CAD_ACTIVITY_DETECTED,
-                            IRQ_CAD_DONE,
+                            IRQ_CAD_DONE|IRQ_CAD_ACTIVITY_DETECTED,
                             IRQ_RADIO_NONE,
                             IRQ_RADIO_NONE);
 }
@@ -1049,6 +1075,11 @@ __attribute__((weak)) void sx126x_tx_done_callback()
 
 }
 
+__attribute__((weak)) void sx126x_cad_done_callback(uint8_t detected)
+{
+    (void)detected;
+}
+
 __attribute__((weak)) void sx126x_rx_done_callback(uint8_t *payload, uint16_t size, 
     int16_t lastpack_rssi, int16_t aver_rssi, int16_t snr)
 {
@@ -1064,13 +1095,15 @@ __attribute__((weak)) void sx126x_rx_done_callback(uint8_t *payload, uint16_t si
  ****************************************************************************/
 void sx126x_irq()
 {
-    uint16_t flag;
+    uint16_t flag, cad_flag;
+    uint8_t cad_ret;
     flag = sx126x_get_irq_status();
-    sx126x_clear_irq_status(IRQ_RADIO_ALL);
 
     if ((flag & IRQ_TX_DONE) == IRQ_TX_DONE) {
+        sx126x_clear_irq_status(IRQ_RADIO_ALL);
         sx126x_tx_done_callback();
     } else if ((flag & (IRQ_RX_DONE | IRQ_CRC_ERROR)) == IRQ_RX_DONE) {
+        sx126x_clear_irq_status(IRQ_RADIO_ALL);
         if (G_LoRaConfig.HeaderType == LORA_PACKET_IMPLICIT) {
             sx126x_clear_timeout_event();
         }
@@ -1081,6 +1114,15 @@ void sx126x_irq()
         if (usr_rx_continous_mode == 1) {
             sx126x_set_buffer_base_address(0x00, 0x00);
         }
+    } else if ((flag & IRQ_CAD_DONE) == IRQ_CAD_DONE) {
+        cad_flag = sx126x_get_irq_status();
+        sx126x_clear_irq_status(IRQ_RADIO_ALL);
+        cad_ret = (cad_flag & IRQ_CAD_ACTIVITY_DETECTED) == IRQ_CAD_ACTIVITY_DETECTED;
+        sx126x_cad_done_callback(cad_ret);
+    } else {
+
     }
 }
+
+
 

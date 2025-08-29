@@ -4,6 +4,7 @@
 
 void region_cn470_init_default(struct __channel_grp *grp)
 {
+#if (!defined(LORAP2P_SAVE)) || (defined(P2P_REGION_CN470) && defined(LORAP2P_SAVE))
     int i = 0;
 
     // Ping Channel
@@ -16,7 +17,7 @@ void region_cn470_init_default(struct __channel_grp *grp)
 
     for( uint8_t i = CN470_MAX_NB_CHANNELS - 8; i < CN470_MAX_NB_CHANNELS; i++ ) {
         // 500 kHz channels
-        p2p_channel_config(&grp->ch_list[i], 470000000 + ( i - ( CN470_MAX_NB_CHANNELS - 8 ) ) * 1600000, 2, 7, 1, 18,16);
+        p2p_channel_config(&grp->ch_list[i], 470300000 + ( i - ( CN470_MAX_NB_CHANNELS - 8 ) ) * 1600000, 2, 7, 1, 18,16);
     }
 
     grp->grp_ch_len = CN470_MAX_NB_CHANNELS;
@@ -30,19 +31,23 @@ void region_cn470_init_default(struct __channel_grp *grp)
 
     grp->dw_list = &grp->ch_list[8];
     grp->dw_ch_len = grp->grp_ch_len - 8;
+#endif
 }
 
 void region_cn470_channelstate_reset(struct __channel_grp *grp)
 {
+#if (!defined(LORAP2P_SAVE)) || (defined(P2P_REGION_CN470) && defined(LORAP2P_SAVE))
     int i = 0;
 
     for (i = 0; i < grp->grp_ch_len; i++) {
         grp->bad_list[i] = 0;
     }
+#endif
 }
 
 uint8_t region_cn470_downchannelnext(struct __channel_grp *grp, int16_t rssi, int8_t snr)
 {
+#if (!defined(LORAP2P_SAVE)) || (defined(P2P_REGION_CN470) && defined(LORAP2P_SAVE))
     int cnt_down = 0;
 
     if (rssi < -95 || snr < -5) {
@@ -77,11 +82,15 @@ uint8_t region_cn470_downchannelnext(struct __channel_grp *grp, int16_t rssi, in
     return 0;
 
 freq_error:
+#endif
+
     return 1;
 }
 
 uint8_t region_cn470_upchannelnext(struct __channel_grp *grp)
 {
+#if (!defined(LORAP2P_SAVE)) || (defined(P2P_REGION_CN470) && defined(LORAP2P_SAVE))
     // as ping channel, use fixed up channel
+#endif
     return 0;
 }

@@ -5,6 +5,7 @@
  ****************************************************************************/
 void p2p_raw_ackfhss_sender_process(struct __p2p_obj *obj)
 {
+#if (!defined(LORAP2P_SAVE)) || (defined(LORAP2P_SAVE) && defined(P2P_ROLE_MASTER) && defined(P2P_MODE_RAWACK_FHSS))
     size_t calsz;
     size_t rsz, osz;
     int ret, i;
@@ -29,7 +30,7 @@ void p2p_raw_ackfhss_sender_process(struct __p2p_obj *obj)
             connect_dataheader.up_fq_idx = 0;
             connect_dataheader.rssi = obj->_up_ch_rssi;
             connect_dataheader.snr = obj->_up_ch_snr;
-
+            connect_dataheader.magic_num = (obj->_action == P2P_ACTION_STATE_TO_CONFIG)?0x1B:0x00;
             osz = obj->_fstream(&obj->_pbuffer[0], calsz);
             if (osz <= 0) {
                 return;
@@ -67,6 +68,12 @@ void p2p_raw_ackfhss_sender_process(struct __p2p_obj *obj)
             break;
         }
     case 0x13: {
+            if (obj->_action == P2P_ACTION_STATE_TO_CONFIG) {
+                obj->_action = P2P_ACTION_IDLE;
+                p2p_state_to_link_config(obj);
+                return;
+            }
+
             // wait recv CONNECTION_RESULT
             if (P2P_ELAPSED_TIME(obj->_ack_fail_timestamp) > P2P_ACK_TIMEOUT) {
                 // re enter
@@ -100,7 +107,7 @@ void p2p_raw_ackfhss_sender_process(struct __p2p_obj *obj)
 
             for (i = 0; i < rsz; i++) {
                 ret = p2p_proto_parser(&obj->_proto, obj->_pbuffer[i]);
-                if (ret == P2P_CONNECT_ACK) {
+                if (ret == P2P_ID_CONNECT_ACK) {
                     decode_connect_ack(&obj->_proto, &connect_ack);
                     if (connect_ack.snd_auth_key == obj->_id_ck.auth_key_board) {
                         if ((obj->_status.seq-connect_ack.seq) == 1) {
@@ -108,14 +115,14 @@ void p2p_raw_ackfhss_sender_process(struct __p2p_obj *obj)
                         } else {
                             p2p_info("Unknown seq error\n");
                         }
-
+                        obj->_action = (connect_ack.magic_num == 0x1A)?P2P_ACTION_STATE_TO_CONFIG:P2P_ACTION_IDLE;
                         obj->_dw_ch_rssi = connect_ack.rssi;
                         obj->_dw_ch_snr = connect_ack.snr;
                         obj->_ack_fail_retry_cnter = 0;
                         obj->_status.ack_completed_time = P2P_TIMESTAMP_GET() - obj->_status.ack_timestamp;
                         obj->_status.ack_wait_time = P2P_TIMESTAMP_GET() - obj->_status.ack_wait_timestamp;
 
-                        p2p_info("d:(%03d.%03d) Ack:%d, urssi:%d, drssi:%d, usnr:%d, dsnr:%d, snd:%d, lost:%d, acktime:%d, ackwait:%d, lbt time:%d, nxtfreq:(%03d.%03d)\r\n",
+                        p2p_info("d:(%03d.%03d) Ack:%d, urssi:%d, drssi:%d, usnr:%d, dsnr:%d, snd:%d, lost:%d, acktime:%d, ackwait:%d, lbt time:%d, nxtfreq:(%03d.%03d), pw:%d\r\n",
                             obj->_ch_grp.current.freq/1000000,
                             (obj->_ch_grp.current.freq/1000)%1000,
                             connect_ack.seq, 
@@ -126,7 +133,8 @@ void p2p_raw_ackfhss_sender_process(struct __p2p_obj *obj)
                             obj->_status.ack_completed_time, obj->_status.ack_wait_time,
                             obj->_status.lbt_back_time,
                             obj->_ch_grp.dw_list[obj->_ch_grp.dw_fq_idx].freq/1000000,
-                            (obj->_ch_grp.dw_list[obj->_ch_grp.dw_fq_idx].freq/1000)%1000);
+                            (obj->_ch_grp.dw_list[obj->_ch_grp.dw_fq_idx].freq/1000)%1000,
+                            obj->_ch_grp.current.power);
 
                         memset(&obj->_proto, 0, sizeof(struct __p2p_proto));
                         obj->_substate = 0x14;
@@ -144,14 +152,21 @@ void p2p_raw_ackfhss_sender_process(struct __p2p_obj *obj)
         break;
     case 0x14: {
             p2p_set_standby(obj);
-            p2p_set_channel(obj, obj->_ch_grp.dw_list[obj->_ch_grp.dw_fq_idx].freq);
-            obj->_ch_grp.current.freq = obj->_ch_grp.dw_list[obj->_ch_grp.dw_fq_idx].freq;
+            p2p_power_adjust(obj, obj->_dw_ch_rssi, obj->_dw_ch_snr);
+
+            if (obj->_action == P2P_ACTION_IDLE) {
+                p2p_set_channel(obj, obj->_ch_grp.dw_list[obj->_ch_grp.dw_fq_idx].freq);
+                obj->_ch_grp.current.freq = obj->_ch_grp.dw_list[obj->_ch_grp.dw_fq_idx].freq;
+            }
 
             obj->_substate = 0x11;
         }
         break;
     default: break;
     }
+
+#endif
+
 }
 
 /****************************************************************************
@@ -159,6 +174,7 @@ void p2p_raw_ackfhss_sender_process(struct __p2p_obj *obj)
  ****************************************************************************/
 void p2p_raw_ackfhss_receiver_process(struct __p2p_obj *obj)
 {
+#if (!defined(LORAP2P_SAVE)) || (defined(LORAP2P_SAVE) && defined(P2P_ROLE_SLAVE) && defined(P2P_MODE_RAWACK_FHSS))
     uint8_t c;
     size_t rsz;
     uint8_t osz;
@@ -170,7 +186,8 @@ void p2p_raw_ackfhss_receiver_process(struct __p2p_obj *obj)
 
     switch (obj->_substate) {
     case 0x11: {
-            if (P2P_ELAPSED_TIME(obj->_link_failed_timestamp) > P2P_LINK_FAIL_TIMEOUT) {
+            if ((P2P_ELAPSED_TIME(obj->_link_failed_timestamp) > P2P_LINK_FAIL_TIMEOUT && (obj->_status.seq > 0)) || 
+                P2P_ELAPSED_TIME(obj->_link_failed_timestamp) > P2P_LINK_CRUSH_TIMEOUT) {
                 // re-enter
                 p2p_state_to_linkfind(obj);
             }
@@ -186,9 +203,16 @@ void p2p_raw_ackfhss_receiver_process(struct __p2p_obj *obj)
 
             for (i = 0; i < rsz; i++) {
                 ret = p2p_proto_parser(&obj->_proto, obj->_pbuffer[i]);
-                if (ret == P2P_CONNECT_DATAHEAD) {
+                if (ret == P2P_ID_CONNECT_DATAHEAD) {
                     decode_connect_data(&obj->_proto, &connect_dataheader, &raw_payload, &osz);
                     if (connect_dataheader.rcv_auth_key == obj->_id_ck.auth_key_board) {
+
+                        if (connect_dataheader.magic_num == 0x1B &&
+                            obj->_action == P2P_ACTION_STATE_TO_CONFIG) {
+                            obj->_action = P2P_ACTION_IDLE;
+                            p2p_state_to_link_config(obj);
+                            return;
+                        }
 
                         if (osz <= 0) {
                             p2p_info("WTF len error \r\n");
@@ -241,6 +265,7 @@ void p2p_raw_ackfhss_receiver_process(struct __p2p_obj *obj)
             connect_ack.snr = obj->_dw_ch_snr;
             connect_ack.snd_auth_key = obj->_id_ck.auth_key_obj;
             connect_ack.seq = obj->_status.seq;
+            connect_ack.magic_num = (obj->_action == P2P_ACTION_STATE_TO_CONFIG)?0x1A:0x00;
             rsz = encode_connect_ack(&obj->_proto, &connect_ack);
 
             p2p_set_standby(obj);
@@ -251,7 +276,7 @@ void p2p_raw_ackfhss_receiver_process(struct __p2p_obj *obj)
             obj->_substate = 0x13;
             obj->_status.seq_lst = obj->_status.seq;
 
-            p2p_info("d:(%03d.%03d) Ack:%d, urssi:%d, drssi:%d, usnr:%d, dsnr:%d, rcv:%d, lost:%d, ack-time(lst):%d\r\n", 
+            p2p_info("d:(%03d.%03d) Ack:%d, urssi:%d, drssi:%d, usnr:%d, dsnr:%d, rcv:%d, lost:%d, ack-time(lst):%d, pw:%d\r\n", 
                 obj->_ch_grp.current.freq/1000000,
                 (obj->_ch_grp.current.freq/1000)%1000,
                 obj->_status.seq, 
@@ -259,7 +284,8 @@ void p2p_raw_ackfhss_receiver_process(struct __p2p_obj *obj)
                 obj->_up_ch_snr, obj->_dw_ch_snr,
                 obj->_status.nbytes_total_recv,
                 obj->_status.pack_lost,
-                obj->_status.rcv_ack_time);
+                obj->_status.rcv_ack_time,
+                obj->_ch_grp.current.power);
 
         }
         break;
@@ -267,9 +293,12 @@ void p2p_raw_ackfhss_receiver_process(struct __p2p_obj *obj)
             // wait CONNECTION_RESULT send completed
             if (p2p_is_tx_done(obj)) {
                 p2p_wait_to_idle(obj);
+                p2p_power_adjust(obj, obj->_up_ch_rssi, obj->_up_ch_rssi);
 
-                p2p_set_channel(obj, obj->_ch_grp.dw_list[obj->_ch_grp.dw_fq_idx].freq);
-                obj->_ch_grp.current.freq = obj->_ch_grp.dw_list[obj->_ch_grp.dw_fq_idx].freq;
+                if (obj->_action == P2P_ACTION_IDLE) {
+                    p2p_set_channel(obj, obj->_ch_grp.dw_list[obj->_ch_grp.dw_fq_idx].freq);
+                    obj->_ch_grp.current.freq = obj->_ch_grp.dw_list[obj->_ch_grp.dw_fq_idx].freq;
+                }
 
                 prb_reset(&obj->_prbuf);
 
@@ -284,13 +313,29 @@ void p2p_raw_ackfhss_receiver_process(struct __p2p_obj *obj)
         break;
     default: break;
     }
+
+#endif
+
 }
 
 void p2p_raw_ackfhss_process(struct __p2p_obj *obj)
 {
+#if !defined(LORAP2P_SAVE)
     if (obj->_role == P2P_SENDER) {
         p2p_raw_ackfhss_sender_process(obj);
     } else if (obj->_role == P2P_RECEIVER) {
         p2p_raw_ackfhss_receiver_process(obj);
     }
+#else
+
+#if defined(P2P_ROLE_SLAVE) && defined(P2P_MODE_RAWACK_FHSS)
+    p2p_raw_ackfhss_receiver_process(obj);
+#endif
+
+#if defined(P2P_ROLE_MASTER) && defined(P2P_MODE_RAWACK_FHSS)
+    p2p_raw_ackfhss_sender_process(obj);
+#endif
+
+#endif
+
 }

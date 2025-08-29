@@ -242,7 +242,7 @@ void board_bsp_init()
     stm32_rtc_setup();
 
     /** GNSS Module PPS Irq pin */
-    stm32_gpiosetevent(GET_PINHAL(GPIOE, 2), true, false, true, gnss_pps_irq, NULL, 4);
+    stm32_gpiosetevent(GET_PINHAL(GPIOC, 10), true, false, true, gnss_pps_irq, NULL, 4);
 
     hw_stm32_eth_init();
 }

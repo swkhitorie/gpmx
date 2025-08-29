@@ -75,35 +75,19 @@ void can_tx_post(struct can_dev_s *dev)
 
 void can_rxfifo_clear(struct can_rxfifo_s *rfifo)
 {
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
-
-    vPortEnterCritical();
-#else
-
     dn_disable_irq();
-#endif
+
     rfifo->rx_head = 0;
     rfifo->rx_tail = 0;
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
-
-    vPortExitCritical();
-#else
-
     dn_enable_irq();
-#endif
 }
 
 int can_rxfifo_put(struct can_rxfifo_s *rfifo, void *buf)
 {
     int ret = DTRUE;
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
-
-    vPortEnterCritical();
-#else
 
     dn_disable_irq();
-#endif
 
     struct can_msg_s *pmsg;
     pmsg = (struct can_msg_s *)buf;
@@ -117,26 +101,16 @@ int can_rxfifo_put(struct can_rxfifo_s *rfifo, void *buf)
         rfifo->rx_tail = (rfifo->rx_tail + 1) % CONFIG_CAN_FIFOSIZE;
     }
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
-
-    vPortExitCritical();
-#else
-
     dn_enable_irq();
-#endif
+
     return ret;
 }
 
 int can_rxfifo_get(struct can_rxfifo_s *rfifo, void *buf)
 {
     int ret = DTRUE;
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
-
-    vPortEnterCritical();
-#else
 
     dn_disable_irq();
-#endif
 
     if(rfifo->rx_tail == rfifo->rx_head) {
         // empty
@@ -147,12 +121,7 @@ int can_rxfifo_get(struct can_rxfifo_s *rfifo, void *buf)
         rfifo->rx_head = (rfifo->rx_head + 1) % CONFIG_CAN_FIFOSIZE;
     }
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
-
-    vPortExitCritical();
-#else
-
     dn_enable_irq();
-#endif
+
     return ret;
 }

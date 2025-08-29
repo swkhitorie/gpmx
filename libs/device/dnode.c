@@ -66,10 +66,18 @@ uint32_t dn_timems()
 
 void dn_disable_irq()
 {
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+    portDISABLE_INTERRUPTS();
+#else
     __disable_irq();
+#endif
 }
 
 void dn_enable_irq()
 {
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+    portENABLE_INTERRUPTS();
+#else
     __enable_irq();
+#endif
 }

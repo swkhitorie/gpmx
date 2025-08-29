@@ -1,20 +1,78 @@
 #include "p2p_common.h"
 
+void p2p_action(struct __p2p_obj *obj, enum __p2p_action act)
+{
+    obj->_action = act;
+}
+
 void p2p_setup(struct __p2p_obj *obj,
     enum __p2p_role role,
     enum __p2p_mode mode,
     enum __region region,
     p2p_forwarding_data fstream,
     p2p_authkey_generate fauth_gen,
+    p2p_ant_selection fantsw,
+    p2p_config_ack fackcfg,
     uint32_t *uid_board,
     uint32_t uid_key_rng,
     uint16_t fcl_bytes)
 {
+    obj->_errcode = 0;
+    obj->_action = P2P_ACTION_IDLE;
+
+#if !defined(LORAP2P_SAVE)
     obj->_role = role;
     obj->_mode = mode;
     obj->_region = region;
+#else
+
+#if defined(P2P_ROLE_MASTER)
+    obj->_role = P2P_SENDER;
+#elif defined(P2P_ROLE_SLAVE)
+    obj->_role = P2P_RECEIVER;
+#endif
+
+#if defined(P2P_REGION_US915)
+    obj->_region = LORA_REGION_US915;
+#elif defined(P2P_REGION_EU868)
+    obj->_region = LORA_REGION_EU868;
+#elif defined(P2P_REGION_CN470)
+    obj->_region = LORA_REGION_CN470;
+#endif
+
+#if defined(P2P_MODE_RAW)
+    obj->_mode = P2P_RAW;
+#elif defined(P2P_MODE_RAWACK)
+    obj->_mode = P2P_RAWACK;
+#elif defined(P2P_MODE_RAWACK_FHSS)
+    obj->_mode = P2P_RAWACK_FHSS;
+#endif
+
+#endif
+
     obj->_fstream = fstream;
     obj->_fauth_gen = fauth_gen;
+    obj->_fant = fantsw;
+    obj->_fack_cfg = fackcfg;
+
+    /* Switch to Default Antenna */
+    obj->ant_snder_selection_completed = false;
+    obj->ant_test_cnter = 0;
+    obj->ant_test_times = P2P_ANTENNA_TEST_TIMES;
+    obj->ant_idx = 0;
+    obj->ant_now = 0;
+    obj->_fant(obj->ant_now);
+    obj->ant_idx_best = 0;
+    obj->ant_rssi_best = -150;
+    for (int i = 0; i < P2P_ANTENNA_ARRAY; i++) {
+        for (int j = 0; j < P2P_ANTENNA_ARRAY_RSSI_LEN; j++) {
+            obj->ant_rssi[i][j] = obj->ant_rssi_best;
+        }
+    }
+
+    #if (P2P_ANTENNA_ARRAY == 1)
+        obj->ant_snder_selection_completed = true;
+    #endif
 
     obj->hw.tx_done = true;
 
@@ -57,7 +115,7 @@ void p2p_setup(struct __p2p_obj *obj,
         p2p_channel_config(&obj->_ch_grp.current, obj->_ch_grp.ping.freq, 2, 7, 1, 18, 16);
     } else {
 
-        // bw:2500KHz, sf:6, cr:1, power: 18, preambleLen: 16
+        // bw:250KHz, sf:6, cr:1, power: 18, preambleLen: 16
         p2p_channel_config(&obj->_ch_grp.current, obj->_ch_grp.ping.freq, 1, 6, 1, 18, 16);
     }
 
@@ -106,8 +164,9 @@ void p2p_setup(struct __p2p_obj *obj,
     if (obj->_role == P2P_SENDER) {
         bool isfind = p2p_cad_scan_first_free_channel(obj, 800, 800, 10000);
         if (!isfind) {
-            p2p_info("Can't Find Any FreeChannel\r\n");
-            while(1){}
+            obj->_errcode |= 0x00000001;
+            p2p_error("Can't Find Any FreeChannel, Use Default\r\n");
+            obj->_ch_grp.dw_fq_idx_fix = 0;
         }
         obj->_ch_grp.up_fq_idx_fix = rand_lcg_seed_next(obj->_ch_grp.up_ch_len);
         p2p_info("downch: [%d]%d, upch: [%d]%d\r\n", 
@@ -139,6 +198,9 @@ void p2p_process(struct __p2p_obj *obj)
             p2p_raw_ackfhss_process(obj);
         }
         break;
+    case P2P_LINK_CONFIG:
+        p2p_config_process(obj);
+        break;
     }
 }
 
@@ -151,6 +213,9 @@ void p2p_channel_grp_reset(struct __p2p_obj *obj)
     case LORA_REGION_US915:
         region_us915_channelstate_reset(&obj->_ch_grp);
         break;
+    case LORA_REGION_CN470:
+        region_cn470_channelstate_reset(&obj->_ch_grp);
+        break;
     }
 }
 
@@ -162,6 +227,9 @@ uint8_t p2p_dw_channel_next(struct __p2p_obj *obj, int16_t rssi, int8_t snr)
         break;
     case LORA_REGION_US915:
         region_us915_downchannelnext(&obj->_ch_grp, rssi, snr);
+        break;
+    case LORA_REGION_CN470:
+        region_cn470_downchannelnext(&obj->_ch_grp, rssi, snr);
         break;
     }
 
@@ -176,6 +244,9 @@ uint8_t p2p_up_channel_next(struct __p2p_obj *obj)
         break;
     case LORA_REGION_US915:
         region_us915_upchannelnext(&obj->_ch_grp);
+        break;
+    case LORA_REGION_CN470:
+        region_cn470_upchannelnext(&obj->_ch_grp);
         break;
     }
 
@@ -245,7 +316,7 @@ int fcl_cal(struct __p2p_obj *obj, int verify_sz)
     int rsz = 0;
 
     if (obj->_fctrl.bytes_max_ones <= 0) {
-        return obj->_max_payload;
+        return obj->_max_payload - (P2P_PROTO_NONPAYLOAD_LEN+P2P_FLEN_CONNECT_DATAHEADER);
     }
 
     if (obj->_fctrl.bytes_snd == 0) {
@@ -283,3 +354,33 @@ void fcl_sndbytes(struct __p2p_obj *obj)
     return;
 }
 
+void p2p_power_adjust(struct __p2p_obj *obj, int16_t rssi, int8_t snr)
+{
+    if (rssi < -95 && obj->_ch_grp.current.power < 22) {
+        obj->_ch_grp.current.power++;
+    }
+
+    if (rssi > -30 && obj->_ch_grp.current.power > 16) {
+        obj->_ch_grp.current.power--;
+    }
+
+    if (obj->_ch_grp.current.power >= 22) {
+        obj->_ch_grp.current.power = 22;
+    } else if (obj->_ch_grp.current.power <= 16) {
+        obj->_ch_grp.current.power = 16;
+    }
+
+    p2p_set_standby(obj);
+    p2p_set_power(obj, obj->_ch_grp.current.power);
+}
+
+void p2p_antenna_switch_judge(struct __p2p_obj *obj, int16_t rssi)
+{
+    if (rssi < P2P_ANTENNA_RSSI_THRESOLD) {
+        obj->ant_now++;
+        if (obj->ant_now >= P2P_ANTENNA_ARRAY) {
+            obj->ant_now = 0;
+        }
+        obj->_fant(obj->ant_now);
+    }
+}

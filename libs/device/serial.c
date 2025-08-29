@@ -117,13 +117,7 @@ uint16_t serial_buf_write(struct uart_buffer_s *obj, const uint8_t *p, uint16_t 
 	uint16_t wlen = 0;
 	uint16_t rssize = 0;
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
-
-    vPortEnterCritical();
-#else
-
     dn_disable_irq();
-#endif
 
 	rssize = obj->capacity - obj->size;
 	if (rssize >= len) {
@@ -141,13 +135,7 @@ uint16_t serial_buf_write(struct uart_buffer_s *obj, const uint8_t *p, uint16_t 
         obj->size++;
 	}
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
-
-    vPortExitCritical();
-#else
-
     dn_enable_irq();
-#endif
 
 	return wlen;
 }
@@ -157,13 +145,7 @@ uint16_t serial_buf_read(struct uart_buffer_s *obj, uint8_t *p, uint16_t len)
 	uint16_t i;
 	uint16_t rlen = 0;
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
-
-    vPortEnterCritical();
-#else
-
     dn_disable_irq();
-#endif
 
 	if (obj->size >= len) {
 		rlen = len;
@@ -180,26 +162,14 @@ uint16_t serial_buf_read(struct uart_buffer_s *obj, uint8_t *p, uint16_t len)
         obj->size--;
 	}
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
-
-    vPortExitCritical();
-#else
-
     dn_enable_irq();
-#endif
 
 	return rlen;
 }
 
 void serial_buf_clear(struct uart_buffer_s *obj)
 {
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
-
-    vPortEnterCritical();
-#else
-
     dn_disable_irq();
-#endif
 
 	for (int i = 0; i < obj->capacity; i++) {
 		obj->buffer[i] = 0;
@@ -208,12 +178,6 @@ void serial_buf_clear(struct uart_buffer_s *obj)
 	obj->in = 0;
 	obj->out = 0;
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
-
-    vPortExitCritical();
-#else
-
     dn_enable_irq();
-#endif
 }
 

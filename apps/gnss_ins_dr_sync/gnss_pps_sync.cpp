@@ -111,3 +111,12 @@ void gnss_hrt_timestamp_get(gnss_time_t *now_time)
 
     now_time->subsec = hrt_absolute_time()%1000000;
 }
+
+uint32_t gnss_subsec_get(struct timeval *tv)
+{
+    if (sync_pps.hrt_rtc_calib_flag) {
+        return hrt_absolute_time()%1000000;
+    }
+
+    return tv->tv_usec;
+}

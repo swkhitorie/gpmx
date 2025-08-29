@@ -24,6 +24,8 @@ void gnss_timestamp_get_start_calib(time_t gnss_msg_utc_time);
 
 void gnss_hrt_timestamp_get(gnss_time_t *now);
 
+uint32_t gnss_subsec_get(struct timeval *tv);
+
 #ifdef __cplusplus
 }
 #endif

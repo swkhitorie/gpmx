@@ -17,19 +17,21 @@
 #include "region/region_CN470.h"
 
 #define P2P_VERSION_MAIN   (2)
-#define P2P_VERSION_SUB1   (1)
-#define P2P_VERSION_SUB2   (2)
+#define P2P_VERSION_SUB1   (2)
+#define P2P_VERSION_SUB2   (0)
 
-#if defined(P_REGION_US915)
+#if defined(P2P_REGION_US915)
 #define REGION_NVM_MAX_NB_CHANNELS       (US915_MAX_NB_CHANNELS)
-#elif defined(P_REGION_EU868)
+#elif defined(P2P_REGION_EU868)
 #define REGION_NVM_MAX_NB_CHANNELS       (EU868_MAX_NB_CHANNELS)
-#elif defined(P_REGION_CN470)
+#elif defined(P2P_REGION_CN470)
 #define REGION_NVM_MAX_NB_CHANNELS       (CN470_MAX_NB_CHANNELS)
 #endif
 
 typedef uint16_t (*p2p_forwarding_data)(uint8_t *p, uint16_t len);
 typedef uint32_t (*p2p_authkey_generate)(uint32_t *uid, uint32_t key);
+typedef void     (*p2p_ant_selection)(uint8_t idx);
+typedef void     (*p2p_config_ack)(void *arg);
 
 enum __region {
     LORA_REGION_EU868,           /* European band on 868MHz */
@@ -44,6 +46,22 @@ enum __p2p_role {
     P2P_RECEIVER,
 };
 
+/**
+ * Raw Data Transmission Mode(Fix Direction)
+ * Master/Sender    Slave/Receiver
+ *        --------------->
+ *           Raw Data
+ *       <----------------
+ *         ACK (Optional)
+ * 
+ * Config Mode
+ * Master/Sender    Slave/Receiver
+ *       <----------------
+ *          Config Data
+ *       ----------------->
+ *          Config Ack
+ * 
+ */
 enum __p2p_mode {
     P2P_LISTEN = 0x00,
     P2P_RAW,
@@ -56,6 +74,13 @@ enum __p2p_mode {
 enum __p2p_state {
     P2P_LINK_FIND = 0x00,
     P2P_LINK_ESTABLISHED,
+    P2P_LINK_CONFIG,
+};
+
+enum __p2p_action {
+    P2P_ACTION_IDLE = 0x00,
+    P2P_ACTION_STATE_TO_CONFIG,
+    P2P_ACTION_STATE_TO_CONNECT,
 };
 
 #define P2P_CHANNEL_CFG_GET_SF(val) (val & 0x0f)
@@ -138,12 +163,13 @@ struct __flowctrl_status {
 
 struct __p2p_obj {
 
-    enum __region    _region;
-    enum __p2p_role  _role;
-    enum __p2p_mode  _mode;
-    enum __p2p_state _state;
-    uint8_t          _substate;
-    uint8_t          _connect_bond;
+    enum __region     _region;
+    enum __p2p_role   _role;
+    enum __p2p_mode   _mode;
+    enum __p2p_state  _state;
+    enum __p2p_action _action;
+    uint8_t           _substate;
+    uint8_t           _connect_bond;
 
     uint8_t                 _max_payload;
     uint8_t                 _cad_idx;
@@ -168,6 +194,8 @@ struct __p2p_obj {
 
     p2p_forwarding_data   _fstream;
     p2p_authkey_generate  _fauth_gen;
+    p2p_ant_selection     _fant;
+    p2p_config_ack        _fack_cfg;
 
     /**
      * LoRaP2P shared memory
@@ -177,8 +205,20 @@ struct __p2p_obj {
     struct __prbuf     _prbuf;
     struct __p2p_proto _proto;
 
+    /* Radio Antenna Array Selection */
+    uint8_t ant_now;
+    uint8_t ant_idx;
+    uint8_t ant_test_times;
+    uint8_t ant_test_cnter;
+    uint8_t ant_idx_best;
+    int16_t ant_rssi_best;
+    int16_t ant_rssi[P2P_ANTENNA_ARRAY][P2P_ANTENNA_ARRAY_RSSI_LEN];
+    bool ant_snder_selection_completed;
+
     /** platform obj */
     struct p2p_hw hw;
+
+    uint32_t _errcode;
 };
 
 #ifdef __cplusplus
@@ -195,11 +235,15 @@ void p2p_setup(struct __p2p_obj *obj,
     enum __region region,
     p2p_forwarding_data fstream,
     p2p_authkey_generate fauth_gen,
+    p2p_ant_selection fantsw,
+    p2p_config_ack fackcfg,
     uint32_t *uid_board,
     uint32_t uid_key_rng,
     uint16_t fcl_bytes);
 
 void p2p_process(struct __p2p_obj *obj);
+
+void p2p_action(struct __p2p_obj *obj, enum __p2p_action act);
 
 void p2p_channel_grp_reset(struct __p2p_obj *obj);
 
@@ -214,6 +258,8 @@ void p2p_state_to_linkfind(struct __p2p_obj *obj);
 
 void p2p_state_to_link_established(struct __p2p_obj *obj);
 
+void p2p_state_to_link_config(struct __p2p_obj *obj);
+
 void p2p_linkfind(struct __p2p_obj *obj);
 
 void p2p_raw_process(struct __p2p_obj *obj);
@@ -222,6 +268,7 @@ void p2p_raw_ack_process(struct __p2p_obj *obj);
 
 void p2p_raw_ackfhss_process(struct __p2p_obj *obj);
 
+void p2p_config_process(struct __p2p_obj *obj);
 
 /************************
  * P2P utility Function
@@ -240,6 +287,10 @@ bool util_id_empty(uint32_t *uid);
 
 int  fcl_cal(struct __p2p_obj *obj, int verify_sz);
 void fcl_sndbytes(struct __p2p_obj *obj);
+
+void p2p_power_adjust(struct __p2p_obj *obj, int16_t rssi, int8_t snr);
+
+void p2p_antenna_switch_judge(struct __p2p_obj *obj, int16_t rssi);
 
 #ifdef __cplusplus
 }
