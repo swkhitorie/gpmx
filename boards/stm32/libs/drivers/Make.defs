@@ -29,9 +29,9 @@ LIBDRV_CSRCS += drv_mmcsd.c
 endif
 
 ifeq ($(BSP_LIBCONFIG_STM32_HAL_FLASH),y)
-LIBDRV_CINCDIRS += include/flash
+LIBDRV_CINCDIRS += flash
 ifeq (${BSP_LIBCONFIG_STM32_SERIES},BSP_STM32_H7)
-LIBDRV_CSRCS += drv_flash_h7.c
+LIBDRV_CSRCS += flash/drv_flash_h7.c
 endif
 endif
 

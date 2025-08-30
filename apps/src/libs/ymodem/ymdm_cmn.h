@@ -45,11 +45,6 @@ struct __packet_ysoh {
     uint8_t buff[YMODEM_PAYLOADLEN_SOH];
 };
 
-struct __ymodem_status {
-    uint8_t status;
-    uint8_t errcode;
-};
-
 #ifdef __cplusplus
 extern "C" {
 #endif

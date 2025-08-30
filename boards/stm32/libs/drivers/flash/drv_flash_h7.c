@@ -182,7 +182,7 @@ static uint8_t low_flash_write_word(uint32_t faddr, uint32_t *pdata)
 	return res;
 }
 
-uint8_t stm32_flash_write(uint32_t WriteAddr, const uint32_t *pBuffer, uint32_t NumToWrite)
+int stm32_flash_write(uint32_t WriteAddr, const uint32_t *pBuffer, uint32_t NumToWrite)
 {
 	uint8_t res = 0;
 	uint8_t status = 0;
@@ -231,8 +231,29 @@ void stm32_flash_read(uint32_t ReadAddr, uint32_t *pBuffer, uint32_t NumToRead)
 	}
 }
 
+uint32_t stm32_flash_readword(uint32_t addr)
+{
+    return low_flash_read_word(addr);
+}
+
 int stm32_flash_erase(uint32_t addr, size_t size)
 {
+    uint32_t addr_start = addr;
+	uint32_t addr_end = addr_start + size;
+
+	uint32_t sector_start = addr_start & ~0x1FFFF;
+	uint32_t sector_end = addr_end & ~0x1FFFF;
+
+	uint32_t i = sector_start;
+
+	if (i == sector_end) {
+		low_flash_erase_sector(low_flash_get_sector(i));
+	} else {
+		while (i < sector_end) {
+            low_flash_erase_sector(low_flash_get_sector(i));
+			i += 0x20000;
+		}
+	}
 
     return 0;
 }

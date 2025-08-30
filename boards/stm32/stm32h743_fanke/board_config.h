@@ -12,7 +12,10 @@
 
 #include <drv_rtc.h>
 
+#ifndef APP_LOAD_ADDRESS
 #define APP_LOAD_ADDRESS      (0x08000000)
+#endif
+
 #define HSE_VALUE             (25000000UL)
 #define LSE_VALUE             (32768UL)
 #define __FPU_PRESENT         1
