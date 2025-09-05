@@ -18,6 +18,14 @@ void board_subghz_init()
     HAL_NVIC_EnableIRQ(SUBGHZ_Radio_IRQn);
 }
 
+void board_subghz_deinit()
+{
+    __HAL_RCC_SUBGHZSPI_CLK_DISABLE();
+    HAL_SUBGHZ_DeInit(&hsubghz);
+
+    HAL_NVIC_DisableIRQ(SUBGHZ_Radio_IRQn);
+}
+
 bool board_subghz_tx_ready()
 {
     return (READ_BIT(SUBGHZSPI->SR, SPI_SR_TXE) == (SPI_SR_TXE));

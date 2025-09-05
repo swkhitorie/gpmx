@@ -2,6 +2,9 @@
 #include <drv_uart.h>
 #include <device/dnode.h>
 #include <device/serial.h>
+#ifdef DEBUG_SPI_BUS
+#include <device/spi.h>
+#endif
 
 /* COM1 */
 uint8_t com1_dma_rxbuff[4096];
@@ -43,6 +46,38 @@ struct up_uart_dev_s com1_dev = {
     .enable_dmatx = true,
 };
 
+#ifdef DEBUG_SPI_BUS
+/**************
+ * Debug spi1
+ **************/
+struct up_spi_dev_s sensor_spi_dev = 
+{
+    .dev = {
+		.frequency = SPI_BAUDRATEPRESCALER_32,
+		.mode = SPIDEV_MODE0,
+		.nbits = 8,
+        .ops       = &g_spi_ops,
+        .priv      = &sensor_spi_dev,
+    },
+    .id = 1, //SPI1
+	.pin_ncs = 1, //soft
+	.pin_sck = 1, //PA5
+	.pin_miso = 1, //PA6
+	.pin_mosi = 1, //PA7
+    .priority = 4,
+    .priority_dmarx = 5,
+    .priority_dmatx = 5,
+    .enable_dmarx = true,
+    .enable_dmatx = true,
+    .devid = { 
+        [0] = 0x01,
+    },
+	.devcs = {
+        [0] = {GPIOA, 4},
+    },
+};
+#endif
+
 uart_dev_t *dstdout;
 uart_dev_t *dstdin;
 
@@ -58,6 +93,11 @@ void board_bsp_init()
 
     dstdout = serial_bus_get(1);
     dstdin = serial_bus_get(1);
+
+#ifdef DEBUG_SPI_BUS
+    spi_register(&sensor_spi_dev.dev, 1);
+    spi_bus_initialize(1);
+#endif
 
 #ifdef CONFIG_BOARD_MTD_QSPIFLASH_ENABLE
     board_mtd_init();
@@ -79,7 +119,22 @@ void board_bsp_init()
     HAL_Delay(100);  // wait cdc init completed
 #endif
 
-    stm32_rtc_setup();
+//    stm32_rtc_setup();
+}
+
+void board_bsp_deinit()
+{
+    __HAL_RCC_GPIOH_CLK_DISABLE();
+
+    __HAL_RCC_USART1_CLK_DISABLE();
+    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_9|GPIO_PIN_10);
+    HAL_DMA_DeInit(&com1_dev.com.hdmatx);
+    HAL_DMA_DeInit(&com1_dev.com.hdmarx);
+    HAL_NVIC_DisableIRQ(USART1_IRQn);
+
+    usbd_deinitialize(0);
+
+    HAL_DeInit();
 }
 
 void board_led_toggle(uint8_t idx)

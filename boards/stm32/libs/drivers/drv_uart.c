@@ -573,8 +573,21 @@ void _usart_setup(struct uart_dev_s *dev)
 void _usart_irq(struct uart_dev_s *dev)
 {
     struct up_uart_dev_s *priv = dev->priv;
-	__HAL_UART_DISABLE_IT(&priv->com, UART_IT_ERR);
-	__HAL_UART_DISABLE_IT(&priv->com, UART_IT_PE);
+	// __HAL_UART_DISABLE_IT(&priv->com, UART_IT_ERR);
+	// __HAL_UART_DISABLE_IT(&priv->com, UART_IT_PE);
+
+    if (__HAL_UART_GET_FLAG(&priv->com, UART_IT_PE) != RESET) {
+        __HAL_UART_CLEAR_PEFLAG(&priv->com);
+    }
+    if (__HAL_UART_GET_FLAG(&priv->com, UART_FLAG_ORE) != RESET) {
+        __HAL_UART_CLEAR_OREFLAG(&priv->com);
+    }
+    if (__HAL_UART_GET_FLAG(&priv->com, UART_FLAG_FE) != RESET) {
+        __HAL_UART_CLEAR_FEFLAG(&priv->com);
+    }
+    if (__HAL_UART_GET_FLAG(&priv->com, UART_FLAG_NE) != RESET) {
+        __HAL_UART_CLEAR_NEFLAG(&priv->com);
+    }
 
 	if ((__HAL_UART_GET_FLAG(&priv->com, UART_FLAG_IDLE) != RESET)) {
 		__HAL_UART_CLEAR_IDLEFLAG(&priv->com);

@@ -16,7 +16,9 @@ _Min_Stack_Size = 0x400; /* required amount of stack */
 /* Memories definition */
 MEMORY
 {
-  ROM    (rx)    : ORIGIN = 0x08000000, LENGTH = 128K   /* Flash memory dedicated to CM4 */
+                /* ORIGIN = 0x08000000, LENGTH = 128K  */
+  ROM    (rx)    : ORIGIN = LR_CODE_BASE, LENGTH = LR_CODE_SIZE    /* Flash memory dedicated to CM4 */
+  nvm_data (rx)  : ORIGIN = NVM_DATA_BASE, LENGTH = NVM_DATA_SIZE 
   RAM1   (xrw)   : ORIGIN = 0x20000000, LENGTH = 16K    /* Non-backup SRAM1 dedicated to CM4 */
   RAM2   (xrw)   : ORIGIN = 0x20008000, LENGTH = 16K    /* Backup SRAM2 dedicated to CM4 */
 }
@@ -57,6 +59,13 @@ SECTIONS
     *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
     . = ALIGN(8);
   } >ROM
+
+  .nvm (NOLOAD):
+  {
+    __nvm_data_start__ = .;
+    *(NVM_DATA_REGION)
+    __nvm_data_end__ = .;
+  } > nvm_data
 
   .ARM.extab   : { 
     . = ALIGN(8);

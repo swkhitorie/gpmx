@@ -1,25 +1,24 @@
 #ifndef P2P_CONFIG_H_
 #define P2P_CONFIG_H_
 
-// un-comment it when resource is not tight
+/**
+
+1: define it when linkfind state need antenna idx selection 
+#define LORAP2P_ANTENNA_LINKTEST
+
+2: define it when resource is not tight
 #define LORAP2P_SAVE
 
-// un-comment it when linkfind state need antenna idx selection 
-// #define LORAP2P_ANTENNA_LINKTEST
+3: LoRaP2P Freqency Configuration, Must Define
+#define P2P_REGION_US915 / P2P_REGION_EU868 / P2P_REGION_CN470
 
-/** LoRaP2P Freqency Configuration */
-#define P2P_REGION_US915
-// #define P2P_REGION_EU868
-// #define P2P_REGION_CN470
+4. (when define LORAP2P_SAVE) LoRaP2P Role Configuration 
+#define P2P_ROLE_MASTER / P2P_ROLE_SLAVE
 
-/** LoRaP2P Role Configuration */
-#define P2P_ROLE_MASTER
-// #define P2P_ROLE_SLAVE
+5. (when define LORAP2P_SAVE) LoRaP2P Default mode Configuration
+#define P2P_MODE_RAW / P2P_MODE_RAWACK / P2P_MODE_RAWACK_FHSS
 
-/** LoRaP2P Default mode Configuration */
-// #define P2P_MODE_RAW
-#define P2P_MODE_RAWACK
-// #define P2P_MODE_RAWACK_FHSS
+*/
 
 #define P_RBUFFER_LENGTH                 (255)
 

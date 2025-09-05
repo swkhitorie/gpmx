@@ -16,6 +16,13 @@ void board_crc_init()
     HAL_CRC_Init(&hcrc);
 }
 
+void board_crc_deinit()
+{
+    __HAL_RCC_CRC_CLK_DISABLE();
+
+    HAL_CRC_DeInit(&hcrc);
+}
+
 uint32_t board_crc_key_get(uint32_t *uid, uint32_t key)
 {
     uint32_t p[4];

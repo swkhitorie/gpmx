@@ -133,6 +133,11 @@ void p2p_state_to_link_config(struct __p2p_obj *obj)
 
     obj->_state = P2P_LINK_CONFIG;
     obj->_substate = 0x21;
+    obj->_cmd_seq = 0x00;
+
+    obj->_cmd_ack_timeout_enable = 0;
+    obj->_cmd_ack_timestamp = 0;
+    obj->_cmd_ack_timeout = 0;
 
     /** clear some state */
     prb_reset(&obj->_prbuf);

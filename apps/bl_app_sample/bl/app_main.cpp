@@ -6,10 +6,10 @@
 #include <device/serial.h>
 #include <drv_flash.h>
 
-static uint32_t boot_app_addr = 0x08020000;
-static uint32_t boot_app_addr_wd = boot_app_addr;
+static volatile uint32_t boot_app_addr = 0x08020000;
+static volatile uint32_t boot_app_addr_wd = boot_app_addr;
 
-struct __ymodem_receiver yrv;
+struct __ymodem_receiver yrv; 
 int total_ysize_cal = 0;
 int total_ysize = 0;
 
@@ -18,7 +18,7 @@ uint8_t bf_bl1[2048];
 
 static void write_appbin(uint32_t appAddr, uint8_t *appbuf, uint32_t appsize)
 {
-    static uint32_t iapbuf[512];
+    static uint32_t iapbuf[256];
 	uint8_t *byteStream = appbuf;
 	uint32_t wordCount = 0;
 	uint32_t i = 0;
@@ -75,31 +75,14 @@ static bool check_appbin(uint32_t appAddr, uint8_t *appbuf, uint32_t appsize)
 		return true;
 }
 
-#define arch_setvtor(address) SCB->VTOR = (uint32_t)address;
-
-/* Make the actual jump to app */
-void
-arch_do_jump(const uint32_t *app_base)
-{
-	/* extract the stack and entrypoint from the app vector table and go */
-	uint32_t stacktop = app_base[0];
-	uint32_t entrypoint = app_base[1];
-
-	asm volatile(
-		"msr msp, %0  \n"
-		"bx %1  \n"
-		: : "r"(stacktop), "r"(entrypoint) :);
-
-	// just to keep noreturn happy
-	for (;;) ;
-}
-
 static void exec_app()
 {
 	uint32_t i = 0;
 	void (*AppJump)(void);
 
-	__disable_irq(); 
+	board_bsp_deinit();
+
+	__set_PRIMASK(1); 
 
 	HAL_RCC_DeInit();
 
@@ -111,20 +94,17 @@ static void exec_app()
 		NVIC->ICER[i]=0xFFFFFFFF;
 		NVIC->ICPR[i]=0xFFFFFFFF;
 	}	
-	__enable_irq();
+	__set_PRIMASK(0);
 
-    SCB->VTOR = 0x08020000;
+    SCB->VTOR = boot_app_addr;
 
-	AppJump = (void (*)(void)) (*((volatile uint32_t *) (0x08020000 + 4)));
-	__set_MSP(*(volatile uint32_t *)0x08020000);
+    __set_CONTROL(0);
+
+	AppJump = (void (*)(void)) (*((volatile uint32_t *) (boot_app_addr + 4)));
+	__set_MSP(*(volatile uint32_t *)boot_app_addr);
 	AppJump(); 
 
-    arch_do_jump(boot_app_addr);
-
-    printf("error fuck \r\n");
-	while (1) {
-	}
-
+	while (1) {}
 }
 
 void ymodem_send(uint8_t c)
@@ -171,12 +151,7 @@ int main(int argc, char *argv[])
     ymodem_cfg_callback(&yrv, ymodem_receiver_callback);
     ymodem_start(&yrv);
 
-    // printf("read to jump: %x \r\n", boot_app_addr);
-    // HAL_Delay(500);
-    // exec_app();
-    // printf("un\r\n");
-
-    uint32_t m = HAL_GetTick();
+	uint32_t m = HAL_GetTick();
     for (;;) {
 
         if (HAL_GetTick() >= 2*1000 && (ymodem_state(&yrv) == YMODEM_SYNC_WAIT)) {
@@ -187,7 +162,7 @@ int main(int argc, char *argv[])
             m = HAL_GetTick();
 
             sz = SERIAL_RDBUF(bus, bf_bl1, 1200);
-            if (sz > 0 && sz != 11) {
+            if (sz > 0) {
                 ymodem_rx_process(&yrv, bf_bl1, sz);
             } else {
                 if (ymodem_state(&yrv) == YMODEM_SYNC_WAIT) {
@@ -199,7 +174,6 @@ int main(int argc, char *argv[])
         }
 
         if (total_ysize_cal == total_ysize && ymodem_state(&yrv) == YMODEM_RCV_COMPLETED) {
-            printf("jump \r\n");
             exec_app();
         }
     }

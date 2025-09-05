@@ -76,14 +76,14 @@ int sens_sync_proto_parser(struct __sens_sync_proto *proto, uint8_t val);
 int sens_sync_encode_rover(struct __sens_sync_proto *proto, const uint8_t *payload, uint16_t len);
 int sens_sync_encode_base(struct __sens_sync_proto *proto, const uint8_t *payload, uint16_t len);
 int sens_sync_encode_imu(struct __sens_sync_proto *proto, time_t now, uint32_t subsec, uint32_t id, 
-    int32_t accx, int32_t accy, int32_t accz, int32_t gyrox, int32_t gyroy, int32_t gyroz, uint32_t seq);
+    float accx, float accy, float accz, float gyrox, float gyroy, float gyroz, uint32_t seq);
 int sens_sync_encode_wheelspd(struct __sens_sync_proto *proto, time_t now, uint32_t subsec,
     uint32_t speed, uint32_t seq);
 
 int sens_sync_decode_rover(struct __sens_sync_proto *proto, uint8_t **payload, uint16_t *len);
 int sens_sync_decode_base(struct __sens_sync_proto *proto, uint8_t **payload, uint16_t *len);
 int sens_sync_decode_imu(struct __sens_sync_proto *proto, time_t *now, uint32_t *subsec, uint32_t *id, 
-    int32_t *accx, int32_t *accy, int32_t *accz, int32_t *gyrox, int32_t *gyroy, int32_t *gyroz, uint32_t *seq);
+    float *accx, float *accy, float *accz, float *gyrox, float *gyroy, float *gyroz, uint32_t *seq);
 int sens_sync_decode_wheelspd(struct __sens_sync_proto *proto, time_t *now, uint32_t *subsec,
     uint32_t *speed, uint32_t *seq);
 

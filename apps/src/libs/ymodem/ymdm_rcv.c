@@ -144,7 +144,7 @@ void ymodem_rx_process(struct __ymodem_receiver *yrcv, const uint8_t *p, uint16_
         break;
 
     case YMODEM_RCV_PAYLOAD:
-        if (yrcv->fsize - yrcv->fsize_cal < YMODEM_PAYLOADLEN_SOH) {
+        if (yrcv->fsize - yrcv->fsize_cal <= YMODEM_PAYLOADLEN_SOH) {
             rcv_pack_type = YMODEM_SOH;
             rcv_pack_len = YMODEM_PAYLOADLEN_SOH;
         }
@@ -163,12 +163,14 @@ void ymodem_rx_process(struct __ymodem_receiver *yrcv, const uint8_t *p, uint16_
                 if (yrcv->fsize_cal >= yrcv->fsize) {
                     yrcv->state = YMODEM_RCV_EOTA;
 
-                    if (rcv_pack_type == YMODEM_SOH) {
-                        rcv_pack_len = yrcv->fsize % YMODEM_PAYLOADLEN_SOH;
-                    }
+                    if (yrcv->fsize_cal > yrcv->fsize) {
+                        if (rcv_pack_type == YMODEM_SOH) {
+                            rcv_pack_len = yrcv->fsize % YMODEM_PAYLOADLEN_SOH;
+                        }
 
-                    if (rcv_pack_type == YMODEM_STX) {
-                        rcv_pack_len = yrcv->fsize % YMODEM_PAYLOADLEN_STX;
+                        if (rcv_pack_type == YMODEM_STX) {
+                            rcv_pack_len = yrcv->fsize % YMODEM_PAYLOADLEN_STX;
+                        }
                     }
 
                     YM_LOG("Final, Wait EOT\r\n");

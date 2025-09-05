@@ -35,9 +35,9 @@ void obd_request_speed()
     obdbus->cd_ops->co_send(obdbus, &msg_test);
 }
 
+static struct can_msg_s rmsg;
 void obd_rx_speed_detect()
 {
-    struct can_msg_s rmsg;
     if (can_rxfifo_get(&obdbus->cd_rxfifo, &rmsg) == DTRUE &&
         rmsg.cm_hdr.ch_id == 0x7E8) {
 

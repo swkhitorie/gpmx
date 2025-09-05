@@ -1,7 +1,7 @@
 
-PROJ_NAME  :=  LoRaP2P_sample_wlxx
+PROJ_NAME  :=  lora_ota_master_app
 PROJ_TC    :=  gae
-APP_PROJ_DIR = apps/LoRaP2P_sample
+APP_PROJ_DIR = apps/lorap2p_ota_sample/master_app
 
 CONFIG_C_STANDARD:=gnu11
 CONFIG_CXX_STANDARD:=gnu++11
@@ -10,14 +10,12 @@ CONFIG_LINK_SCANF_FLOAT:=n
 CONFIG_COMPILE_OPTIMIZE:=O1
 TARGET_POSTBUILD := ${TARGET_DEST_FILENAME_BIN}
 
-# board configuration
-# stm32wl55_nucleo_wl55jc
-# stm32wle5_e77_900mbl
-include ${SDK_ROOTDIR}/boards/stm32/stm32wl55_nucleo_wl55jc/make.mk
+# board bsp config
+include ${SDK_ROOTDIR}/boards/stm32/stm32wle5_e77_900mbl/make.mk
 
 # os and library config
 MK_COMPILER=gcc
-MK_RTOS=none
+MK_RTOS=frtos
 MK_MEM_METHOD=4
 MK_USE_POSIX=n
 MK_USE_LIB_CPP=n
@@ -32,17 +30,39 @@ MK_USE_PX4_COMPONENT=n
 MK_USE_PX4_UORB=n
 MK_USE_PX4_WORKQUEUE=n
 
+NVM_FLASH_BASE=0x0800b800
+NVM_FLASH_SIZE=2K
+APP_A_LOAD_CODE_BASE=0x0800c000
+APP_A_LOAD_CODE_SIZE=104K
+APP_B_LOAD_CODE_BASE=0x08026000
+APP_B_LOAD_CODE_SIZE=104K
+
+APP_COMPILE_LOAD_ADDRESS=${APP_B_LOAD_CODE_BASE}
+APP_COMPILE_LOAD_SIZE=${APP_B_LOAD_CODE_SIZE}
+
+PROJ_SCF_DEFS += -DLR_CODE_BASE=${APP_COMPILE_LOAD_ADDRESS}
+PROJ_SCF_DEFS += -DLR_CODE_SIZE=${APP_COMPILE_LOAD_SIZE}
+PROJ_SCF_DEFS += -DNVM_DATA_BASE=${NVM_FLASH_BASE}
+PROJ_SCF_DEFS += -DNVM_DATA_SIZE=${NVM_FLASH_SIZE}
+
+PROJ_CDEFS +=APP_LOAD_ADDRESS=${APP_COMPILE_LOAD_ADDRESS}
+
 PROJ_CDEFS += CONFIG_BOARD_COM_STDINOUT
-#PROJ_CDEFS += CONFIG_BOARD_COM_STDOUT_DMA
+# PROJ_CDEFS += CONFIG_BOARD_COM_STDOUT_DMA
+
+PROJ_CDEFS += RADIO_BOARD_ROLE=1
+PROJ_CDEFS += LORAP2P_SAVE
+PROJ_CDEFS += P2P_REGION_EU868
+PROJ_CDEFS += P2P_ROLE_MASTER
+PROJ_CDEFS += P2P_MODE_RAWACK_FHSS
 
 PROJ_CINCDIRS += ${APP_PROJ_DIR}
 CPPSOURCES += ${APP_PROJ_DIR}/app_main.cpp
 
-PROJ_CINCDIRS += apps/src/libs/rtklib
-CPPSOURCES += apps/src/libs/rtklib/rtkcmn.cpp
-CPPSOURCES += apps/src/libs/rtklib/rtcm3.cpp
-CPPSOURCES += apps/src/libs/rtklib/rtcm3_bsmsg.cpp
+PROJ_CINCDIRS += ${APP_PROJ_DIR}/../
+CPPSOURCES += ${APP_PROJ_DIR}/../nvm_board.cpp
 
+CPPSOURCES += ${APP_PROJ_DIR}/lorap2p.cpp
 PROJ_CINCDIRS += apps/src/libs/LoRaP2P/
 CSOURCES += apps/src/libs/LoRaP2P/platforms/p2p_platform_wlxx.c
 CSOURCES += apps/src/libs/LoRaP2P/proto/p2p_proto.c
@@ -58,6 +78,3 @@ CSOURCES += apps/src/libs/LoRaP2P/p2p_raw.c
 CSOURCES += apps/src/libs/LoRaP2P/p2p_rawack.c
 CSOURCES += apps/src/libs/LoRaP2P/p2p_rawack_fhss.c
 CSOURCES += apps/src/libs/LoRaP2P/p2p_pconfig.c
-
-
-

@@ -38,11 +38,15 @@ void p2p_config_sender_process(struct __p2p_obj *obj)
                             obj->_action = P2P_ACTION_STATE_TO_CONNECT;
                         }
 
+                        obj->_cmd_seq++;
+
                         if (osz <= 0) {
                             p2p_info("WTF len error \r\n");
                         }
 
                         // handle payload
+                        p2p_set_devtype(obj, cfg_data.dev_type);
+                        p2p_set_cmdtype(obj, cfg_data.cmd_type);
                         obj->_fstream(raw_payload, osz);
 
                         obj->_substate = 0x22;
@@ -60,7 +64,6 @@ void p2p_config_sender_process(struct __p2p_obj *obj)
         break;
     case 0x22: {
             // send CONNECTION_RESULT
-            cfg_ack.cmd_ret = 0x10;
             cfg_ack.snd_auth_key = obj->_id_ck.auth_key_obj;
             cfg_ack.magic_num = (obj->_action == P2P_ACTION_STATE_TO_CONNECT)?0x2B:0x00;
 
@@ -115,14 +118,15 @@ void p2p_config_receiver_process(struct __p2p_obj *obj)
 
             // Add CONFIG_HEAD front of data
             cfg_data.rcv_auth_key = obj->_id_ck.auth_key_obj;
-            cfg_data.cmd_type = 0;
-            cfg_data.dev_type = 0;
             cfg_data.magic_num = (obj->_action == P2P_ACTION_STATE_TO_CONNECT)?0x2A:0x00;
             osz = obj->_fstream(&obj->_pbuffer[0], 
                 obj->_max_payload-(P2P_PROTO_NONPAYLOAD_LEN+P2P_FLEN_CONFIG_DATAHEADER));
             if (osz <= 0) {
                 return;
             }
+
+            cfg_data.cmd_type = obj->_cmd_type;
+            cfg_data.dev_type = obj->_dev_type;
 
             rsz = encode_config_data(&obj->_proto, &cfg_data, &obj->_pbuffer[0], osz);
 
@@ -138,10 +142,21 @@ void p2p_config_receiver_process(struct __p2p_obj *obj)
                 prb_reset(&obj->_prbuf);
                 p2p_rx(obj, 0);
                 obj->_substate = 0x23;
+
+                if (obj->_cmd_ack_timeout_enable == 1) {
+                    obj->_cmd_ack_timestamp = P2P_TIMESTAMP_GET();
+                }
             }
         }
         break;
     case 0x23: {
+
+            if (P2P_ELAPSED_TIME(obj->_cmd_ack_timestamp) > obj->_cmd_ack_timeout &&
+                obj->_cmd_ack_timeout_enable == 1) {
+                // re-enter
+                p2p_state_to_link_config(obj);
+            }
+
             if (prb_is_empty(&obj->_prbuf)) {
                 return;
             }
@@ -157,7 +172,6 @@ void p2p_config_receiver_process(struct __p2p_obj *obj)
                     decode_config_ack(&obj->_proto, &cfg_ack);
                     if (cfg_ack.snd_auth_key == obj->_id_ck.auth_key_board) {
 
-
                         if (cfg_ack.magic_num == 0x2B &&
                             obj->_action == P2P_ACTION_STATE_TO_CONNECT) {
                             obj->_action = P2P_ACTION_IDLE;
@@ -165,6 +179,7 @@ void p2p_config_receiver_process(struct __p2p_obj *obj)
                             return;
                         }
 
+                        obj->_cmd_seq++;
                         obj->_fack_cfg(&cfg_ack.cmd_ret);
 
                         memset(&obj->_proto, 0, sizeof(struct __p2p_proto));

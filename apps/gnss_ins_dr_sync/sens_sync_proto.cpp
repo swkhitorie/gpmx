@@ -108,7 +108,7 @@ int sens_sync_encode_base(struct __sens_sync_proto *proto, const uint8_t *payloa
 
 
 int sens_sync_encode_imu(struct __sens_sync_proto *proto, time_t now, uint32_t subsec, uint32_t id, 
-    int32_t accx, int32_t accy, int32_t accz, int32_t gyrox, int32_t gyroy, int32_t gyroz, uint32_t seq)
+    float accx, float accy, float accz, float gyrox, float gyroy, float gyroz, uint32_t seq)
 {
     int i = 0;
     uint16_t msglen = 44;
@@ -183,7 +183,7 @@ int sens_sync_decode_base(struct __sens_sync_proto *proto, uint8_t **payload, ui
 }
 
 int sens_sync_decode_imu(struct __sens_sync_proto *proto, time_t *now, uint32_t *subsec, uint32_t *id, 
-    int32_t *accx, int32_t *accy, int32_t *accz, int32_t *gyrox, int32_t *gyroy, int32_t *gyroz, uint32_t *seq)
+    float *accx, float *accy, float *accz, float *gyrox, float *gyroy, float *gyroz, uint32_t *seq)
 {
     uint8_t *msgpayload = &proto->buff[SENS_SYNC_PROTO_PAYLOADIDX];
 
@@ -191,13 +191,13 @@ int sens_sync_decode_imu(struct __sens_sync_proto *proto, time_t *now, uint32_t 
     *subsec = *((uint32_t *)&msgpayload[8]);
     *id = *((uint32_t *)&msgpayload[12]);
 
-    *accx = *((int32_t *)&msgpayload[16]);
-    *accy = *((int32_t *)&msgpayload[20]);
-    *accz = *((int32_t *)&msgpayload[24]);
+    *accx = *((float *)&msgpayload[16]);
+    *accy = *((float *)&msgpayload[20]);
+    *accz = *((float *)&msgpayload[24]);
 
-    *gyrox = *((int32_t *)&msgpayload[28]);
-    *gyroy = *((int32_t *)&msgpayload[32]);
-    *gyroz = *((int32_t *)&msgpayload[36]);
+    *gyrox = *((float *)&msgpayload[28]);
+    *gyroy = *((float *)&msgpayload[32]);
+    *gyroz = *((float *)&msgpayload[36]);
 
     *seq = *((int32_t *)&msgpayload[40]);
 

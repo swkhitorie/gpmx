@@ -162,6 +162,42 @@ void board_bsp_init()
 
     SERIAL_RXCLEAR(_tty_msg_in);
     SERIAL_RXCLEAR(_tty_log_in);
+
+    board_rng_init();
+    board_crc_init();
+    board_subghz_init();
+
+}
+
+void board_bsp_deinit()
+{
+    __set_PRIMASK(1);
+
+    board_rng_deinit();
+    board_crc_deinit();
+    board_subghz_deinit();
+
+    __HAL_RCC_GPIOA_CLK_DISABLE();
+    __HAL_RCC_GPIOB_CLK_DISABLE();
+
+    __HAL_RCC_USART1_CLK_DISABLE();
+    __HAL_RCC_USART2_CLK_DISABLE();
+
+    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_9|GPIO_PIN_10);
+    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_2|GPIO_PIN_3);
+
+    HAL_DMA_DeInit(&com1_dev.com.hdmatx);
+    HAL_DMA_DeInit(&com1_dev.com.hdmarx);
+
+    HAL_DMA_DeInit(&com2_dev.com.hdmatx);
+    HAL_DMA_DeInit(&com2_dev.com.hdmarx);
+
+    HAL_NVIC_DisableIRQ(USART1_IRQn);
+    HAL_NVIC_DisableIRQ(USART2_IRQn);
+
+    HAL_DeInit();
+
+    __set_PRIMASK(0); 
 }
 
 void board_debug()

@@ -79,6 +79,7 @@ void board_reboot();
 void board_init();
 
 void board_bsp_init();
+void board_bsp_deinit();
 
 /*-------------- board bsp interface --------------*/
 void board_rtc_setup();

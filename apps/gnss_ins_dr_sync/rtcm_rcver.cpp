@@ -3,6 +3,7 @@
 
 static rtcm_t rtk_rover = {0};
 static rtcm_t rtk_base = {0};
+static struct timeval vt_debug;
 int rtcm_rover_process(uint8_t c, uint8_t *rp, uint16_t *rlen)
 {
     int rf = 0;
@@ -24,16 +25,16 @@ int rtcm_rover_process(uint8_t c, uint8_t *rp, uint16_t *rlen)
             }
 
             if (rt == 21) {
-                struct timeval vt;
+
+                // board_rtc_get_timeval(&vt_debug);
 
                 printf("[%d] EPVT quality:%d, sat:%d, satv:%d, id:%d, tow:%d, now:%d.%03d\r\n", 
                     HAL_GetTick(), 
                     msg->st.quality, msg->st.sat_use, msg->st.sat_view, msg->st.time_id,
                     msg->st.epoch_time, (uint32_t)msg->st.now.time, (int)msg->st.now.sec);
 
-                printf("timestamp compare: %u, %u\r\n",
-                    (uint32_t)board_rtc_get_timeval(&vt),
-                    (uint32_t)msg->st.now.time);
+                // printf("timestamp compare: %u, %u\r\n", (uint32_t)vt_debug.tv_sec,
+                //     (uint32_t)msg->st.now.time);
 
                 if (msg->bds_time_sync == SYS_CMP) {
                     printf("bds now: %u \r\n", (uint32_t)msg->bds_now);

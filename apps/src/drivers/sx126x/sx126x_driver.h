@@ -1,6 +1,11 @@
 #ifndef SX126X_DRIVER_H
 #define SX126X_DRIVER_H
 
+/**
+ * SubGHz Module from Lierda FL22-C8
+ * url: https://alidocs.dingtalk.com/i/nodes/dxXB52LJqnGE6GN4caZ2QLyK8qjMp697?utm_scene=team_space
+ */
+
 #include <stdint.h>
 // #include <math.h>
 #include "sx126x_hal.h"

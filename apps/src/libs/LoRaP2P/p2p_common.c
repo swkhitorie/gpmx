@@ -96,7 +96,7 @@ void p2p_setup(struct __p2p_obj *obj,
         "US915",
         "CN470",
     };
-    switch (region) {
+    switch (obj->_region) {
     case LORA_REGION_EU868:
         region_eu868_init_default(&obj->_ch_grp);
         break;
@@ -383,4 +383,35 @@ void p2p_antenna_switch_judge(struct __p2p_obj *obj, int16_t rssi)
         }
         obj->_fant(obj->ant_now);
     }
+}
+
+void p2p_set_cmdtype(struct __p2p_obj *obj, uint8_t cmdtype)
+{
+    obj->_cmd_type = cmdtype;
+}
+
+void p2p_set_devtype(struct __p2p_obj *obj, uint8_t devtype)
+{
+    obj->_dev_type = devtype;
+}
+
+uint8_t p2p_get_cmdtype(struct __p2p_obj *obj)
+{
+    return obj->_cmd_type;
+}
+
+uint8_t p2p_get_devtype(struct __p2p_obj *obj)
+{
+    return obj->_dev_type;
+}
+
+uint32_t p2p_get_cmdseq(struct __p2p_obj *obj)
+{
+    return obj->_cmd_seq;
+}
+
+void p2p_config_ack_timeout_set(struct __p2p_obj *obj, uint8_t enable, uint32_t timeout)
+{
+    obj->_cmd_ack_timeout_enable = enable;
+    obj->_cmd_ack_timeout = timeout;
 }

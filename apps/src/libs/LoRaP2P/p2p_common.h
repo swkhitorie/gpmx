@@ -205,6 +205,14 @@ struct __p2p_obj {
     struct __prbuf     _prbuf;
     struct __p2p_proto _proto;
 
+    uint8_t _dev_type;
+    uint8_t _cmd_type;
+    uint32_t _cmd_seq;
+
+    uint8_t _cmd_ack_timeout_enable;
+    uint32_t _cmd_ack_timestamp;
+    uint32_t _cmd_ack_timeout;
+
     /* Radio Antenna Array Selection */
     uint8_t ant_now;
     uint8_t ant_idx;
@@ -291,6 +299,16 @@ void fcl_sndbytes(struct __p2p_obj *obj);
 void p2p_power_adjust(struct __p2p_obj *obj, int16_t rssi, int8_t snr);
 
 void p2p_antenna_switch_judge(struct __p2p_obj *obj, int16_t rssi);
+
+void p2p_set_cmdtype(struct __p2p_obj *obj, uint8_t cmdtype);
+void p2p_set_devtype(struct __p2p_obj *obj, uint8_t devtype);
+
+uint8_t p2p_get_cmdtype(struct __p2p_obj *obj);
+uint8_t p2p_get_devtype(struct __p2p_obj *obj);
+
+uint32_t p2p_get_cmdseq(struct __p2p_obj *obj);
+
+void p2p_config_ack_timeout_set(struct __p2p_obj *obj, uint8_t enable, uint32_t timeout);
 
 #ifdef __cplusplus
 }

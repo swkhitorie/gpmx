@@ -67,11 +67,29 @@ void board_reboot()
 
 void board_init()
 {
-    //SCB->VTOR = APP_LOAD_ADDRESS;
+    SCB->VTOR = APP_LOAD_ADDRESS;
 
     //board_irq_reset();
 
     HAL_Init();
 
     board_config_power_rcc();
+}
+
+void board_deinit()
+{
+    __set_PRIMASK(1); 
+
+    HAL_RCC_DeInit();
+
+    SysTick->CTRL = 0;
+    SysTick->LOAD = 0;
+    SysTick->VAL = 0;
+
+    for (i = 0; i < 8; i++) {
+        NVIC->ICER[i]=0xFFFFFFFF;
+        NVIC->ICPR[i]=0xFFFFFFFF;
+    }	
+
+    __set_PRIMASK(0);
 }

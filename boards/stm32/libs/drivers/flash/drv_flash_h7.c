@@ -182,12 +182,15 @@ static uint8_t low_flash_write_word(uint32_t faddr, uint32_t *pdata)
 	return res;
 }
 
-int stm32_flash_write(uint32_t WriteAddr, const uint32_t *pBuffer, uint32_t NumToWrite)
+int stm32_flash_write(uint32_t addr, const uint8_t *buf, size_t size)
 {
 	uint8_t res = 0;
 	uint8_t status = 0;
 	uint32_t addrx = 0;
-	uint32_t endaddr = 0;	
+	uint32_t endaddr = 0;
+	const uint32_t *pBuffer = (const uint32_t *)buf;
+	uint32_t NumToWrite = size;
+
     if (WriteAddr < STM32_FLASH_BASE_ADDR || WriteAddr % 32)
 		return 0xFF;
 	low_flash_unlock();
@@ -222,13 +225,16 @@ int stm32_flash_write(uint32_t WriteAddr, const uint32_t *pBuffer, uint32_t NumT
 	return res;
 }
 
-void stm32_flash_read(uint32_t ReadAddr, uint32_t *pBuffer, uint32_t NumToRead)
+int stm32_flash_read(uint32_t addr, uint8_t *buf, size_t size)
 {
 	uint32_t i;
-	for (i = 0; i < NumToRead; i++) {
-		pBuffer[i] = low_flash_read_word(ReadAddr);
-		ReadAddr += 4;
+	uint32_t *pBuffer = (uint32_t *)buf;
+	for (i = 0; i < size; i++) {
+		pBuffer[i] = low_flash_read_word(addr);
+		addr += 4;
 	}
+
+	return 0;
 }
 
 uint32_t stm32_flash_readword(uint32_t addr)

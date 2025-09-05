@@ -20,6 +20,12 @@ void board_rng_init()
     }
 }
 
+void board_rng_deinit()
+{
+    __HAL_RCC_RNG_CLK_DISABLE();
+    HAL_RNG_DeInit(&hrng);
+}
+
 uint32_t board_rng_get()
 {
     uint32_t rng_val;

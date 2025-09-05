@@ -9,7 +9,10 @@
 #include <stdbool.h>
 #include <device/serial.h>
 
+#ifndef APP_LOAD_ADDRESS
 #define APP_LOAD_ADDRESS      (0x08000000)
+#endif
+
 #define LSE_VALUE             (32768UL)
 #define __FPU_USED            1
 #define __FPU_PRESENT         1    /* need change __FPU_PRESENT macro in stm32wl55xx.h into 1UL */
@@ -23,7 +26,9 @@
 
 #define RADIO_BOARD_TRANSMITTER  1
 #define RADIO_BOARD_RECEIVER     2
-#define RADIO_BOARD_ROLE         RADIO_BOARD_RECEIVER
+#ifndef RADIO_BOARD_ROLE
+#define RADIO_BOARD_ROLE         RADIO_BOARD_TRANSMITTER
+#endif
 
 #define BOARD_DEBUG(...) do {\
     printf("[%d.%03d] ", HAL_GetTick()/1000, HAL_GetTick()%1000); \
@@ -45,14 +50,19 @@ void board_irq_reset();
 void board_reboot();
 
 void board_init();
+void board_deinit();
 
 void board_bsp_init();
+void board_bsp_deinit();
 
 void board_rng_init();
+void borad_rng_deinit();
 
 void board_crc_init();
+void board_crc_deinit();
 
 void board_subghz_init();
+void board_subghz_deinit();
 
 /*-------------- board bsp interface --------------*/
 

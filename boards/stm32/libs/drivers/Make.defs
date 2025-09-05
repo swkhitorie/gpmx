@@ -30,9 +30,15 @@ endif
 
 ifeq ($(BSP_LIBCONFIG_STM32_HAL_FLASH),y)
 LIBDRV_CINCDIRS += flash
+
 ifeq (${BSP_LIBCONFIG_STM32_SERIES},BSP_STM32_H7)
 LIBDRV_CSRCS += flash/drv_flash_h7.c
 endif
+
+ifeq (${BSP_LIBCONFIG_STM32_SERIES},BSP_STM32_WL)
+LIBDRV_CSRCS += flash/drv_flash_wl.c
+endif
+
 endif
 
 ifeq ($(BSP_LIBCONFIG_STM32_HAL_ETH_LEGACY),y)

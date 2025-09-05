@@ -21,7 +21,7 @@ struct __gnss_pps_timesync {
     uint8_t __pad[2];
 };
 
-static struct __gnss_pps_timesync sync_pps = {
+static volatile struct __gnss_pps_timesync sync_pps = {
     .pps_cnt = 0,
     .pps_stable_cnt = 3,
     .pps_time = 0,
@@ -41,12 +41,13 @@ void hrt_pps_calib_callback()
 
 void gnss_time_debug()
 {
-    struct tm now_t1;
-    board_rtc_get_tm(&now_t1);
-    printf("%02d:%02d:%02d.%03d\r\n",
-        now_t1.tm_hour+8, now_t1.tm_min, now_t1.tm_sec,
-        (hrt_absolute_time()%1000000)/1000);
-    printf("pps delay: %d\r\n", sync_pps.err_pps_msg_delay);
+    // struct tm now_t1;
+    // board_rtc_get_tm(&now_t1);
+    // printf("%02d:%02d:%02d.%03d\r\n",
+    //     now_t1.tm_hour+8, now_t1.tm_min, now_t1.tm_sec,
+    //     (hrt_absolute_time()%1000000)/1000);
+
+    printf("pps delay: %d, calib: %d\r\n", sync_pps.err_pps_msg_delay, sync_pps.hrt_rtc_calib_flag);
 }
 
 void gnss_time_debug2(time_t t1)
@@ -102,21 +103,24 @@ void gnss_timestamp_get_start_calib(time_t gnss_msg_utc_time)
     }
 }
 
-void gnss_hrt_timestamp_get(gnss_time_t *now_time)
+void gnss_hrt_timestamp_get(struct timeval *now)
 {
-    struct timeval tv;
-    time_t timestamp = board_rtc_get_timeval(&tv);
-    now_time->now = timestamp;
+    int32_t subsec = 0;
+    time_t time_now = board_rtc_get_timeval(now);
+    now->tv_sec = time_now;
 
-
-    now_time->subsec = hrt_absolute_time()%1000000;
-}
-
-uint32_t gnss_subsec_get(struct timeval *tv)
-{
-    if (sync_pps.hrt_rtc_calib_flag) {
-        return hrt_absolute_time()%1000000;
+    if (!sync_pps.hrt_rtc_calib_flag) {
+        return;
     }
 
-    return tv->tv_usec;
+    subsec = (int32_t)(hrt_absolute_time()%1000000);
+
+    if (subsec - (int32_t)now->tv_usec < 0) {
+        // hrt time overflow, but rtc not yet
+        now->tv_sec += 1;
+        printf("hrt time overflow: %d, %d \r\n", subsec, now->tv_usec);
+    }
+
+    now->tv_usec = subsec;
 }
+
