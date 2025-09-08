@@ -190,6 +190,7 @@ int stm32_flash_write(uint32_t addr, const uint8_t *buf, size_t size)
 	uint32_t endaddr = 0;
 	const uint32_t *pBuffer = (const uint32_t *)buf;
 	uint32_t NumToWrite = size;
+    uint32_t WriteAddr = addr;
 
     if (WriteAddr < STM32_FLASH_BASE_ADDR || WriteAddr % 32)
 		return 0xFF;

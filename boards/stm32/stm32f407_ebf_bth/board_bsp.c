@@ -209,6 +209,7 @@ void board_bsp_init()
     LOW_INITPIN(GPIOF, 6, IOMODE_OUTPP, IO_NOPULL, IO_SPEEDHIGH);
     LOW_INITPIN(GPIOF, 7, IOMODE_OUTPP, IO_NOPULL, IO_SPEEDHIGH);
     LOW_INITPIN(GPIOF, 8, IOMODE_OUTPP, IO_NOPULL, IO_SPEEDHIGH);
+    LOW_INITPIN(GPIOC, 3, IOMODE_OUTPP, IO_NOPULL, IO_SPEEDHIGH);
 
     /** SPI CS */
     LOW_INITPIN(GPIOG, 6, IOMODE_OUTPP, IO_PULLUP, IO_SPEEDHIGH);
@@ -218,6 +219,7 @@ void board_bsp_init()
     LOW_IOSET(GPIOF, 6, 1);
     LOW_IOSET(GPIOF, 7, 1);
     LOW_IOSET(GPIOF, 8, 1);
+    LOW_IOSET(GPIOC, 3, 1);
 
     serial_register(&com1_dev.dev, 1);
     serial_register(&com2_dev.dev, 2);
@@ -250,37 +252,6 @@ void board_bsp_init()
 void board_debug()
 {
     board_led_toggle(1);
-
-    // struct can_msg_s msg_test;
-    // memset(&msg_test, 0, sizeof(struct can_msg_s));
-    // msg_test.cm_hdr.ch_dlc = 8;
-    // msg_test.cm_hdr.ch_id = 0x11;
-    // for (int i = 0; i < 8; i++) {
-    //     msg_test.cm_data[i] = 40+i;
-    // }
-
-    // can2_dev.dev.cd_ops->co_send(&can2_dev.dev, &msg_test);
-
-    // printf("send msg\r\n");
-
-    // struct can_msg_s aamsg;
-    // if (can_rxfifo_get(&can2_dev.dev.cd_rxfifo, &aamsg) == DTRUE) {
-    //     printf("rcv dlc:%d, rtr/dtr:%d, std/ext:%d, id:%x ",
-    //         aamsg.cm_hdr.ch_dlc, aamsg.cm_hdr.ch_rtr, aamsg.cm_hdr.ch_extid,
-    //         aamsg.cm_hdr.ch_id);
-    //     for (int i = 0; i < 8; i++) {
-    //         printf("%x ", aamsg.cm_data[i]);
-    //     }
-    //     printf("\r\n");
-    // }
-
-    // struct tm now;
-    // stm32_rtc_get_tm(&now);
-
-    // printf("%d-%02d-%02d %02d:%02d:%02d \r\n",
-    //     now.tm_year+1900, now.tm_mon+1, now.tm_mday, 
-    //     now.tm_hour+8, now.tm_min, now.tm_sec);
-
 }
 
 void board_led_toggle(uint8_t idx)
@@ -304,6 +275,10 @@ void board_led_toggle(uint8_t idx)
         LOW_IOSET(GPIOF, 8, !val);
         LOW_IOSET(GPIOF, 6, 1);
         LOW_IOSET(GPIOF, 7, 1);
+        break;
+    case 3:
+        val = LOW_IOGET(GPIOC, 3);
+        LOW_IOSET(GPIOC, 3, !val);
         break;
     }
 }

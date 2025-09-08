@@ -64,7 +64,8 @@ void gnss_pps_irq(void *p)
 {
     pps_pulse_irq();
 
-    printf("[%lu] pps pulse come\r\n", HAL_GetTick());
+    board_led_toggle(3);
+    // printf("[%lu] pps pulse come\r\n", HAL_GetTick());
 }
 
 SCH1_raw_data       SCH1_data;
