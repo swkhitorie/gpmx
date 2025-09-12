@@ -155,13 +155,12 @@ time_t stm32_rtc_get_timeval(struct timeval *tv)
 #ifdef RT_ALARM_USING_LOCAL_TIME
     tv->tv_sec = mktime(&tm_new);
 #else
-    tv->tv_sec = mktime(&tm_new); //timegm(&tm_new);
+    tv->tv_sec = mktime(&tm_new);
 #endif
 
-//#if defined(DRV_BSP_H7)
-    // tv->tv_usec = (255.0 - stm32_rtc_get_subsecond() * 1.0) / 256.0 * 1000.0 * 1000.0;
+#if defined(DRV_BSP_H7) || defined(DRV_BSP_F4) || defined(DRV_BSP_WL)
     tv->tv_usec = (255.0 - RTC_TimeStruct.SubSeconds * 1.0) / 256.0 * 1000.0 * 1000.0;
-//#endif
+#endif
 
     return tv->tv_sec;
 }

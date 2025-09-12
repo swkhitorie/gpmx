@@ -1,4 +1,6 @@
 
+PROJ_CINCDIRS += kernel/rt_nano/include
+
 ifeq (${MK_CHIP_ARCH},m7)
 RT_PLATFORM := cortex-m7
 else ifeq (${MK_CHIP_ARCH},m4)

@@ -84,6 +84,7 @@ void board_bsp_init();
 void board_debug();
 
 void board_led_toggle(uint8_t idx);
+void board_led_handle(uint8_t idx, bool handle);
 
 time_t board_rtc_get_timeval(struct timeval *tv);
 
@@ -96,12 +97,6 @@ extern void gnss_pps_irq(void *p);
 #ifdef __cplusplus
 }
 #endif
-
-
-
-
-
-
 
 
 

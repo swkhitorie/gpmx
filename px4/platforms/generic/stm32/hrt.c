@@ -47,8 +47,9 @@
 #include "FreeRTOS.h"
 #include "portmacro.h"
 #else
-#define portSET_INTERRUPT_MASK_FROM_ISR()		0
-#define portCLEAR_INTERRUPT_MASK_FROM_ISR(x)
+#include <board_config.h>
+#define portSET_INTERRUPT_MASK_FROM_ISR()		(0); __disable_irq()
+#define portCLEAR_INTERRUPT_MASK_FROM_ISR(x)    __enable_irq()
 typedef uint32_t UBaseType_t;
 #endif
 
@@ -241,6 +242,17 @@ static void		hrt_call_invoke(void);
 # define CCMR2_PPM	0
 # define CCER_PPM	0
 
+/*
+ * use by hrt_absolute_time()
+ *
+ * Counter state.  Marked volatile as they may change
+ * inside this routine but outside the irqsave/restore
+ * pair.  Discourage the compiler from moving loads/stores
+ * to these outside of the protected range.
+ */
+static volatile hrt_abstime base_time = 0;
+static volatile uint32_t last_count = 0;
+
 static void hrt_tim_init(void)
 {
 	/* clock/power on our timer */
@@ -274,6 +286,12 @@ static void hrt_tim_init(void)
 
 	/* enable interrupts */
 	up_enable_irq(HRT_TIMER_VECTOR);
+
+	up_prioritize_irq(HRT_TIMER_VECTOR, 0);
+
+	base_time = 0;
+
+	last_count = 0;
 }
 
 static void hrt_tim_isr()
@@ -312,15 +330,6 @@ hrt_abstime hrt_absolute_time(void)
 	hrt_abstime	abstime;
 	uint32_t	count;
 	UBaseType_t	flags;
-
-	/*
-	 * Counter state.  Marked volatile as they may change
-	 * inside this routine but outside the irqsave/restore
-	 * pair.  Discourage the compiler from moving loads/stores
-	 * to these outside of the protected range.
-	 */
-	static volatile hrt_abstime base_time;
-	static volatile uint32_t last_count;
 
 	/* prevent re-entry */
 	flags = portSET_INTERRUPT_MASK_FROM_ISR();

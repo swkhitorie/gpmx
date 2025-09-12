@@ -49,29 +49,31 @@ PROJ_CDEFS += LWIP_ETHERNET_DEFAULT_MASK=\"255.255.255.0\"
 PROJ_CDEFS += UP_UDP_IP=\"192.168.1.130\"
 PROJ_CDEFS += UP_UDP_PORT=6001
 
+# PROJ_CDEFS += CONFIG_SPI_IMU_SCH1633
+PROJ_CDEFS += CONFIG_SPI_IMU_ASM330LHH
+
 # PROJ_CDEFS += UP_UDP_IP=\"192.168.75.128\"
 # PROJ_CDEFS += UP_UDP_PORT=5001
 
 PROJ_CINCDIRS += ${APP_PROJ_DIR}
 
-CSOURCES += ${APP_PROJ_DIR}/ringbuffer.c
-
 CPPSOURCES += ${APP_PROJ_DIR}/app_main.cpp
 CPPSOURCES += ${APP_PROJ_DIR}/gnss_pps_sync.cpp
 CPPSOURCES += ${APP_PROJ_DIR}/rtcm_rcver.cpp
-CPPSOURCES += ${APP_PROJ_DIR}/udp_echo.cpp
 CPPSOURCES += ${APP_PROJ_DIR}/udp_transfer.cpp
 CPPSOURCES += ${APP_PROJ_DIR}/canspeed_obd.cpp
 CPPSOURCES += ${APP_PROJ_DIR}/sens_sync_proto.cpp
 
 PROJ_CINCDIRS += apps/src/libs/rtklib
-PROJ_CINCDIRS += apps/src/drivers/mpu6050
-PROJ_CINCDIRS += apps/src/drivers/sch1633
+PROJ_CINCDIRS += apps/src/drivers/imu/mpu6050
+PROJ_CINCDIRS += apps/src/drivers/imu/sch1633
+PROJ_CINCDIRS += apps/src/drivers/imu/asm330l
 
 CPPSOURCES += apps/src/libs/rtklib/rtcm3.cpp
 CPPSOURCES += apps/src/libs/rtklib/rtcm3_st.cpp
 CPPSOURCES += apps/src/libs/rtklib/rtkcmn.cpp
-CPPSOURCES += apps/src/drivers/mpu6050/mpu6050.cpp
-CPPSOURCES += apps/src/drivers/sch1633/sch1633.cpp
-CPPSOURCES += apps/src/drivers/sch1633/sch1633_hw.cpp
+CPPSOURCES += apps/src/drivers/imu/mpu6050/mpu6050.cpp
+CPPSOURCES += apps/src/drivers/imu/sch1633/sch1633.cpp
+CPPSOURCES += apps/src/drivers/imu/sch1633/sch1633_hw.cpp
+CSOURCES += apps/src/drivers/imu/asm330l/asm330l.c
 

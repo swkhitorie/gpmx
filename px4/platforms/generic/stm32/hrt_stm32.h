@@ -9,6 +9,7 @@
 
 #define modifyreg32           MODIFY_REG
 #define up_enable_irq         __NVIC_EnableIRQ
+#define up_prioritize_irq     __NVIC_SetPriority
 
 /* event generation register */
 #define GTIM_EGR_UG         (TIM_EGR_UG)

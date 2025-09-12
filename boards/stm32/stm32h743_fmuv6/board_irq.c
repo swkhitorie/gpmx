@@ -73,6 +73,7 @@ void PendSV_Handler(void) {}
 #ifdef CONFIG_BOARD_FREERTOS_ENABLE
 #include <FreeRTOS.h>
 #include <task.h>
+extern void xPortSysTickHandler(void);
 #endif
 void SysTick_Handler(void)
 {

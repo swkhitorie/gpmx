@@ -715,10 +715,20 @@ int up_can_setup(struct can_dev_s *dev)
 
 int up_can_send(struct can_dev_s *dev, struct can_msg_s *msg)
 {
-    int ret = 0;
+    int ret = DTRUE;
 
-    can_tx_wait(dev);
-    _can_sendmsg(dev, msg, 0);
+    if (can_tx_wait(dev) == DTRUE) {
+        ret = _can_sendmsg(dev, msg, 0);
+        if (ret == 0) {
+            ret = DTRUE;
+        } else {
+            can_tx_post(dev);
+            ret = DFALSE;
+        }
+    } else {
+        ret = DFALSE;
+    }
+
     return ret;
 }
 

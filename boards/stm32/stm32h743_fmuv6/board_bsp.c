@@ -7,7 +7,7 @@
 #include <device/i2c_master.h>
 #include <device/spi.h>
 
-#include <drivers/drv_sensor.h>
+// #include <drivers/drv_sensor.h>
 
 /**************
  * GPS1 Serial port

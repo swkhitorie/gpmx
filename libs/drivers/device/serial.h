@@ -24,13 +24,13 @@ struct uart_buffer_s {
     volatile uint16_t out;   /* Index to the tail [OUT] index in the buffer */
     uint16_t          size;
     uint16_t          capacity;
-    char        *buffer;
+    unsigned char     *buffer;
 };
 
 struct uart_dmaxfer_s {
-    char  *buffer;
-    bool   halflag;
-    uint16_t capacity;
+    unsigned char  *buffer;
+    bool           halflag;
+    uint16_t       capacity;
 };
 
 struct uart_dev_s;

@@ -62,7 +62,7 @@ extern uint32_t SystemCoreClock;
 #define configMINIMAL_STACK_SIZE				((unsigned short)130)   /* Idle Task Stack Size, unit in word */
 #define configMAX_TASK_NAME_LEN					(16)                    /* Task NameString Max Len */
 
-#define configGENERATE_RUN_TIME_STATS	        1                       /* 1: Enable Task cpu utilization analyze */
+#define configGENERATE_RUN_TIME_STATS	        0                       /* 1: Enable Task cpu utilization analyze */
 #define configSUPPORT_DYNAMIC_ALLOCATION        1                       /* 1: support dynamic allocation */
 #define configSUPPORT_STATIC_ALLOCATION         1                       /* 1: support static allocation */
 

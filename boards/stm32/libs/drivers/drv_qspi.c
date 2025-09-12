@@ -96,12 +96,12 @@ bool low_pinconfig(struct up_qspi_dev_s *dev)
 	}
 
 	if (illegal != 0) {
-        low_gpio_setup(clk_pin_node->port, clk_pin_node->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, clk_pin_node->alternate, NULL, NULL, 0);
-        low_gpio_setup(io0_pin_node->port, io0_pin_node->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, io0_pin_node->alternate, NULL, NULL, 0);
-        low_gpio_setup(io1_pin_node->port, io1_pin_node->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, io1_pin_node->alternate, NULL, NULL, 0);
-        low_gpio_setup(io2_pin_node->port, io2_pin_node->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, io2_pin_node->alternate, NULL, NULL, 0);
-        low_gpio_setup(io3_pin_node->port, io3_pin_node->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, io3_pin_node->alternate, NULL, NULL, 0);
-        low_gpio_setup(ncs_pin_node->port, ncs_pin_node->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, ncs_pin_node->alternate, NULL, NULL, 0);
+        // low_gpio_setup(clk_pin_node->port, clk_pin_node->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, clk_pin_node->alternate, NULL, NULL, 0);
+        // low_gpio_setup(io0_pin_node->port, io0_pin_node->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, io0_pin_node->alternate, NULL, NULL, 0);
+        // low_gpio_setup(io1_pin_node->port, io1_pin_node->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, io1_pin_node->alternate, NULL, NULL, 0);
+        // low_gpio_setup(io2_pin_node->port, io2_pin_node->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, io2_pin_node->alternate, NULL, NULL, 0);
+        // low_gpio_setup(io3_pin_node->port, io3_pin_node->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, io3_pin_node->alternate, NULL, NULL, 0);
+        // low_gpio_setup(ncs_pin_node->port, ncs_pin_node->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, ncs_pin_node->alternate, NULL, NULL, 0);
 	} else {
 		return false;
 	}

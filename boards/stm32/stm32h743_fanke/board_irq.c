@@ -1,5 +1,7 @@
 #include "board_config.h"
 
+#include <stdio.h>
+
 void NMI_Handler(void) { printf("%s\r\n", __func__); }
 void MemManage_Handler(void) { printf("%s\r\n", __func__); }
 void BusFault_Handler(void) { printf("%s\r\n", __func__); }
@@ -74,6 +76,7 @@ void PendSV_Handler(void) {}
 #ifdef CONFIG_BOARD_FREERTOS_ENABLE
 #include <FreeRTOS.h>
 #include <task.h>
+extern void xPortSysTickHandler(void);
 #endif
 void SysTick_Handler(void)
 {

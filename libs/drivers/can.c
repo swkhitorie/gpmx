@@ -54,7 +54,9 @@ int can_tx_wait(struct can_dev_s *dev)
     xSemaphoreTake(dev->sem_tx, portMAX_DELAY);
 #else
 
-    while (dev->flag_tx != 0x01);
+    if (dev->flag_tx != 0x01) {
+        return DFALSE;
+    }
     dev->flag_tx = 0x00;
 #endif
     return ret;

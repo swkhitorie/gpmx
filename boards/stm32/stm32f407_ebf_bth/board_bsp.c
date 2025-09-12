@@ -158,8 +158,8 @@ struct up_spi_dev_s spi1_dev =
 {
     .dev = {
 		.frequency = SPI_BAUDRATEPRESCALER_32,
-		.mode = SPIDEV_MODE0,
-		.nbits = 16,
+		.mode = SPIDEV_MODE3,
+		.nbits = 8,
         .ops       = &g_spi_ops,
         .priv      = &spi1_dev,
     },
@@ -214,6 +214,10 @@ void board_bsp_init()
     /** SPI CS */
     LOW_INITPIN(GPIOG, 6, IOMODE_OUTPP, IO_PULLUP, IO_SPEEDHIGH);
     LOW_INITPIN(GPIOC, 6, IOMODE_OUTPP, IO_PULLUP, IO_SPEEDHIGH);
+    #if defined(CONFIG_SPI_IMU_ASM330LHH)
+    LOW_IOSET(GPIOC, 6, 0);
+    #endif
+
     LOW_IOSET(GPIOG, 6, 1);
 
     LOW_IOSET(GPIOF, 6, 1);
@@ -244,7 +248,7 @@ void board_bsp_init()
     stm32_rtc_setup();
 
     /** GNSS Module PPS Irq pin */
-    stm32_gpiosetevent(GET_PINHAL(GPIOC, 10), true, false, true, gnss_pps_irq, NULL, 4);
+    stm32_gpiosetevent(GET_PINHAL(GPIOC, 10), true, false, true, gnss_pps_irq, NULL, 0);
 
     hw_stm32_eth_init();
 }
@@ -279,6 +283,31 @@ void board_led_toggle(uint8_t idx)
     case 3:
         val = LOW_IOGET(GPIOC, 3);
         LOW_IOSET(GPIOC, 3, !val);
+        break;
+    }
+}
+
+void board_led_handle(uint8_t idx, bool handle)
+{
+    int val;
+    switch (idx) {
+    case 0:
+        LOW_IOSET(GPIOF, 6, !handle);
+        LOW_IOSET(GPIOF, 7, handle);
+        LOW_IOSET(GPIOF, 8, handle);
+        break;
+    case 1:
+        LOW_IOSET(GPIOF, 7, !handle);
+        LOW_IOSET(GPIOF, 6, handle);
+        LOW_IOSET(GPIOF, 8, handle);
+        break;
+    case 2:
+        LOW_IOSET(GPIOF, 8, !handle);
+        LOW_IOSET(GPIOF, 6, handle);
+        LOW_IOSET(GPIOF, 7, handle);
+        break;
+    case 3:
+        LOW_IOSET(GPIOC, 3, !handle);
         break;
     }
 }

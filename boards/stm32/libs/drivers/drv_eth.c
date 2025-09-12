@@ -160,7 +160,9 @@ int stm32_eth_tx(struct pbuf *p)
     DLOG_D("transmit frame length :%d", framelength);
 
     /* wait for unlocked */
-    while (EthHandle.Lock == HAL_LOCKED);
+    while (EthHandle.Lock == HAL_LOCKED) {
+        DLOG_D("wait eth lock \r\n");
+    }
 
     state = HAL_ETH_TransmitFrame(&EthHandle, framelength);
     if (state != HAL_OK) {

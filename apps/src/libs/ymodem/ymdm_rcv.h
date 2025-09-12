@@ -3,7 +3,9 @@
 
 #include "ymdm_cmn.h"
 
+#ifndef YM_LOG(...)
 #define YM_LOG(...)   printf(__VA_ARGS__)
+#endif
 
 /** block sending */
 typedef void (*itf_ymodem_receiver_sndbyte)(uint8_t c);

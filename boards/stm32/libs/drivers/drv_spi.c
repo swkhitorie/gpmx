@@ -215,7 +215,7 @@ void _spi_dmatx_setup(struct spi_dev_s *dev)
 #if defined (DRV_BSP_H7)
 	DMA_Stream_TypeDef *spi_txdma_stream[DRV_SPI_PERIPHAL_NUM] = {
         DMA1_Stream2, DMA1_Stream3, DMA1_Stream4,
-        DMA1_Stream5, DMA1_Stream6, BDMA_Channel0
+        DMA1_Stream5, DMA1_Stream6, (DMA_Stream_TypeDef *)BDMA_Channel0
     };
 	uint8_t spi_txdma_request[DRV_SPI_PERIPHAL_NUM] = {
         DMA_REQUEST_SPI1_TX, DMA_REQUEST_SPI2_TX, 
@@ -292,7 +292,7 @@ void _spi_dmarx_setup(struct spi_dev_s *dev)
 #if defined (DRV_BSP_H7)
 	DMA_Stream_TypeDef *spi_rxdma_stream[DRV_SPI_PERIPHAL_NUM] = {
         DMA2_Stream2, DMA2_Stream3, DMA2_Stream4,
-        DMA2_Stream5, DMA2_Stream6, BDMA_Channel1
+        DMA2_Stream5, DMA2_Stream6, (DMA_Stream_TypeDef *)BDMA_Channel1
     };
 	uint8_t spi_rxdma_request[DRV_SPI_PERIPHAL_NUM] = {
         DMA_REQUEST_SPI1_RX, DMA_REQUEST_SPI2_RX, 

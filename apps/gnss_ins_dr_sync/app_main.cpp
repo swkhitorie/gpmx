@@ -8,18 +8,19 @@
 
 #include "mpu6050.h"
 #include "sch1633.h"
+#include "asm330l.h"
 
 #include "gnss_pps_sync.h"
 #include "rtcm_rcver.h"
 
 #include "canspeed_obd.h"
 
-#include "udp_echo.h"
 #include "udp_transfer.h"
 #include "lwip/timeouts.h"
 
 #include "sens_sync_proto.h"
-#include "ringbuffer.h"
+
+uint32_t run_tag = 0;
 
 #ifndef UP_UDP_IP
 #define UP_UDP_IP "192.168.75.34"
@@ -30,7 +31,6 @@
 #endif
 
 __attribute__((section(".ccmram"))) struct __sens_sync_proto sens_sync;
-__attribute__((section(".ccmram"))) struct __prbuf rbuffer;
 __attribute__((section(".ccmram"))) static uint8_t rmem[1024*2];
 
 static uart_dev_t *rtk_rover_port;
@@ -65,9 +65,9 @@ void gnss_pps_irq(void *p)
     pps_pulse_irq();
 
     board_led_toggle(3);
-    // printf("[%lu] pps pulse come\r\n", HAL_GetTick());
 }
 
+#if defined(CONFIG_SPI_IMU_SCH1633)
 SCH1_raw_data       SCH1_data;
 SCH1_filter         SCH1_Filter;
 SCH1_sensitivity    SCH1_Sensitivity;
@@ -113,6 +113,10 @@ void imu_init()
     strcpy(serial_num, SCH1_getSnbr());
     printf("[IMU] SCH1633 Serial number: %s\r\n\r\n", serial_num);
 }
+#endif
+#if defined(CONFIG_SPI_IMU_ASM330LHH)
+float ins[6];
+#endif
 
 struct timeval tv;
 int main(int argc, char *argv[])
@@ -125,7 +129,15 @@ int main(int argc, char *argv[])
     rtk_base_port = serial_bus_get(2);
     rtk_rover_port = serial_bus_get(3);
 
+#if defined(CONFIG_SPI_IMU_SCH1633)
     imu_init();
+#elif defined(CONFIG_SPI_IMU_ASM330LHH)
+    int rq1 = asm330l_init(1);
+    if (rq1 != 0) {
+        printf("asm330l init failed \r\n");
+        while(1){}
+    }
+#endif
 
     obd_bus_init();
 
@@ -138,47 +150,54 @@ int main(int argc, char *argv[])
     uint32_t m1 = HAL_GetTick();
     uint32_t m2 = HAL_GetTick();
     uint32_t m3 = HAL_GetTick();
-
-    prb_reset(&rbuffer);
-
-    printf("gnss_ins_dr_sync start \r\n");
+    uint32_t m4 = HAL_GetTick();
 
     for (;;) {
 
         udp_request();
 
+        run_tag = 0x0001;
         /** Rover Handle */
         int sz = SERIAL_RDBUF(rtk_rover_port, &rtk_rover_c, 1);
         if (sz > 0) {
+            run_tag = 0x0002;
             if (rtcm_rover_process(rtk_rover_c, buff_rover, &buff_roverlen) == 1) {
+                run_tag = 0x0003;
                 int rover_len = sens_sync_encode_rover(&sens_sync, (const uint8_t *)&buff_rover[0], buff_roverlen);
+                run_tag = 0x0004;
                 udp_transfer_raw_control(sens_sync.buff, rover_len);
-                // prb_write(&rbuffer, sens_sync.buff, rover_len);
+                run_tag = 0x0005;
                 memset(sens_sync.buff, 0, 1024*5);
-
             }
         }
 
+        run_tag = 0x0011;
         /** Base Handle */
         int sz2 = SERIAL_RDBUF(rtk_base_port, &rtk_base_c, 1);
         if (sz2 > 0) {
+            run_tag = 0x0012;
             if (rtcm_base_process(rtk_base_c, buff_base, &buff_baselen) == 1) {
+                run_tag = 0x0013;
                 int base_len = sens_sync_encode_base(&sens_sync, (const uint8_t *)&buff_base[0], buff_baselen);
+                run_tag = 0x0014;
                 udp_transfer_raw_control(sens_sync.buff, base_len);
-                // prb_write(&rbuffer, sens_sync.buff, base_len);
+                run_tag = 0x0015;
                 memset(sens_sync.buff, 0, 1024*5);
-
             }
         }
 
+        run_tag = 0x0021;
         if (HAL_GetTick() - m2 >= 2) {
             m2 = HAL_GetTick();
-
+#if defined(CONFIG_SPI_IMU_SCH1633)
+            run_tag = 0x0022;
             SCH1_getData(&SCH1_data);
             SCH1_convert_data(&SCH1_data, &SCH1_ret_data);
             SCH1_getStatus(&SCH1_Status);
 
-            gnss_hrt_timestamp_get(&tv);
+            run_tag = 0x0023;
+            gnsspps_timestamp(&tv);
+            run_tag = 0x0024;
             time_t timestamp = tv.tv_sec;
             uint32_t subsec = tv.tv_usec;
             imu_seq++;
@@ -193,23 +212,47 @@ int main(int argc, char *argv[])
                 SCH1_ret_data.Rate1[AXIS_Y],
                 SCH1_ret_data.Rate1[AXIS_Z],
                 imu_seq);
+#endif
 
-            // prb_write(&rbuffer, sens_sync.buff, imu_len);
+#if defined(CONFIG_SPI_IMU_ASM330LHH)
+            run_tag = 0x0022;
+            asm330l_read(&ins[0]);
+
+            run_tag = 0x0023;
+            gnsspps_timestamp(&tv);
+            run_tag = 0x0024;
+            time_t timestamp = tv.tv_sec;
+            uint32_t subsec = tv.tv_usec;
+            imu_seq++;
+            int imu_len = sens_sync_encode_imu(&sens_sync, 
+                timestamp, 
+                subsec,
+                SENS_IMU_ID_SCH1633,
+                ins[0],
+                ins[1],
+                ins[2],
+                ins[3]*3.1415926f/180.0f,
+                ins[4]*3.1415926f/180.0f,
+                ins[5]*3.1415926f/180.0f,
+                imu_seq);
+#endif
+            run_tag = 0x0025;
             udp_transfer_raw_control(sens_sync.buff, imu_len);
 
+            run_tag = 0x0026;
             memset(sens_sync.buff, 0, 1024*5);
-
-            // int m7 = HAL_GetTick();
-            // printf("imu debug tag: %d %d\r\n",(uint32_t)m2, m7-m2);
         }
 
         if (HAL_GetTick() - m3 >= 20) {
             m3 = HAL_GetTick();
+            run_tag = 0x0030;
             obd_request_speed();
             obd_rx_speed_detect();
             speed_obd = obd_read_speed();
 
-            gnss_hrt_timestamp_get(&tv);
+            run_tag = 0x0031;
+            gnsspps_timestamp(&tv);
+            run_tag = 0x0032;
             time_t timestamp = tv.tv_sec;
             uint32_t subsec = tv.tv_usec;
             spd_seq++;
@@ -219,26 +262,24 @@ int main(int argc, char *argv[])
                 speed_obd,
                 spd_seq);
 
-            // prb_write(&rbuffer, sens_sync.buff, spd_len);
+            run_tag = 0x0033;
             udp_transfer_raw_control(sens_sync.buff, spd_len);
 
+            run_tag = 0x0034;
             memset(sens_sync.buff, 0, 1024*5);
         }
 
         if (HAL_GetTick() - m1 >= 500) {
             m1 = HAL_GetTick();
-            printf("[led] flash\r\n");
             board_led_toggle(1);
 
+            run_tag = 0x0040;
             // lwip timeout task core
             sys_check_timeouts();
+            run_tag = 0x0050;
         }
 
-        // rbuf_sz = prb_read(&rbuffer, rmem, 2*1024);
-        // if (rbuf_sz > 0) {
-        //     // printf("[udb rb] snd\r\n");
-        //     udp_transfer_raw_control(rmem, rbuf_sz);
-        // }
+        gnsspps_recalib();
 
     }
 }

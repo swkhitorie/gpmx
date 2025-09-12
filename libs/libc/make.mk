@@ -6,6 +6,8 @@ endif
 ifeq (${MK_RTOS},frtos)
 
 ifeq (${MK_USE_POSIX},y)
+PROJ_CINCDIRS += libs/libc/_inc
+
 CSOURCES += libs/libc/queue/dq_addafter.c
 CSOURCES += libs/libc/queue/dq_addbefore.c
 CSOURCES += libs/libc/queue/dq_addfirst.c

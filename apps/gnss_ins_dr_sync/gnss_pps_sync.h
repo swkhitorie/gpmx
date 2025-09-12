@@ -8,16 +8,17 @@
 extern "C" {
 #endif
 
-void pps_pulse_irq(void);
+void pps_pulse_irq();
 
-void gnss_first_msg_handle(void);
+void gnsspps_reset();
+void gnsspps_afterpps_fstmsg();
+void gnsspps_calibhrt_timestamp(time_t now);
+void gnsspps_timestamp(struct timeval *now);
+void gnsspps_recalib();
 
-/**
- * @param gnss_msg_utc_time: utc time, units in sec
- */
-void gnss_timestamp_get_start_calib(time_t gnss_msg_utc_time);
+uint32_t gnss_get_dbg1();
 
-void gnss_hrt_timestamp_get(struct timeval *now);
+uint32_t gnss_get_dbg2();
 
 #ifdef __cplusplus
 }

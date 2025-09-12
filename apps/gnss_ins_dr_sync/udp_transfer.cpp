@@ -1,5 +1,5 @@
 #include "udp_transfer.h"
-
+#include "app_main.h"
 #include <stdio.h>	
 #include <string.h>	
 
@@ -11,19 +11,19 @@ static uint32_t request_tick = 0;
 
 static void udp_empty_callback(void *arg, struct udp_pcb *upcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
 {
-    pbuf_free(p);
-
     if (!strcmp((const char *)p->payload, "READY")) {
         printf("[eth] success to link \r\n");
         is_bind_target = true;
     } else {
         printf("[eth] ready msg error \r\n");
     }
+
+    pbuf_free(p);
 }
 
 void udp_set_target_ip_port(ip_addr_t addr, uint16_t port)
 {
-    // is_bind_target = true;
+    is_bind_target = true;
     target_port = port;
     memcpy(&target_ip, &addr, sizeof(ip_addr_t));
 
@@ -57,7 +57,6 @@ void udp_request()
     }
 }
 
-
 int udp_transfer_raw_control(const uint8_t *p, uint16_t len)
 {
     int ret = 0;
@@ -78,8 +77,11 @@ int udp_transfer_raw_control(const uint8_t *p, uint16_t len)
     memset(q->payload, 0 , q->len);
     memcpy(q->payload, p, len);
 
+    run_tag = 0x1000;
     udp_sendto(udp_tpcb, q, &target_ip, target_port);
+    run_tag = 0x1001;
     pbuf_free(q);
+    run_tag = 0x1002;
 
     return ret;
 }

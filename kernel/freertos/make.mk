@@ -1,4 +1,6 @@
 
+PROJ_CINCDIRS += kernel/freertos/include
+
 ifeq (${MOD_ARCH},m7)
 FR_PLATFORM := cortex_m7
 else ifeq (${MOD_ARCH},m4)
@@ -30,5 +32,3 @@ CSOURCES += kernel/freertos/queue.c
 CSOURCES += kernel/freertos/stream_buffer.c
 CSOURCES += kernel/freertos/tasks.c
 CSOURCES += kernel/freertos/timers.c
-
-CSOURCES += kernel/freertos/fr_hook.c

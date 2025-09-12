@@ -5,7 +5,7 @@
 #ifdef DEBUG_SPI_BUS
 #include <device/spi.h>
 #endif
-
+#include "dev_cdc_acm.h"
 /* COM1 */
 uint8_t com1_dma_rxbuff[4096];
 uint8_t com1_dma_txbuff[256];
@@ -155,17 +155,17 @@ void board_debug()
 
 void board_rtc_setup()
 {
-    low_rtc_setup();
+    //low_rtc_setup();
 }
 
 time_t board_rtc_get_timestamp(struct timeval *now)
 {
-    return low_rtc_get_timeval(now);
+    return 0;//low_rtc_get_timeval(now);
 }
 
 bool board_rtc_set_timestamp(time_t now)
 {
-    return low_rtc_set_time_stamp(now);
+    return 0;//low_rtc_set_time_stamp(now);
 }
 
 #ifdef CONFIG_BOARD_COM_STDINOUT
@@ -239,3 +239,48 @@ hrt_abstime hrt_absolute_time(void)
     return (m * 1000 + ((tms - v) * 1000) / tms);
 }
 #endif
+
+
+
+
+
+
+
+
+
+
+#ifdef CONFIG_FR_IDLE_TIMER_TASKCREATE_HANDLE
+#include "FreeRTOS.h"
+#include "task.h"
+StackType_t xTaskIdle_stack[configMINIMAL_STACK_SIZE];
+StaticTask_t xTaskIdle;
+
+StackType_t xTasktimer_stack[configTIMER_TASK_STACK_DEPTH];
+StaticTask_t xTasktimer;
+
+void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, 
+    StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize )
+{
+    *ppxIdleTaskTCBBuffer = &xTaskIdle;
+    *ppxIdleTaskStackBuffer = xTaskIdle_stack;
+    *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
+}
+
+void vApplicationGetTimerTaskMemory( StaticTask_t **ppxTimerTaskTCBBuffer, 
+    StackType_t **ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize )
+{
+    *ppxTimerTaskTCBBuffer = &xTasktimer;
+    *ppxTimerTaskStackBuffer = xTasktimer_stack;
+    *pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
+}
+#endif
+
+#ifdef CONFIG_FR_MALLOC_FAILED_HANDLE
+#include "FreeRTOS.h"
+#include "task.h"
+void vApplicationMallocFailedHook( void )
+{
+    // printf("[ERROR] memory allocate failed, free: %d bytes\r\n", xPortGetFreeHeapSize());
+}
+#endif
+

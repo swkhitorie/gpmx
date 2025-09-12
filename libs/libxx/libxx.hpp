@@ -1,11 +1,10 @@
 #ifndef __LIBXX_LIBXX_HXX
 #define __LIBXX_LIBXX_HXX
 
-#include <FreeRTOS.h>
-#include <portable.h>
-
 #include <new>
 
+#include <FreeRTOS.h>
+#include <portable.h>
 #define lib_malloc(s)    pvPortMalloc(s)
 #define lib_free(p)      vPortFree(p)
 

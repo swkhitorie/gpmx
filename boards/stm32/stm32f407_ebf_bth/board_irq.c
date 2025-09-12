@@ -69,7 +69,9 @@ void PendSV_Handler(void) {}
 #ifdef CONFIG_BOARD_FREERTOS_ENABLE
 #include <FreeRTOS.h>
 #include <task.h>
+extern void xPortSysTickHandler(void);
 #endif
+
 void SysTick_Handler(void)
 {
 #ifdef CONFIG_BOARD_FREERTOS_ENABLE
@@ -77,5 +79,9 @@ void SysTick_Handler(void)
         xPortSysTickHandler();
     }
 #endif
-    HAL_IncTick();
+    __disable_irq();
+    if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) {
+        HAL_IncTick();
+    }
+    __enable_irq();
 }

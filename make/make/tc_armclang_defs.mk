@@ -31,6 +31,7 @@ TC_CPP:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/armclang.exe)
 TC_ASM:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/armclang.exe)
 TC_LINK:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/armlink.exe)
 TC_AR:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/armar.exe)
+TC_GENSCF:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/armclang.exe)
 TC_GENBIN:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/fromelf.exe)
 TC_SIZE:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/fromelf.exe -z)
 TC_DUMP:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/fromelf.exe)
@@ -41,6 +42,7 @@ TC_CPP:=${TC_PATH_BIN}/armclang
 TC_ASM:=${TC_PATH_BIN}/armclang
 TC_LINK:=${TC_PATH_BIN}/armlink
 TC_AR:=${TC_PATH_BIN}/armar
+TC_GENSCF:=${TC_PATH_BIN}/armclang
 TC_GENBIN:=${TC_PATH_BIN}/fromelf
 TC_SIZE:=${TC_PATH_BIN}/fromelf -z
 TC_DUMP:=${TC_PATH_BIN}/fromelf
@@ -164,11 +166,11 @@ MK_TC_LIBDIRS=$(if ${1},--userlibpath $(call MK_SPCTOCOM,${1}))
 # command to generate list of linker directory search paths
 MK_TC_LIBS=$(if ${1},$(addsuffix .${TC_LIBEXT},${1}))
 
-# command to generate scatter file
+# command to generate scatter file, only support 32bits system
 # 1 - template file
 # 2 - output file
 # 3 (opt) - armcc options
-MK_TC_GENSCF=$(if $(and ${1},${2},${3}),@${TC_GENSCF} -E ${1} -o ${2} ${3})
+MK_TC_GENSCF=$(if $(and ${1},${2},${3}),@${TC_GENSCF} -P -E --target=arm-arm-none-eabi -x c ${1} -o ${2} ${3})
 
 # command to generate binary file
 # 1 - input file
