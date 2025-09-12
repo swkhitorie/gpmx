@@ -128,8 +128,8 @@ void board_bsp_deinit()
 
     __HAL_RCC_USART1_CLK_DISABLE();
     HAL_GPIO_DeInit(GPIOA, GPIO_PIN_9|GPIO_PIN_10);
-    HAL_DMA_DeInit(&com1_dev.com.hdmatx);
-    HAL_DMA_DeInit(&com1_dev.com.hdmarx);
+    HAL_DMA_DeInit(com1_dev.com.hdmatx);
+    HAL_DMA_DeInit(com1_dev.com.hdmarx);
     HAL_NVIC_DisableIRQ(USART1_IRQn);
 
     usbd_deinitialize(0);

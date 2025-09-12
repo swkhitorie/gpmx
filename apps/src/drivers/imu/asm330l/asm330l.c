@@ -33,6 +33,8 @@ uint8_t read_register(uint8_t addr)
     uint8_t tx_buf[2] = {send_addr, 0xFF};
     uint8_t rx_buf[2] = {0};
 
+	SPI_SETMODE(bus, SPIDEV_MODE3);
+	SPI_SETBITS(bus, 8);
     ret = SPI_SELECT(bus,DRV_MODULE_DEVTYPE_USR,true);
     ret = SPI_EXCHANGEBLOCK(bus, tx_buf, rx_buf, 2);
     ret = SPI_SELECT(bus,DRV_MODULE_DEVTYPE_USR,false);
@@ -54,6 +56,8 @@ void read_registers(uint8_t addr, uint8_t *buf, uint8_t len)
         return;
     }
 
+	SPI_SETMODE(bus, SPIDEV_MODE3);
+	SPI_SETBITS(bus, 8);
     ret = SPI_SELECT(bus,DRV_MODULE_DEVTYPE_USR,true);
     ret = SPI_EXCHANGEBLOCK(bus, tx_buf, rx_buf, len+1);
     ret = SPI_SELECT(bus,DRV_MODULE_DEVTYPE_USR,false);

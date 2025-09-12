@@ -14,9 +14,9 @@ TARGET_POSTBUILD := ${TARGET_DEST_FILENAME_BIN}
 include ${SDK_ROOTDIR}/boards/stm32/stm32f407_ebf_bth/make.mk
 
 # os and library config
-MK_COMPILER=gcc
 MK_RTOS=none
-MK_MEM_METHOD=4
+MK_RTOS_PLATFORM=gcc
+MK_RTOS_MEM_METHOD=4
 MK_USE_POSIX=n
 MK_USE_LIB_CPP=n
 

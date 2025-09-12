@@ -1,6 +1,6 @@
 
 PROJ_NAME  :=  dev_test
-PROJ_TC    :=  gae
+PROJ_TC    :=  armclang
 APP_PROJ_DIR = apps/test/dev_test
 
 # compile config
@@ -13,9 +13,9 @@ TARGET_POSTBUILD := ${TARGET_DEST_FILENAME_BIN}
 include ${SDK_ROOTDIR}/boards/stm32/stm32h743_fanke/make.mk
 
 # os and library config
-MK_COMPILER=gcc
 MK_RTOS=frtos
-MK_MEM_METHOD=4
+MK_RTOS_PLATFORM=gcc
+MK_RTOS_MEM_METHOD=4
 MK_USE_POSIX=n
 MK_USE_LIB_CPP=n
 

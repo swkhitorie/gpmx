@@ -1,19 +1,19 @@
 
 PROJ_CINCDIRS += kernel/rt_nano/include
 
-ifeq (${MK_CHIP_ARCH},m7)
+ifeq (${MOD_ARCH},m7)
 RT_PLATFORM := cortex-m7
-else ifeq (${MK_CHIP_ARCH},m4)
+else ifeq (${MOD_ARCH},m4)
 RT_PLATFORM := cortex-m4
-else ifeq (${MK_CHIP_ARCH},m3)
+else ifeq (${MOD_ARCH},m3)
 RT_PLATFORM := cortex-m3
-else ifeq (${MK_CHIP_ARCH},m0)
+else ifeq (${MOD_ARCH},m0)
 RT_PLATFORM := cortex-m0
 endif
 
 PROJ_CINCDIRS += kernel/rt_nano/libcpu/arm/${RT_PLATFORM}/
 CSOURCES += kernel/rt_nano/libcpu/arm/${RT_PLATFORM}/cpuport.c
-ASMSOURCES += kernel/rt_nano/libcpu/arm/${RT_PLATFORM}/context_${MK_COMPILER}.S
+ASMSOURCES += kernel/rt_nano/libcpu/arm/${RT_PLATFORM}/context_${MK_RTOS_PLATFORM}.S
 
 CSOURCES += kernel/rt_nano/clock.c
 CSOURCES += kernel/rt_nano/components.c

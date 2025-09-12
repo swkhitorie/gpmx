@@ -11,18 +11,18 @@ else ifeq (${MOD_ARCH},m0)
 FR_PLATFORM := cortex_m0
 endif
 
-PROJ_CINCDIRS += kernel/freertos/arch/${FR_PLATFORM}/${MK_COMPILER}
-CSOURCES += kernel/freertos/arch/${FR_PLATFORM}/${MK_COMPILER}/port.c
+PROJ_CINCDIRS += kernel/freertos/arch/${FR_PLATFORM}/${MK_RTOS_PLATFORM}
+CSOURCES += kernel/freertos/arch/${FR_PLATFORM}/${MK_RTOS_PLATFORM}/port.c
 
-ifeq (${MK_MEM_METHOD},1)
+ifeq (${MK_RTOS_MEM_METHOD},1)
 CSOURCES += kernel/freertos/mm/heap_1.c
-else ifeq (${MK_MEM_METHOD},2)
+else ifeq (${MK_RTOS_MEM_METHOD},2)
 CSOURCES += kernel/freertos/mm/heap_2.c
-else ifeq (${MK_MEM_METHOD},3)
+else ifeq (${MK_RTOS_MEM_METHOD},3)
 CSOURCES += kernel/freertos/mm/heap_3.c
-else ifeq (${MK_MEM_METHOD},4)
+else ifeq (${MK_RTOS_MEM_METHOD},4)
 CSOURCES += kernel/freertos/mm/heap_4.c
-else ifeq (${MK_MEM_METHOD},5)
+else ifeq (${MK_RTOS_MEM_METHOD},5)
 CSOURCES += kernel/freertos/mm/heap_5.c
 endif
 

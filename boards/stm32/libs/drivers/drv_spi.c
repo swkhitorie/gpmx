@@ -529,72 +529,175 @@ uint32_t up_spi_setfrequency(struct spi_dev_s *dev, uint32_t frequency)
 void up_spi_setmode(struct spi_dev_s *dev, enum spi_mode_e mode)
 {
     struct up_spi_dev_s *priv = dev->priv;
+    uint16_t setbits;
+    uint16_t clrbits;
+
+	if (mode != dev->mode) {
 #if defined (DRV_BSP_H7)
-    switch (dev->mode) {
-	case SPIDEV_MODE0:
-        priv->hspi.Instance->CFG2 |= SPI_POLARITY_LOW | SPI_PHASE_1EDGE;
-		break;
-	case SPIDEV_MODE1:
-        priv->hspi.Instance->CFG2 |= SPI_POLARITY_LOW | SPI_PHASE_2EDGE;
-		break;
-	case SPIDEV_MODE2:
-        priv->hspi.Instance->CFG2 |= SPI_POLARITY_HIGH | SPI_PHASE_1EDGE;
-		break;
-	case SPIDEV_MODE3:
-        priv->hspi.Instance->CFG2 |= SPI_POLARITY_HIGH | SPI_PHASE_2EDGE;
-		break;	
-	default :break;
-	}
+
+        switch (mode) {
+        case SPIDEV_MODE0: /* CPOL=0; CPHA=0 */
+            setbits = 0;
+            clrbits = SPI_CFG2_CPOL | SPI_CFG2_CPHA;
+            break;
+
+        case SPIDEV_MODE1: /* CPOL=0; CPHA=1 */
+            setbits = SPI_CFG2_CPHA;
+            clrbits = SPI_CFG2_CPOL;
+            break;
+
+        case SPIDEV_MODE2: /* CPOL=1; CPHA=0 */
+            setbits = SPI_CFG2_CPOL;
+            clrbits = SPI_CFG2_CPHA;
+            break;
+
+        case SPIDEV_MODE3: /* CPOL=1; CPHA=1 */
+            setbits = SPI_CFG2_CPOL | SPI_CFG2_CPHA;
+            clrbits = 0;
+            break;
+
+        default:
+            return;
+        }
+
+		__HAL_SPI_DISABLE(&priv->hspi);
+		MODIFY_REG(priv->hspi.Instance->CFG2, clrbits, setbits);
+        __HAL_SPI_ENABLE(&priv->hspi);
+
+        while ((READ_REG(priv->hspi.Instance->SR) & SPI_SR_RXPLVL_0) != 0) {
+            /* Flush SPI read FIFO */
+            READ_REG(priv->hspi.Instance->RXDR);
+        }
 #endif
 
 #if defined (DRV_BSP_F4) || defined (DRV_BSP_F1)
-    switch (dev->mode) {
-	case SPIDEV_MODE0:
-        priv->hspi.Instance->CR1 |= SPI_POLARITY_LOW | SPI_PHASE_1EDGE;
-		break;
-	case SPIDEV_MODE1:
-        priv->hspi.Instance->CR1 |= SPI_POLARITY_LOW | SPI_PHASE_2EDGE;
-		break;
-	case SPIDEV_MODE2:
-        priv->hspi.Instance->CR1 |= SPI_POLARITY_HIGH | SPI_PHASE_1EDGE;
-		break;
-	case SPIDEV_MODE3:
-        priv->hspi.Instance->CR1 |= SPI_POLARITY_HIGH | SPI_PHASE_2EDGE;
-		break;	
-	default :break;
-	}
+		switch (mode) {
+			case SPIDEV_MODE0: /* CPOL=0; CPHA=0 */
+			setbits = 0;
+			clrbits = SPI_CR1_CPOL | SPI_CR1_CPHA;
+			break;
+
+		case SPIDEV_MODE1: /* CPOL=0; CPHA=1 */
+			setbits = SPI_CR1_CPHA;
+			clrbits = SPI_CR1_CPOL;
+			break;
+
+		case SPIDEV_MODE2: /* CPOL=1; CPHA=0 */
+			setbits = SPI_CR1_CPOL;
+			clrbits = SPI_CR1_CPHA;
+			break;
+
+		case SPIDEV_MODE3: /* CPOL=1; CPHA=1 */
+			setbits = SPI_CR1_CPOL | SPI_CR1_CPHA;
+			clrbits = 0;
+			break;
+
+		#ifdef SPI_CR2_FRF    /* If MCU supports TI Synchronous Serial Frame Format */
+		case SPIDEV_MODETI:
+			setbits = 0;
+			clrbits = SPI_CR1_CPOL | SPI_CR1_CPHA;
+			break;
+		#endif
+
+		default:
+			return;
+		}
+
+		__HAL_SPI_DISABLE(&priv->hspi);
+        MODIFY_REG(priv->hspi.Instance->CR1, clrbits, setbits);
+		__HAL_SPI_ENABLE(&priv->hspi);
+
+#ifdef SPI_CR2_FRF    /* If MCU supports TI Synchronous Serial Frame Format */
+		switch (mode) {
+		case SPIDEV_MODE0:
+		case SPIDEV_MODE1:
+		case SPIDEV_MODE2:
+		case SPIDEV_MODE3:
+            setbits = 0;
+            clrbits = SPI_CR2_FRF;
+            break;
+
+		case SPIDEV_MODETI:
+            setbits = SPI_CR2_FRF;
+            clrbits = 0;
+            break;
+
+		default:
+            return;
+		}
+
+		MODIFY_REG(priv->hspi.Instance->CR1, 0, SPI_CR1_SPE);
+        MODIFY_REG(priv->hspi.Instance->CR1, clrbits, setbits);
+		MODIFY_REG(priv->hspi.Instance->CR1, SPI_CR1_SPE, 0);
 #endif
 
+#endif
+		dev->mode = mode;
+	}
 }
 
 void up_spi_setbits(struct spi_dev_s *dev, int nbits)
 {
     struct up_spi_dev_s *priv = dev->priv;
+    uint16_t setbits;
+    uint16_t clrbits;
+
+    if (nbits != dev->nbits) {
 #if defined (DRV_BSP_H7)
-    switch (nbits) {
-	case 8:
-        priv->hspi.Instance->CFG1 |= SPI_DATASIZE_8BIT;
-		break;
-	case 16:
-        priv->hspi.Instance->CFG1 |= SPI_DATASIZE_16BIT;
-		break;
-	default :break;
-	}
+        if (nbits < 4 || nbits > 32) {
+            return;
+        }
+
+#define SPI_CFG1_DSIZE_SHIFT      (0) /* Bits 0-4: number of bits in at single SPI data frame */
+#define SPI_CFG1_DSIZE_VAL(n)     ((n-1) << SPI_CFG1_DSIZE_SHIFT)
+#define SPI_CFG1_DSIZE_MASK       (0x1f << SPI_CFG1_DSIZE_SHIFT)
+
+#define SPI_CFG1_FTHLV_SHIFT      (5) /* Bits 5-8: FIFO threshold level */
+#define SPI_CFG1_FTHLV_MASK       (0xf << SPI_CFG1_FTHLV_SHIFT)
+
+#define SPI_CFG1_FTHLV_1DATA    (0 << SPI_CFG1_FTHLV_SHIFT)
+#define SPI_CFG1_FTHLV_2DATA    (1 << SPI_CFG1_FTHLV_SHIFT)
+
+        clrbits = SPI_CFG1_DSIZE_MASK;
+        setbits = SPI_CFG1_DSIZE_VAL(nbits);
+		/* REVISIT: FIFO threshold level */
+
+		/* If nbits is <=8, then we are in byte mode and FRXTH shall be set
+		 * (else, transaction will not complete).
+		 */
+
+		if (nbits < 9) {
+		    setbits |= SPI_CFG1_FTHLV_1DATA; /* RX FIFO Threshold = 1 byte */
+		} else {
+		    setbits |= SPI_CFG1_FTHLV_2DATA; /* RX FIFO Threshold = 2 byte */
+		}
+
+        __HAL_SPI_DISABLE(&priv->hspi);
+		MODIFY_REG(priv->hspi.Instance->CFG1, clrbits, setbits);
+        __HAL_SPI_ENABLE(&priv->hspi);
 #endif
 
 #if defined (DRV_BSP_F4) || defined (DRV_BSP_F1)
-	priv->hspi.Instance->CR1 &= ~SPI_CR1_SPE;  // disable spi
-    switch (nbits) {
-	case 8:
-        priv->hspi.Instance->CR1 |= (0x0UL) << 11;
-		break;
-	case 16:
-        priv->hspi.Instance->CR1 |= (0x1UL) << 11;
-		break;
-	default :break;
-	}
-	priv->hspi.Instance->CR1 |= SPI_CR1_SPE;  // enable spi
+		switch (nbits) {
+		case 8:
+			priv->hspi.Init.DataSize = SPI_DATASIZE_8BIT;
+			setbits = 0;
+            clrbits = SPI_CR1_DFF;
+			break;
+		case 16:
+			priv->hspi.Init.DataSize = SPI_DATASIZE_16BIT;
+			setbits = SPI_CR1_DFF;
+            clrbits = 0;
+			break;
+		default :break;
+		}
+
+		__HAL_SPI_DISABLE(&priv->hspi);
+        MODIFY_REG(priv->hspi.Instance->CR1, clrbits, setbits);
+		__HAL_SPI_ENABLE(&priv->hspi);
 #endif
+        dev->nbits = nbits;
+	}
 }
 
 int up_spi_lock(struct spi_dev_s *dev, bool lock)

@@ -186,14 +186,27 @@ bool stm32_rtc_set_time_stamp(time_t time_stamp)
 {
     RTC_TimeTypeDef RTC_TimeStruct = {0};
     RTC_DateTypeDef RTC_DateStruct = {0};
-    struct tm tm = {0};
 
 #ifdef RT_ALARM_USING_LOCAL_TIME
     localtime_r(&time_stamp,&tm);
 #else
-    gmtime_r(&time_stamp, &tm);
-#endif
 
+#if defined(__clang__) || defined(__CC_ARM)
+
+    struct tm *tma = NULL;
+    tma = gmtime(&time_stamp);
+
+    RTC_TimeStruct.Seconds = tma->tm_sec ;
+    RTC_TimeStruct.Minutes = tma->tm_min ;
+    RTC_TimeStruct.Hours   = tma->tm_hour;
+    RTC_DateStruct.Date    = tma->tm_mday;
+    RTC_DateStruct.Month   = tma->tm_mon + 1 ;
+    RTC_DateStruct.Year    = tma->tm_year - 100;
+    RTC_DateStruct.WeekDay = tma->tm_wday + 1;
+#elif defined(__GNUC__)
+
+    struct tm tm = {0};
+    gmtime_r(&time_stamp, &tm);
     if (tm.tm_year < 100) {
         return false;
     }
@@ -205,6 +218,9 @@ bool stm32_rtc_set_time_stamp(time_t time_stamp)
     RTC_DateStruct.Month   = tm.tm_mon + 1 ;
     RTC_DateStruct.Year    = tm.tm_year - 100;
     RTC_DateStruct.WeekDay = tm.tm_wday + 1;
+#endif
+
+#endif
 
     if (HAL_RTC_SetTime(&RTC_Handler, &RTC_TimeStruct, RTC_FORMAT_BIN) != HAL_OK) {
         return false;

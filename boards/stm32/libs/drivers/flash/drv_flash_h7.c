@@ -137,7 +137,7 @@ static uint32_t low_flash_read_word(uint32_t faddr)
 	return *(volatile uint32_t *)faddr;
 }
 
-static uint8_t low_flash_write_word(uint32_t faddr, uint32_t *pdata)
+static uint8_t low_flash_write_word(uint32_t faddr, const uint32_t *pdata)
 {
 	uint8_t n_word = 8;
 	uint8_t res = 0;

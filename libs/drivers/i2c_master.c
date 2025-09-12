@@ -138,6 +138,7 @@ int i2c_dev_transfer_completed(struct i2c_master_s *dev)
     BaseType_t h_pri;
     xSemaphoreGiveFromISR(dev->sem_isr, &h_pri);
     portYIELD_FROM_ISR(h_pri);
+    return DTRUE;
 #else
 
     dev->flag_isr = 0x01;

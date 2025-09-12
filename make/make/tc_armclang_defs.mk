@@ -170,7 +170,7 @@ MK_TC_LIBS=$(if ${1},$(addsuffix .${TC_LIBEXT},${1}))
 # 1 - template file
 # 2 - output file
 # 3 (opt) - armcc options
-MK_TC_GENSCF=$(if $(and ${1},${2},${3}),@${TC_GENSCF} -P -E --target=arm-arm-none-eabi -x c ${1} -o ${2} ${3})
+MK_TC_GENSCF=$(if $(and ${1},${2},${3}),@${TC_GENSCF} -P -E --target=arm-arm-none-eabi -march=armv7-m -x c ${1} -o ${2} ${3})
 
 # command to generate binary file
 # 1 - input file

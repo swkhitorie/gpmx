@@ -149,10 +149,10 @@ uint64_t hw_SPI48_Send_Request(uint64_t Request)
 
     //printf("[spi] start: %llx \r\n", Request);
     // Send tx buffer and receive rx buffer simultaneously.
+	SPI_SETMODE(sbus, SPIDEV_MODE0);
+	SPI_SETBITS(sbus, 16);
     hw_CS_Low();
-    //SPI_EXCHANGEBLOCK(sbus, (uint8_t*)txBuffer, (uint8_t*)rxBuffer, size);
-    struct up_spi_dev_s *priv = (struct up_spi_dev_s *)sbus->priv;
-    HAL_SPI_TransmitReceive(&priv->hspi, (uint8_t*)txBuffer, (uint8_t*)rxBuffer, size, 3000);
+    SPI_EXCHANGEBLOCK(sbus, (uint8_t*)txBuffer, (uint8_t*)rxBuffer, size);
     hw_CS_High();
 
     // Create ReceivedData qword from received rx buffer (MISO data).

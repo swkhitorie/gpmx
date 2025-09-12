@@ -3,7 +3,18 @@
 
 #include <stdint.h>
 #include "drv_common.h"
+
+#if defined(__clang__) || defined(__CC_ARM)
+#include <time.h>
+struct timeval {
+    time_t tv_sec;
+    int tv_usec;
+};
+#elif defined(__GNUC__)
 #include <sys/time.h>
+#else
+#error drv_rtc: unkown compiler, support: gae, armclang, armcc
+#endif
 
 #ifdef cplusplus
 extern "C" {

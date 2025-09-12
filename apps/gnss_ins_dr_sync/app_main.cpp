@@ -79,9 +79,9 @@ void imu_init()
     char serial_num[15];
     int  init_status;
 
-    if (0 == mpu6050_init(1)) {
-        printf("[imu] mpu init success \r\n");
-    }
+    // if (0 == mpu6050_init(1)) {
+    //     printf("[imu] mpu init success \r\n");
+    // }
 
     hw_CS_High();
     hw_init();
@@ -212,6 +212,10 @@ int main(int argc, char *argv[])
                 SCH1_ret_data.Rate1[AXIS_Y],
                 SCH1_ret_data.Rate1[AXIS_Z],
                 imu_seq);
+
+            // printf("ins: %.3f, %.3f, %.3f, %.3f, %.3f, %.3f \r\n",
+            //     SCH1_ret_data.Acc1[AXIS_X], SCH1_ret_data.Acc1[AXIS_Y], SCH1_ret_data.Acc1[AXIS_Z],
+            //     SCH1_ret_data.Rate1[AXIS_X], SCH1_ret_data.Rate1[AXIS_Y], SCH1_ret_data.Rate1[AXIS_Z]);
 #endif
 
 #if defined(CONFIG_SPI_IMU_ASM330LHH)
@@ -228,13 +232,16 @@ int main(int argc, char *argv[])
                 timestamp, 
                 subsec,
                 SENS_IMU_ID_SCH1633,
-                ins[0],
-                ins[1],
-                ins[2],
+                ins[0]*9.7913f,
+                ins[1]*9.7913f,
+                ins[2]*9.7913f,
                 ins[3]*3.1415926f/180.0f,
                 ins[4]*3.1415926f/180.0f,
                 ins[5]*3.1415926f/180.0f,
                 imu_seq);
+
+            // printf("ins: %.3f, %.3f, %.3f, %.3f, %.3f, %.3f \r\n",
+            //     ins[0], ins[1], ins[2], ins[3], ins[4], ins[5]);
 #endif
             run_tag = 0x0025;
             udp_transfer_raw_control(sens_sync.buff, imu_len);

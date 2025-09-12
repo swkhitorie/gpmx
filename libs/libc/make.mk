@@ -1,5 +1,5 @@
 
-ifeq (${MK_COMPILER},gcc)
+ifeq (${PROJ_TC},gae)
 CSOURCES   +=  libs/libc/noneuse_syscall.c
 endif
 
