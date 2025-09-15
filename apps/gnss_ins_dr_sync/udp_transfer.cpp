@@ -23,7 +23,7 @@ static void udp_empty_callback(void *arg, struct udp_pcb *upcb, struct pbuf *p, 
 
 void udp_set_target_ip_port(ip_addr_t addr, uint16_t port)
 {
-    is_bind_target = true;
+    // is_bind_target = true;
     target_port = port;
     memcpy(&target_ip, &addr, sizeof(ip_addr_t));
 
@@ -51,7 +51,7 @@ void udp_request()
         request_tick = UDP_TRANSFER_TIMESTAMP();
 
         if (!is_bind_target) {
-            printf("[eth] request link\r\n");
+            printf("[eth ] request link\r\n");
             udp_transfer_raw((const uint8_t *)&msg[0], 7);
         }
     }
