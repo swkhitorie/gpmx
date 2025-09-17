@@ -46,11 +46,11 @@ BOARD_CSRCS += board_bsp.c
 BOARD_CSRCS += board_mtd.c
 BOARD_CSRCS += board_mmcsd.c
 
-# BOARD_ASMSOURCES += stm32h743_eval_startup_gcc.s
-# BOARD_LNK_FILE   += stm32h743_eval_lnk_gcc.ld
+BOARD_ASMSOURCES += stm32h743_eval_startup_gcc.s
+BOARD_LNK_FILE   += stm32h743_eval_lnk_gcc.ld
 
-BOARD_ASMSOURCES += stm32h743_eval_startup_arm.s
-BOARD_LNK_FILE   += stm32h743_eval_lnk_arm.sct
+# BOARD_ASMSOURCES += stm32h743_eval_startup_arm.s
+# BOARD_LNK_FILE   += stm32h743_eval_lnk_arm.sct
 
 TMPBOARD_CSRCS = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_CSRCS}}
 TMPBOARD_ASMSOURCES = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_ASMSOURCES}}

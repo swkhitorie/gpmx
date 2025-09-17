@@ -5,9 +5,8 @@
 /* FreeRTOS POSIX Cannot support create task dynamic */
 extern uint32_t SystemCoreClock;
 
-#define configASSERT             0
 #define vAssertCalled(char,int) //board_blue_led_toggle()
-#define configASSERT(x) if((x)==0) vAssertCalled(__FILE__,__LINE__)
+#define configASSERT(x) //if((x)==0) vAssertCalled(__FILE__,__LINE__)
 
 /****************************************************************************
  * FreeRTOS Interrupt Configuration

@@ -1,0 +1,24 @@
+
+
+
+LIBSTD_CINCDIRS += device
+
+LIBSTD_CINCDIRS += std_driver
+LIBSTD_CSRCS += std_driver/misc.c
+LIBSTD_CSRCS += std_driver/n32g430_pwr.c
+LIBSTD_CSRCS += std_driver/n32g430_rcc.c
+LIBSTD_CSRCS += std_driver/n32g430_gpio.c
+LIBSTD_CSRCS += std_driver/n32g430_exti.c
+LIBSTD_CSRCS += std_driver/n32g430_dma.c
+
+ifeq ($(BSP_LIBCONFIG_N32_STD_FLASH),y)
+LIBSTD_CSRCS += std_driver/n32g430_flash.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_N32_STD_USART),y)
+LIBSTD_CSRCS += std_driver/n32g430_usart.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_N32_STD_SPI),y)
+LIBSTD_CSRCS += std_driver/n32g430_spi.c
+endif

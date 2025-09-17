@@ -47,7 +47,7 @@
     #else
         #define BSP_CHIP_RESOURCE_LEVEL BSP_CHIP_RESOURCE_MAX
     #endif
-    #define CONFIG_UART_PERIPHAL_NUM (6)
+    #define CONFIG_UART_PERIPHAL_NUM (8)
     #define CONFIG_SPI_PERIPHAL_NUM  (6)
     #define CONFIG_DRV_GPIO_EXTERNAL_IRQ_LINE_NUM (16)
 #elif defined (DRV_BSP_G0)

@@ -8,16 +8,16 @@
  *
  ****************************************************************************/
 
-FAR sq_entry_t *sq_remlast(sq_queue_t *queue)
+sq_entry_t *sq_remlast(sq_queue_t *queue)
 {
-    FAR sq_entry_t *ret = queue->tail;
+    sq_entry_t *ret = queue->tail;
 
     if (ret) {
         if (queue->head == queue->tail) {
             queue->head = NULL;
             queue->tail = NULL;
         } else {
-            FAR sq_entry_t *prev;
+            sq_entry_t *prev;
             for (prev = queue->head;
                 prev && prev->flink != ret;
                 prev = prev->flink);

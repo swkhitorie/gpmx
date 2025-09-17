@@ -71,8 +71,8 @@ void* g_start(void *p)
     pthread_setname_np(pthread_self(), "g_start");
 
     char *tmp_argv[5] = {
-        "uorb",
-        "start"
+        (char *)"uorb",
+        (char *)"start"
     };
 
     d1 = __atomic_load_n(&atomic_counter, __ATOMIC_SEQ_CST);

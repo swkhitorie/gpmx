@@ -8,7 +8,7 @@
  *
  ****************************************************************************/
 
-void dq_addfirst(FAR dq_entry_t *node, dq_queue_t *queue)
+void dq_addfirst(dq_entry_t *node, dq_queue_t *queue)
 {
     node->blink = NULL;
     node->flink = queue->head;

@@ -14,7 +14,7 @@ void obd_request_speed();
 
 void obd_rx_speed_detect();
 
-uint32_t obd_read_speed();
+int8_t obd_read_speed();
 
 #ifdef __cplusplus
 }

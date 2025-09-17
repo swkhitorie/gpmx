@@ -6,7 +6,7 @@
 
 #include "./prv_timer.h"
 
-int timer_create(clockid_t clockid, FAR struct sigevent *evp, FAR timer_t *timerid)
+int timer_create(clockid_t clockid, struct sigevent *evp, timer_t *timerid)
 {
     int ret = 0;
     timer_internal_t *p = NULL;

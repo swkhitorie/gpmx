@@ -9,7 +9,7 @@
 
 typedef uint32_t  time_t;         /* Holds time in seconds */
 typedef uint8_t   clockid_t;      /* Identifies one time base source */
-typedef FAR void* timer_t;        /* Represents one POSIX timer */
+typedef  void* timer_t;        /* Represents one POSIX timer */
 
 #define MICROSECONDS_PER_SECOND    (1000000LL)
 #define NANOSECONDS_PER_SECOND     (1000000000LL)
@@ -62,22 +62,26 @@ extern "C"
 
 clock_t clock(void);
 
-int clock_settime(clockid_t clockid, FAR const struct timespec *tp);
-int clock_gettime(clockid_t clockid, FAR struct timespec *tp);
-int clock_getres(clockid_t clockid, FAR struct timespec *res);
+int clock_settime(clockid_t clockid,  const struct timespec *tp);
+int clock_gettime(clockid_t clockid,  struct timespec *tp);
+int clock_getres(clockid_t clockid,  struct timespec *res);
 
-int timer_create(clockid_t clockid, FAR struct sigevent *evp, FAR timer_t *timerid);
+time_t mktime(struct tm *tp);
+struct tm *gmtime(const time_t *timep);
+struct tm *gmtime_r(const time_t *timep, struct tm *result);
+
+int timer_create(clockid_t clockid,  struct sigevent *evp,  timer_t *timerid);
 int timer_delete(timer_t timerid);
 int timer_settime(timer_t timerid, int flags,
-                  FAR const struct itimerspec *value,
-                  FAR struct itimerspec *ovalue);
-int timer_gettime(timer_t timerid, FAR struct itimerspec *value);
+                   const struct itimerspec *value,
+                   struct itimerspec *ovalue);
+int timer_gettime(timer_t timerid,  struct itimerspec *value);
 int timer_getoverrun(timer_t timerid);
 
 int clock_nanosleep(clockid_t clockid, int flags,
-                    FAR const struct timespec *rqtp,
-                    FAR struct timespec *rmtp);
-int nanosleep(FAR const struct timespec *rqtp, FAR struct timespec *rmtp);
+                     const struct timespec *rqtp,
+                     struct timespec *rmtp);
+int nanosleep( const struct timespec *rqtp,  struct timespec *rmtp);
 
 #undef EXTERN
 #if defined(__cplusplus)

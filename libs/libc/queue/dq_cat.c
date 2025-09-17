@@ -8,7 +8,7 @@
  *
  ****************************************************************************/
 
-void dq_cat(FAR dq_queue_t *queue1, FAR dq_queue_t *queue2)
+void dq_cat(dq_queue_t *queue1, dq_queue_t *queue2)
 {
     if (dq_empty(queue2)) {
         /* If queue2 is empty, then just move queue1 to queue2 */

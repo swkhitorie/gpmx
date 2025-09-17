@@ -42,12 +42,14 @@ void obd_rx_speed_detect()
         rmsg.cm_hdr.ch_id == 0x7E8) {
 
         vehicle_speed = (int8_t)(rmsg.cm_data[3]);  // byte3 [2]: 0D
+    } else if (can_rxfifo_get(&obdbus->cd_rxfifo, &rmsg) == DTRUE) {
+        // printf("id: %x \r\n ", rmsg.cm_hdr.ch_id);
     }
 }
 
-uint32_t obd_read_speed()
+int8_t obd_read_speed()
 {
     int8_t spd = vehicle_speed;
 
-    return spd*1000*10/36;
+    return spd;
 }

@@ -2,6 +2,7 @@
 #include <string.h>
 #include "pthread.h"
 #include "errno.h"
+#include <utils.h>
 
 int g_irqerrno;
 
@@ -40,7 +41,7 @@ static void run_thread(void *xarg)
 int *get_errno_ptr()
 {
     pthread_obj_t *p = (pthread_obj_t *)pthread_self();
-    return p->pterrno;
+    return &p->pterrno;
 }
 
 int pthread_create(pthread_t *tid, const pthread_attr_t *attr, void *(*start)(void *), void *arg)

@@ -4,11 +4,6 @@
 include ${MAKEFILES_ROOTDIR}/make/macros.mk
 
 #
-# This is the default installation path for Keil/MDK. Change it if different
-# 
-# TC_PATH_INST_ARMCLANG := D:\__dev_envir\__env\mdk5\CORE\ARM\ARMCLANG
-
-#
 # ARM Compiler related section
 #
 ifneq ($(OS),Linux)
@@ -21,9 +16,9 @@ TC_PATH_INC:=${TC_PATH_INST_ARMCLANG}/include
 TC_PATH_LIB:=${TC_PATH_INST_ARMCLANG}/lib
 endif
 
-#
-# toolchain executables
-#
+########################################
+# toolchain executables                #
+########################################
 ifneq ($(OS),Linux)
 TC_MAKEDEP:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/armclang.exe -M)
 TC_CC:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/armclang.exe)
@@ -33,6 +28,7 @@ TC_LINK:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/armlink.exe)
 TC_AR:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/armar.exe)
 TC_GENSCF:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/armclang.exe)
 TC_GENBIN:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/fromelf.exe)
+TC_GENHEX:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/fromelf.exe)
 TC_SIZE:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/fromelf.exe -z)
 TC_DUMP:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/fromelf.exe)
 else
@@ -44,13 +40,14 @@ TC_LINK:=${TC_PATH_BIN}/armlink
 TC_AR:=${TC_PATH_BIN}/armar
 TC_GENSCF:=${TC_PATH_BIN}/armclang
 TC_GENBIN:=${TC_PATH_BIN}/fromelf
+TC_GENHEX:=${TC_PATH_BIN}/fromelf
 TC_SIZE:=${TC_PATH_BIN}/fromelf -z
 TC_DUMP:=${TC_PATH_BIN}/fromelf
 endif
 
-#
-# toolchain switches macros
-#
+########################################
+# toolchain switches macros            #
+########################################
 TC_ASM_VIA=@${1}
 TC_CC_VIA=@${1}
 TC_LINK_VIA=@${1}
@@ -58,9 +55,9 @@ TC_LINK_ENTRY=--entry=${1}
 TC_LINK_SCF=--scatter=${1}
 TC_LINK_LIST=--list=${1}
 
-#
-# constants
-#
+########################################
+# constants                            #
+########################################
 
 # toolchain identifiers
 TC_NAME:=armclang
@@ -73,13 +70,37 @@ TC_ASMEXT:=s
 TC_TARGETTHUMB:=-mthumb
 TC_TARGETARM:=-marm
 
+########################################
+# compile/assembly/link options        #
+########################################
+TC_SOURCEOPTS+= -c
+TC_SOURCEOPTS+= -gdwarf-4
+TC_SOURCEOPTS+= -fno-rtti
+TC_SOURCEOPTS+= -funsigned-char
+TC_SOURCEOPTS+= -fshort-enums
+TC_SOURCEOPTS+= -fshort-wchar
+TC_SOURCEOPTS+= -ffunction-sections
+ifeq (${CONFIG_COMPILE_OPTIMIZE},)
+TC_SOURCEOPTS+= -O1
+else
+TC_SOURCEOPTS+= ${CONFIG_COMPILE_OPTIMIZE}
+endif
+ifeq (${CONFIG_LIB_USE_NANO},y)
+TC_LIB_SELECT+= --library_type=microlib
+else
+TC_LIB_SELECT+= --library_type=standardlib
+endif
+
 # Assembly compiler options
 TC_ASMOPTS:=\
   --target=arm-arm-none-eabi        \
   -masm=auto                        \
   -c                                \
   -gdwarf-4
-  
+ifeq (${CONFIG_LIB_USE_NANO},y)
+TC_ASMOPTS+= -Wa,armasm,--pd,"__MICROLIB SETA 1"
+endif
+
 # Assembly compiler defines
 TC_ASMDEFS:=
 
@@ -87,48 +108,27 @@ TC_ASMDEFS:=
 # C compiler options
 TC_COPTS:=\
   --target=arm-arm-none-eabi        \
-  -xc                               \
-  -std=c11                          \
-  -gdwarf-4                         \
-  -O1                               \
-  -c                                \
-  -fno-rtti                         \
-  -funsigned-char -fshort-enums -fshort-wchar -ffunction-sections \
-  -Wno-packed -Wno-missing-variable-declarations -Wno-missing-prototypes \
-  -Wno-missing-noreturn -Wno-nonportable-include-path -Wno-sign-conversion \
-  -Wno-reserved-id-macro -Wno-unused-macros -Wno-documentation-unknown-command \
-  -Wno-documentation -Wno-license-management \
-  -Wno-parentheses-equality -Wno-reserved-identifier \
-  -Wno-empty-body \
-  -Wno-macro-redefined \
-  -Wno-invalid-source-encoding \
-  -Wno-writable-strings
+  ${TC_SOURCEOPTS}                  \
+  -xc
+ifneq (${CONFIG_C_STANDARD},)
+TC_COPTS += -std=${CONFIG_C_STANDARD}
+endif
 
 TC_CPPOPTS:=\
   --target=arm-arm-none-eabi        \
-  -xc++                             \
-  -std=c++11                        \
-  -gdwarf-4                         \
-  -O1                               \
-  -c                                \
-  -fno-rtti                         \
-  -funsigned-char -fshort-enums -fshort-wchar -ffunction-sections \
-  -Wno-packed -Wno-missing-variable-declarations -Wno-missing-prototypes \
-  -Wno-missing-noreturn -Wno-nonportable-include-path -Wno-sign-conversion \
-  -Wno-reserved-id-macro -Wno-unused-macros -Wno-documentation-unknown-command \
-  -Wno-documentation -Wno-license-management \
-  -Wno-parentheses-equality -Wno-reserved-identifier \
-  -Wno-empty-body \
-  -Wno-macro-redefined \
-  -Wno-invalid-source-encoding \
-  -Wno-writable-strings
+  ${TC_SOURCEOPTS}                  \
+  -xc++
+ifneq (${CONFIG_CXX_STANDARD},)
+TC_CPPOPTS += -std=${CONFIG_CXX_STANDARD}
+endif
+
 
 # C compiler defines
 TC_CDEFS:=
 
 # Linker options
 TC_LIBOPTS:=\
-  --libpath=$(call MK_PATHTOUNX,${TC_PATH_LIB}) \
+  ${TC_LIB_SELECT}                        \
   --strict                                \
   --summary_stderr                        \
   --map                                   \
@@ -176,6 +176,11 @@ MK_TC_GENSCF=$(if $(and ${1},${2},${3}),@${TC_GENSCF} -P -E --target=arm-arm-non
 # 1 - input file
 # 2 - output file
 MK_TC_GENBIN=$(if $(and ${1},${2}),@${TC_GENBIN} -c --bin -o ${2} ${1})
+
+# command to generate hex file
+# 1 - input file
+# 2 - output file
+MK_TC_GENHEX=$(if $(and ${1},${2}),@${TC_GENHEX} -c --i32 -o ${2} ${1})
 
 # command to disassembly output file
 # 1 - input file

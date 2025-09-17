@@ -8,9 +8,9 @@
  *
  ****************************************************************************/
 
-size_t dq_count(FAR dq_queue_t *queue)
+size_t dq_count(dq_queue_t *queue)
 {
-    FAR dq_entry_t *node;
+    dq_entry_t *node;
     size_t count;
 
     for (node = queue->head, count = 0;

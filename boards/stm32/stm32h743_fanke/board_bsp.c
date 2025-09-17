@@ -5,7 +5,10 @@
 #ifdef DEBUG_SPI_BUS
 #include <device/spi.h>
 #endif
+#ifdef CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
 #include "dev_cdc_acm.h"
+#endif
+
 /* COM1 */
 uint8_t com1_dma_rxbuff[4096];
 uint8_t com1_dma_txbuff[256];
@@ -132,7 +135,9 @@ void board_bsp_deinit()
     HAL_DMA_DeInit(com1_dev.com.hdmarx);
     HAL_NVIC_DisableIRQ(USART1_IRQn);
 
+#ifdef CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
     usbd_deinitialize(0);
+#endif
 
     HAL_DeInit();
 }
@@ -173,11 +178,7 @@ bool board_rtc_set_timestamp(time_t now)
 #include <stdio.h>
 #include <stdarg.h>
 FILE __stdin, __stdout, __stderr;
-size_t fwrite(const void *ptr, size_t size, size_t n_items, FILE *stream)
-{
-    return _write(stream->_file, ptr, size*n_items);
-}
-int _write(int file, char *ptr, int len)
+int _write(int file, const char *ptr, int len)
 {
     const int stdin_fileno = 0;
     const int stdout_fileno = 1;
@@ -191,10 +192,6 @@ int _write(int file, char *ptr, int len)
     }
     return len;
 }
-size_t fread(void *ptr, size_t size, size_t n_items, FILE *stream)
-{
-    return _read(stream->_file, ptr, size*n_items);
-}
 // nonblock
 int _read(int file, char *ptr, int len)
 {
@@ -207,6 +204,16 @@ int _read(int file, char *ptr, int len)
     }
     return rsize;
 }
+size_t fwrite(const void *ptr, size_t size, size_t n_items, FILE *stream)
+{
+    return _write(stream->_file, ptr, size*n_items);
+}
+
+size_t fread(void *ptr, size_t size, size_t n_items, FILE *stream)
+{
+    return _read(stream->_file, ptr, size*n_items);
+}
+
 #endif
 
 #ifdef CONFIG_BOARD_HRT_TIMEBASE

@@ -1,5 +1,6 @@
 #include "errno.h"
 #include "time.h"
+#include <utils.h>
 
 /* FreeRTOS interface include */
 #include <FreeRTOS.h>

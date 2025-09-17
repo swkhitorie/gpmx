@@ -4,17 +4,23 @@
 #
 ################################################################################
 
+####################
+#      armcc       #
+####################
 ifeq (${TC_NAME},armcc)
 
+endif
 
-endif # TC_NAME - arm cc
-
+####################
+#    armclang      #
+####################
 ifeq (${TC_NAME},armclang)
 
+endif
 
-
-endif # TC_NAME - arm clang
-
+####################
+#    gcc-arm       #
+####################
 ifeq (${TC_NAME},gae)
 CORE_ASMOPTS:=\
   -mcpu=cortex-m0plus              \
@@ -35,4 +41,4 @@ CORE_LIBOPTS:=\
   -mthumb                          \
   -mthumb-interwork
 
-endif # TC_NAME - gae
+endif

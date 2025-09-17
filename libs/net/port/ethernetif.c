@@ -249,13 +249,14 @@ int eth_system_device_init_private(void)
 
     return (int)result;
 }
-
+#include <lwip/timeouts.h>
 static void arp_timer(void *arg)
 {
     etharp_tmr();
     sys_timeout(ARP_TMR_INTERVAL, arp_timer, NULL);
 }
 
+#include <board_config.h>
 uint32_t sys_now(void)
 {
     return HAL_GetTick();

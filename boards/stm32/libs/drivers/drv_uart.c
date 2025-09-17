@@ -45,8 +45,8 @@ bool _usart_pinconfig(struct uart_dev_s *dev)
 
 	switch (num) {
 	case 1:
-		if (PINNODE(uint32_t)(USART_PINCTRL_SOURCE(1, UART_PIN_TX, tx_selec)) != NULL && 
-			PINNODE(uint32_t)(USART_PINCTRL_SOURCE(1, UART_PIN_RX, rx_selec)) != NULL) {
+		if ((USART_PINCTRL_SOURCE(1, UART_PIN_TX, tx_selec)) != NULLPIN && 
+			(USART_PINCTRL_SOURCE(1, UART_PIN_RX, rx_selec)) != NULLPIN) {
 			tx_pin = USART_PINCTRL_SOURCE(1, UART_PIN_TX, tx_selec);
 			rx_pin = USART_PINCTRL_SOURCE(1, UART_PIN_RX, rx_selec);
 			illegal = tx_pin->port && rx_pin->port;
@@ -55,8 +55,8 @@ bool _usart_pinconfig(struct uart_dev_s *dev)
 		}
 		break;
 	case 2:
-		if (PINNODE(uint32_t)(USART_PINCTRL_SOURCE(2, UART_PIN_TX, tx_selec)) != NULL && 
-			PINNODE(uint32_t)(USART_PINCTRL_SOURCE(2, UART_PIN_RX, rx_selec)) != NULL) {
+		if ((USART_PINCTRL_SOURCE(2, UART_PIN_TX, tx_selec)) != NULLPIN && 
+			(USART_PINCTRL_SOURCE(2, UART_PIN_RX, rx_selec)) != NULLPIN) {
 			tx_pin = USART_PINCTRL_SOURCE(2, UART_PIN_TX, tx_selec);
 			rx_pin = USART_PINCTRL_SOURCE(2, UART_PIN_RX, rx_selec);
 			illegal = tx_pin->port && rx_pin->port;
@@ -65,8 +65,8 @@ bool _usart_pinconfig(struct uart_dev_s *dev)
 		}
 		break;
 	case 3:
-		if (PINNODE(uint32_t)(USART_PINCTRL_SOURCE(3, UART_PIN_TX, tx_selec)) != NULL && 
-			PINNODE(uint32_t)(USART_PINCTRL_SOURCE(3, UART_PIN_RX, rx_selec)) != NULL) {
+		if ((USART_PINCTRL_SOURCE(3, UART_PIN_TX, tx_selec)) != NULLPIN && 
+			(USART_PINCTRL_SOURCE(3, UART_PIN_RX, rx_selec)) != NULLPIN) {
 			tx_pin = USART_PINCTRL_SOURCE(3, UART_PIN_TX, tx_selec);
 			rx_pin = USART_PINCTRL_SOURCE(3, UART_PIN_RX, rx_selec);
 			illegal = tx_pin->port && rx_pin->port;
@@ -75,8 +75,8 @@ bool _usart_pinconfig(struct uart_dev_s *dev)
 		}
 		break;
 	case 4:
-		if (PINNODE(uint32_t)(UART_PINCTRL_SOURCE(4, UART_PIN_TX, tx_selec)) != NULL && 
-			PINNODE(uint32_t)(UART_PINCTRL_SOURCE(4, UART_PIN_RX, rx_selec)) != NULL) {
+		if ((UART_PINCTRL_SOURCE(4, UART_PIN_TX, tx_selec)) != NULLPIN && 
+			(UART_PINCTRL_SOURCE(4, UART_PIN_RX, rx_selec)) != NULLPIN) {
 			tx_pin = UART_PINCTRL_SOURCE(4, UART_PIN_TX, tx_selec);
 			rx_pin = UART_PINCTRL_SOURCE(4, UART_PIN_RX, rx_selec);
 			illegal = tx_pin->port && rx_pin->port;
@@ -85,8 +85,8 @@ bool _usart_pinconfig(struct uart_dev_s *dev)
 		}
 		break;
 	case 5:
-		if (PINNODE(uint32_t)(UART_PINCTRL_SOURCE(5, UART_PIN_TX, tx_selec)) != NULL && 
-			PINNODE(uint32_t)(UART_PINCTRL_SOURCE(5, UART_PIN_RX, rx_selec)) != NULL) {
+		if ((UART_PINCTRL_SOURCE(5, UART_PIN_TX, tx_selec)) != NULLPIN && 
+			(UART_PINCTRL_SOURCE(5, UART_PIN_RX, rx_selec)) != NULLPIN) {
 			tx_pin = UART_PINCTRL_SOURCE(5, UART_PIN_TX, tx_selec);
 			rx_pin = UART_PINCTRL_SOURCE(5, UART_PIN_RX, rx_selec);
 			illegal = tx_pin->port && rx_pin->port;
@@ -95,8 +95,8 @@ bool _usart_pinconfig(struct uart_dev_s *dev)
 		}
 		break;
 	case 6:
-		if (PINNODE(uint32_t)(USART_PINCTRL_SOURCE(6, UART_PIN_TX, tx_selec)) != NULL && 
-			PINNODE(uint32_t)(USART_PINCTRL_SOURCE(6, UART_PIN_RX, rx_selec)) != NULL) {
+		if ((USART_PINCTRL_SOURCE(6, UART_PIN_TX, tx_selec)) != NULLPIN && 
+			(USART_PINCTRL_SOURCE(6, UART_PIN_RX, rx_selec)) != NULLPIN) {
 			tx_pin = USART_PINCTRL_SOURCE(6, UART_PIN_TX, tx_selec);
 			rx_pin = USART_PINCTRL_SOURCE(6, UART_PIN_RX, rx_selec);
 			illegal = tx_pin->port && rx_pin->port;
@@ -105,8 +105,8 @@ bool _usart_pinconfig(struct uart_dev_s *dev)
 		}
 		break;
 	case 7:
-		if (PINNODE(uint32_t)(UART_PINCTRL_SOURCE(7, UART_PIN_TX, tx_selec)) != NULL && 
-			PINNODE(uint32_t)(UART_PINCTRL_SOURCE(7, UART_PIN_RX, rx_selec)) != NULL) {
+		if ((UART_PINCTRL_SOURCE(7, UART_PIN_TX, tx_selec)) != NULLPIN && 
+			(UART_PINCTRL_SOURCE(7, UART_PIN_RX, rx_selec)) != NULLPIN) {
 			tx_pin = UART_PINCTRL_SOURCE(7, UART_PIN_TX, tx_selec);
 			rx_pin = UART_PINCTRL_SOURCE(7, UART_PIN_RX, rx_selec);
 			illegal = tx_pin->port && rx_pin->port;
@@ -115,8 +115,8 @@ bool _usart_pinconfig(struct uart_dev_s *dev)
 		}
 		break;
 	case 8:
-		if (PINNODE(uint32_t)(UART_PINCTRL_SOURCE(8, UART_PIN_TX, tx_selec)) != NULL && 
-			PINNODE(uint32_t)(UART_PINCTRL_SOURCE(8, UART_PIN_RX, rx_selec)) != NULL) {
+		if ((UART_PINCTRL_SOURCE(8, UART_PIN_TX, tx_selec)) != NULLPIN && 
+			(UART_PINCTRL_SOURCE(8, UART_PIN_RX, rx_selec)) != NULLPIN) {
 			tx_pin = UART_PINCTRL_SOURCE(8, UART_PIN_TX, tx_selec);
 			rx_pin = UART_PINCTRL_SOURCE(8, UART_PIN_RX, rx_selec);
 			illegal = tx_pin->port && rx_pin->port;
@@ -183,7 +183,7 @@ bool _usart_pinconfig(struct uart_dev_s *dev)
         GPIO_TypeDef* rx_port[8] = { GPIOB,		GPIOD,      GPIOD, GPIOD,   GPIOB,  GPIOG,  GPIOE,  /*GPIOJ*/};
         uint16_t       rx_pin[8] = {   7,        6,          9,      0,      12,     9,      7,     9    };
 
-        uint32_t      alternate[3] = {
+        uint32_t      alternate[8] = {
             GPIO_AF7_USART1, GPIO_AF7_USART2, GPIO_AF7_USART3, GPIO_AF8_UART4,
             GPIO_AF8_UART5, GPIO_AF8_USART6, 
 #if (BSP_CHIP_RESOURCE_LEVEL > 2)

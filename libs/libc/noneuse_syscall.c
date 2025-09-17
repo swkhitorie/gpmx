@@ -93,11 +93,11 @@ int _unlink(char *name)
     return -1;
 }
 
-int _times(struct tms *buf)
-{
-    (void)buf;
-    return -1;
-}
+// int _times(struct tms *buf)
+// {
+//     (void)buf;
+//     return -1;
+// }
 
 int _stat(char *file, struct stat *st)
 {

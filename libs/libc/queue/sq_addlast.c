@@ -8,7 +8,7 @@
  *   the 'queue'
  ****************************************************************************/
 
-void sq_addlast(FAR sq_entry_t *node, sq_queue_t *queue)
+void sq_addlast(sq_entry_t *node, sq_queue_t *queue)
 {
     node->flink = NULL;
     if (!queue->head) {

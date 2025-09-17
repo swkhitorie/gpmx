@@ -4,6 +4,7 @@
 #include <drv_spi.h>
 #include <drv_rtc.h>
 #include <drv_can.h>
+#include <drv_eth.h>
 #include <device/dnode.h>
 #include <device/serial.h>
 #include <device/i2c_master.h>
@@ -11,10 +12,10 @@
 #include <device/can.h>
 
 /* COM1 */
-uint8_t com1_dma_rxbuff[128];
-uint8_t com1_dma_txbuff[512];
-uint8_t com1_txbuff[512];
-uint8_t com1_rxbuff[128];
+uint8_t com1_dma_rxbuff[64];
+uint8_t com1_dma_txbuff[256];
+uint8_t com1_txbuff[256];
+uint8_t com1_rxbuff[64];
 struct up_uart_dev_s com1_dev = {
     .dev = {
         .baudrate = 115200,
@@ -22,19 +23,19 @@ struct up_uart_dev_s com1_dev = {
         .stopbitlen = 1,
         .parity = 'n',
         .recv = {
-            .capacity = 128,
+            .capacity = 64,
             .buffer = com1_rxbuff,
         },
         .xmit = {
-            .capacity = 512,
+            .capacity = 256,
             .buffer = com1_txbuff,
         },
         .dmarx = {
-            .capacity = 128,
+            .capacity = 64,
             .buffer = com1_dma_rxbuff,
         },
         .dmatx = {
-            .capacity = 512,
+            .capacity = 256,
             .buffer = com1_dma_txbuff,
         },
         .ops       = &g_uart_ops,
@@ -230,7 +231,7 @@ void board_bsp_init()
     serial_register(&com3_dev.dev, 3);
 
     i2c_register(&i2c1_dev.dev, 1);
-    spi_register(&spi1_dev, 1);
+    spi_register(&spi1_dev.dev, 1);
     can_register(&can2_dev.dev, 2);
 
     serial_bus_initialize(1);
@@ -329,14 +330,25 @@ bool board_rtc_set_time_stamp(time_t time_stamp)
 
 #ifdef CONFIG_BOARD_COM_STDINOUT
 #include <string.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <sys/unistd.h>
 FILE __stdin, __stdout, __stderr;
-size_t fwrite(const void *ptr, size_t size, size_t n_items, FILE *stream)
+
+int _read(int file, char *ptr, int len)
 {
-    return _write(stream->_file, ptr, size*n_items);
+    const int stdin_fileno = 0;
+    const int stdout_fileno = 1;
+    const int stderr_fileno = 2;
+    int rsize = 0;
+    if (file == stdin_fileno) {
+        rsize = SERIAL_RDBUF(dstdin, ptr, len);
+    }
+    return rsize;
 }
-int _write(int file, char *ptr, int len)
+
+int _write(int file, const char *ptr, int len)
 {
     const int stdin_fileno = 0;
     const int stdout_fileno = 1;
@@ -350,21 +362,17 @@ int _write(int file, char *ptr, int len)
     }
     return len;
 }
+
+size_t fwrite(const void *ptr, size_t size, size_t n_items, FILE *stream)
+{
+    return _write(stream->_file, ptr, size*n_items);
+}
+
 size_t fread(void *ptr, size_t size, size_t n_items, FILE *stream)
 {
     return _read(stream->_file, ptr, size*n_items);
 }
 // nonblock
-int _read(int file, char *ptr, int len)
-{
-    const int stdin_fileno = 0;
-    const int stdout_fileno = 1;
-    const int stderr_fileno = 2;
-    int rsize = 0;
-    if (file == stdin_fileno) {
-        rsize = SERIAL_RDBUF(dstdin, ptr, len);
-    }
-    return rsize;
-}
+
 #endif
 

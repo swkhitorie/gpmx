@@ -42,8 +42,8 @@ bool _i2c_pinconfig(struct i2c_master_s *dev)
 
 	switch (num) {
 	case 1:
-		if (PINNODE(uint32_t)(I2C_PINCTRL_SOURCE(1, I2C_PIN_SCL, pin_scl)) != NULL &&
-			PINNODE(uint32_t)(I2C_PINCTRL_SOURCE(1, I2C_PIN_SDA, pin_sda)) != NULL) {
+		if ((I2C_PINCTRL_SOURCE(1, I2C_PIN_SCL, pin_scl)) != NULLPIN &&
+			(I2C_PINCTRL_SOURCE(1, I2C_PIN_SDA, pin_sda)) != NULLPIN) {
 			scl_node = I2C_PINCTRL_SOURCE(1, I2C_PIN_SCL, pin_scl);
 			sda_node = I2C_PINCTRL_SOURCE(1, I2C_PIN_SDA, pin_sda);
 			illegal = scl_node->port && sda_node->port;
@@ -52,8 +52,8 @@ bool _i2c_pinconfig(struct i2c_master_s *dev)
 		}
 		break;
 	case 2:
-		if (PINNODE(uint32_t)(I2C_PINCTRL_SOURCE(2, I2C_PIN_SCL, pin_scl)) != NULL &&
-			PINNODE(uint32_t)(I2C_PINCTRL_SOURCE(2, I2C_PIN_SDA, pin_sda)) != NULL) {
+		if ((I2C_PINCTRL_SOURCE(2, I2C_PIN_SCL, pin_scl)) != NULLPIN &&
+			(I2C_PINCTRL_SOURCE(2, I2C_PIN_SDA, pin_sda)) != NULLPIN) {
 			scl_node = I2C_PINCTRL_SOURCE(2, I2C_PIN_SCL, pin_scl);
 			sda_node = I2C_PINCTRL_SOURCE(2, I2C_PIN_SDA, pin_sda);
 			illegal = scl_node->port && sda_node->port;
@@ -62,8 +62,8 @@ bool _i2c_pinconfig(struct i2c_master_s *dev)
 		}
 		break;
 	case 3:
-		if (PINNODE(uint32_t)(I2C_PINCTRL_SOURCE(3, I2C_PIN_SCL, pin_scl)) != NULL &&
-			PINNODE(uint32_t)(I2C_PINCTRL_SOURCE(3, I2C_PIN_SDA, pin_sda)) != NULL) {
+		if ((I2C_PINCTRL_SOURCE(3, I2C_PIN_SCL, pin_scl)) != NULLPIN &&
+			(I2C_PINCTRL_SOURCE(3, I2C_PIN_SDA, pin_sda)) != NULLPIN) {
 			scl_node = I2C_PINCTRL_SOURCE(3, I2C_PIN_SCL, pin_scl);
 			sda_node = I2C_PINCTRL_SOURCE(3, I2C_PIN_SDA, pin_sda);
 			illegal = scl_node->port && sda_node->port;
@@ -72,8 +72,8 @@ bool _i2c_pinconfig(struct i2c_master_s *dev)
 		}
 		break;
 	case 4:
-		if (PINNODE(uint32_t)(I2C_PINCTRL_SOURCE(4, I2C_PIN_SCL, pin_scl)) != NULL &&
-			PINNODE(uint32_t)(I2C_PINCTRL_SOURCE(4, I2C_PIN_SDA, pin_sda)) != NULL) {
+		if ((I2C_PINCTRL_SOURCE(4, I2C_PIN_SCL, pin_scl)) != NULLPIN &&
+			(I2C_PINCTRL_SOURCE(4, I2C_PIN_SDA, pin_sda)) != NULLPIN) {
 			scl_node = I2C_PINCTRL_SOURCE(4, I2C_PIN_SCL, pin_scl);
 			sda_node = I2C_PINCTRL_SOURCE(4, I2C_PIN_SDA, pin_sda);
 			illegal = scl_node->port && sda_node->port;

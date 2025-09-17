@@ -8,8 +8,8 @@
 extern "C" {
 #endif
 
-#if !defined(HSE_VALUE)
-#define HSE_VALUE               ((uint32_t)25000000)
+#if !(defined(HSE_VALUE))
+#define HSE_VALUE               (25000000UL)
 #endif
 
 #if !defined(LSE_VALUE)

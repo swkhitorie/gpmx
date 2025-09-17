@@ -4,6 +4,9 @@
 #
 ################################################################################
 
+####################
+#      armcc       #
+####################
 ifeq (${TC_NAME},armcc)
 
 CORE_ASMOPTS:=\
@@ -14,8 +17,11 @@ CORE_COPTS:=\
   --cpu=Cortex-M7.fp.sp             \
   --apcs=interwork
 
-endif # TC_NAME - arm cc 
+endif
 
+####################
+#    armclang      #
+####################
 ifeq (${TC_NAME},armclang)
 
 CORE_ASMOPTS:=\
@@ -31,8 +37,11 @@ CORE_COPTS:=\
 CORE_LIBOPTS:=\
   --cpu Cortex-M7.fp.dp
 
-endif # TC_NAME - arm clang
+endif
 
+####################
+#    gcc-arm       #
+####################
 ifeq (${TC_NAME},gae)
 
 CORE_ASMOPTS:=\
@@ -56,4 +65,4 @@ CORE_LIBOPTS:=\
   -mthumb                          \
   -mthumb-interwork
 
-endif # TC_NAME - gae
+endif

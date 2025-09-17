@@ -59,11 +59,11 @@ bool low_pinconfig(struct up_qspi_dev_s *dev)
 
 	switch (bank_num) {
 	case 1:
-		if (QSPI_PINCTRL_SOURCE(1, QSPI_PIN_IO_0, io0s) != NULL &&
-			QSPI_PINCTRL_SOURCE(1, QSPI_PIN_IO_1, io1s) != NULL &&
-			QSPI_PINCTRL_SOURCE(1, QSPI_PIN_IO_2, io2s) != NULL &&
-			QSPI_PINCTRL_SOURCE(1, QSPI_PIN_IO_3, io3s) != NULL &&
-			QSPI_PINCTRL_SOURCE(1, QSPI_PIN_NCS, ncs) != NULL) {
+		if (QSPI_PINCTRL_SOURCE(1, QSPI_PIN_IO_0, io0s) != NULLPIN &&
+			QSPI_PINCTRL_SOURCE(1, QSPI_PIN_IO_1, io1s) != NULLPIN &&
+			QSPI_PINCTRL_SOURCE(1, QSPI_PIN_IO_2, io2s) != NULLPIN &&
+			QSPI_PINCTRL_SOURCE(1, QSPI_PIN_IO_3, io3s) != NULLPIN &&
+			QSPI_PINCTRL_SOURCE(1, QSPI_PIN_NCS, ncs) != NULLPIN) {
 			io0_pin_node = QSPI_PINCTRL_SOURCE(1, QSPI_PIN_IO_0, io0s);
 			io1_pin_node = QSPI_PINCTRL_SOURCE(1, QSPI_PIN_IO_1, io1s);
 			io2_pin_node = QSPI_PINCTRL_SOURCE(1, QSPI_PIN_IO_2, io2s);
@@ -76,11 +76,11 @@ bool low_pinconfig(struct up_qspi_dev_s *dev)
 		}
 		break;
 	case 2:
-		if (QSPI_PINCTRL_SOURCE(2, QSPI_PIN_IO_0, io0s) != NULL &&
-			QSPI_PINCTRL_SOURCE(2, QSPI_PIN_IO_1, io1s) != NULL &&
-			QSPI_PINCTRL_SOURCE(2, QSPI_PIN_IO_2, io2s) != NULL &&
-			QSPI_PINCTRL_SOURCE(2, QSPI_PIN_IO_3, io3s) != NULL &&
-			QSPI_PINCTRL_SOURCE(2, QSPI_PIN_NCS, ncs) != NULL) {
+		if (QSPI_PINCTRL_SOURCE(2, QSPI_PIN_IO_0, io0s) != NULLPIN &&
+			QSPI_PINCTRL_SOURCE(2, QSPI_PIN_IO_1, io1s) != NULLPIN &&
+			QSPI_PINCTRL_SOURCE(2, QSPI_PIN_IO_2, io2s) != NULLPIN &&
+			QSPI_PINCTRL_SOURCE(2, QSPI_PIN_IO_3, io3s) != NULLPIN &&
+			QSPI_PINCTRL_SOURCE(2, QSPI_PIN_NCS, ncs) != NULLPIN) {
 			io0_pin_node = QSPI_PINCTRL_SOURCE(2, QSPI_PIN_IO_0, io0s);
 			io1_pin_node = QSPI_PINCTRL_SOURCE(2, QSPI_PIN_IO_1, io1s);
 			io2_pin_node = QSPI_PINCTRL_SOURCE(2, QSPI_PIN_IO_2, io2s);

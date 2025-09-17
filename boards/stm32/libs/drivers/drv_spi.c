@@ -58,10 +58,10 @@ bool _spi_pinconfig(struct spi_dev_s *dev)
 
 	switch (num) {
 	case 1:
-		if (PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(1, SPI_PIN_NSS, pin_ncs)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(1, SPI_PIN_SCK, pin_sck)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(1, SPI_PIN_MISO, pin_miso)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(1, SPI_PIN_MOSI, pin_mosi)) != NULL) {
+		if ((SPI_PINCTRL_SOURCE(1, SPI_PIN_NSS, pin_ncs)) != NULLPIN &&
+			(SPI_PINCTRL_SOURCE(1, SPI_PIN_SCK, pin_sck)) != NULLPIN &&
+			(SPI_PINCTRL_SOURCE(1, SPI_PIN_MISO, pin_miso)) != NULLPIN &&
+			(SPI_PINCTRL_SOURCE(1, SPI_PIN_MOSI, pin_mosi)) != NULLPIN) {
 			nss_node = SPI_PINCTRL_SOURCE(1, SPI_PIN_NSS, pin_ncs);
 			sck_node = SPI_PINCTRL_SOURCE(1, SPI_PIN_SCK, pin_sck);
 			miso_node = SPI_PINCTRL_SOURCE(1, SPI_PIN_MISO, pin_miso);
@@ -73,10 +73,10 @@ bool _spi_pinconfig(struct spi_dev_s *dev)
 		}
 		break;
 	case 2:
-		if (PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(2, SPI_PIN_NSS, pin_ncs)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(2, SPI_PIN_SCK, pin_sck)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(2, SPI_PIN_MISO, pin_miso)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(2, SPI_PIN_MOSI, pin_mosi)) != NULL) {
+		if ((SPI_PINCTRL_SOURCE(2, SPI_PIN_NSS, pin_ncs)) != NULLPIN &&
+			(SPI_PINCTRL_SOURCE(2, SPI_PIN_SCK, pin_sck)) != NULLPIN &&
+			(SPI_PINCTRL_SOURCE(2, SPI_PIN_MISO, pin_miso)) != NULLPIN &&
+			(SPI_PINCTRL_SOURCE(2, SPI_PIN_MOSI, pin_mosi)) != NULLPIN) {
 			nss_node = SPI_PINCTRL_SOURCE(2, SPI_PIN_NSS, pin_ncs);
 			sck_node = SPI_PINCTRL_SOURCE(2, SPI_PIN_SCK, pin_sck);
 			miso_node = SPI_PINCTRL_SOURCE(2, SPI_PIN_MISO, pin_miso);
@@ -88,10 +88,10 @@ bool _spi_pinconfig(struct spi_dev_s *dev)
 		}
 		break;
 	case 3:
-		if (PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(3, SPI_PIN_NSS, pin_ncs)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(3, SPI_PIN_SCK, pin_sck)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(3, SPI_PIN_MISO, pin_miso)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(3, SPI_PIN_MOSI, pin_mosi)) != NULL) {
+		if ((SPI_PINCTRL_SOURCE(3, SPI_PIN_NSS, pin_ncs)) != NULLPIN &&
+			(SPI_PINCTRL_SOURCE(3, SPI_PIN_SCK, pin_sck)) != NULLPIN &&
+			(SPI_PINCTRL_SOURCE(3, SPI_PIN_MISO, pin_miso)) != NULLPIN &&
+			(SPI_PINCTRL_SOURCE(3, SPI_PIN_MOSI, pin_mosi)) != NULLPIN) {
 			nss_node = SPI_PINCTRL_SOURCE(3, SPI_PIN_NSS, pin_ncs);
 			sck_node = SPI_PINCTRL_SOURCE(3, SPI_PIN_SCK, pin_sck);
 			miso_node = SPI_PINCTRL_SOURCE(3, SPI_PIN_MISO, pin_miso);
@@ -103,10 +103,10 @@ bool _spi_pinconfig(struct spi_dev_s *dev)
 		}
 		break;
 	case 4:
-		if (PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(4, SPI_PIN_NSS, pin_ncs)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(4, SPI_PIN_SCK, pin_sck)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(4, SPI_PIN_MISO, pin_miso)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(4, SPI_PIN_MOSI, pin_mosi)) != NULL) {
+		if ((SPI_PINCTRL_SOURCE(4, SPI_PIN_NSS, pin_ncs)) != NULLPIN &&
+			(SPI_PINCTRL_SOURCE(4, SPI_PIN_SCK, pin_sck)) != NULLPIN &&
+			(SPI_PINCTRL_SOURCE(4, SPI_PIN_MISO, pin_miso)) != NULLPIN &&
+			(SPI_PINCTRL_SOURCE(4, SPI_PIN_MOSI, pin_mosi)) != NULLPIN) {
 			nss_node = SPI_PINCTRL_SOURCE(4, SPI_PIN_NSS, pin_ncs);
 			sck_node = SPI_PINCTRL_SOURCE(4, SPI_PIN_SCK, pin_sck);
 			miso_node = SPI_PINCTRL_SOURCE(4, SPI_PIN_MISO, pin_miso);
@@ -118,10 +118,10 @@ bool _spi_pinconfig(struct spi_dev_s *dev)
 		}
 		break;
 	case 5:
-		if (PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(5, SPI_PIN_NSS, pin_ncs)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(5, SPI_PIN_SCK, pin_sck)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(5, SPI_PIN_MISO, pin_miso)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(5, SPI_PIN_MOSI, pin_mosi)) != NULL) {
+		if ((SPI_PINCTRL_SOURCE(5, SPI_PIN_NSS, pin_ncs)) != NULLPIN &&
+			(SPI_PINCTRL_SOURCE(5, SPI_PIN_SCK, pin_sck)) != NULLPIN &&
+			(SPI_PINCTRL_SOURCE(5, SPI_PIN_MISO, pin_miso)) != NULLPIN &&
+			(SPI_PINCTRL_SOURCE(5, SPI_PIN_MOSI, pin_mosi)) != NULLPIN) {
 			nss_node = SPI_PINCTRL_SOURCE(5, SPI_PIN_NSS, pin_ncs);
 			sck_node = SPI_PINCTRL_SOURCE(5, SPI_PIN_SCK, pin_sck);
 			miso_node = SPI_PINCTRL_SOURCE(5, SPI_PIN_MISO, pin_miso);
@@ -133,10 +133,10 @@ bool _spi_pinconfig(struct spi_dev_s *dev)
 		}
 		break;
 	case 6:
-		if (PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(6, SPI_PIN_NSS, pin_ncs)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(6, SPI_PIN_SCK, pin_sck)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(6, SPI_PIN_MISO, pin_miso)) != NULL &&
-			PINNODE(uint32_t)(SPI_PINCTRL_SOURCE(6, SPI_PIN_MOSI, pin_mosi)) != NULL) {
+		if ((SPI_PINCTRL_SOURCE(6, SPI_PIN_NSS, pin_ncs)) != NULLPIN &&
+			(SPI_PINCTRL_SOURCE(6, SPI_PIN_SCK, pin_sck)) != NULLPIN &&
+			(SPI_PINCTRL_SOURCE(6, SPI_PIN_MISO, pin_miso)) != NULLPIN &&
+			(SPI_PINCTRL_SOURCE(6, SPI_PIN_MOSI, pin_mosi)) != NULLPIN) {
 			nss_node = SPI_PINCTRL_SOURCE(6, SPI_PIN_NSS, pin_ncs);
 			sck_node = SPI_PINCTRL_SOURCE(6, SPI_PIN_SCK, pin_sck);
 			miso_node = SPI_PINCTRL_SOURCE(6, SPI_PIN_MISO, pin_miso);
@@ -529,8 +529,16 @@ uint32_t up_spi_setfrequency(struct spi_dev_s *dev, uint32_t frequency)
 void up_spi_setmode(struct spi_dev_s *dev, enum spi_mode_e mode)
 {
     struct up_spi_dev_s *priv = dev->priv;
+
+#if defined (DRV_BSP_H7)
+    uint32_t setbits;
+    uint32_t clrbits;
+#endif
+
+#if defined (DRV_BSP_F4) || defined (DRV_BSP_F1)
     uint16_t setbits;
     uint16_t clrbits;
+#endif
 
 	if (mode != dev->mode) {
 #if defined (DRV_BSP_H7)
@@ -639,8 +647,16 @@ void up_spi_setmode(struct spi_dev_s *dev, enum spi_mode_e mode)
 void up_spi_setbits(struct spi_dev_s *dev, int nbits)
 {
     struct up_spi_dev_s *priv = dev->priv;
+
+#if defined (DRV_BSP_H7)
+    uint32_t setbits;
+    uint32_t clrbits;
+#endif
+
+#if defined (DRV_BSP_F4) || defined (DRV_BSP_F1)
     uint16_t setbits;
     uint16_t clrbits;
+#endif
 
     if (nbits != dev->nbits) {
 #if defined (DRV_BSP_H7)
@@ -722,23 +738,24 @@ int up_spi_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbuffer,
 {
     int ret = 0;
     struct up_spi_dev_s *priv = dev->priv;
+    void *nc_txbuffer = (void *)txbuffer;
 
 	// bug: when write sensor register data:
 	// call HAL_SPI_TransmitReceive_DMA(dev, {addr, data}, {0x00, 0x00}, 2), it can not work
 	// call HAL_SPI_Transmit_DMA(dev, {addr, data}, 2), it works
 	// ???
 
-	if (!txbuffer && rxbuffer) {
+	if (!nc_txbuffer && rxbuffer) {
 		dev->rxresult = 0x00;
 		ret = HAL_SPI_Receive_DMA(&priv->hspi, rxbuffer, nwords);
         ret = spi_dmarxwait(dev);
-	} else if (txbuffer && !rxbuffer) {
+	} else if (nc_txbuffer && !rxbuffer) {
 		dev->txresult = 0x00;
-		ret = HAL_SPI_Transmit_DMA(&priv->hspi, txbuffer, nwords);
+		ret = HAL_SPI_Transmit_DMA(&priv->hspi, nc_txbuffer, nwords);
         ret = spi_dmatxwait(dev);
-	} else if (txbuffer && rxbuffer) {
+	} else if (nc_txbuffer && rxbuffer) {
 		dev->txresult = 0x00;
-		ret = HAL_SPI_TransmitReceive_DMA(&priv->hspi, txbuffer, rxbuffer, nwords);
+		ret = HAL_SPI_TransmitReceive_DMA(&priv->hspi, nc_txbuffer, rxbuffer, nwords);
         ret = spi_dmatxwait(dev);
 	}
 
@@ -750,8 +767,9 @@ int up_spi_exchangeblock(struct spi_dev_s *dev,
 {
 	int ret = 0;
 	struct up_spi_dev_s *priv = dev->priv;
+    void *nc_txbuffer = (void *)txbuffer;
 
-	ret = HAL_SPI_TransmitReceive(&priv->hspi, txbuffer, rxbuffer, nwords, 1000);
+	ret = HAL_SPI_TransmitReceive(&priv->hspi, nc_txbuffer, rxbuffer, nwords, 1000);
 	return ret;
 }
 
@@ -759,8 +777,9 @@ int up_spi_sndblock(struct spi_dev_s *dev, const void *buffer, size_t nwords)
 {
 	int ret = 0;
 	struct up_spi_dev_s *priv = dev->priv;
+	void *nc_buffer = (void *)buffer;
 
-	ret = HAL_SPI_Transmit(&priv->hspi, buffer, nwords, 1000);
+	ret = HAL_SPI_Transmit(&priv->hspi, nc_buffer, nwords, 1000);
 	return ret;
 }
 

@@ -3,10 +3,6 @@
 
 #include <stdint.h>
 
-#ifndef FAR
-#define FAR
-#endif
-
 #ifndef TRUE
 #define TRUE  1
 #endif
@@ -47,6 +43,6 @@ typedef uint32_t     useconds_t;
 typedef int32_t      suseconds_t;
 
 /* Task entry point */
-typedef int (*main_t)(int argc, FAR char *argv[]);
+typedef int (*main_t)(int argc, char *argv[]);
 
 #endif

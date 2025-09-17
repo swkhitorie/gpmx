@@ -37,9 +37,12 @@ static bool low_pinconfig(struct up_mmcsd_dev_s *dev)
 							cmd_pin_node->port && clk_pin_node->port;
 		break;
 	case 2:
-		if (SDMMC2_PINCTRL_SOURCE(SDMMC_D0, d0s) != NULL && SDMMC2_PINCTRL_SOURCE(SDMMC_D1, d1s) != NULL
-			&& SDMMC2_PINCTRL_SOURCE(SDMMC_D2, d2s) != NULL && SDMMC2_PINCTRL_SOURCE(SDMMC_D3, d3s) != NULL
-			&& SDMMC2_PINCTRL_SOURCE(SDMMC_CMD, cmds) != NULL && SDMMC2_PINCTRL_SOURCE(SDMMC_CLK, clks) != NULL) {
+		if (SDMMC2_PINCTRL_SOURCE(SDMMC_D0, d0s) != NULLPIN && 
+            SDMMC2_PINCTRL_SOURCE(SDMMC_D1, d1s) != NULLPIN && 
+            SDMMC2_PINCTRL_SOURCE(SDMMC_D2, d2s) != NULLPIN && 
+            SDMMC2_PINCTRL_SOURCE(SDMMC_D3, d3s) != NULLPIN &&
+            SDMMC2_PINCTRL_SOURCE(SDMMC_CMD, cmds) != NULLPIN &&
+            SDMMC2_PINCTRL_SOURCE(SDMMC_CLK, clks) != NULLPIN) {
 			d0_pin_node = SDMMC2_PINCTRL_SOURCE(SDMMC_D0, d0s);
 			d1_pin_node = SDMMC2_PINCTRL_SOURCE(SDMMC_D1, d1s);
 			d2_pin_node = SDMMC2_PINCTRL_SOURCE(SDMMC_D2, d2s);

@@ -8,7 +8,7 @@
  *
  ****************************************************************************/
 
-void sq_rem(FAR sq_entry_t *node, sq_queue_t *queue)
+void sq_rem(sq_entry_t *node, sq_queue_t *queue)
 {
     if (queue->head && node) {
         if (node == queue->head) {
@@ -17,8 +17,8 @@ void sq_rem(FAR sq_entry_t *node, sq_queue_t *queue)
                 queue->tail = NULL;
             }
         } else {
-            FAR sq_entry_t *prev;
-            for (prev = (FAR sq_entry_t *)queue->head;
+            sq_entry_t *prev;
+            for (prev = (sq_entry_t *)queue->head;
                   prev && prev->flink != node;
                   prev = prev->flink);
             if (prev) {

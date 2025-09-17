@@ -14,6 +14,7 @@ CONST_MAKE      :=  included
 MOD_BOOTEXT     :=  BOOT
 MOD_UPGEXT      :=  UPG
 MOD_BINEXT      :=  bin
+MOD_HEXEXT      :=  hex
 MOD_LNKLSTEXT   :=  txt
 
 #

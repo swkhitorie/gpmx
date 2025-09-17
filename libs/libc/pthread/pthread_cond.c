@@ -4,6 +4,7 @@
 #include "pthread.h"
 #include "errno.h"
 #include "atomic.h"
+#include <utils.h>
 
 
 static void init_condstatic(pthread_cond_t *p)

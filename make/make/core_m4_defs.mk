@@ -4,6 +4,9 @@
 #
 ################################################################################
 
+####################
+#      armcc       #
+####################
 ifeq (${TC_NAME},armcc)
 
 CORE_ASMOPTS:=\
@@ -17,8 +20,11 @@ CORE_COPTS:=\
 CORE_LIBOPTS:=\
   --cpu=Cortex-M4.fp.sp
 
-endif # TC_NAME - arm cc
+endif
 
+####################
+#    armclang      #
+####################
 ifeq (${TC_NAME},armclang)
 
 CORE_ASMOPTS:=\
@@ -32,8 +38,14 @@ CORE_COPTS:=\
   -mfpu=fpv4-sp-d16                 \
   -mfloat-abi=hard
 
-endif # TC_NAME - arm clang
+CORE_LIBOPTS:=\
+  --cpu=Cortex-M4.fp.sp
 
+endif
+
+####################
+#    gcc-arm       #
+####################
 ifeq (${TC_NAME},gae)
 
 CORE_ASMOPTS:=\
@@ -57,4 +69,4 @@ CORE_LIBOPTS:=\
   -mthumb                          \
   -mthumb-interwork
 
-endif # TC_NAME - gae
+endif

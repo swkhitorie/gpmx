@@ -12,8 +12,8 @@ struct mq_attr
     size_t         mq_curmsgs;   /* Number of messages currently in queue */
 };
 
-//typedef FAR struct void* mqd_t;
-typedef FAR void* mqd_t;
+//typedef struct void* mqd_t;
+typedef void* mqd_t;
 
 #ifdef __cplusplus
 #define EXTERN extern "C"

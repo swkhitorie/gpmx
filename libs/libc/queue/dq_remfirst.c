@@ -8,12 +8,12 @@
  *
  ****************************************************************************/
 
-FAR dq_entry_t *dq_remfirst(dq_queue_t *queue)
+dq_entry_t *dq_remfirst(dq_queue_t *queue)
 {
-    FAR dq_entry_t *ret = queue->head;
+    dq_entry_t *ret = queue->head;
 
     if (ret) {
-        FAR dq_entry_t *next = ret->flink;
+        dq_entry_t *next = ret->flink;
         if (!next) {
             queue->head = NULL;
             queue->tail = NULL;

@@ -1,5 +1,6 @@
 #include "./prv_mqueue.h"
 #include "utils.h"
+#include <string.h>
 
 ssize_t mq_timedreceive(mqd_t mqdes, char *msg_ptr, size_t msg_len, unsigned *msg_prio, const struct timespec *abstime)
 {

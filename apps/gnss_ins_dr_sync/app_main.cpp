@@ -31,7 +31,6 @@ uint32_t run_tag = 0;
 #endif
 
 __attribute__((section(".ccmram"))) struct __sens_sync_proto sens_sync;
-__attribute__((section(".ccmram"))) static uint8_t rmem[1024*2];
 
 static uart_dev_t *rtk_rover_port;
 static uart_dev_t *rtk_base_port;
@@ -55,7 +54,7 @@ static uint32_t spd_seq = 0;
 __attribute__((section(".ccmram"))) static uint8_t buff_eth[512];
 
 /** OBD Data */
-static uint32_t speed_obd = 0;
+static int32_t speed_obd = 0;
 
 static ip_addr_t up_addr;
 static uint16_t up_port;
@@ -167,7 +166,7 @@ int main(int argc, char *argv[])
                 run_tag = 0x0004;
                 udp_transfer_raw_control(sens_sync.buff, rover_len);
                 run_tag = 0x0005;
-                memset(sens_sync.buff, 0, 1024*5);
+                memset(sens_sync.buff, 0, SENS_SYNC_PROTO_PARSEBUFFERLEN);
             }
         }
 
@@ -182,7 +181,7 @@ int main(int argc, char *argv[])
                 run_tag = 0x0014;
                 udp_transfer_raw_control(sens_sync.buff, base_len);
                 run_tag = 0x0015;
-                memset(sens_sync.buff, 0, 1024*5);
+                memset(sens_sync.buff, 0, SENS_SYNC_PROTO_PARSEBUFFERLEN);
             }
         }
 
@@ -247,7 +246,7 @@ int main(int argc, char *argv[])
             udp_transfer_raw_control(sens_sync.buff, imu_len);
 
             run_tag = 0x0026;
-            memset(sens_sync.buff, 0, 1024*5);
+            memset(sens_sync.buff, 0, SENS_SYNC_PROTO_PARSEBUFFERLEN);
         }
 
         if (HAL_GetTick() - m3 >= 20) {
@@ -255,7 +254,7 @@ int main(int argc, char *argv[])
             run_tag = 0x0030;
             obd_request_speed();
             obd_rx_speed_detect();
-            speed_obd = obd_read_speed();
+            speed_obd = (int32_t)obd_read_speed();
 
             run_tag = 0x0031;
             gnsspps_timestamp(&tv);
@@ -273,7 +272,7 @@ int main(int argc, char *argv[])
             udp_transfer_raw_control(sens_sync.buff, spd_len);
 
             run_tag = 0x0034;
-            memset(sens_sync.buff, 0, 1024*5);
+            memset(sens_sync.buff, 0, SENS_SYNC_PROTO_PARSEBUFFERLEN);
         }
 
         if (HAL_GetTick() - m1 >= 500) {

@@ -8,10 +8,10 @@
  *
  ****************************************************************************/
 
-void dq_rem(FAR dq_entry_t *node, dq_queue_t *queue)
+void dq_rem(dq_entry_t *node, dq_queue_t *queue)
 {
-    FAR dq_entry_t *prev = node->blink;
-    FAR dq_entry_t *next = node->flink;
+    dq_entry_t *prev = node->blink;
+    dq_entry_t *next = node->flink;
 
     if (!prev) {
         queue->head = next;

@@ -15,6 +15,7 @@ struct pin_node{
 	uint32_t alternate;
 };
 
+#define NULLPIN   ((void *)0)
 #define INDEX(a)  a
 #ifdef cplusplus
     #define PINNODE(a) reinterpret_cast<a>
@@ -97,12 +98,12 @@ static const struct pin_node uart8_pinctrl[2][2] = {
 };
 
 #define USART_PINCTRL_SOURCE(NUM, TYPE, SELECT)   \
-		(TYPE < UART_PIN_TYPE_NUM && SELECT <= uart_max_selection_number[NUM - 1]) ?   \
-				&usart## NUM ##_pinctrl[INDEX(TYPE)][INDEX(SELECT) - 1] : NULL
+		((TYPE < UART_PIN_TYPE_NUM && SELECT <= uart_max_selection_number[NUM - 1]) ?   \
+				&usart## NUM ##_pinctrl[INDEX(TYPE)][INDEX(SELECT) - 1] : NULLPIN)
 
 #define UART_PINCTRL_SOURCE(NUM, TYPE, SELECT)   \
-		(TYPE < UART_PIN_TYPE_NUM && SELECT <= uart_max_selection_number[NUM - 1]) ?   \
-				&uart## NUM ##_pinctrl[INDEX(TYPE)][INDEX(SELECT) - 1] : NULL
+		((TYPE < UART_PIN_TYPE_NUM && SELECT <= uart_max_selection_number[NUM - 1]) ?   \
+				&uart## NUM ##_pinctrl[INDEX(TYPE)][INDEX(SELECT) - 1] : NULLPIN)
 
 /**
  * @brief 
@@ -232,8 +233,8 @@ static const struct pin_node timer8_pinctrl[5][4] = {
 };
 
 #define TIMER_PINCTRL_SOURCE(NUM, TYPE, SELECT)   \
-		(TYPE < TIM_PIN_TYPE_NUM && SELECT <= tim_max_selection_number[NUM - 1]) ?   \
-				&timer## NUM ##_pinctrl[INDEX(TYPE)][INDEX(SELECT) - 1] : NULL
+		((TYPE < TIM_PIN_TYPE_NUM && SELECT <= tim_max_selection_number[NUM - 1]) ?   \
+				&timer## NUM ##_pinctrl[INDEX(TYPE)][INDEX(SELECT) - 1] : NULLPIN)
 
 /**
  *  =========================================================================
@@ -510,8 +511,8 @@ static const struct pin_node spi6_pinctrl[4][3] = {
 
 
 #define SPI_PINCTRL_SOURCE(NUM, TYPE, SELECT)   \
-		(TYPE < SPI_PIN_TYPE_NUM && SELECT <= spi_max_selection_number[NUM - 1]) ?   \
-				&spi## NUM ##_pinctrl[INDEX(TYPE)][INDEX(SELECT) - 1] : NULL
+		((TYPE < SPI_PIN_TYPE_NUM && SELECT <= spi_max_selection_number[NUM - 1]) ?   \
+				&spi## NUM ##_pinctrl[INDEX(TYPE)][INDEX(SELECT) - 1] : NULLPIN)
 
 /**
  * @brief 
@@ -577,11 +578,11 @@ static const struct pin_node qspi_bank2_pinctrl[5][2] = {
 };
 
 #define QSPI_PINCTRL_SOURCE_CLK(SELECT) \
-		(SELECT <= 2) ? &qspi_clk_pinctrl[SELECT - 1] : NULL
+		((SELECT <= 2) ? &qspi_clk_pinctrl[SELECT - 1] : NULLPIN)
 
 #define QSPI_PINCTRL_SOURCE(NUM, TYPE, SELECT)   \
-		(TYPE < QSPI_PIN_TYPE_NUM && SELECT <= qspi_max_selection_number[NUM - 1]) ?   \
-				&qspi_bank## NUM ##_pinctrl[INDEX(TYPE)][INDEX(SELECT) - 1] : NULL
+		((TYPE < QSPI_PIN_TYPE_NUM && SELECT <= qspi_max_selection_number[NUM - 1]) ?   \
+				&qspi_bank## NUM ##_pinctrl[INDEX(TYPE)][INDEX(SELECT) - 1] : NULLPIN)
 #endif
 /**
  * @brief 
@@ -617,8 +618,8 @@ static const struct pin_node can2_pinctrl[2][2] = {
 };
 
 #define CAN_PINCTRL_SOURCE(NUM, TYPE, SELECT)   \
-		(TYPE < CAN_PIN_TYPE_NUM && SELECT <= can_max_selection_number[NUM - 1]) ?   \
-				&can## NUM ##_pinctrl[INDEX(TYPE)][INDEX(SELECT) - 1] : NULL
+		((TYPE < CAN_PIN_TYPE_NUM && SELECT <= can_max_selection_number[NUM - 1]) ?   \
+				&can## NUM ##_pinctrl[INDEX(TYPE)][INDEX(SELECT) - 1] : NULLPIN)
 
 
 /**
@@ -672,11 +673,11 @@ static const struct pin_node sdmmc2_pinctrl[6][2] = {
 };
 
 #define SDMMC1_PINCTRL_SOURCE(TYPE)   \
-		(TYPE < SDMMC_PIN_TYPE_NUM) ? &sdmmc1_pinctrl[INDEX(TYPE)] : NULL
+		((TYPE < SDMMC_PIN_TYPE_NUM) ? &sdmmc1_pinctrl[INDEX(TYPE)] : NULLPIN)
 
 #define SDMMC2_PINCTRL_SOURCE(TYPE, SELECT)   \
-		(TYPE < SDMMC_PIN_TYPE_NUM && SELECT <= sdmmc_max_selection_number[1]) ?   \
-				&sdmmc2_pinctrl[INDEX(TYPE)][INDEX(SELECT) - 1] : NULL
+		((TYPE < SDMMC_PIN_TYPE_NUM && SELECT <= sdmmc_max_selection_number[1]) ?   \
+				&sdmmc2_pinctrl[INDEX(TYPE)][INDEX(SELECT) - 1] : NULLPIN)
 
 
 
@@ -737,8 +738,8 @@ static const struct pin_node i2c4_pinctrl[2][5] = {
 
 
 #define I2C_PINCTRL_SOURCE(NUM, TYPE, SELECT)   \
-		(TYPE < CAN_PIN_TYPE_NUM && SELECT <= i2c_max_selection_number[NUM - 1]) ?   \
-				&i2c## NUM ##_pinctrl[INDEX(TYPE)][INDEX(SELECT) - 1] : NULL
+		((TYPE < CAN_PIN_TYPE_NUM && SELECT <= i2c_max_selection_number[NUM - 1]) ?   \
+				&i2c## NUM ##_pinctrl[INDEX(TYPE)][INDEX(SELECT) - 1] : NULLPIN)
 
 
 

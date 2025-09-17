@@ -74,10 +74,10 @@ static int stm32_eth_init()
     }
 
     /* Initialize Tx Descriptors list: Chain Mode */
-    HAL_ETH_DMATxDescListInit(&EthHandle, DMATxDscrTab, Tx_Buff, ETH_TXBUFNB);
+    HAL_ETH_DMATxDescListInit(&EthHandle, DMATxDscrTab, (uint8_t *)Tx_Buff, ETH_TXBUFNB);
 
     /* Initialize Rx Descriptors list: Chain Mode  */
-    HAL_ETH_DMARxDescListInit(&EthHandle, DMARxDscrTab, Rx_Buff, ETH_RXBUFNB);
+    HAL_ETH_DMARxDescListInit(&EthHandle, DMARxDscrTab, (uint8_t *)Rx_Buff, ETH_RXBUFNB);
 
     /* ETH interrupt Init */
     HAL_NVIC_SetPriority(ETH_IRQn, 7, 0);

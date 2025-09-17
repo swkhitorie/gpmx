@@ -11,7 +11,7 @@
 union sigval
 {
     int       sival_int;       /* Integer value */
-    FAR void* sival_ptr;       /* Pointer value */
+    void* sival_ptr;       /* Pointer value */
 };
 
 typedef void (*sigev_notify_function_t)(union sigval value);
@@ -22,7 +22,7 @@ struct sigevent
     uint8_t      sigev_signo;  /* Notification signal */
     union sigval sigev_value;  /* Data passed with notification */
     sigev_notify_function_t sigev_notify_function; /* Notification function */
-    FAR pthread_attr_t *sigev_notify_attributes;   /* Notification attributes */
+    pthread_attr_t *sigev_notify_attributes;   /* Notification attributes */
 };
 
 #endif

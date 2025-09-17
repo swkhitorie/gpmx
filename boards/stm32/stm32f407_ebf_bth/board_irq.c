@@ -1,4 +1,5 @@
 #include "board_config.h"
+#include <stdio.h>
 
 void NMI_Handler(void) { printf("%s\r\n", __func__); }
 void MemManage_Handler(void) { printf("%s\r\n", __func__); }

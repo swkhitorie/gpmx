@@ -1,0 +1,16 @@
+
+LIBDRV_CINCDIRS += include
+
+LIBDRV_CSRCS += drv_gpio.c
+
+ifeq ($(BSP_LIBCONFIG_N32_STD_USART),y)
+LIBDRV_CSRCS += drv_uart.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_N32_STD_SPI),y)
+LIBDRV_CSRCS += drv_spi.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_N32_STD_FLASH),y)
+LIBDRV_CSRCS += drv_flash.c
+endif

@@ -73,10 +73,10 @@
 
 /* I2c bus speed */
 
-#define I2C_SPEED_STANDARD   100000  /* Standard speed (100Khz) */
-#define I2C_SPEED_FAST       400000  /* Fast speed     (400Khz) */
-#define I2C_SPEED_FAST_PLUS  1000000 /* Fast+ speed    (  1Mhz) */
-#define I2C_SPEED_HIGH       3400000 /* High speed     (3.4Mhz) */
+#define I2CBUS_SPEED_STANDARD   100000  /* Standard speed (100Khz) */
+#define I2CBUS_SPEED_FAST       400000  /* Fast speed     (400Khz) */
+#define I2CBUS_SPEED_FAST_PLUS  1000000 /* Fast+ speed    (  1Mhz) */
+#define I2CBUS_SPEED_HIGH       3400000 /* High speed     (3.4Mhz) */
 
 /****************************************************************************
  * Name: I2C_TRANSFER_BLOCK

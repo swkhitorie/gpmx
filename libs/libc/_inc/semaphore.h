@@ -25,13 +25,13 @@ extern "C"
 #define EXTERN extern
 #endif
 
-int        sem_init(FAR sem_t *sem, int pshared, unsigned int value);
-int        sem_destroy(FAR sem_t *sem);
-int        sem_wait(FAR sem_t *sem);
-int        sem_timedwait(FAR sem_t *sem, FAR const struct timespec *abstime);
-int        sem_trywait(FAR sem_t *sem);
-int        sem_post(FAR sem_t *sem);
-int        sem_getvalue(FAR sem_t *sem, FAR int *sval);
+int        sem_init(sem_t *sem, int pshared, unsigned int value);
+int        sem_destroy(sem_t *sem);
+int        sem_wait(sem_t *sem);
+int        sem_timedwait(sem_t *sem,  const struct timespec *abstime);
+int        sem_trywait(sem_t *sem);
+int        sem_post(sem_t *sem);
+int        sem_getvalue(sem_t *sem, int *sval);
 
 #undef EXTERN
 #ifdef __cplusplus

@@ -1,4 +1,6 @@
 #include "./prv_mqueue.h"
+#include <utils.h>
+#include <string.h>
 
 /**< Maximum number of bytes in a filename (not including terminating null). */
 #define NAME_MAX                         64
