@@ -1,15 +1,13 @@
 #include "drv_gpio.h"
-#include <string.h>
-#define IRQ_LINE_NUM CONFIG_DRV_GPIO_EXTERNAL_IRQ_LINE_NUM
-struct gpio_pin_t irq_pin_list[IRQ_LINE_NUM];
 
-struct gpio_pin_t stm32_gpio_setup(
-    GPIO_TypeDef *port, uint32_t pin, uint32_t mode, 
-    uint32_t pull, uint32_t speed, uint32_t alternate, 
-    io_exit_func entry, void *arg, uint32_t priority)
+struct irq_pin_t irq_pin_list[CONFIG_STM32_IO_IRQ_LINE_NUM];
+
+void stm32_gpio_setup(GPIO_TypeDef *port, uint32_t pin, 
+    uint32_t mode, uint32_t pull, uint32_t speed, uint32_t alternate, 
+    io_irq_entry entry, void *arg, uint32_t priority)
 {
-    struct gpio_pin_t obj;
     GPIO_InitTypeDef init_obj;
+
     IRQn_Type irqn_array[16] = {
         EXTI0_IRQn,	    EXTI1_IRQn,	    EXTI2_IRQn,	    EXTI3_IRQn,      /* EXIT IRQ 0~3 */
         EXTI4_IRQn,	    EXTI9_5_IRQn,   EXTI9_5_IRQn,   EXTI9_5_IRQn,    /* EXIT IRQ 4~7 */
@@ -17,80 +15,76 @@ struct gpio_pin_t stm32_gpio_setup(
         EXTI15_10_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn, EXTI15_10_IRQn   /* EXIT IRQ 12~15 */
     };
 
-    obj.port = port;
-    obj.pin = (uint16_t)(0x01 << pin);
-    obj.alternate = alternate;
-    obj.priority = priority;
-
-    if (port == GPIOA)			__HAL_RCC_GPIOA_CLK_ENABLE();
-    else if (port == GPIOB)		__HAL_RCC_GPIOB_CLK_ENABLE();
-    else if (port == GPIOC)		__HAL_RCC_GPIOC_CLK_ENABLE();
-#if (BSP_CHIP_RESOURCE_LEVEL > 0)
-    else if (port == GPIOD)		__HAL_RCC_GPIOD_CLK_ENABLE();
-#if (BSP_CHIP_RESOURCE_LEVEL > 1)
-    else if (port == GPIOE)		__HAL_RCC_GPIOE_CLK_ENABLE();
-    else if (port == GPIOF)		__HAL_RCC_GPIOF_CLK_ENABLE();
-    else if (port == GPIOG)		__HAL_RCC_GPIOG_CLK_ENABLE();
-    else if (port == GPIOH)		__HAL_RCC_GPIOH_CLK_ENABLE();
-    else if (port == GPIOI)		__HAL_RCC_GPIOI_CLK_ENABLE();
-#if (BSP_CHIP_RESOURCE_LEVEL > 2)
-    else if (port == GPIOJ)		__HAL_RCC_GPIOJ_CLK_ENABLE();
-    else if (port == GPIOK)		__HAL_RCC_GPIOK_CLK_ENABLE();
+    if      (port == GPIOA)     __HAL_RCC_GPIOA_CLK_ENABLE();
+    else if (port == GPIOB)     __HAL_RCC_GPIOB_CLK_ENABLE();
+#if defined(GPIOC)
+    else if (port == GPIOC)     __HAL_RCC_GPIOC_CLK_ENABLE();
 #endif
+#if defined(GPIOD)
+    else if (port == GPIOD)     __HAL_RCC_GPIOD_CLK_ENABLE();
 #endif
-#endif // End With Define BSP_CHIP_RESOURCE_LEVEL
+#if defined(GPIOE)
+    else if (port == GPIOE)     __HAL_RCC_GPIOE_CLK_ENABLE();
+#endif
+#if defined(GPIOF)
+    else if (port == GPIOF)     __HAL_RCC_GPIOF_CLK_ENABLE();
+#endif
+#if defined(GPIOG)
+    else if (port == GPIOG)     __HAL_RCC_GPIOG_CLK_ENABLE();
+#endif
+#if defined(GPIOH)
+    else if (port == GPIOH)     __HAL_RCC_GPIOH_CLK_ENABLE();
+#endif
+#if defined(GPIOI)
+    else if (port == GPIOI)     __HAL_RCC_GPIOI_CLK_ENABLE();
+#endif
+#if defined(GPIOJ)
+    else if (port == GPIOJ)     __HAL_RCC_GPIOJ_CLK_ENABLE();
+#endif
+#if defined(GPIOK)
+    else if (port == GPIOK)     __HAL_RCC_GPIOK_CLK_ENABLE();
+#endif
 
-    init_obj.Pin = obj.pin;
+
+    init_obj.Pin = (0x01 << pin);
     init_obj.Mode = mode;
     init_obj.Pull = pull;
     init_obj.Speed = speed;
-#if !defined (DRV_BSP_F1)
+#if defined (DRV_STM32_F4) || defined (DRV_STM32_H7) || defined (DRV_STM32_WL)
     init_obj.Alternate = alternate;
 #endif
-    HAL_GPIO_Init(obj.port, &init_obj);
+    HAL_GPIO_Init(port, &init_obj);
 
     if (mode >= IOMODE_IT_RISING && entry != NULL) {
-        obj.callback = entry;
-        obj.arg = arg;
+        irq_pin_list[pin].callback = entry;
+        irq_pin_list[pin].arg = arg;
+        irq_pin_list[pin].priority = priority;
         HAL_NVIC_SetPriority(irqn_array[pin], priority, 0);
         HAL_NVIC_EnableIRQ(irqn_array[pin]);
-        memcpy(&irq_pin_list[pin], &obj, sizeof(struct gpio_pin_t));
     }
-
-    return obj;
 }
 
-void stm32_gpio_write(struct gpio_pin_t *obj, uint8_t val)
-{
-    HAL_GPIO_WritePin(obj->port, obj->pin, val);
-}
-
-uint8_t stm32_gpio_read(struct gpio_pin_t *obj)
-{
-    return HAL_GPIO_ReadPin(obj->port, obj->pin);
-}
-
-bool stm32_gpioread(uint32_t pinset)
+uint8_t stm32_pin_read(uint32_t pinset)
 {
     GPIO_TypeDef *port = PIN_STPORT(pinset);
     uint16_t pin = PIN_STPIN(pinset);
 
-    return HAL_GPIO_ReadPin(port, 1<<pin);
+    return HAL_GPIO_ReadPin(port, pin);
 }
 
-void stm32_gpiowrite(uint32_t pinset, bool value)
+void stm32_pin_write(uint32_t pinset, uint8_t value)
 {
     GPIO_TypeDef *port = PIN_STPORT(pinset);
     uint16_t pin = PIN_STPIN(pinset);
 
-    HAL_GPIO_WritePin(port, 1<<pin, value);
+    HAL_GPIO_WritePin(port, pin, value);
 }
 
-int stm32_gpiosetevent(uint32_t pinset, bool risingedge, bool fallingedge,
-                       bool event, io_exit_func func, void *arg, uint32_t priority)
+int stm32_pin_setevent(uint32_t pinset, bool risingedge, bool fallingedge,
+    bool event, io_irq_entry func, void *arg, uint32_t priority)
 {
     GPIO_TypeDef *port = PIN_STPORT(pinset);
-    uint16_t pin = PIN_NO(pinset); //PIN_STPIN(pinset);
+    uint16_t pin = PIN_NO(pinset);
     uint32_t mode;
     uint32_t pull;
 

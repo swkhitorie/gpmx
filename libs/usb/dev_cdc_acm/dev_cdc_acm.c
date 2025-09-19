@@ -307,15 +307,7 @@ int dev_cdc_acm_read(uint8_t busid, uint8_t *p, uint16_t len)
 #include <stdio.h>
 #include <stdarg.h>
 FILE __stdin, __stdout, __stderr;
-size_t fread(void *ptr, size_t size, size_t n_items, FILE *stream)
-{
-    return _read(stream->_file, ptr, size*n_items);
-}
-size_t fwrite(const void *ptr, size_t size, size_t n_items, FILE *stream)
-{
-    return _write(stream->_file, ptr, size*n_items);
-}
-int _write(int file, char *ptr, int len)
+int _write(int file, const char *ptr, int len)
 {
     if (file == 1) {
         // file -> 0:stdin 1:stdout 2: stderr
@@ -337,4 +329,13 @@ int _read(int file, char *ptr, int len)
     }
     return ret;
 }
+size_t fread(void *ptr, size_t size, size_t n_items, FILE *stream)
+{
+    return _read(stream->_file, ptr, size*n_items);
+}
+size_t fwrite(const void *ptr, size_t size, size_t n_items, FILE *stream)
+{
+    return _write(stream->_file, ptr, size*n_items);
+}
+
 #endif

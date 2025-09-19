@@ -1,18 +1,21 @@
 #include "drv_i2c.h"
 
-static struct i2c_master_s *i2c_mlist[4] = {0, 0, 0, 0};
+static struct i2c_master_s *g_i2c_list[CONFIG_STM32_I2C_NUM] = {0};
 
-#if defined (DRV_BSP_H7)
-static uint32_t _i2c_h7_set_clock(struct i2c_master_s *dev, uint32_t frequency, bool set);
+static uint8_t       _i2c_instance_judge(I2C_HandleTypeDef *hi2c);
+static void          _i2c_rcc_init(uint8_t id);
+static I2C_TypeDef*  _i2c_obj_get(uint8_t id);
+static IRQn_Type     _i2c_event_irq_get(uint8_t id);
+static IRQn_Type     _i2c_error_irq_get(uint8_t id);
+
+#if defined(DRV_STM32_H7)
+static void     _i2c_set_clocksrc(struct i2c_master_s *dev);
 #endif
-
-static bool _i2c_pinconfig(struct i2c_master_s *dev);
-static bool _i2c_pinsetup(struct i2c_master_s *dev, uint32_t mode);
-static void _i2c_config(struct i2c_master_s *dev);
-static void _i2c_setup(struct i2c_master_s *dev);
-static int  _i2c_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count);
+static void     _i2c_pin_cfg(struct i2c_master_s *dev, uint32_t mode);
+static void     _i2c_set_clock(struct i2c_master_s *dev, uint32_t freq);
+static void     _i2c_setup(struct i2c_master_s *dev);
+static int      _i2c_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count);
 static void _i2c_completed_irq(struct i2c_master_s *dev);
-static int  _i2c_eset(struct i2c_master_s *dev);
 
 static int up_i2c_setup(struct i2c_master_s *dev);
 static int up_i2c_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count);
@@ -27,95 +30,171 @@ const struct i2c_ops_s g_i2c_master_ops =
 /****************************************************************************
  * Private Function
  ****************************************************************************/
+uint8_t _i2c_instance_judge(I2C_HandleTypeDef *hi2c)
+{
+    uint8_t idx;
+    if      (hi2c->Instance == I2C1) idx = 0;
+#if defined(I2C2)
+    else if (hi2c->Instance == I2C2) idx = 1;
+#endif
+#if defined(I2C3)
+    else if (hi2c->Instance == I2C3) idx = 2;
+#endif
+#if defined(I2C4)
+    else if (hi2c->Instance == I2C4) idx = 3;
+#endif
+#if defined(I2C5)
+    else if (hi2c->Instance == I2C5) idx = 4;
+#endif
 
-bool _i2c_pinconfig(struct i2c_master_s *dev)
+    return idx;
+}
+
+void _i2c_rcc_init(uint8_t id)
+{
+	switch (id) {
+        case 1:	__HAL_RCC_I2C1_CLK_ENABLE();	break;
+#if defined(I2C2)
+        case 2:	__HAL_RCC_I2C2_CLK_ENABLE();	break;
+#endif
+#if defined(I2C3)
+        case 3: __HAL_RCC_I2C3_CLK_ENABLE();  break;
+#endif
+#if defined(I2C4)
+        case 4: __HAL_RCC_I2C4_CLK_ENABLE();  break;
+#endif
+#if defined(I2C5)
+        case 5: __HAL_RCC_I2C5_CLK_ENABLE();  break;
+#endif
+    }
+}
+
+I2C_TypeDef* _i2c_obj_get(uint8_t id)
+{
+    I2C_TypeDef *i2c_array[CONFIG_STM32_I2C_NUM] = {
+        I2C1, 
+#if defined(I2C2)
+        I2C2,
+#endif
+#if defined(I2C3)
+        I2C3,
+#endif
+#if defined(I2C4)
+        I2C4,
+#endif
+#if defined(I2C5)
+        I2C5,
+#endif
+    };
+
+    return i2c_array[id-1];
+}
+
+IRQn_Type _i2c_event_irq_get(uint8_t id)
+{
+	IRQn_Type i2c_event_irq_array[CONFIG_STM32_I2C_NUM] = {
+        I2C1_EV_IRQn,
+#if defined(I2C2)
+        I2C2_EV_IRQn,
+#endif
+#if defined(I2C3)
+        I2C3_EV_IRQn,
+#endif
+#if defined(I2C4)
+        I2C4_EV_IRQn,
+#endif
+#if defined(I2C5)
+        I2C5_EV_IRQn,
+#endif
+    };
+
+    return i2c_event_irq_array[id - 1];
+}
+
+IRQn_Type _i2c_error_irq_get(uint8_t id)
+{
+	IRQn_Type i2c_error_irq_array[CONFIG_STM32_I2C_NUM] = {
+        I2C1_ER_IRQn,
+#if defined(I2C2)
+        I2C2_ER_IRQn,
+#endif
+#if defined(I2C3)
+        I2C3_ER_IRQn,
+#endif
+#if defined(I2C4)
+        I2C4_ER_IRQn,
+#endif
+#if defined(I2C5)
+        I2C5_ER_IRQn,
+#endif
+    };
+
+    return i2c_error_irq_array[id - 1];
+}
+
+#if defined(DRV_STM32_H7)
+static void _i2c_set_clocksrc(struct i2c_master_s *dev)
 {
     struct up_i2c_master_s *priv = dev->priv;
-    uint8_t num = priv->id;
-    uint8_t pin_scl = priv->pin_scl;
-    uint8_t pin_sda = priv->pin_sda;
 
-#if defined (DRV_BSP_H7)
-	const struct pin_node *scl_node;
-	const struct pin_node *sda_node;
-	uint32_t illegal;
+    RCC_PeriphCLKInitTypeDef i2c_clk_init = {0};
 
-	switch (num) {
-	case 1:
-		if ((I2C_PINCTRL_SOURCE(1, I2C_PIN_SCL, pin_scl)) != NULLPIN &&
-			(I2C_PINCTRL_SOURCE(1, I2C_PIN_SDA, pin_sda)) != NULLPIN) {
-			scl_node = I2C_PINCTRL_SOURCE(1, I2C_PIN_SCL, pin_scl);
-			sda_node = I2C_PINCTRL_SOURCE(1, I2C_PIN_SDA, pin_sda);
-			illegal = scl_node->port && sda_node->port;
-		}else {
-			return false;
-		}
-		break;
-	case 2:
-		if ((I2C_PINCTRL_SOURCE(2, I2C_PIN_SCL, pin_scl)) != NULLPIN &&
-			(I2C_PINCTRL_SOURCE(2, I2C_PIN_SDA, pin_sda)) != NULLPIN) {
-			scl_node = I2C_PINCTRL_SOURCE(2, I2C_PIN_SCL, pin_scl);
-			sda_node = I2C_PINCTRL_SOURCE(2, I2C_PIN_SDA, pin_sda);
-			illegal = scl_node->port && sda_node->port;
-		}else {
-			return false;
-		}
-		break;
-	case 3:
-		if ((I2C_PINCTRL_SOURCE(3, I2C_PIN_SCL, pin_scl)) != NULLPIN &&
-			(I2C_PINCTRL_SOURCE(3, I2C_PIN_SDA, pin_sda)) != NULLPIN) {
-			scl_node = I2C_PINCTRL_SOURCE(3, I2C_PIN_SCL, pin_scl);
-			sda_node = I2C_PINCTRL_SOURCE(3, I2C_PIN_SDA, pin_sda);
-			illegal = scl_node->port && sda_node->port;
-		}else {
-			return false;
-		}
-		break;
-	case 4:
-		if ((I2C_PINCTRL_SOURCE(4, I2C_PIN_SCL, pin_scl)) != NULLPIN &&
-			(I2C_PINCTRL_SOURCE(4, I2C_PIN_SDA, pin_sda)) != NULLPIN) {
-			scl_node = I2C_PINCTRL_SOURCE(4, I2C_PIN_SCL, pin_scl);
-			sda_node = I2C_PINCTRL_SOURCE(4, I2C_PIN_SDA, pin_sda);
-			illegal = scl_node->port && sda_node->port;
-		}else {
-			return false;
-		}
-		break;
-	default: return false;
-	}
-
-	if (illegal != 0) {
-        priv->scl_port = scl_node->port;
-        priv->sda_port = sda_node->port;
-        priv->scl_pin = scl_node->pin;
-        priv->sda_pin = sda_node->pin;
-	}else {
-		return false;
-	}
-	return true;
+    uint32_t i2c_clk[CONFIG_STM32_I2C_NUM] = {
+        RCC_PERIPHCLK_I2C1, 
+#if defined(I2C2)
+        RCC_PERIPHCLK_I2C2,
 #endif
+#if defined(I2C3)
+        RCC_PERIPHCLK_I2C3, 
+#endif
+#if defined(I2C4)
+        RCC_PERIPHCLK_I2C4, 
+#endif
+#if defined(I2C5)
+        RCC_PERIPHCLK_I2C5
+#endif
+    };
+    uint32_t i2c_clk_src[CONFIG_STM32_I2C_NUM] = {
+        RCC_I2C1CLKSOURCE_HSI, 
+#if defined(I2C2)
+        RCC_I2C2CLKSOURCE_HSI,
+#endif
+#if defined(I2C3)
+        RCC_I2C3CLKSOURCE_HSI, 
+#endif
+#if defined(I2C4)
+        RCC_I2C4CLKSOURCE_HSI, 
+#endif
+#if defined(I2C5)
+        RCC_I2C5CLKSOURCE_HSI
+#endif
+    };
 
-#if defined (DRV_BSP_F1) || defined (DRV_BSP_F4)
-    GPIO_TypeDef *scl_port[2]  = {GPIOB,   GPIOB  };
-    uint16_t      scl_pin[2]   = {6,       10,    };
+    /* h7 series use HSI/4 --> 16MHZ */
+    __HAL_RCC_HSI_CONFIG(RCC_HSI_DIV4);
 
-    GPIO_TypeDef *sda_port[2]  = {GPIOB,   GPIOB  };
-    uint16_t      sda_pin[2]   = {7,       11,    };
-
-    if (num == 1 && pin_scl != 0) {
-        scl_pin[0] = 8;  // PB8
-        sda_pin[0] = 9;  // PB9
+    i2c_clk_init.PeriphClockSelection = i2c_clk[priv->id-1];
+    if (priv->id <= 3 || priv->id == 5) {
+        i2c_clk_init.I2c123ClockSelection = i2c_clk_src[priv->id-1];
+    } else if (priv->id == 4) {
+        i2c_clk_init.I2c4ClockSelection   = i2c_clk_src[priv->id-1];
     }
-
-    priv->scl_port = scl_port[num-1];
-    priv->sda_port = sda_port[num-1];
-    priv->scl_pin = scl_pin[num-1];
-    priv->sda_pin = sda_pin[num-1];
-    return true;
+    HAL_RCCEx_PeriphCLKConfig(&i2c_clk_init);
+}
 #endif
+
+bool _i2c_pin_cfg(struct i2c_master_s *dev)
+{
+    struct up_i2c_master_s *priv = dev->priv;
+    struct periph_pin_t *sclpin = &priv->sclpin;
+    struct periph_pin_t *sdapin = &priv->sdapin;
+
+    LOW_PERIPH_INITPIN(sclpin->port, sclpin->pin, mode, IO_NOPULL, IO_SPEEDHIGH, sclpin->alternate);
+    LOW_PERIPH_INITPIN(sdapin->port, sdapin->pin, mode, IO_NOPULL, IO_SPEEDHIGH, sdapin->alternate);
 }
 
 /************************************************************************************
+ *   In Platform STM32H7:
  *   This function supports bus clock frequencies of:
  *
  *      1000Khz (Fast Mode+)
@@ -129,93 +208,85 @@ bool _i2c_pinconfig(struct i2c_master_s *dev)
  *
  *   HSI is the default and is always 16Mhz.
  ************************************************************************************/
-#if defined (DRV_BSP_H7)
-uint32_t _i2c_h7_set_clock(struct i2c_master_s *dev, uint32_t frequency, bool set)
+void _i2c_set_clock(struct i2c_master_s *dev, uint32_t freq)
 {
+    struct up_i2c_master_s *priv = dev->priv;
+
+#if defined (DRV_STM32_H7)
     uint8_t presc;
     uint8_t scl_delay;
     uint8_t sda_delay;
     uint8_t scl_h_period;
     uint8_t scl_l_period;
-    struct up_i2c_master_s *priv = dev->priv;
 
-    /*  The Speed and timing calculation are based on the following
-       *  fI2CCLK = HSI and is 16Mhz
-       *  Analog filter is on,
-       *  Digital filter off
-       *  Rise Time is 120 ns and fall is 10ns
-       *  Mode is FastMode
-    */
+    /* I2C peripheral must be disabled to update clocking configuration.
+     * This will SW reset the device.
+     */
 
-    if (set) {
-        /* I2C peripheral must be disabled to update clocking configuration.
-        * This will SW reset the device.
+    MODIFY_REG(priv->hi2c.Instance->CR1, I2C_CR1_PE, 0);
+
+    if (freq != priv->frequency) {
+
+        /*  The Speed and timing calculation are based on the following
+        *  fI2CCLK = HSI and is 16Mhz
+        *  Analog filter is on,
+        *  Digital filter off
+        *  Rise Time is 120 ns and fall is 10ns
+        *  Mode is FastMode
         */
 
-        MODIFY_REG(priv->hi2c.Instance->CR1, I2C_CR1_PE, 0);
+        if (freq == 100000) {
+            presc        = 0;
+            scl_delay    = 5;
+            sda_delay    = 0;
+            scl_h_period = 61;
+            scl_l_period = 89;
+
+        } else if (freq == 400000) {
+            presc        = 0;
+            scl_delay    = 3;
+            sda_delay    = 0;
+            scl_h_period = 6;
+            scl_l_period = 24;
+        } else if (freq == 1000000) {
+            presc        = 0;
+            scl_delay    = 2;
+            sda_delay    = 0;
+            scl_h_period = 1;
+            scl_l_period = 5;
+        } else {
+            presc        = 7;
+            scl_delay    = 0;
+            sda_delay    = 0;
+            scl_h_period = 35;
+            scl_l_period = 162;
+        }
+
+        uint32_t timingr =
+                (presc << I2C_TIMINGR_PRESC_Pos) |
+                (scl_delay << I2C_TIMINGR_SCLDEL_Pos) |
+                (sda_delay << I2C_TIMINGR_SDADEL_Pos) |
+                (scl_h_period << I2C_TIMINGR_SCLH_Pos) |
+                (scl_l_period << I2C_TIMINGR_SCLL_Pos);
+
+        priv->hi2c.Instance->TIMINGR = timingr & TIMING_CLEAR_MASK;
+        priv->frequency = freq;
     }
 
-    if (frequency == 100000) {
-        presc        = 0;
-        scl_delay    = 5;
-        sda_delay    = 0;
-        scl_h_period = 61;
-        scl_l_period = 89;
-    } else if (frequency == 400000) {
-        presc        = 0;
-        scl_delay    = 3;
-        sda_delay    = 0;
-        scl_h_period = 6;
-        scl_l_period = 24;
-    } else if (frequency == 1000000) {
-        presc        = 0;
-        scl_delay    = 2;
-        sda_delay    = 0;
-        scl_h_period = 1;
-        scl_l_period = 5;
-    } else {
-        presc        = 7;
-        scl_delay    = 0;
-        sda_delay    = 0;
-        scl_h_period = 35;
-        scl_l_period = 162;
-    }
-    uint32_t timingr =
-            (presc << 28) |
-            (scl_delay << 20) |
-            (sda_delay << 16) |
-            (scl_h_period << 8) |
-            (scl_l_period << 0);
-
-    if (frequency != dev->cfg.frequency && set) {
-
-        priv->hi2c.Instance->TIMINGR = timingr & (0xF0FFFFFFU);
-        dev->cfg.frequency = frequency;
-    }
-
-    if (set) {
-        /* Enable I2C peripheral */
-
-        MODIFY_REG(priv->hi2c.Instance->CR1, 0, I2C_CR1_PE);
-    }
-
-    return timingr;
-}
+    /* Enable I2C peripheral */
+    MODIFY_REG(priv->hi2c.Instance->CR1, 0, I2C_CR1_PE);
 #endif
 
-#if defined (DRV_BSP_F1) || defined (DRV_BSP_F4)
-void _i2c_set_clock(struct i2c_master_s *dev, uint32_t frequency)
-{
+
+#if defined(DRV_STM32_F1) || defined(DRV_STM32_F4)
     uint16_t cr1;
     uint16_t ccr;
     uint16_t trise;
     uint16_t freqmhz;
     uint16_t speed;
-    uint32_t pclk1 = HAL_RCC_GetPCLK1Freq();
-    struct up_i2c_master_s *priv = dev->priv;
+    uint32_t pclk1 = priv->clock;
 
-    if (frequency != dev->cfg.frequency) {
-
+    if (freq != priv->frequency) {
         /* Disable the selected I2C periphera */
         cr1 = priv->hi2c.Instance->CR1;
         priv->hi2c.Instance->CR1 = cr1 & ~I2C_CR1_PE;
@@ -238,23 +309,29 @@ void _i2c_set_clock(struct i2c_master_s *dev, uint32_t frequency)
             trise = freqmhz + 1;
         } else {
             /* (frequency <= 400000) */
-            /* Fast mode speed calculation with Tlow/Thigh = 16/9 */ 
             if (priv->hi2c.Init.DutyCycle == I2C_DUTYCYCLE_16_9) {
+                /* Fast mode speed calculation with Tlow/Thigh = 16/9 */ 
+                speed = (uint16_t)(pclk1 / (frequency * 25));
+
+                /* Set fast speed bit */
+                ccr |= (I2C_CCR_DUTY | I2C_CCR_FS);
+            } else if (priv->hi2c.Init.DutyCycle == I2C_DUTYCYCLE_2) {
+
                 /* Fast mode speed calculation with Tlow/Thigh = 2 */
                 speed = (uint16_t)(pclk1 / (frequency * 3));
-                /* Set fast speed bit */
-                ccr |= I2C_CCR_FS;
-            } else if (priv->hi2c.Init.DutyCycle == I2C_DUTYCYCLE_2) {
-                speed = (uint16_t)(pclk1 / (frequency * 25));
+
                 /* Set DUTY and fast speed bits */
-                ccr |= (I2C_CCR_DUTY | I2C_CCR_FS);
+                ccr |= I2C_CCR_FS;
             }
+
             /* Verify that the CCR speed value is nonzero */
             if (speed < 1) {
+
                 /* Set the minimum allowed value */
                 speed = 1;
             }
             ccr |= speed;
+
             /* Set Maximum Rise Time for fast mode */
             trise = (uint16_t)(((freqmhz * 300) / 1000) + 1);
         }
@@ -272,120 +349,33 @@ void _i2c_set_clock(struct i2c_master_s *dev, uint32_t frequency)
         /* Save the new I2C frequency */
         dev->cfg.frequency = frequency;
     }
-}
 #endif
-
-bool _i2c_pinsetup(struct i2c_master_s *dev, uint32_t mode)
-{
-    struct up_i2c_master_s *priv = dev->priv;
-    uint8_t num = priv->id;
-    uint8_t scl_pin = priv->scl_pin;
-    uint8_t sda_pin = priv->sda_pin;
-    GPIO_TypeDef *scl_port = priv->scl_port;
-    GPIO_TypeDef *sda_port = priv->sda_port;
-
-    uint32_t i2c_af[4]    = {
-        GPIO_AF4_I2C1, GPIO_AF4_I2C2, GPIO_AF4_I2C3, 
-#if (BSP_CHIP_RESOURCE_LEVEL > 4)
-        GPIO_AF4_I2C4,
-#endif
-    };
-
-    LOW_PERIPH_INITPIN(scl_port, scl_pin, mode, IO_NOPULL, IO_SPEEDHIGH, i2c_af[num-1]);
-    LOW_PERIPH_INITPIN(sda_port, sda_pin, mode, IO_NOPULL, IO_SPEEDHIGH, i2c_af[num-1]);
-
-    return true;
 }
 
-void _i2c_config(struct i2c_master_s *dev)
+void _i2c_setup(struct i2c_master_s *dev)
 {
     struct up_i2c_master_s *priv = dev->priv;
-    uint8_t num = priv->id;
-    uint32_t timing = 0;
-	I2C_TypeDef *i2cx[4] = {
-        I2C1, I2C2, I2C3,
-#if (BSP_CHIP_RESOURCE_LEVEL > 4)
-        I2C4
-#endif
-    };
+    struct up_i2c_master_s *priv = dev->priv;
 
-#if defined (DRV_BSP_H7)
-    /* h7 series use HSI/4 --> 16MHZ */
-    __HAL_RCC_HSI_CONFIG(RCC_HSI_DIV4);
-    uint32_t i2c_clk[4] = {
-        RCC_PERIPHCLK_I2C1, RCC_PERIPHCLK_I2C2, 
-        RCC_PERIPHCLK_I2C3, RCC_PERIPHCLK_I2C4,
-    };
-    uint32_t i2c_clk_src[4] = {
-        RCC_I2C1CLKSOURCE_HSI, RCC_I2C2CLKSOURCE_HSI,
-        RCC_I2C3CLKSOURCE_HSI, RCC_I2C4CLKSOURCE_HSI
-    };
-    RCC_PeriphCLKInitTypeDef i2c_clk_init = {0};
-    i2c_clk_init.PeriphClockSelection = i2c_clk[num-1];
-    if (num <= 3)      i2c_clk_init.I2c123ClockSelection = i2c_clk_src[num-1];
-    else if (num == 4) i2c_clk_init.I2c4ClockSelection   = i2c_clk_src[num-1];
-    HAL_RCCEx_PeriphCLKConfig(&i2c_clk_init);
-#endif
-
-    _i2c_pinconfig(dev);
-
-    priv->hi2c.Instance 			    = i2cx[num-1];
-#if defined (DRV_BSP_F1) || defined (DRV_BSP_F4)
-    priv->hi2c.Init.DutyCycle = I2C_DUTYCYCLE_2;
-    priv->hi2c.Init.ClockSpeed = dev->cfg.frequency;    //100k, 400k
-#endif
-#if defined (DRV_BSP_H7)
-    timing = _i2c_h7_set_clock(dev, dev->cfg.frequency, false);
-    priv->hi2c.Init.Timing  = timing;  //constant: 0x20B0CCFF(h7b0) 0x00901954(h743)
-#endif
+    priv->clock = HAL_RCC_GetPCLK1Freq();
+    priv->hi2c.Instance              = _i2c_obj_get(priv->id);
     priv->hi2c.Init.OwnAddress1      = 0;
     priv->hi2c.Init.AddressingMode   = I2C_ADDRESSINGMODE_7BIT;
     priv->hi2c.Init.DualAddressMode  = I2C_DUALADDRESS_DISABLE;
     priv->hi2c.Init.OwnAddress2      = 0;
     priv->hi2c.Init.GeneralCallMode  = I2C_GENERALCALL_DISABLE;
     priv->hi2c.Init.NoStretchMode    = I2C_NOSTRETCH_DISABLE;
-}
-
-void _i2c_setup(struct i2c_master_s *dev)
-{
-    struct up_i2c_master_s *priv = dev->priv;
-    uint8_t num = priv->id;
-
-	IRQn_Type i2c_err_irq[4] = {
-        I2C1_ER_IRQn, I2C2_ER_IRQn, I2C3_ER_IRQn,
-#if (BSP_CHIP_RESOURCE_LEVEL > 4)
-        I2C4_ER_IRQn,
+#if defined (DRV_STM32_F1) || defined (DRV_STM32_F4)
+    priv->hi2c.Init.DutyCycle = I2C_DUTYCYCLE_2;
+    priv->hi2c.Init.ClockSpeed = 100000;
 #endif
-    };
-	IRQn_Type i2c_event_irq[4] = {
-        I2C1_EV_IRQn, I2C2_EV_IRQn, I2C3_EV_IRQn,
-#if (BSP_CHIP_RESOURCE_LEVEL > 4)
-        I2C4_EV_IRQn,
+#if defined (DRV_STM32_H7)
+    priv->hi2c.Init.Timing = 0x00503D59;   // HSI/4->16MHz, default 100KHz
 #endif
-    };
-
-	switch (num) {
-	case 1: __HAL_RCC_I2C1_CLK_ENABLE(); break;
-	case 2: __HAL_RCC_I2C2_CLK_ENABLE(); break;
-	case 3: __HAL_RCC_I2C3_CLK_ENABLE(); break;
-#if (BSP_CHIP_RESOURCE_LEVEL > 4)
-	case 4: __HAL_RCC_I2C4_CLK_ENABLE(); break; 
-#endif
-	default: break;
-	}
-
-    _i2c_config(dev);
-    _i2c_pinsetup(dev, IOMODE_AFOD);
-
     HAL_I2C_Init(&priv->hi2c);
-#if defined (DRV_BSP_H7)
+#if defined (DRV_STM32_H7)
 	HAL_I2CEx_AnalogFilter_Config(&priv->hi2c, I2C_ANALOGFILTER_ENABLE); 
 #endif
-
-	HAL_NVIC_SetPriority(i2c_err_irq[num-1], priv->priority_error, 0);
-	HAL_NVIC_EnableIRQ(i2c_err_irq[num-1]);
-	HAL_NVIC_SetPriority(i2c_event_irq[num-1], priv->priority_event, 0);
-	HAL_NVIC_EnableIRQ(i2c_event_irq[num-1]);
 }
 
 int _i2c_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
@@ -420,6 +410,7 @@ int _i2c_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
 
         if (msg->flags & I2C_M_READ) {
 
+            _i2c_set_clock(dev, msg->frequency);
             ret = HAL_I2C_Master_Seq_Receive_IT(&priv->hi2c, (msg->addr<<1), msg->buffer, msg->length, mode);
             if (ret != HAL_OK) {
                 goto out;
@@ -429,6 +420,7 @@ int _i2c_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
             }
         } else {
 
+            _i2c_set_clock(dev, msg->frequency);
             ret = HAL_I2C_Master_Seq_Transmit_IT(&priv->hi2c, (msg->addr<<1), msg->buffer, msg->length, mode);
             if (ret != HAL_OK) {
                 goto out;
@@ -450,6 +442,7 @@ int _i2c_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
 
     if (msg->flags & I2C_M_READ) {
 
+        _i2c_set_clock(dev, msg->frequency);
         ret = HAL_I2C_Master_Seq_Receive_IT(&priv->hi2c,(msg->addr<<1), msg->buffer, msg->length, mode);
         if (ret != HAL_OK) {
             goto out;
@@ -459,6 +452,7 @@ int _i2c_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
         }
     } else {
 
+        _i2c_set_clock(dev, msg->frequency);
         ret = HAL_I2C_Master_Seq_Transmit_IT(&priv->hi2c, (msg->addr<<1), msg->buffer, msg->length, mode);
         if (ret != HAL_OK) {
             goto out;
@@ -474,13 +468,13 @@ out:
     if (priv->hi2c.ErrorCode == HAL_I2C_ERROR_AF) {
         printf("I2C NACK Error now stoped \r\n");
         /* Send stop signal to prevent bus lock-up */
-#if defined(DRV_BSP_H7)
+#if defined(DRV_STM32_H7)
         priv->hi2c.Instance->CR1 |= I2C_IT_STOPI;
 #endif
     }
     if (priv->hi2c.ErrorCode == HAL_I2C_ERROR_BERR) {
         printf("I2C BUS Error now stoped \r\n");
-#if defined(DRV_BSP_H7)
+#if defined(DRV_STM32_H7)
         priv->hi2c.Instance->CR1 |= I2C_IT_STOPI;
 #else
         priv->hi2c.Instance->CR1 |= I2C_CR1_STOP;
@@ -506,12 +500,25 @@ int _i2c_reset(struct i2c_master_s *dev)
 int up_i2c_setup(struct i2c_master_s *dev)
 {
     struct up_i2c_master_s *priv = dev->priv;
-    uint8_t num = priv->id;
+
+#if defined (DRV_STM32_H7)
+	_i2c_set_clocksrc(dev); 
+#endif
+
+    _i2c_pin_cfg(dev, IOMODE_AFOD);
 
     _i2c_setup(dev);
 
-    priv->ecnt = 0;
-    i2c_mlist[num-1] = dev;
+	HAL_NVIC_SetPriority(_i2c_event_irq_get(priv->id), priv->priority, 0);
+	HAL_NVIC_EnableIRQ(_i2c_event_irq_get(priv->id));
+
+	HAL_NVIC_SetPriority(_i2c_error_irq_get(priv->id), priv->priority_error, 0);
+	HAL_NVIC_EnableIRQ(_i2c_error_irq_get(priv->id));
+
+    priv->state = 0;
+
+    g_i2c_list[priv->id - 1] = dev;
+
     return 0;
 }
 
@@ -535,91 +542,94 @@ int up_i2c_reset(struct i2c_master_s *dev)
 }
 
 /****************************************************************************
- * STM32 HAL Library Callback 
+ * STM32 HAL Callback 
  ****************************************************************************/
 void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
     uint8_t idx = 0;
-    if (hi2c->Instance == I2C1)		    idx = 0;
-    else if (hi2c->Instance == I2C2)    idx = 1;
-    else if (hi2c->Instance == I2C3)	idx = 2;
-#if (BSP_CHIP_RESOURCE_LEVEL > 4)
-    else if (hi2c->Instance == I2C4)	idx = 3;
-#endif
-    _i2c_completed_irq(i2c_mlist[idx]);
+    idx = _i2c_instance_judge(hi2c);
+    _i2c_completed_irq(g_i2c_list[idx]);
 }
 
 void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
     uint8_t idx = 0;
-    if (hi2c->Instance == I2C1)		    idx = 0;
-    else if (hi2c->Instance == I2C2)    idx = 1;
-    else if (hi2c->Instance == I2C3)	idx = 2;
-#if (BSP_CHIP_RESOURCE_LEVEL > 4)
-    else if (hi2c->Instance == I2C4)	idx = 3;
-#endif
-    _i2c_completed_irq(i2c_mlist[idx]);
+    idx = _i2c_instance_judge(hi2c);
+    _i2c_completed_irq(g_i2c_list[idx]);
 }
 
 void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c)
 {
     struct up_i2c_master_s *priv;
-    uint8_t idx = 0;
-    if (hi2c->Instance == I2C1)		    idx = 0;
-    else if (hi2c->Instance == I2C2)    idx = 1;
-    else if (hi2c->Instance == I2C3)	idx = 2;
-#if (BSP_CHIP_RESOURCE_LEVEL > 4)
-    else if (hi2c->Instance == I2C4)	idx = 3;
-#endif
+    uint8_t idx = _i2c_instance_judge(hi2c);
+    priv = g_i2c_list[idx]->priv;
 
-    priv = i2c_mlist[idx]->priv;
-    priv->ecnt++;
+    priv->state++;
 }
 
+/****************************************************************************
+ * STM32 IRQ
+ ****************************************************************************/
 void I2C1_EV_IRQHandler(void)
 {
-    struct up_i2c_master_s *priv = i2c_mlist[0]->priv;
+    struct up_i2c_master_s *priv = g_i2c_list[0]->priv;
     HAL_I2C_EV_IRQHandler(&priv->hi2c);
 }
-
 void I2C1_ER_IRQHandler(void)
 {
-    struct up_i2c_master_s *priv = i2c_mlist[0]->priv;
+    struct up_i2c_master_s *priv = g_i2c_list[0]->priv;
     HAL_I2C_ER_IRQHandler(&priv->hi2c);
 }
 
+#if defined(I2C2)
 void I2C2_EV_IRQHandler(void)
 {
-    struct up_i2c_master_s *priv = i2c_mlist[1]->priv;
+    struct up_i2c_master_s *priv = g_i2c_list[1]->priv;
     HAL_I2C_EV_IRQHandler(&priv->hi2c);
 }
-
 void I2C2_ER_IRQHandler(void)
 {
-    struct up_i2c_master_s *priv = i2c_mlist[1]->priv;
+    struct up_i2c_master_s *priv = g_i2c_list[1]->priv;
     HAL_I2C_ER_IRQHandler(&priv->hi2c);
 }
+#endif
 
+#if defined(I2C3)
 void I2C3_EV_IRQHandler(void)
 {
-    struct up_i2c_master_s *priv = i2c_mlist[2]->priv;
+    struct up_i2c_master_s *priv = g_i2c_list[2]->priv;
     HAL_I2C_EV_IRQHandler(&priv->hi2c);
 }
-
 void I2C3_ER_IRQHandler(void)
 {
-    struct up_i2c_master_s *priv = i2c_mlist[2]->priv;
+    struct up_i2c_master_s *priv = g_i2c_list[2]->priv;
     HAL_I2C_ER_IRQHandler(&priv->hi2c);
 }
+#endif
 
+#if defined(I2C4)
 void I2C4_EV_IRQHandler(void)
 {
-    struct up_i2c_master_s *priv = i2c_mlist[3]->priv;
+    struct up_i2c_master_s *priv = g_i2c_list[3]->priv;
     HAL_I2C_EV_IRQHandler(&priv->hi2c);
 }
-
 void I2C4_ER_IRQHandler(void)
 {
-    struct up_i2c_master_s *priv = i2c_mlist[3]->priv;
+    struct up_i2c_master_s *priv = g_i2c_list[3]->priv;
     HAL_I2C_ER_IRQHandler(&priv->hi2c);
 }
+#endif
+
+#if defined(I2C5)
+void I2C5_EV_IRQHandler(void)
+{
+    struct up_i2c_master_s *priv = g_i2c_list[4]->priv;
+    HAL_I2C_EV_IRQHandler(&priv->hi2c);
+}
+void I2C5_ER_IRQHandler(void)
+{
+    struct up_i2c_master_s *priv = g_i2c_list[4]->priv;
+    HAL_I2C_ER_IRQHandler(&priv->hi2c);
+}
+#endif
+

@@ -2,14 +2,11 @@
 
 #define FLASH_PAGE_SIZE              (2*1024)
 #define STM32_FLASH_START_ADRESS     (0x08000000)
-#define STM32_FLASH_END_ADDRESS      (0x0803ffff)
-
-#define FH_ALIGN_DOWN(size, align)      ((size) & ~((align) - 1))
 
 static uint32_t GetPage(uint32_t addr)
 {
     uint32_t page = 0;
-    page = FH_ALIGN_DOWN(addr-STM32_FLASH_START_ADRESS, FLASH_PAGE_SIZE)/FLASH_PAGE_SIZE;
+    page = FLASH_ALIGN_DOWN(addr-STM32_FLASH_START_ADRESS, FLASH_PAGE_SIZE)/FLASH_PAGE_SIZE;
     return page;
 }
 
@@ -20,10 +17,6 @@ static uint32_t GetPage(uint32_t addr)
 int stm32_flash_read(uint32_t addr, uint8_t *buf, size_t size)
 {
     size_t i;
-
-    if ((addr + size) > STM32_FLASH_END_ADDRESS) {
-        return -1;
-    }
 
     for (i = 0; i < size; i++, buf++, addr++) {
         *buf = *(uint8_t *) addr;
@@ -43,10 +36,6 @@ int stm32_flash_write(uint32_t addr, const uint8_t *buf, size_t size)
     size_t i, j;
     int result = 0;
     uint64_t write_data = 0, temp_data = 0;
-
-    if ((addr + size) > STM32_FLASH_END_ADDRESS) {
-        return -1;
-    }
 
     if(addr % 8 != 0) {
         return -2;

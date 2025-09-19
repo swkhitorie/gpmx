@@ -1,8 +1,8 @@
-#ifndef DRV_ETH_H_
-#define DRV_ETH_H_
+#ifndef DRIVE_ETHERNET_H_
+#define DRIVE_ETHERNET_H_
 
 #include <stdint.h>
-#include "drv_common.h"
+#include "drv_cmn.h"
 
 /* The PHY basic control register */
 #define PHY_BASIC_CONTROL_REG       0x00U

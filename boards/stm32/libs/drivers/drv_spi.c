@@ -1,10 +1,19 @@
 #include "drv_spi.h"
 
-struct spi_dev_s *g_spi_list[DRV_SPI_PERIPHAL_NUM];
+struct spi_dev_s *g_spi_list[CONFIG_STM32_SPI_NUM];
 
-static bool _spi_pinconfig(struct spi_dev_s *dev);
-static void _spi_dmatx_setup(struct spi_dev_s *dev);
-static void _spi_dmarx_setup(struct spi_dev_s *dev);
+static uint8_t       _spi_instance_judge(SPI_HandleTypeDef *hspi);
+static void          _spi_rcc_init(uint8_t id);
+static SPI_TypeDef*  _spi_obj_get(uint8_t id);
+static IRQn_Type     _spi_irq_get(uint8_t id);
+
+#if defined(DRV_STM32_H7)
+static void     _spi_set_clocksrc(struct spi_dev_s *dev);
+static uint32_t _spi_get_clock(struct spi_dev_s *dev);
+#endif
+
+static void _spi_pin_config(struct spi_dev_s *dev);
+static void _spi_dma_setup(struct spi_dev_s *dev, uint8_t flag);
 static void _spi_setup(struct spi_dev_s *dev);
 static void _spi_irq(struct spi_dev_s *dev);
 static void _spi_irq_dmatx(struct spi_dev_s *dev);
@@ -40,440 +49,385 @@ const struct spi_ops_s g_spi_ops =
 /****************************************************************************
  * Private Function
  ****************************************************************************/
-bool _spi_pinconfig(struct spi_dev_s *dev)
+uint8_t _spi_instance_judge(SPI_HandleTypeDef *hspi)
+{
+    uint8_t idx = 0;
+    if      (hspi->Instance == SPI1)    idx = 0;
+#if defined(SPI2)
+    else if (hspi->Instance == SPI2)    idx = 1;
+#endif
+#if defined(SPI3)
+    else if (hspi->Instance == SPI3)    idx = 2;
+#endif
+#if defined(SPI4)
+    else if (hspi->Instance == SPI4)    idx = 3;
+#endif
+#if defined(SPI5)
+    else if (hspi->Instance == SPI5)    idx = 4;
+#endif
+#if defined(SPI6)
+    else if (hspi->Instance == SPI6)    idx = 5;
+#endif
+    return idx;
+}
+
+void _spi_rcc_init(uint8_t id)
+{
+    switch (id) {
+    case 1:	__HAL_RCC_SPI1_CLK_ENABLE();	break;
+#if defined(SPI2)
+    case 2:	__HAL_RCC_SPI2_CLK_ENABLE();	break;
+#endif
+#if defined(SPI3)
+    case 2:	__HAL_RCC_SPI3_CLK_ENABLE();	break;
+#endif
+#if defined(SPI4)
+    case 2:	__HAL_RCC_SPI4_CLK_ENABLE();	break;
+#endif
+#if defined(SPI5)
+    case 2:	__HAL_RCC_SPI5_CLK_ENABLE();	break;
+#endif
+#if defined(SPI6)
+    case 2:	__HAL_RCC_SPI6_CLK_ENABLE();	break;
+#endif
+	}
+}
+
+SPI_TypeDef* _spi_obj_get(uint8_t id)
+{
+    SPI_TypeDef *spi_instance[6] = {
+        SPI1, 
+#if defined(SPI2)
+        SPI2,
+#endif
+#if defined(SPI3)
+        SPI3,
+#endif
+#if defined(SPI4)
+        SPI4,
+#endif
+#if defined(SPI5)
+        SPI5,
+#endif
+#if defined(SPI6)
+        SPI6,
+#endif
+    };
+
+    return spi_instance[id-1];
+}
+
+IRQn_Type _spi_irq_get(uint8_t id)
+{
+    IRQn_Type spi_irq_array[6] = {
+        SPI1_IRQn,
+#if defined(SPI2)
+        SPI2_IRQn,
+#endif
+#if defined(SPI3)
+        SPI3_IRQn,
+#endif
+#if defined(SPI4)
+        SPI4_IRQn,
+#endif
+#if defined(SPI5)
+        SPI5_IRQn,
+#endif
+#if defined(SPI6)
+        SPI6_IRQn,
+#endif
+    };
+
+    return spi_irq_array[id-1];
+}
+
+#if defined(DRV_STM32_H7)
+void _spi_set_clocksrc(struct spi_dev_s *dev)
 {
     struct up_spi_dev_s *priv = dev->priv;
-    uint8_t num = priv->id;
-    uint8_t pin_ncs = priv->pin_ncs;
-    uint8_t pin_sck = priv->pin_sck;
-    uint8_t pin_miso = priv->pin_miso;
-    uint8_t pin_mosi = priv->pin_mosi;
 
-#if defined (DRV_BSP_H7)
-	const struct pin_node *nss_node;
-	const struct pin_node *sck_node;
-	const struct pin_node *miso_node;
-	const struct pin_node *mosi_node;
-	uint32_t illegal;
+    RCC_PeriphCLKInitTypeDef spi_clk_init = {0};
 
-	switch (num) {
-	case 1:
-		if ((SPI_PINCTRL_SOURCE(1, SPI_PIN_NSS, pin_ncs)) != NULLPIN &&
-			(SPI_PINCTRL_SOURCE(1, SPI_PIN_SCK, pin_sck)) != NULLPIN &&
-			(SPI_PINCTRL_SOURCE(1, SPI_PIN_MISO, pin_miso)) != NULLPIN &&
-			(SPI_PINCTRL_SOURCE(1, SPI_PIN_MOSI, pin_mosi)) != NULLPIN) {
-			nss_node = SPI_PINCTRL_SOURCE(1, SPI_PIN_NSS, pin_ncs);
-			sck_node = SPI_PINCTRL_SOURCE(1, SPI_PIN_SCK, pin_sck);
-			miso_node = SPI_PINCTRL_SOURCE(1, SPI_PIN_MISO, pin_miso);
-			mosi_node = SPI_PINCTRL_SOURCE(1, SPI_PIN_MOSI, pin_mosi);
-			illegal = nss_node->port && nss_node->port
-						&& nss_node->port && nss_node->port;
-		}else {
-			return false;
-		}
-		break;
-	case 2:
-		if ((SPI_PINCTRL_SOURCE(2, SPI_PIN_NSS, pin_ncs)) != NULLPIN &&
-			(SPI_PINCTRL_SOURCE(2, SPI_PIN_SCK, pin_sck)) != NULLPIN &&
-			(SPI_PINCTRL_SOURCE(2, SPI_PIN_MISO, pin_miso)) != NULLPIN &&
-			(SPI_PINCTRL_SOURCE(2, SPI_PIN_MOSI, pin_mosi)) != NULLPIN) {
-			nss_node = SPI_PINCTRL_SOURCE(2, SPI_PIN_NSS, pin_ncs);
-			sck_node = SPI_PINCTRL_SOURCE(2, SPI_PIN_SCK, pin_sck);
-			miso_node = SPI_PINCTRL_SOURCE(2, SPI_PIN_MISO, pin_miso);
-			mosi_node = SPI_PINCTRL_SOURCE(2, SPI_PIN_MOSI, pin_mosi);
-			illegal = nss_node->port && nss_node->port
-						&& nss_node->port && nss_node->port;
-		}else {
-			return false;
-		}
-		break;
-	case 3:
-		if ((SPI_PINCTRL_SOURCE(3, SPI_PIN_NSS, pin_ncs)) != NULLPIN &&
-			(SPI_PINCTRL_SOURCE(3, SPI_PIN_SCK, pin_sck)) != NULLPIN &&
-			(SPI_PINCTRL_SOURCE(3, SPI_PIN_MISO, pin_miso)) != NULLPIN &&
-			(SPI_PINCTRL_SOURCE(3, SPI_PIN_MOSI, pin_mosi)) != NULLPIN) {
-			nss_node = SPI_PINCTRL_SOURCE(3, SPI_PIN_NSS, pin_ncs);
-			sck_node = SPI_PINCTRL_SOURCE(3, SPI_PIN_SCK, pin_sck);
-			miso_node = SPI_PINCTRL_SOURCE(3, SPI_PIN_MISO, pin_miso);
-			mosi_node = SPI_PINCTRL_SOURCE(3, SPI_PIN_MOSI, pin_mosi);
-			illegal = nss_node->port && nss_node->port
-						&& nss_node->port && nss_node->port;
-		}else {
-			return false;
-		}
-		break;
-	case 4:
-		if ((SPI_PINCTRL_SOURCE(4, SPI_PIN_NSS, pin_ncs)) != NULLPIN &&
-			(SPI_PINCTRL_SOURCE(4, SPI_PIN_SCK, pin_sck)) != NULLPIN &&
-			(SPI_PINCTRL_SOURCE(4, SPI_PIN_MISO, pin_miso)) != NULLPIN &&
-			(SPI_PINCTRL_SOURCE(4, SPI_PIN_MOSI, pin_mosi)) != NULLPIN) {
-			nss_node = SPI_PINCTRL_SOURCE(4, SPI_PIN_NSS, pin_ncs);
-			sck_node = SPI_PINCTRL_SOURCE(4, SPI_PIN_SCK, pin_sck);
-			miso_node = SPI_PINCTRL_SOURCE(4, SPI_PIN_MISO, pin_miso);
-			mosi_node = SPI_PINCTRL_SOURCE(4, SPI_PIN_MOSI, pin_mosi);
-			illegal = nss_node->port && nss_node->port
-						&& nss_node->port && nss_node->port;
-		}else {
-			return false;
-		}
-		break;
-	case 5:
-		if ((SPI_PINCTRL_SOURCE(5, SPI_PIN_NSS, pin_ncs)) != NULLPIN &&
-			(SPI_PINCTRL_SOURCE(5, SPI_PIN_SCK, pin_sck)) != NULLPIN &&
-			(SPI_PINCTRL_SOURCE(5, SPI_PIN_MISO, pin_miso)) != NULLPIN &&
-			(SPI_PINCTRL_SOURCE(5, SPI_PIN_MOSI, pin_mosi)) != NULLPIN) {
-			nss_node = SPI_PINCTRL_SOURCE(5, SPI_PIN_NSS, pin_ncs);
-			sck_node = SPI_PINCTRL_SOURCE(5, SPI_PIN_SCK, pin_sck);
-			miso_node = SPI_PINCTRL_SOURCE(5, SPI_PIN_MISO, pin_miso);
-			mosi_node = SPI_PINCTRL_SOURCE(5, SPI_PIN_MOSI, pin_mosi);
-			illegal = nss_node->port && nss_node->port
-						&& nss_node->port && nss_node->port;
-		}else {
-			return false;
-		}
-		break;
-	case 6:
-		if ((SPI_PINCTRL_SOURCE(6, SPI_PIN_NSS, pin_ncs)) != NULLPIN &&
-			(SPI_PINCTRL_SOURCE(6, SPI_PIN_SCK, pin_sck)) != NULLPIN &&
-			(SPI_PINCTRL_SOURCE(6, SPI_PIN_MISO, pin_miso)) != NULLPIN &&
-			(SPI_PINCTRL_SOURCE(6, SPI_PIN_MOSI, pin_mosi)) != NULLPIN) {
-			nss_node = SPI_PINCTRL_SOURCE(6, SPI_PIN_NSS, pin_ncs);
-			sck_node = SPI_PINCTRL_SOURCE(6, SPI_PIN_SCK, pin_sck);
-			miso_node = SPI_PINCTRL_SOURCE(6, SPI_PIN_MISO, pin_miso);
-			mosi_node = SPI_PINCTRL_SOURCE(6, SPI_PIN_MOSI, pin_mosi);
-			illegal = nss_node->port && nss_node->port
-						&& nss_node->port && nss_node->port;
-		}else {
-			return false;
-		}
-		break;
-	default: return false;
-	}
-	
-	if (illegal != 0) {
-        // LOW_PERIPH_INITPIN(nss_node->port, nss_node->pin_num, IOMODE_AFPP, IO_PULLUP, IO_SPEEDMAX, nss_node->alternate);
-		LOW_PERIPH_INITPIN(sck_node->port, sck_node->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDMAX, sck_node->alternate);
-		LOW_PERIPH_INITPIN(miso_node->port, miso_node->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDMAX, miso_node->alternate);
-		LOW_PERIPH_INITPIN(mosi_node->port, mosi_node->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDMAX, mosi_node->alternate);
-	}else {
-		return false;
-	}
-	return true;
+    uint32_t spi_clk[CONFIG_STM32_SPI_NUM] = {
+        RCC_PERIPHCLK_SPI1, 
+#if defined(SPI2)
+        RCC_PERIPHCLK_SPI2,
+#endif
+#if defined(SPI3)
+        RCC_PERIPHCLK_SPI3, 
+#endif
+#if defined(SPI4)
+        RCC_PERIPHCLK_SPI4, 
+#endif
+#if defined(SPI5)
+        RCC_PERIPHCLK_SPI5,
+#endif
+#if defined(SPI6)
+        RCC_PERIPHCLK_SPI6,
+#endif
+    };
+
+    uint32_t spi_clk_src[CONFIG_STM32_SPI_NUM] = {
+        RCC_SPI1CLKSOURCE_PLL, 
+#if defined(SPI2)
+        RCC_SPI2CLKSOURCE_PLL,
+#endif
+#if defined(SPI3)
+        RCC_SPI3CLKSOURCE_PLL, 
+#endif
+#if defined(SPI4)
+        RCC_SPI4CLKSOURCE_D2PCLK1, 
+#endif
+#if defined(SPI5)
+        RCC_SPI5CLKSOURCE_D2PCLK1,
+#endif
+#if defined(SPI6)
+        RCC_SPI6CLKSOURCE_D3PCLK1,
+#endif
+    };
+
+	spi_clk_init.PeriphClockSelection = spi_clk[priv->id-1];
+
+    if (priv->id <= 3) {
+        spi_clk_init.Spi123ClockSelection = spi_clk_src[num-1];
+    } else if (priv->id <= 5) {
+        spi_clk_init.Spi45ClockSelection = spi_clk_src[num-1];
+    } else {
+        spi_clk_init.Spi6ClockSelection = spi_clk_src[num-1];
+    }
+
+	HAL_RCCEx_PeriphCLKConfig(&spi_clk_init);
+}
+
+uint32_t _spi_get_clock(struct spi_dev_s *dev)
+{
+    struct up_spi_dev_s *priv = dev->priv;
+    uint32_t freq;
+
+    uint64_t src[CONFIG_STM32_SPI_NUM] = {
+        RCC_PERIPHCLK_SPI123, 
+#if defined(SPI2)
+        RCC_PERIPHCLK_SPI123,
+#endif
+#if defined(SPI3)
+        RCC_PERIPHCLK_SPI123, 
+#endif
+#if defined(SPI4)
+        RCC_PERIPHCLK_SPI45, 
+#endif
+#if defined(SPI5)
+        RCC_PERIPHCLK_SPI45,
+#endif
+#if defined(SPI6)
+        RCC_PERIPHCLK_SPI6,
+#endif
+    };
+    freq = HAL_RCCEx_GetPeriphCLKFreq(src[priv->id-1]);
+
+    return freq;
+}
+
 #endif
 
-#if defined (DRV_BSP_F1)
-    if (pin_ncs == 0) {
-        GPIO_TypeDef *spi_port[3] =  { GPIOA,		GPIOB,      GPIOB };
-        uint16_t       sck_pin[3] =  {   5,         13,          3    };
-        uint16_t       miso_pin[3] = {   6,         14,          4    };
-		uint16_t       mosi_pin[3] = {   7,         15,          5    };
-		LOW_PERIPH_INITPIN(spi_port[num-1], sck_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH);
-		LOW_PERIPH_INITPIN(spi_port[num-1], mosi_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH);
-		LOW_PERIPH_INITPIN(spi_port[num-1], miso_pin[num-1], IOMODE_INPUT, IO_NOPULL, IO_SPEEDHIGH);
-    } else if (pin_ncs == 1 && num == 1) {
-		LOW_PERIPH_INITPIN(GPIOB, 3, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH);  //sck
-		LOW_PERIPH_INITPIN(GPIOB, 4, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH);  //miso
-		LOW_PERIPH_INITPIN(GPIOB, 5, IOMODE_INPUT, IO_NOPULL, IO_SPEEDHIGH);  //mosi  
-    }
-	return true;
+void _spi_pin_config(struct spi_dev_s *dev)
+{
+    struct up_spi_dev_s *priv = dev->priv;
+    struct periph_pin_t *sckpin = &priv->sckpin;
+    struct periph_pin_t *misopin = &priv->misopin;
+    struct periph_pin_t *mosipin = &priv->mosipin;
+
+#if defined (DRV_STM32_H7)
+    LOW_PERIPH_INITPIN(sckpin->port, sckpin->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDMAX, sckpin->alternate);
+    LOW_PERIPH_INITPIN(misopin->port, misopin->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDMAX, misopin->alternate);
+    LOW_PERIPH_INITPIN(mosipin->port, mosipin->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDMAX, mosipin->alternate);
 #endif
 
-#if defined (DRV_BSP_F4)
-    if (pin_ncs == 0) {
-        GPIO_TypeDef *spi_port[3] =  { GPIOA,		GPIOB,      GPIOB };
-        uint16_t       sck_pin[3] =  {   5,         13,          3    };
-        uint16_t       miso_pin[3] = {   6,         14,          4    };
-		uint16_t       mosi_pin[3] = {   7,         15,          5    };
-        uint32_t       alternate[3] = {GPIO_AF5_SPI1, GPIO_AF5_SPI2, GPIO_AF6_SPI3};
+#if defined (DRV_STM32_F1)
+    LOW_PERIPH_INITPIN(sckpin->port, sckpin->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH);
+    LOW_PERIPH_INITPIN(misopin->port, misopin->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH);
+    LOW_PERIPH_INITPIN(mosipin->port, mosipin->pin, IOMODE_INPUT, IO_NOPULL, IO_SPEEDHIGH);
+#endif
 
-		LOW_PERIPH_INITPIN(spi_port[num-1], sck_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1]);
-		LOW_PERIPH_INITPIN(spi_port[num-1], mosi_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1]);
-		LOW_PERIPH_INITPIN(spi_port[num-1], miso_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1]);
-    } else if (pin_ncs == 1) {
-        GPIO_TypeDef *spi_port[3] =  { GPIOB,		GPIOB,      GPIOC };
-        uint16_t       sck_pin[3] =  {   3,         10,          10   };
-        uint16_t       miso_pin[3] = {   4,         2,          11    };
-		uint16_t       mosi_pin[3] = {   5,         3,          12    };
-        uint32_t       alternate[3] = {GPIO_AF5_SPI1, GPIO_AF5_SPI2, GPIO_AF6_SPI3};
-
-		LOW_PERIPH_INITPIN(spi_port[num-1], sck_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1]);
-		if (num == 2) {
-			spi_port[num-1] = GPIOC;
-		}
-		LOW_PERIPH_INITPIN(spi_port[num-1], mosi_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1]);
-		LOW_PERIPH_INITPIN(spi_port[num-1], miso_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, alternate[num-1]);
-    }
-	return true;
+#if defined (DRV_STM32_F4)
+    LOW_PERIPH_INITPIN(sckpin->port, sckpin->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, sckpin->alternate);
+    LOW_PERIPH_INITPIN(misopin->port, misopin->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, misopin->alternate);
+    LOW_PERIPH_INITPIN(mosipin->port, mosipin->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, mosipin->alternate);
 #endif
 }
 
-void _spi_dmatx_setup(struct spi_dev_s *dev)
+void _spi_dma_setup(struct spi_dev_s *dev, uint8_t flag)
 {
     struct up_spi_dev_s *priv = dev->priv;
-    uint8_t num = priv->id;
+    struct dma_config *dmacfg = ((void *)0);
+    DMA_HandleTypeDef *dmaobj = ((void *)0);
 
-#if defined (DRV_BSP_H7)
-	DMA_Stream_TypeDef *spi_txdma_stream[DRV_SPI_PERIPHAL_NUM] = {
-        DMA1_Stream2, DMA1_Stream3, DMA1_Stream4,
-        DMA1_Stream5, DMA1_Stream6, (DMA_Stream_TypeDef *)BDMA_Channel0
-    };
-	uint8_t spi_txdma_request[DRV_SPI_PERIPHAL_NUM] = {
-        DMA_REQUEST_SPI1_TX, DMA_REQUEST_SPI2_TX, 
-		DMA_REQUEST_SPI3_TX, DMA_REQUEST_SPI4_TX, 
-        DMA_REQUEST_SPI5_TX, BDMA_REQUEST_SPI6_TX
-    };
-    IRQn_Type spi_txdma_irq[DRV_SPI_PERIPHAL_NUM] = {
-        DMA1_Stream2_IRQn, DMA1_Stream3_IRQn, DMA1_Stream4_IRQn,
-        DMA1_Stream5_IRQn, DMA1_Stream6_IRQn, BDMA_Channel0_IRQn
-    };
-#elif defined(DRV_BSP_F4)
-	DMA_Stream_TypeDef *spi_txdma_stream[DRV_SPI_PERIPHAL_NUM] = {
-        DMA2_Stream3, DMA1_Stream4, DMA1_Stream5,
-        DMA2_Stream1, DMA2_Stream4, DMA2_Stream5
-    };
-    uint32_t spi_txdma_channel[DRV_SPI_PERIPHAL_NUM] = {
-        DMA_CHANNEL_3, DMA_CHANNEL_0, DMA_CHANNEL_0,
-        DMA_CHANNEL_4, DMA_CHANNEL_2, DMA_CHANNEL_1
-    };
-    IRQn_Type spi_txdma_irq[DRV_SPI_PERIPHAL_NUM] = {
-        DMA2_Stream3_IRQn, DMA1_Stream4_IRQn, DMA1_Stream5_IRQn,
-        DMA2_Stream1_IRQn, DMA2_Stream4_IRQn, DMA2_Stream5_IRQn
-    };
-#endif  // End With Define DRV_BSP_F4, DRV_BSP_H7
+    if (!dmacfg->enable) {
+        return;
+    }
 
-    __HAL_LINKDMA(&priv->hspi, hdmatx, priv->txdma);
-#if defined (DRV_BSP_H7)
-	if (num != 6) {
-		__HAL_RCC_DMA1_CLK_ENABLE();
-	} else {
-		__HAL_RCC_BDMA_CLK_ENABLE();
-	}
-	//HAL_DMA_DeInit(&obj->txdma);
-	priv->txdma.Instance = spi_txdma_stream[num-1];
-	priv->txdma.Init.Request = spi_txdma_request[num-1];
-	priv->txdma.Init.Direction = DMA_MEMORY_TO_PERIPH;
-	priv->txdma.Init.PeriphInc = DMA_PINC_DISABLE;
-	priv->txdma.Init.MemInc = DMA_MINC_ENABLE;
-	priv->txdma.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
-	priv->txdma.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-	priv->txdma.Init.Mode = DMA_NORMAL;
-	priv->txdma.Init.Priority = DMA_PRIORITY_HIGH;
-	priv->txdma.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
-	priv->txdma.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
-	priv->txdma.Init.MemBurst = DMA_MBURST_SINGLE;
-	priv->txdma.Init.PeriphBurst = DMA_PBURST_SINGLE;
-#elif defined(DRV_BSP_F4)
-	if (num == 2 || num == 3) {
-		__HAL_RCC_DMA1_CLK_ENABLE();
-	} else if (num == 1 || num == 4 || num == 5 || num ==6) {
-		__HAL_RCC_DMA2_CLK_ENABLE();
-	}
-	priv->txdma.Instance = spi_txdma_stream[num-1];
-	priv->txdma.Init.Channel = spi_txdma_channel[num-1];
-	priv->txdma.Init.Direction = DMA_MEMORY_TO_PERIPH;
-	priv->txdma.Init.PeriphInc = DMA_PINC_DISABLE;
-	priv->txdma.Init.MemInc = DMA_MINC_ENABLE;
-	priv->txdma.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
-	priv->txdma.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-	priv->txdma.Init.Mode = DMA_NORMAL;
-	priv->txdma.Init.Priority = DMA_PRIORITY_HIGH;
-	priv->txdma.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+    if (DEVICE_SPI_DMA_RX == flag) {
+        dmacfg = &priv->rxdma_cfg;
+        dmaobj = &priv->rxdma;
+        __HAL_LINKDMA(&priv->hspi, hdmarx, priv->rxdma);
+    } else if (DEVICE_SPI_DMA_TX == flag) {
+        dmacfg = &priv->txdma_cfg;
+        dmaobj = &priv->txdma;
+        __HAL_LINKDMA(&priv->hspi, hdmatx, priv->txdma);
+    }
+
+    {
+        uint32_t tmpreg = 0x00U;
+#if defined(DRV_STM32_F1)
+        /* enable DMA clock && Delay after an RCC peripheral clock enabling*/
+        SET_BIT(RCC->AHBENR, dmacfg->dma_rcc);
+
+        tmpreg = READ_BIT(RCC->AHBENR, dmacfg->dma_rcc);
+#elif defined(DRV_STM32_F4)|| defined(DRV_STM32_H7)
+        SET_BIT(RCC->AHB1ENR, dmacfg->dma_rcc);
+
+        /* Delay after an RCC peripheral clock enabling */
+        tmpreg = READ_BIT(RCC->AHB1ENR, dmacfg->dma_rcc);
 #endif
-	HAL_DMA_Init(&priv->txdma);
-	HAL_NVIC_SetPriority(spi_txdma_irq[num-1], priv->priority_dmatx, 0);
-	HAL_NVIC_EnableIRQ(spi_txdma_irq[num-1]);
-}
+        UNUSED(tmpreg); /* To avoid compiler warnings */
+    }
 
-void _spi_dmarx_setup(struct spi_dev_s *dev)
-{
-    struct up_spi_dev_s *priv = dev->priv;
-    uint8_t num = priv->id;
-
-#if defined (DRV_BSP_H7)
-	DMA_Stream_TypeDef *spi_rxdma_stream[DRV_SPI_PERIPHAL_NUM] = {
-        DMA2_Stream2, DMA2_Stream3, DMA2_Stream4,
-        DMA2_Stream5, DMA2_Stream6, (DMA_Stream_TypeDef *)BDMA_Channel1
-    };
-	uint8_t spi_rxdma_request[DRV_SPI_PERIPHAL_NUM] = {
-        DMA_REQUEST_SPI1_RX, DMA_REQUEST_SPI2_RX, 
-		DMA_REQUEST_SPI3_RX, DMA_REQUEST_SPI4_RX, 
-        DMA_REQUEST_SPI5_RX, BDMA_REQUEST_SPI6_RX
-    };
-    IRQn_Type spi_rxdma_irq[DRV_SPI_PERIPHAL_NUM] = {
-        DMA2_Stream2_IRQn, DMA2_Stream3_IRQn, DMA2_Stream4_IRQn,
-        DMA2_Stream5_IRQn, DMA2_Stream6_IRQn, BDMA_Channel1_IRQn
-    };
-#elif defined(DRV_BSP_F4)
-	DMA_Stream_TypeDef *spi_rxdma_stream[DRV_SPI_PERIPHAL_NUM] = {
-        DMA2_Stream2, DMA1_Stream3, DMA1_Stream0,
-        DMA2_Stream0, DMA2_Stream5, DMA2_Stream6
-    };
-    uint32_t spi_rxdma_channel[DRV_SPI_PERIPHAL_NUM] = {
-        DMA_CHANNEL_3, DMA_CHANNEL_0, DMA_CHANNEL_0,
-        DMA_CHANNEL_4, DMA_CHANNEL_7, DMA_CHANNEL_1
-    };
-    IRQn_Type spi_rxdma_irq[DRV_SPI_PERIPHAL_NUM] = {
-        DMA2_Stream2_IRQn, DMA1_Stream3_IRQn, DMA1_Stream0_IRQn,
-        DMA2_Stream0_IRQn, DMA2_Stream5_IRQn, DMA2_Stream6_IRQn
-    };
-#endif  // End With Define DRV_BSP_F4, DRV_BSP_H7
-
-    __HAL_LINKDMA(&priv->hspi, hdmarx, priv->rxdma);
-#if defined (DRV_BSP_H7)
-    if (num != 6) {
-		__HAL_RCC_DMA2_CLK_ENABLE();
-	} else {
-		__HAL_RCC_BDMA_CLK_ENABLE();
-	}
-    //HAL_DMA_DeInit(&obj->rxdma);
-    priv->rxdma.Instance = spi_rxdma_stream[num-1];
-    priv->rxdma.Init.Request = spi_rxdma_request[num-1];
-    priv->rxdma.Init.Direction = DMA_PERIPH_TO_MEMORY;
-    priv->rxdma.Init.PeriphInc = DMA_PINC_DISABLE;
-    priv->rxdma.Init.MemInc = DMA_MINC_ENABLE;
-    priv->rxdma.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
-    priv->rxdma.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-    priv->rxdma.Init.Mode = DMA_NORMAL;
-    priv->rxdma.Init.Priority = DMA_PRIORITY_HIGH;
-    priv->rxdma.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
-    priv->rxdma.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
-    priv->rxdma.Init.MemBurst = DMA_MBURST_SINGLE;
-    priv->rxdma.Init.PeriphBurst = DMA_PBURST_SINGLE;
-#elif defined(DRV_BSP_F4)
-	if (num == 2 || num == 3) {
-		__HAL_RCC_DMA1_CLK_ENABLE();
-	} else if (num == 1 || num == 4 || num == 5 || num ==6) {
-		__HAL_RCC_DMA2_CLK_ENABLE();
-	}
-	priv->rxdma.Instance = spi_rxdma_stream[num-1];
-	priv->rxdma.Init.Channel = spi_rxdma_channel[num-1];
-	priv->rxdma.Init.Direction = DMA_PERIPH_TO_MEMORY;
-	priv->rxdma.Init.PeriphInc = DMA_PINC_DISABLE;
-	priv->rxdma.Init.MemInc = DMA_MINC_ENABLE;
-	priv->rxdma.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
-	priv->rxdma.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-	priv->rxdma.Init.Mode = DMA_NORMAL;
-	priv->rxdma.Init.Priority = DMA_PRIORITY_HIGH;
-	priv->rxdma.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+    dmaobj->Instance                 = dmacfg->instance;
+#if defined(DRV_STM32_F4) 
+    dmaobj->Init.Channel             = dmacfg->channel;
+#elif defined(DRV_STM32_H7)
+    dmaobj->Init.Request             = dmacfg->request;
 #endif
-	HAL_DMA_Init(&priv->rxdma);
-	HAL_NVIC_SetPriority(spi_rxdma_irq[num-1], priv->priority_dmarx, 0);
-	HAL_NVIC_EnableIRQ(spi_rxdma_irq[num-1]);
+    dmaobj->Init.PeriphInc            = DMA_PINC_DISABLE;
+    dmaobj->Init.MemInc               = DMA_MINC_ENABLE;
+    dmaobj->Init.PeriphDataAlignment  = DMA_PDATAALIGN_BYTE;
+    dmaobj->Init.MemDataAlignment     = DMA_MDATAALIGN_BYTE;
+    dmaobj->Init.Mode                 = DMA_NORMAL;
+
+    if (DEVICE_SPI_DMA_RX == flag) {
+        dmaobj->Init.Direction = DMA_PERIPH_TO_MEMORY;
+        dmaobj->Init.Priority = DMA_PRIORITY_HIGH;
+    } else if (DEVICE_SPI_DMA_TX == flag) {
+        dmaobj->Init.Direction = DMA_MEMORY_TO_PERIPH;
+        dmaobj->Init.Priority = DMA_PRIORITY_LOW;
+    }
+
+#if  defined(DRV_STM32_H7) || defined(DRV_STM32_F4) 
+    dmaobj->Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
+    dmaobj->Init.FIFOThreshold       = DMA_FIFO_THRESHOLD_FULL;
+    dmaobj->Init.MemBurst            = DMA_MBURST_INC4;
+    dmaobj->Init.PeriphBurst         = DMA_PBURST_INC4;
+#endif
+
+    if (HAL_DMA_DeInit(dmaobj) != HAL_OK) {
+        ret = -1;
+        return;
+    }
+
+    if (HAL_DMA_Init(dmaobj) != HAL_OK) {
+        ret = -2;
+        return;
+    }
+
+    HAL_NVIC_SetPriority(dmacfg->dma_irq, dmacfg->priority, 0);
+    HAL_NVIC_EnableIRQ(dmacfg->dma_irq);
 }
 
 void _spi_setup(struct spi_dev_s *dev)
 {
+    int ret = 0;
     struct up_spi_dev_s *priv = dev->priv;
-    uint8_t num = priv->id;
-#if defined (DRV_BSP_H7)
-    uint32_t spi_clk[6] = {
-		RCC_PERIPHCLK_SPI1, RCC_PERIPHCLK_SPI2, RCC_PERIPHCLK_SPI3,
-		RCC_PERIPHCLK_SPI4, RCC_PERIPHCLK_SPI5, RCC_PERIPHCLK_SPI6
-	};
-	uint32_t spi_clk_src[6] = {
-		RCC_SPI1CLKSOURCE_PLL, RCC_SPI2CLKSOURCE_PLL, RCC_SPI3CLKSOURCE_PLL,
-		RCC_SPI4CLKSOURCE_D2PCLK1, RCC_SPI5CLKSOURCE_D2PCLK1, RCC_SPI6CLKSOURCE_D3PCLK1
-	};
-	RCC_PeriphCLKInitTypeDef spi_clk_init_obj = {0};
-	spi_clk_init_obj.PeriphClockSelection = spi_clk[num-1];
-	if (num <= 3)      spi_clk_init_obj.Spi123ClockSelection = spi_clk_src[num-1];
-	else if (num <= 5) spi_clk_init_obj.Spi45ClockSelection = spi_clk_src[num-1];
-	else               spi_clk_init_obj.Spi6ClockSelection = spi_clk_src[num-1];
-	HAL_RCCEx_PeriphCLKConfig(&spi_clk_init_obj);
-#endif
 
-	switch (num) {
-	case 1:	__HAL_RCC_SPI1_CLK_ENABLE();	break;
-	case 2:	__HAL_RCC_SPI2_CLK_ENABLE();	break;
-#if (BSP_CHIP_RESOURCE_LEVEL > 1)
-	case 3:	__HAL_RCC_SPI3_CLK_ENABLE();	break;
-#elif (BSP_CHIP_RESOURCE_LEVEL > 2)
-	case 4:	__HAL_RCC_SPI4_CLK_ENABLE();	break;
-	case 5:	__HAL_RCC_SPI5_CLK_ENABLE();	break;
-	case 6:	__HAL_RCC_SPI6_CLK_ENABLE();	break;
-#endif
-	}
-
-	_spi_pinconfig(dev);	
-
-	SPI_TypeDef *spi_instance[6] = {
-		SPI1, SPI2, 
-#if (BSP_CHIP_RESOURCE_LEVEL > 1)
-		SPI3,
-#elif (BSP_CHIP_RESOURCE_LEVEL > 2)
-		SPI4, SPI5, SPI6
-#endif
-	};
-
-	IRQn_Type spi_irq_array[6] = {
-		SPI1_IRQn, SPI2_IRQn, 
-#if (BSP_CHIP_RESOURCE_LEVEL > 1)
-		SPI3_IRQn, 
-#elif (BSP_CHIP_RESOURCE_LEVEL > 2)
-		SPI4_IRQn, SPI5_IRQn, SPI6_IRQn
-#endif
-    };
-
-	priv->hspi.Instance               = spi_instance[num-1];
-    priv->hspi.Init.BaudRatePrescaler = dev->frequency;
-	priv->hspi.Init.Mode              = SPI_MODE_MASTER;
-	priv->hspi.Init.Direction         = SPI_DIRECTION_2LINES;
-	switch (dev->nbits) {
-	case 8:
-        priv->hspi.Init.DataSize = SPI_DATASIZE_8BIT;
-        break;
-	case 16:
-        priv->hspi.Init.DataSize = SPI_DATASIZE_16BIT;
-        break;
-	}
-	switch (dev->mode) {
-	case SPIDEV_MODE0:
+    priv->hspi.Instance               = _spi_obj_get(priv->id-1);
+    priv->hspi.Init.Mode              = SPI_MODE_MASTER;
+    priv->hspi.Init.Direction         = SPI_DIRECTION_2LINES;
+    switch (dev->nbits) {
+    case 8: priv->hspi.Init.DataSize = SPI_DATASIZE_8BIT; break;
+    case 16: priv->hspi.Init.DataSize = SPI_DATASIZE_16BIT; break;
+    }
+    switch (dev->mode) {
+    case SPIDEV_MODE0:
         priv->hspi.Init.CLKPolarity       = SPI_POLARITY_LOW;
-		priv->hspi.Init.CLKPhase          = SPI_PHASE_1EDGE;
-		break;
-	case SPIDEV_MODE1:
+        priv->hspi.Init.CLKPhase          = SPI_PHASE_1EDGE;
+        break;
+    case SPIDEV_MODE1:
         priv->hspi.Init.CLKPolarity       = SPI_POLARITY_LOW;
         priv->hspi.Init.CLKPhase          = SPI_PHASE_2EDGE;
-		break;
-	case SPIDEV_MODE2:
+        break;
+    case SPIDEV_MODE2:
         priv->hspi.Init.CLKPolarity       = SPI_POLARITY_HIGH;
         priv->hspi.Init.CLKPhase          = SPI_PHASE_1EDGE;
-		break;
-	case SPIDEV_MODE3:
+        break;
+    case SPIDEV_MODE3:
         priv->hspi.Init.CLKPolarity       = SPI_POLARITY_HIGH;
         priv->hspi.Init.CLKPhase          = SPI_PHASE_2EDGE;
-		break;	
-	default :break;
-	}
-	priv->hspi.Init.NSS               = SPI_NSS_SOFT;
-#if defined (DRV_BSP_H7)
-    priv->hspi.Init.NSSPMode          = SPI_NSS_PULSE_DISABLE;
-    priv->hspi.Init.MasterKeepIOState = SPI_MASTER_KEEP_IO_STATE_ENABLE;
-	priv->hspi.Init.MasterSSIdleness  = SPI_MASTER_SS_IDLENESS_00CYCLE;
-	priv->hspi.Init.MasterInterDataIdleness = SPI_MASTER_INTERDATA_IDLENESS_10CYCLE;
+        break;	
+    default :break;
+    }
+    priv->hspi.Init.NSS               = SPI_NSS_SOFT;
+
+#if defined(APBPERIPH_BASE)
+    priv->clock = HAL_RCC_GetPCLK1Freq();
+#elif defined(APB1PERIPH_BASE) || defined(APB2PERIPH_BASE)
+#if defined(DRV_STM32_H7)
+    priv->clock = _spi_get_clock(dev);
+#else
+    if ((uint32_t)_spi_obj_get(priv->id-1) >= APB2PERIPH_BASE) {
+
+        priv->clock = HAL_RCC_GetPCLK2Freq();
+    } else {
+
+        priv->clock = HAL_RCC_GetPCLK1Freq();
+    }
 #endif
+#endif
+    if (dev->frequency >= priv->clock / 2) {
+
+        priv->hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+    } else if (cfg->max_hz >= priv->clock / 4) {
+
+        priv->hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
+    } else if (cfg->max_hz >= priv->clock / 8) {
+
+        priv->hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
+    } else if (cfg->max_hz >= priv->clock / 16) {
+
+        priv->hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
+    } else if (cfg->max_hz >= priv->clock / 32) {
+
+        priv->hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
+    } else if (cfg->max_hz >= priv->clock / 64) {
+
+        priv->hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
+    } else if (cfg->max_hz >= priv->clock / 128) {
+
+        priv->hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_128;
+    } else {
+        /*  min prescaler 256 */
+        priv->hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
+    }
+
     priv->hspi.Init.FirstBit          = SPI_FIRSTBIT_MSB;
-    priv->hspi.Init.TIMode            = SPI_TIMODE_DISABLE;
     priv->hspi.Init.CRCCalculation    = SPI_CRCCALCULATION_DISABLE;
-    priv->hspi.Init.CRCPolynomial     = 10;
-#if defined (DRV_BSP_H7)
-    priv->hspi.Init.FifoThreshold     = SPI_FIFO_THRESHOLD_01DATA;
+    priv->hspi.State = HAL_SPI_STATE_RESET;
+#if defined(DRV_STM32_H7)
+    priv->hspi.Init.Mode                       = SPI_MODE_MASTER;
+    priv->hspi.Init.NSS                        = SPI_NSS_SOFT;
+    priv->hspi.Init.NSSPMode                   = SPI_NSS_PULSE_DISABLE;
+    priv->hspi.Init.NSSPolarity                = SPI_NSS_POLARITY_LOW;
+    priv->hspi.Init.CRCPolynomial              = 7;
+    priv->hspi.Init.TxCRCInitializationPattern = SPI_CRC_INITIALIZATION_ALL_ZERO_PATTERN;
+    priv->hspi.Init.RxCRCInitializationPattern = SPI_CRC_INITIALIZATION_ALL_ZERO_PATTERN;
+    priv->hspi.Init.MasterSSIdleness           = SPI_MASTER_SS_IDLENESS_00CYCLE;
+    priv->hspi.Init.MasterInterDataIdleness    = SPI_MASTER_INTERDATA_IDLENESS_00CYCLE;
+    priv->hspi.Init.MasterReceiverAutoSusp     = SPI_MASTER_RX_AUTOSUSP_DISABLE;
+    priv->hspi.Init.MasterKeepIOState = SPI_MASTER_KEEP_IO_STATE_ENABLE;
+    priv->hspi.Init.IOSwap                     = SPI_IO_SWAP_DISABLE;
+    priv->hspi.Init.FifoThreshold              = SPI_FIFO_THRESHOLD_01DATA;
 #endif
-    __HAL_SPI_DISABLE(&priv->hspi);	
-	HAL_SPI_DeInit(&priv->hspi);
-	HAL_SPI_Init(&priv->hspi);
-	__HAL_SPI_ENABLE(&priv->hspi);
 
-    if (priv->enable_dmarx) {
-        _spi_dmarx_setup(dev);
+    if (HAL_SPI_Init(&priv->hspi) != HAL_OK) {
+        ret = -1;
     }
-    if (priv->enable_dmatx) {
-        _spi_dmatx_setup(dev);
-    }
-	HAL_NVIC_SetPriority(spi_irq_array[num-1], priv->priority, 0);
-	HAL_NVIC_EnableIRQ(spi_irq_array[num-1]);
-
-	g_spi_list[num-1] = dev;
 }
 
 void _spi_irq(struct spi_dev_s *dev)
@@ -506,42 +460,120 @@ void _spi_irq_dmartx(struct spi_dev_s *dev)
 /****************************************************************************
  * Public Function Interface 
  ****************************************************************************/
-int up_spi_setup(struct spi_dev_s *dev)
-{
-    _spi_setup(dev);
-    return 0;
-}
-
 uint32_t up_spi_setfrequency(struct spi_dev_s *dev, uint32_t frequency)
 {
     struct up_spi_dev_s *priv = dev->priv;
-#if defined (DRV_BSP_H7)
-	priv->hspi.Instance->CFG1 |= (frequency << 28);
+
+    uint32_t setbits = 0;
+    uint32_t actual  = 0;
+
+#if defined (DRV_STM32_H7)
+    const uint32_t mask = SPI_CFG1_MBR_Msk;
+    const uint32_t cfg_FPCLKd2 = (0 << SPI_CFG1_MBR_Pos);
+    const uint32_t cfg_FPCLKd4 = (1 << SPI_CFG1_MBR_Pos);
+    const uint32_t cfg_FPCLKd8 = (2 << SPI_CFG1_MBR_Pos);
+    const uint32_t cfg_FPCLKd16 = (3 << SPI_CFG1_MBR_Pos);
+    const uint32_t cfg_FPCLKd32 = (4 << SPI_CFG1_MBR_Pos);
+    const uint32_t cfg_FPCLKd64 = (5 << SPI_CFG1_MBR_Pos);
+    const uint32_t cfg_FPCLKd128 = (6 << SPI_CFG1_MBR_Pos);
+    const uint32_t cfg_FPCLKd256 = (7 << SPI_CFG1_MBR_Pos);
+#elif defined (DRV_STM32_F1) || defined (DRV_STM32_F4)
+    const uint32_t mask = SPI_CR1_BR_Msk;
+    const uint32_t cfg_FPCLKd2 = (0 << SPI_CR1_BR_Pos);
+    const uint32_t cfg_FPCLKd4 = (1 << SPI_CR1_BR_Pos);
+    const uint32_t cfg_FPCLKd8 = (2 << SPI_CR1_BR_Pos);
+    const uint32_t cfg_FPCLKd16 = (3 << SPI_CR1_BR_Pos);
+    const uint32_t cfg_FPCLKd32 = (4 << SPI_CR1_BR_Pos);
+    const uint32_t cfg_FPCLKd64 = (5 << SPI_CR1_BR_Pos);
+    const uint32_t cfg_FPCLKd128 = (6 << SPI_CR1_BR_Pos);
+    const uint32_t cfg_FPCLKd256 = (7 << SPI_CR1_BR_Pos);
 #endif
 
-#if defined (DRV_BSP_F4) || defined (DRV_BSP_F1)
-    priv->hspi.Instance->CR1 |= (frequency << 3);
-#endif
+    /* Limit to max possible (if STM32_SPI_CLK_MAX is defined in board.h) */
 
-	return 0;
+    if (frequency > priv->clock) {
+        frequency = priv->clock;
+    }
+
+    /* Has the frequency changed? */
+
+    if (frequency != dev->frequency) {
+
+        /* Choices are limited by PCLK frequency with a set of divisors */
+
+        if (frequency >= priv->clock >> 1) {
+
+            /* More than fPCLK/2.  This is as fast as we can go */
+            setbits = cfg_FPCLKd2; /* 000: fPCLK/2 */
+            actual = priv->clock >> 1;
+        } else if (frequency >= priv->clock >> 2) {
+
+            /* Between fPCLCK/2 and fPCLCK/4, pick the slower */
+            setbits = cfg_FPCLKd4; /* 001: fPCLK/4 */
+            actual = priv->clock >> 2;
+        } else if (frequency >= priv->clock >> 3) {
+
+            /* Between fPCLCK/4 and fPCLCK/8, pick the slower */
+            setbits = cfg_FPCLKd8; /* 010: fPCLK/8 */
+            actual = priv->clock >> 3;
+        } else if (frequency >= priv->clock >> 4) {
+
+            /* Between fPCLCK/8 and fPCLCK/16, pick the slower */
+            setbits = cfg_FPCLKd16; /* 011: fPCLK/16 */
+            actual = priv->clock >> 4;
+        } else if (frequency >= priv->clock >> 5) {
+
+            /* Between fPCLCK/16 and fPCLCK/32, pick the slower */
+            setbits = cfg_FPCLKd32; /* 100: fPCLK/32 */
+            actual = priv->clock >> 5;
+        } else if (frequency >= priv->clock >> 6) {
+
+            /* Between fPCLCK/32 and fPCLCK/64, pick the slower */
+            setbits = cfg_FPCLKd64; /*  101: fPCLK/64 */
+            actual = priv->clock >> 6;
+        } else if (frequency >= priv->clock >> 7) {
+
+            /* Between fPCLCK/64 and fPCLCK/128, pick the slower */
+            setbits = cfg_FPCLKd128; /* 110: fPCLK/128 */
+            actual = priv->clock >> 7;
+        } else {
+
+            /* Less than fPCLK/128.  This is as slow as we can go */
+            setbits = cfg_FPCLKd256; /* 111: fPCLK/256 */
+            actual = priv->spiclock >> 8;
+        }
+
+		__HAL_SPI_DISABLE(&priv->hspi);
+#if defined (DRV_STM32_H7)
+        MODIFY_REG(priv->hspi.Instance->CFG1, mask, setbits);
+#elif defined (DRV_STM32_F1) || defined (DRV_STM32_F4)
+        MODIFY_REG(priv->hspi.Instance->CR1, mask, setbits);
+#endif
+        __HAL_SPI_ENABLE(&priv->hspi);
+
+        dev->frequency = frequency;
+        priv->actual_freq    = actual;
+    }
+
+    return priv->actual_freq;
 }
 
 void up_spi_setmode(struct spi_dev_s *dev, enum spi_mode_e mode)
 {
     struct up_spi_dev_s *priv = dev->priv;
 
-#if defined (DRV_BSP_H7)
+#if defined (DRV_STM32_H7)
     uint32_t setbits;
     uint32_t clrbits;
 #endif
 
-#if defined (DRV_BSP_F4) || defined (DRV_BSP_F1)
+#if defined (DRV_STM32_F4) || defined (DRV_STM32_F1)
     uint16_t setbits;
     uint16_t clrbits;
 #endif
 
 	if (mode != dev->mode) {
-#if defined (DRV_BSP_H7)
+#if defined (DRV_STM32_H7)
 
         switch (mode) {
         case SPIDEV_MODE0: /* CPOL=0; CPHA=0 */
@@ -578,7 +610,7 @@ void up_spi_setmode(struct spi_dev_s *dev, enum spi_mode_e mode)
         }
 #endif
 
-#if defined (DRV_BSP_F4) || defined (DRV_BSP_F1)
+#if defined (DRV_STM32_F4) || defined (DRV_STM32_F1)
 		switch (mode) {
 			case SPIDEV_MODE0: /* CPOL=0; CPHA=0 */
 			setbits = 0;
@@ -648,18 +680,18 @@ void up_spi_setbits(struct spi_dev_s *dev, int nbits)
 {
     struct up_spi_dev_s *priv = dev->priv;
 
-#if defined (DRV_BSP_H7)
+#if defined (DRV_STM32_H7)
     uint32_t setbits;
     uint32_t clrbits;
 #endif
 
-#if defined (DRV_BSP_F4) || defined (DRV_BSP_F1)
+#if defined (DRV_STM32_F4) || defined (DRV_STM32_F1)
     uint16_t setbits;
     uint16_t clrbits;
 #endif
 
     if (nbits != dev->nbits) {
-#if defined (DRV_BSP_H7)
+#if defined (DRV_STM32_H7)
         if (nbits < 4 || nbits > 32) {
             return;
         }
@@ -693,7 +725,7 @@ void up_spi_setbits(struct spi_dev_s *dev, int nbits)
         __HAL_SPI_ENABLE(&priv->hspi);
 #endif
 
-#if defined (DRV_BSP_F4) || defined (DRV_BSP_F1)
+#if defined (DRV_STM32_F4) || defined (DRV_STM32_F1)
 		switch (nbits) {
 		case 8:
 			priv->hspi.Init.DataSize = SPI_DATASIZE_8BIT;
@@ -792,84 +824,92 @@ int up_spi_recvblock(struct spi_dev_s *dev, void *buffer, size_t nwords)
 	return ret;
 }
 
+int up_spi_setup(struct spi_dev_s *dev)
+{
+    struct up_spi_dev_s *priv = dev->priv;
+
+#if defined(DRV_STM32_H7)
+    _spi_set_clocksrc(dev);
+#endif
+    _spi_rcc_init(priv->id);
+
+    _spi_pin_config(dev);
+
+    _spi_setup(dev);
+
+    _spi_dma_setup(dev, DEVICE_SPI_DMA_TX);
+    _spi_dma_setup(dev, DEVICE_SPI_DMA_RX);
+
+	HAL_NVIC_SetPriority(_spi_irq_get(priv->id), priv->priority, 0);
+	HAL_NVIC_EnableIRQ(_spi_irq_get(priv->id));
+
+    g_spi_list[priv->id-1] = dev;
+
+    return 0;
+}
+
 /****************************************************************************
- * STM32 HAL Library Callback 
+ * STM32 HAL Callback 
  ****************************************************************************/
 
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
     uint8_t idx = 0;
-    if (hspi->Instance == SPI1)		    idx = 0;
-    else if (hspi->Instance == SPI2)	idx = 1;
-#if (BSP_CHIP_RESOURCE_LEVEL > 1)
-    else if (hspi->Instance == SPI3)	idx = 2;
-#elif (BSP_CHIP_RESOURCE_LEVEL > 2)
-    else if (hspi->Instance == SPI4)	idx = 3;
-    else if (hspi->Instance == SPI5)	idx = 4;
-    else if (hspi->Instance == SPI6)	idx = 5;
-#endif
-
+    idx = _spi_instance_judge(hspi);
     _spi_irq_dmartx(g_spi_list[idx]);
 }
 
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 {
     uint8_t idx = 0;
-    if (hspi->Instance == SPI1)		    idx = 0;
-    else if (hspi->Instance == SPI2)	idx = 1;
-#if (BSP_CHIP_RESOURCE_LEVEL > 1)
-    else if (hspi->Instance == SPI3)	idx = 2;
-#elif (BSP_CHIP_RESOURCE_LEVEL > 2)
-    else if (hspi->Instance == SPI4)	idx = 3;
-    else if (hspi->Instance == SPI5)	idx = 4;
-    else if (hspi->Instance == SPI6)	idx = 5;
-#endif
-
+    idx = _spi_instance_judge(hspi);
     _spi_irq_dmatx(g_spi_list[idx]);
 }
 
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
 {
     uint8_t idx = 0;
-    if (hspi->Instance == SPI1)		    idx = 0;
-    else if (hspi->Instance == SPI2)	idx = 1;
-#if (BSP_CHIP_RESOURCE_LEVEL > 1)
-    else if (hspi->Instance == SPI3)	idx = 2;
-#elif (BSP_CHIP_RESOURCE_LEVEL > 2)
-    else if (hspi->Instance == SPI4)	idx = 3;
-    else if (hspi->Instance == SPI5)	idx = 4;
-    else if (hspi->Instance == SPI6)	idx = 5;
-#endif
-
+    idx = _spi_instance_judge(hspi);
     _spi_irq_dmarx(g_spi_list[idx]);
 }
 
+/****************************************************************************
+ * STM32 IRQ
+ ****************************************************************************/
 void SPI1_IRQHandler(void)
 {
 	_spi_irq(g_spi_list[0]);
 }
 
+#if defined(SPI2)
 void SPI2_IRQHandler(void)
 {
 	_spi_irq(g_spi_list[1]);
 }
+#endif
 
-#if (BSP_CHIP_RESOURCE_LEVEL > 1)
+#if defined(SPI3)
 void SPI3_IRQHandler(void)
 {
 	_spi_irq(g_spi_list[2]);
 }
+#endif
 
+#if defined(SPI4)
 void SPI4_IRQHandler(void)
 {
 	_spi_irq(g_spi_list[3]);
 }
+#endif
 
+#if defined(SPI5)
 void SPI5_IRQHandler(void)
 {
 	_spi_irq(g_spi_list[4]);
 }
+#endif
 
+#if defined(SPI6)
 void SPI6_IRQHandler(void)
 {
 	_spi_irq(g_spi_list[5]);

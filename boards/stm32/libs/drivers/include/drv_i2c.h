@@ -1,12 +1,9 @@
-#ifndef DRV_I2C_V1_H_
-#define DRV_I2C_V1_H_
+#ifndef DRIVE_I2C_H_
+#define DRIVE_I2C_H_
 
 #include <stdint.h>
-#include "drv_common.h"
+#include "drv_cmn.h"
 #include "drv_gpio.h"
-#if defined (DRV_BSP_H7)
-#include "drv_pin_h7.h"
-#endif
 #include <device/i2c_master.h>
 
 struct up_i2c_master_s
@@ -14,18 +11,14 @@ struct up_i2c_master_s
     struct i2c_master_s dev;
 
     uint8_t id;
-    uint8_t pin_scl;
-    uint8_t pin_sda;
-    uint8_t priority_event;
+    uint8_t state;
+    struct periph_pin_t sclpin;
+    struct periph_pin_t sdapin;
+    uint8_t priority;
     uint8_t priority_error;
 
-    uint8_t ecnt;
-
     I2C_HandleTypeDef hi2c;
-    GPIO_TypeDef *scl_port;
-    GPIO_TypeDef *sda_port;
-    uint16_t scl_pin;
-    uint16_t sda_pin;
+    uint32_t clock;
 };
 
 extern const struct i2c_ops_s g_i2c_master_ops;

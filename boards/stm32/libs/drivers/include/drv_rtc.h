@@ -1,8 +1,9 @@
-#ifndef DRV_RTC_H_
-#define DRV_RTC_H_
+#ifndef DRIVE_RTC_H_
+#define DRIVE_RTC_H_
 
 #include <stdint.h>
-#include "drv_common.h"
+#include <stdbool.h>
+#include "drv_cmn.h"
 
 #if defined(__clang__) || defined(__CC_ARM)
 #include <time.h>
@@ -21,6 +22,7 @@ extern "C" {
 #endif
 
 bool   stm32_rtc_setup(void);
+void   stm32_rtc_deinit(void);
 time_t stm32_rtc_get_timeval(struct timeval *tv);
 void   stm32_rtc_get_tm(struct tm *now);
 

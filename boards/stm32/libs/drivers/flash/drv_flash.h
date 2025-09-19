@@ -1,13 +1,13 @@
-#ifndef DRV_FLASH_H_
-#define DRV_FLASH_H_
+#ifndef DRIVE_FLASH_H_
+#define DRIVE_FLASH_H_
 
-#include "drv_common.h"
+#include "drv_cmn.h"
+
+#define FLASH_ALIGN_DOWN(size, align)      ((size) & ~((align) - 1))
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-uint32_t stm32_flash_readword(uint32_t addr);
 
 int  stm32_flash_erase(uint32_t addr, size_t size);
 int  stm32_flash_write(uint32_t addr, const uint8_t *buf, size_t size);

@@ -1,31 +1,73 @@
 
+ifeq ($(BSP_LIBCONFIG_STM32_DRV_LEGACY),y)
+
+LIBDRV_CINCDIRS += legacy/include
+
+LIBDRV_CSRCS += legacy/drv_gpio.c
+LIBDRV_CSRCS += legacy/drv_dma.c
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_RTC),y)
+LIBDRV_CSRCS += legacy/drv_rtc.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_USART),y)
+LIBDRV_CSRCS += legacy/drv_uart.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_I2C),y)
+LIBDRV_CSRCS += legacy/drv_i2c.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_SPI),y)
+LIBDRV_CSRCS += legacy/drv_spi.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_QSPI),y)
+LIBDRV_CSRCS += legacy/drv_qspi.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_MMCSD),y)
+LIBDRV_CSRCS += legacy/drv_mmcsd.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_FLASH),y)
+LIBDRV_CINCDIRS += legacy/flash
+
+ifeq (${BSP_LIBCONFIG_STM32_SERIES},BSP_STM32_H7)
+LIBDRV_CSRCS += legacy/flash/drv_flash_h7.c
+endif
+
+ifeq (${BSP_LIBCONFIG_STM32_SERIES},BSP_STM32_WL)
+LIBDRV_CSRCS += legacy/flash/drv_flash_wl.c
+endif
+
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_ETH_LEGACY),y)
+LIBDRV_CSRCS += legacy/drv_eth.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_CAN)$(BSP_LIBCONFIG_STM32_HAL_CAN_LEGACY),y)
+LIBDRV_CSRCS += legacy/drv_can.c
+endif
+
+endif # BSP_LIBCONFIG_STM32_DRV_LEGACY
+
+
+
+
+ifeq ($(BSP_LIBCONFIG_STM32_DRV_LEGACY),n)
+
 LIBDRV_CINCDIRS += include
 
 LIBDRV_CSRCS += drv_gpio.c
-LIBDRV_CSRCS += drv_dma.c
-
-ifeq ($(BSP_LIBCONFIG_STM32_HAL_RTC),y)
-LIBDRV_CSRCS += drv_rtc.c
-endif
 
 ifeq ($(BSP_LIBCONFIG_STM32_HAL_USART),y)
 LIBDRV_CSRCS += drv_uart.c
 endif
 
-ifeq ($(BSP_LIBCONFIG_STM32_HAL_I2C),y)
-LIBDRV_CSRCS += drv_i2c.c
-endif
-
-ifeq ($(BSP_LIBCONFIG_STM32_HAL_SPI),y)
-LIBDRV_CSRCS += drv_spi.c
-endif
-
-ifeq ($(BSP_LIBCONFIG_STM32_HAL_QSPI),y)
-LIBDRV_CSRCS += drv_qspi.c
-endif
-
-ifeq ($(BSP_LIBCONFIG_STM32_HAL_MMCSD),y)
-LIBDRV_CSRCS += drv_mmcsd.c
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_RTC),y)
+LIBDRV_CSRCS += drv_rtc.c
 endif
 
 ifeq ($(BSP_LIBCONFIG_STM32_HAL_FLASH),y)
@@ -41,10 +83,4 @@ endif
 
 endif
 
-ifeq ($(BSP_LIBCONFIG_STM32_HAL_ETH_LEGACY),y)
-LIBDRV_CSRCS += drv_eth.c
-endif
-
-ifeq ($(BSP_LIBCONFIG_STM32_HAL_CAN)$(BSP_LIBCONFIG_STM32_HAL_CAN_LEGACY),y)
-LIBDRV_CSRCS += drv_can.c
 endif

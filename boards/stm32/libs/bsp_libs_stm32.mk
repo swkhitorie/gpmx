@@ -13,13 +13,7 @@ endif
 #########################################################################
 # Chips SDK
 #########################################################################
-ifeq (${BSP_LIBCONFIG_STM32_SERIES},BSP_STM32_G0)
-
-include ${BSP_LIBS_PATHSDK}/stm32g0xx_hal/Make.defs
-TMPHAL_CINCDIRS = ${addprefix ${BSP_LIBS_PATH}/stm32g0xx_hal/,${LIBHAL_CINCDIRS}}
-TMPHAL_CSRCS = ${addprefix ${BSP_LIBS_PATH}/stm32g0xx_hal/,${LIBHAL_CSRCS}}
-
-else ifeq (${BSP_LIBCONFIG_STM32_SERIES},BSP_STM32_F1)
+ifeq (${BSP_LIBCONFIG_STM32_SERIES},BSP_STM32_F1)
 
 include ${BSP_LIBS_PATHSDK}/stm32f1xx_hal/Make.defs
 TMPHAL_CINCDIRS = ${addprefix ${BSP_LIBS_PATH}/stm32f1xx_hal/,${LIBHAL_CINCDIRS}}

@@ -1,7 +1,25 @@
-/**
- * this can driver not used, waiting for future rewrites
- */
 #include "drv_can.h"
+
+#define BS1SHIFT        16
+#define BS2SHIFT        20
+#define RRESCLSHIFT     0
+#define SJWSHIFT        24
+
+#define BS1MASK         ((0x0F)   << BS1SHIFT)
+#define BS2MASK         ((0x07)   << BS2SHIFT)
+#define RRESCLMASK      ((0x3FF)  << RRESCLSHIFT)
+#define SJWMASK         ((0x3)    << SJWSHIFT)
+
+#define CAN_EVENT_RX_IND     (0x0010)
+#define CAN_EVENT_RXOF_IND   (0x0011)
+#define CAN_EVENT_TX_FAIL    (0x0021)
+#define CAN_EVENT_TX_DONE    (0x0022)
+
+struct stm32_baud_rate_tab
+{
+    uint32_t baud;
+    uint32_t config;
+};
 
 static struct can_dev_s *can_list[2] = {0, 0};
 
@@ -58,7 +76,8 @@ static uint32_t get_can_baud_index(uint32_t baud)
     return 0;
 }
 
-static bool _can_pinconfig(struct can_dev_s *dev);
+static void _can_pin_config(struct can_dev_s *dev);
+
 static int  _can_config(struct can_dev_s *dev);
 static int  _can_control(struct can_dev_s *dev, int cmd, void *arg);
 static int  _can_sendmsg(struct can_dev_s *dev, const void *buf, uint32_t box_num);
@@ -78,78 +97,29 @@ const struct can_ops_s g_can_master_ops =
     .co_send = up_can_send,
 };
 
-bool _can_pinconfig(struct can_dev_s *dev)
+/****************************************************************************
+ * Private Function
+ ****************************************************************************/
+void _can_pin_config(struct can_dev_s *dev);
 {
     struct up_can_dev_s *priv = dev->cd_priv;
-    uint8_t num = priv->id;
-    uint8_t tx_selec = priv->pin_tx;
-    uint8_t rx_selec = priv->pin_rx;
+    struct periph_pin_t *txpin = &priv->txpin;
+    struct periph_pin_t *rxpin = &priv->rxpin;
 
 #if defined (DRV_BSP_H7)
-    const struct pin_node *tx_pin, *rx_pin;
-	uint32_t illegal;
-	switch (num) {
-	case 1:
-		if (PINNODE(uint32_t)(CAN_PINCTRL_SOURCE(1, CAN_PIN_TX, tx_selec)) != NULL
-			&& PINNODE(uint32_t)(CAN_PINCTRL_SOURCE(1, CAN_PIN_RX, rx_selec)) != NULL) {
-			tx_pin = CAN_PINCTRL_SOURCE(1, CAN_PIN_TX, tx_selec);
-			rx_pin = CAN_PINCTRL_SOURCE(1, CAN_PIN_RX, rx_selec);
-			illegal = tx_pin->port && rx_pin->port;
-		}else {
-			return false;
-		}
-		break;
-	case 2:
-		if (PINNODE(uint32_t)(CAN_PINCTRL_SOURCE(2, CAN_PIN_TX, tx_selec)) != NULL
-			&& PINNODE(uint32_t)(CAN_PINCTRL_SOURCE(2, CAN_PIN_RX, rx_selec)) != NULL) {
-			tx_pin = CAN_PINCTRL_SOURCE(2, CAN_PIN_TX, tx_selec);
-			rx_pin = CAN_PINCTRL_SOURCE(2, CAN_PIN_RX, rx_selec);
-			illegal = tx_pin->port && rx_pin->port;
-		}else {
-			return false;
-		}
-		break;
-	default: return false;
-	}
-	
-	if (illegal != 0) {
-        LOW_PERIPH_INITPIN(tx_pin->port, tx_pin->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDHIGH, tx_pin->alternate);
-        LOW_PERIPH_INITPIN(rx_pin->port, rx_pin->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDHIGH, rx_pin->alternate);
-	} else {
-		return false;
-	}
-	return true;
+    LOW_PERIPH_INITPIN(txpin->port, txpin->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDHIGH, txpin->alternate);
+    LOW_PERIPH_INITPIN(rxpin->port, rxpin->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDHIGH, rxpin->alternate);
 #endif
 
-#if defined (DRV_BSP_F1) || defined (DRV_BSP_F4)
-    GPIO_TypeDef *tx_port[2]  = {GPIOA,   GPIOB  };
-    uint16_t      tx_pin[2]   = {12,       6,    };
-
-    GPIO_TypeDef *rx_port[2]  = {GPIOA,   GPIOB  };
-    uint16_t      rx_pin[2]   = {11,       5,    };
-
-    uint32_t alternate = GPIO_AF9_CAN2; // same with GPIO_AF9_CAN2
-
-    if (tx_selec == 1 && num == 2) {
-        // CAN2
-        LOW_PERIPH_INITPIN(GPIOB, 13, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate);
-        LOW_PERIPH_INITPIN(GPIOB, 12, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate);
-    } else if (tx_selec == 1 && num == 1) {
-        // CAN1
-        LOW_PERIPH_INITPIN(GPIOB, 9, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate);
-        LOW_PERIPH_INITPIN(GPIOB, 8, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate);
-    } else if (tx_selec == 2 && num == 1) {
-        // CAN1
-        LOW_PERIPH_INITPIN(GPIOD, 1, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate);
-        LOW_PERIPH_INITPIN(GPIOD, 0, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate);
-    } else {
-        LOW_PERIPH_INITPIN(tx_port[num-1], tx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate);
-        LOW_PERIPH_INITPIN(rx_port[num-1], rx_pin[num-1], IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, alternate);
-    }
-
-    return true;
+#if defined (DRV_BSP_F4)
+    LOW_PERIPH_INITPIN(txpin->port, txpin->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, txpin->alternate);
+    LOW_PERIPH_INITPIN(rxpin->port, rxpin->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, rxpin->alternate);
 #endif
 
+#if defined (DRV_BSP_F1)
+    LOW_PERIPH_INITPIN(txpin->port, txpin->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH);
+    LOW_PERIPH_INITPIN(rxpin->port, rxpin->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH);
+#endif
 }
 
 int _can_control(struct can_dev_s *dev, int cmd, void *arg)
@@ -161,7 +131,7 @@ int _can_control(struct can_dev_s *dev, int cmd, void *arg)
     CAN_TypeDef* can_obj[2] = {CAN1, CAN2};
     uint32_t can_rx0_irq[2] = {CAN1_RX0_IRQn, CAN2_RX0_IRQn};
     uint32_t can_rx1_irq[2] = {CAN1_RX1_IRQn, CAN2_RX1_IRQn};
-    uint32_t can_tx_irq[2] = {CAN1_TX_IRQn, CAN2_TX_IRQn};
+    uint32_t can_tx_irq[2]  = {CAN1_TX_IRQn, CAN2_TX_IRQn};
     uint32_t can_sce_irq[2] = {CAN1_SCE_IRQn, CAN2_SCE_IRQn};
 
     switch (cmd) {
