@@ -35,13 +35,13 @@ static void write_appbin(uint32_t appAddr, uint8_t *appbuf, uint32_t appsize)
 		iapbuf[wordCount++] = writeword;
 		if (wordCount == 8) {
 			wordCount = 0;
-			stm32_flash_write(fileWriteAddr,iapbuf,8);
+			stm32_flash_write(fileWriteAddr,(const uint8_t *)iapbuf,32);
 			fileWriteAddr += (8*4);
 		}
 	}
 
 	if (wordCount) {
-		stm32_flash_write(fileWriteAddr,iapbuf,wordCount);
+		stm32_flash_write(fileWriteAddr,(const uint8_t *)iapbuf,wordCount*4);
 	}
 }
 
@@ -60,12 +60,12 @@ static bool check_appbin(uint32_t appAddr, uint8_t *appbuf, uint32_t appsize)
 		word_value |= (uint32_t)appbuf[1] << 8;
 		word_value |= (uint32_t)appbuf[0];
 		appbuf += 4;
-		if (word_value != stm32_flash_readword((appAddr + i * 4))) {
+		if (word_value != *(volatile uint32_t *)((appAddr + i * 4))) {
 			check_error_cnt++;
 
             printf("appbin flash error addr: wordval: %x, flashval: %x, %x\r\n",
                 word_value,
-                (appAddr + i * 4), stm32_flash_readword((appAddr + i * 4)));
+                (appAddr + i * 4), *(volatile uint32_t *)((appAddr + i * 4)));
 		}
 	}
 
@@ -78,7 +78,13 @@ static bool check_appbin(uint32_t appAddr, uint8_t *appbuf, uint32_t appsize)
 static void exec_app()
 {
 	uint32_t i = 0;
+
 	void (*AppJump)(void);
+
+	if (*(volatile uint32_t *) (boot_app_addr + 4) == 0xffffffff ||
+        *(volatile uint32_t *) (boot_app_addr)) {
+        return;
+	}
 
 	board_bsp_deinit();
 

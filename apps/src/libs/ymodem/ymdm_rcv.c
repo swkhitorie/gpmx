@@ -1,5 +1,16 @@
 #include "ymdm_rcv.h"
 
+static void ymodem_proto_clear(struct __ymodem_rcv_parse *obj)
+{
+    obj->nbyte = 0;
+    obj->nlen = 0;
+    obj->seq = 0;
+    obj->seq_xor = 0;
+    for (int i = 0; i <YMODEM_NONPAYLOADLEN+YMODEM_PAYLOADLEN_STX+1; i++) {
+        obj->buff[i] = 0;
+    }
+}
+
 static int ymodem_parse_dframe(struct __ymodem_rcv_parse *msg, uint8_t c, uint8_t type)
 {
     int header = YMODEM_SOH;
@@ -69,7 +80,7 @@ static int ymodem_parser_buff(struct __ymodem_receiver *yrcv, const uint8_t *p, 
         }
 
         if (ret == -1) {
-            memset(&yrcv->proto, 0, sizeof(struct __ymodem_rcv_parse));
+            ymodem_proto_clear(&yrcv->proto);
         }
     }
 
@@ -104,8 +115,13 @@ int ymodem_filesz(struct __ymodem_receiver *yrcv)
 void ymodem_reset(struct __ymodem_receiver *yrcv)
 {
     yrcv->state = YMODEM_IDLE;
-    memset(&yrcv->proto, 0, sizeof(struct __ymodem_rcv_parse));
-    memset(&yrcv->fname[0], 0, 128);
+
+    ymodem_proto_clear(&yrcv->proto);
+
+    for (int i = 0; i < 128; i++) {
+        yrcv->fname[i] = 0;
+    }
+
     yrcv->fsize = 0;
     yrcv->fsize_cal = 0;
     yrcv->seq_lst = 0;
@@ -130,7 +146,7 @@ void ymodem_rx_process(struct __ymodem_receiver *yrcv, const uint8_t *p, uint16_
                     &yrcv->proto.buff[YMODEM_HEADLEN],
                     YMODEM_PAYLOADLEN_SOH,
                     &yrcv->fname[0],
-                    &yrcv->fsize)) {
+                    (unsigned int *)&yrcv->fsize)) {
 
                     yrcv->_fsnd(YMODEM_ACK);
                     yrcv->_fsnd(YMODEM_C);

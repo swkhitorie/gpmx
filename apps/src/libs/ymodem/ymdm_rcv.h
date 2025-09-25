@@ -3,7 +3,8 @@
 
 #include "ymdm_cmn.h"
 
-#ifndef YM_LOG(...)
+#ifndef YM_LOG
+#include <stdio.h>
 #define YM_LOG(...)   printf(__VA_ARGS__)
 #endif
 

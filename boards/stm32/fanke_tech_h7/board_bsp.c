@@ -16,7 +16,7 @@ uint8_t com1_txbuff[256];
 uint8_t com1_rxbuff[2048];
 struct up_uart_dev_s com1_dev = {
     .dev = {
-        .baudrate = 921600,
+        .baudrate = 115200,
         .wordlen = 8,
         .stopbitlen = 1,
         .parity = 'n',
@@ -68,12 +68,6 @@ uart_dev_t *dstdin;
 
 void board_bsp_init()
 {
-#ifdef CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
-    HAL_Delay(300);
-    cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
-    HAL_Delay(100); // wait cdc init completed
-#endif
-
     LOW_INITPIN(GPIOH, 7, IOMODE_OUTPP, IO_NOPULL, IO_SPEEDHIGH);
     LOW_IOSET(GPIOH, 7, 1);
 
@@ -85,11 +79,20 @@ void board_bsp_init()
     dstdin = serial_bus_get(1);
 #endif
 
+#ifdef CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
+    HAL_Delay(300);
+    cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
+    HAL_Delay(100); // wait cdc init completed
+#endif
+
     hw_stm32_rtc_setup();
 
+#if defined(CONFIG_STM32_MMCSD_FATFS_SUPPORT)
     hw_stm32_mmcsd_init(1, 1, 4);
     hw_stm32_mmcsd_info(1);
     hw_stm32_mmcsd_fs_init(1);
+#endif
+
 }
 
 void board_bsp_deinit()

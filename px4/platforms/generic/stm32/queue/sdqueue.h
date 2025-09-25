@@ -3,10 +3,6 @@
 
 #include "sys/types.h"
 
-#ifndef FAR
-#define FAR
-#endif
-
 /************************************************************************
  * Pre-processor Definitions
  ************************************************************************/
@@ -49,25 +45,25 @@
  ************************************************************************/
 
 struct sq_entry_s {
-    FAR struct sq_entry_s *flink;
+    struct sq_entry_s *flink;
 };
 typedef struct sq_entry_s sq_entry_t;
 
 struct dq_entry_s {
-    FAR struct dq_entry_s *flink;
-    FAR struct dq_entry_s *blink;
+    struct dq_entry_s *flink;
+    struct dq_entry_s *blink;
 };
 typedef struct dq_entry_s dq_entry_t;
 
 struct sq_queue_s {
-    FAR sq_entry_t *head;
-    FAR sq_entry_t *tail;
+    sq_entry_t *head;
+    sq_entry_t *tail;
 };
 typedef struct sq_queue_s  sq_queue_t;
 
 struct dq_queue_s {
-    FAR dq_entry_t *head;
-    FAR dq_entry_t *tail;
+    dq_entry_t *head;
+    dq_entry_t *tail;
 };
 typedef struct dq_queue_s dq_queue_t;
 
@@ -83,36 +79,36 @@ extern "C"
 #define EXTERN extern
 #endif
 
-void sq_addfirst(FAR sq_entry_t *node, FAR sq_queue_t *queue);
-void dq_addfirst(FAR dq_entry_t *node, FAR dq_queue_t *queue);
-void sq_addlast(FAR sq_entry_t *node, FAR sq_queue_t *queue);
-void dq_addlast(FAR dq_entry_t *node, FAR dq_queue_t *queue);
-void sq_addafter(FAR sq_entry_t *prev, FAR sq_entry_t *node,
-                 FAR sq_queue_t *queue);
-void dq_addafter(FAR dq_entry_t *prev, FAR dq_entry_t *node,
-                 FAR dq_queue_t *queue);
-void dq_addbefore(FAR dq_entry_t *next, FAR dq_entry_t *node,
-                  FAR dq_queue_t *queue);
+void sq_addfirst(sq_entry_t *node, sq_queue_t *queue);
+void dq_addfirst(dq_entry_t *node, dq_queue_t *queue);
+void sq_addlast(sq_entry_t *node, sq_queue_t *queue);
+void dq_addlast(dq_entry_t *node, dq_queue_t *queue);
+void sq_addafter(sq_entry_t *prev, sq_entry_t *node,
+                sq_queue_t *queue);
+void dq_addafter(dq_entry_t *prev, dq_entry_t *node,
+                dq_queue_t *queue);
+void dq_addbefore(dq_entry_t *next, dq_entry_t *node,
+                dq_queue_t *queue);
 
 /* Combine queues */
 
-void sq_cat(FAR sq_queue_t *queue1, FAR sq_queue_t *queue2);
-void dq_cat(FAR dq_queue_t *queue1, FAR dq_queue_t *queue2);
+void sq_cat(sq_queue_t *queue1, sq_queue_t *queue2);
+void dq_cat(dq_queue_t *queue1, dq_queue_t *queue2);
 
 /* Remove nodes from queues */
 
-FAR  sq_entry_t *sq_remafter(FAR sq_entry_t *node, FAR sq_queue_t *queue);
-void sq_rem(FAR sq_entry_t *node, FAR sq_queue_t *queue);
-void dq_rem(FAR dq_entry_t *node, FAR dq_queue_t *queue);
-FAR  sq_entry_t *sq_remlast(FAR sq_queue_t *queue);
-FAR  dq_entry_t *dq_remlast(FAR dq_queue_t *queue);
-FAR  sq_entry_t *sq_remfirst(FAR sq_queue_t *queue);
-FAR  dq_entry_t *dq_remfirst(FAR dq_queue_t *queue);
+sq_entry_t *sq_remafter(sq_entry_t *node, sq_queue_t *queue);
+void sq_rem(sq_entry_t *node, sq_queue_t *queue);
+void dq_rem(dq_entry_t *node, dq_queue_t *queue);
+sq_entry_t *sq_remlast(sq_queue_t *queue);
+dq_entry_t *dq_remlast(dq_queue_t *queue);
+sq_entry_t *sq_remfirst(sq_queue_t *queue);
+dq_entry_t *dq_remfirst(dq_queue_t *queue);
 
 /* Count nodes in queues */
 
-size_t sq_count(FAR sq_queue_t *queue);
-size_t dq_count(FAR dq_queue_t *queue);
+size_t sq_count(sq_queue_t *queue);
+size_t dq_count(dq_queue_t *queue);
 
 #undef EXTERN
 #ifdef __cplusplus
