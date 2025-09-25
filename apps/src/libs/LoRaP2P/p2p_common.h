@@ -26,6 +26,8 @@
 #define REGION_NVM_MAX_NB_CHANNELS       (EU868_MAX_NB_CHANNELS)
 #elif defined(P2P_REGION_CN470)
 #define REGION_NVM_MAX_NB_CHANNELS       (CN470_MAX_NB_CHANNELS)
+#else
+#error please define lora region
 #endif
 
 typedef uint16_t (*p2p_forwarding_data)(uint8_t *p, uint16_t len);

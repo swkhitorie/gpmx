@@ -5,7 +5,7 @@
 #include "drv_cmn.h"
 #include "drv_gpio.h"
 #include "drv_dma.h"
-#include <device/serial.h>
+#include <device/spi.h>
 
 #ifndef CONFIG_SPI_ATTACH_CS_NUM
 #define CONFIG_SPI_ATTACH_CS_NUM   4

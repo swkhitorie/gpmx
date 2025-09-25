@@ -98,6 +98,8 @@ struct irq_pin_t {
 extern "C" {
 #endif
 
+void    low_init_pin(GPIO_TypeDef* port, uint16_t pin, uint32_t mode, uint32_t pull, uint32_t speed);
+
 void    stm32_gpio_setup(GPIO_TypeDef *port, uint32_t pin, 
             uint32_t mode, uint32_t pull, uint32_t speed, uint32_t alternate, 
             io_irq_entry entry, void *arg, uint32_t priority);

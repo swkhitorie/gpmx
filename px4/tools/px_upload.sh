@@ -24,11 +24,11 @@ fi
 
 MKFW=$SCRIPTDIR/px_mkfw.py
 
-python $MKFW \
+python3 $MKFW \
     --prototype $PROTOTYPE \
     --image $FMUBIN \
     > ./bin/$FMUOUTPUT
 
-python $SCRIPTDIR/px_uploader.py --port $SERIAL_PORTS ./bin/$FMUOUTPUT
+python3 $SCRIPTDIR/px_uploader.py --port $SERIAL_PORTS ./bin/$FMUOUTPUT
 
 # busybox.exe bash .\px4\tools\px_upload.sh .\bin\test_fmuv2_bsp_gae_.bin fmuv2 COM35

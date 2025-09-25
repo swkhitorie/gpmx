@@ -358,7 +358,6 @@ int decode_config_data(struct __p2p_proto *proto, struct __p2p_config_datahead *
 
     *len = proto->len - P2P_FLEN_CONFIG_DATAHEADER;
 
-    printf("%02X,\r\n", msg->magic_num);
     return P2P_PROTO_TRUE;
 }
 

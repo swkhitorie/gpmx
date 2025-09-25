@@ -79,16 +79,16 @@ void _spi_rcc_init(uint8_t id)
     case 2:	__HAL_RCC_SPI2_CLK_ENABLE();	break;
 #endif
 #if defined(SPI3)
-    case 2:	__HAL_RCC_SPI3_CLK_ENABLE();	break;
+    case 3:	__HAL_RCC_SPI3_CLK_ENABLE();	break;
 #endif
 #if defined(SPI4)
-    case 2:	__HAL_RCC_SPI4_CLK_ENABLE();	break;
+    case 4:	__HAL_RCC_SPI4_CLK_ENABLE();	break;
 #endif
 #if defined(SPI5)
-    case 2:	__HAL_RCC_SPI5_CLK_ENABLE();	break;
+    case 5:	__HAL_RCC_SPI5_CLK_ENABLE();	break;
 #endif
 #if defined(SPI6)
-    case 2:	__HAL_RCC_SPI6_CLK_ENABLE();	break;
+    case 6:	__HAL_RCC_SPI6_CLK_ENABLE();	break;
 #endif
 	}
 }
@@ -189,11 +189,11 @@ void _spi_set_clocksrc(struct spi_dev_s *dev)
 	spi_clk_init.PeriphClockSelection = spi_clk[priv->id-1];
 
     if (priv->id <= 3) {
-        spi_clk_init.Spi123ClockSelection = spi_clk_src[num-1];
+        spi_clk_init.Spi123ClockSelection = spi_clk_src[priv->id-1];
     } else if (priv->id <= 5) {
-        spi_clk_init.Spi45ClockSelection = spi_clk_src[num-1];
+        spi_clk_init.Spi45ClockSelection = spi_clk_src[priv->id-1];
     } else {
-        spi_clk_init.Spi6ClockSelection = spi_clk_src[num-1];
+        spi_clk_init.Spi6ClockSelection = spi_clk_src[priv->id-1];
     }
 
 	HAL_RCCEx_PeriphCLKConfig(&spi_clk_init);
@@ -257,6 +257,7 @@ void _spi_pin_config(struct spi_dev_s *dev)
 
 void _spi_dma_setup(struct spi_dev_s *dev, uint8_t flag)
 {
+    int ret = 0;
     struct up_spi_dev_s *priv = dev->priv;
     struct dma_config *dmacfg = ((void *)0);
     DMA_HandleTypeDef *dmaobj = ((void *)0);
@@ -383,22 +384,22 @@ void _spi_setup(struct spi_dev_s *dev)
     if (dev->frequency >= priv->clock / 2) {
 
         priv->hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
-    } else if (cfg->max_hz >= priv->clock / 4) {
+    } else if (dev->frequency >= priv->clock / 4) {
 
         priv->hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
-    } else if (cfg->max_hz >= priv->clock / 8) {
+    } else if (dev->frequency >= priv->clock / 8) {
 
         priv->hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
-    } else if (cfg->max_hz >= priv->clock / 16) {
+    } else if (dev->frequency >= priv->clock / 16) {
 
         priv->hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
-    } else if (cfg->max_hz >= priv->clock / 32) {
+    } else if (dev->frequency >= priv->clock / 32) {
 
         priv->hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
-    } else if (cfg->max_hz >= priv->clock / 64) {
+    } else if (dev->frequency >= priv->clock / 64) {
 
         priv->hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
-    } else if (cfg->max_hz >= priv->clock / 128) {
+    } else if (dev->frequency >= priv->clock / 128) {
 
         priv->hspi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_128;
     } else {
@@ -540,7 +541,7 @@ uint32_t up_spi_setfrequency(struct spi_dev_s *dev, uint32_t frequency)
 
             /* Less than fPCLK/128.  This is as slow as we can go */
             setbits = cfg_FPCLKd256; /* 111: fPCLK/256 */
-            actual = priv->spiclock >> 8;
+            actual = priv->clock >> 8;
         }
 
 		__HAL_SPI_DISABLE(&priv->hspi);
@@ -758,8 +759,8 @@ int up_spi_select(struct spi_dev_s *dev, uint32_t devid, bool selected)
     struct up_spi_dev_s *priv = dev->priv;
 	int i = 0;
 	for (; i < CONFIG_SPI_ATTACH_CS_NUM; i++) {
-        if (devid == priv->devid[i] && priv->devcs[i].port != NULL) {
-			HAL_GPIO_WritePin(priv->devcs[i].port, (0x01 << priv->devcs[i].pin), !selected);
+        if (devid == priv->dev_cs[i].id && priv->dev_cs[i].port != NULL) {
+			HAL_GPIO_WritePin(priv->dev_cs[i].port, (0x01 << priv->dev_cs[i].pin), !selected);
 			return 0;
 		}
 	}

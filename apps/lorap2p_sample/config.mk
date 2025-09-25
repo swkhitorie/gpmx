@@ -12,9 +12,9 @@ CONFIG_LIB_USE_NANO:=y
 TARGET_POSTBUILD := ${TARGET_DEST_FILENAME_BIN}
 
 # board configuration
-# stm32wl55_nucleo_wl55jc
-# stm32wle5_e77_900mbl
-include ${SDK_ROOTDIR}/boards/stm32/stm32wle5_e77_900mbl/make.mk
+# ebyte_e77_900mbl
+# nucleo_wl55jc
+include ${SDK_ROOTDIR}/boards/stm32/ebyte_e77_900mbl/make.mk
 
 # os and library config
 MK_RTOS=none

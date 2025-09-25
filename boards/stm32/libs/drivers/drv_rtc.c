@@ -32,7 +32,7 @@ static void low_f1_bkp_update()
 }
 #endif
 
-bool hw_stm32_rtc_config()
+bool stm32_rtc_config()
 {
     RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
 
@@ -88,7 +88,7 @@ bool hw_stm32_rtc_config()
     return true;
 }
 
-bool stm32_rtc_setup()
+bool hw_stm32_rtc_setup()
 {
 #if !defined(DRV_STM32_H7) && !defined(DRV_STM32_WL)
     __HAL_RCC_PWR_CLK_ENABLE();
@@ -112,7 +112,7 @@ bool stm32_rtc_setup()
     HAL_RCC_OscConfig(&RCC_OscInitStruct);
 #endif
 
-    if (!hw_stm32_rtc_config())
+    if (!stm32_rtc_config())
     {
         return false;
     }
@@ -120,12 +120,12 @@ bool stm32_rtc_setup()
     return true;
 }
 
-void stm32_rtc_deinit()
+void hw_stm32_rtc_deinit()
 {
     HAL_RTC_DeInit(&RTC_Handler);
 }
 
-time_t stm32_rtc_get_timeval(struct timeval *tv)
+time_t hw_stm32_rtc_get_timeval(struct timeval *tv)
 {
     RTC_TimeTypeDef RTC_TimeStruct = {0};
     RTC_DateTypeDef RTC_DateStruct = {0};
@@ -154,7 +154,7 @@ time_t stm32_rtc_get_timeval(struct timeval *tv)
     return tv->tv_sec;
 }
 
-void stm32_rtc_get_tm(struct tm *now)
+void hw_stm32_rtc_get_tm(struct tm *now)
 {
     RTC_TimeTypeDef RTC_TimeStruct = {0};
     RTC_DateTypeDef RTC_DateStruct = {0};
@@ -170,7 +170,7 @@ void stm32_rtc_get_tm(struct tm *now)
     now->tm_year = RTC_DateStruct.Year + 100;
 }
 
-bool stm32_rtc_set_time_stamp(time_t time_stamp)
+bool hw_stm32_rtc_set_time_stamp(time_t time_stamp)
 {
     RTC_TimeTypeDef RTC_TimeStruct = {0};
     RTC_DateTypeDef RTC_DateStruct = {0};

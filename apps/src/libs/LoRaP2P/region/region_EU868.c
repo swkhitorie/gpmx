@@ -24,7 +24,7 @@
 
 void region_eu868_init_default(struct __channel_grp *grp)
 {
-#if (!defined(LORAP2P_SAVE)) || (defined(P2P_REGION_EU868) && defined(LORAP2P_SAVE))
+#if defined(P2P_REGION_EU868)
     int i = 0;
 
     // // ping channel, duty cycle < 10%
@@ -82,7 +82,7 @@ void region_eu868_init_default(struct __channel_grp *grp)
 
 void region_eu868_channelstate_reset(struct __channel_grp *grp)
 {
-#if (!defined(LORAP2P_SAVE)) || (defined(P2P_REGION_EU868) && defined(LORAP2P_SAVE))
+#if defined(P2P_REGION_EU868)
     int i = 0;
 
     for (i = 0; i < grp->grp_ch_len; i++) {
@@ -93,7 +93,7 @@ void region_eu868_channelstate_reset(struct __channel_grp *grp)
 
 uint8_t region_eu868_downchannelnext(struct __channel_grp *grp, int16_t rssi, int8_t snr)
 {
-#if (!defined(LORAP2P_SAVE)) || (defined(P2P_REGION_EU868) && defined(LORAP2P_SAVE))
+#if defined(P2P_REGION_EU868)
     int cnt_down = 0;
 
     if (rssi < -95 || snr < -5) {
@@ -135,7 +135,7 @@ freq_error:
 
 uint8_t region_eu868_upchannelnext(struct __channel_grp *grp)
 {
-#if (!defined(LORAP2P_SAVE)) || (defined(P2P_REGION_EU868) && defined(LORAP2P_SAVE))
+#if defined(P2P_REGION_EU868)
     // as ping channel, use fixed up channel
 #endif
     return 0;

@@ -17,38 +17,9 @@
 #elif defined(CORE_M0)
 #include "core_cm0.h"
 #endif
+#else
+#error unsupport platform, please check macro DRV_STM32_XX
 #endif
-
-#define arm_dsb()  __asm__ __volatile__ ("dsb " : : : "memory")
-#define arm_isb()  __asm__ __volatile__ ("isb " : : : "memory")
-#define arm_dmb()  __asm__ __volatile__ ("dmb " : : : "memory")
-
-#define UP_DSB()  arm_dsb()
-#define UP_ISB()  arm_isb()
-#define UP_DMB()  arm_dmb()
-
-#define UP_MB()   \
-    do {          \
-        UP_DSB(); \
-        UP_ISB(); \
-    } while (0)
-
-#include <stdint.h>
-
-#define getreg8(a)     (*(volatile uint8_t *)(a))
-#define putreg8(v,a)   (*(volatile uint8_t *)(a) = (v))
-#define getreg16(a)    (*(volatile uint16_t *)(a))
-#define putreg16(v,a)  (*(volatile uint16_t *)(a) = (v))
-#define getreg32(a)    (*(volatile uint32_t *)(a))
-#define putreg32(v,a)  (*(volatile uint32_t *)(a) = (v))
-#define getreg64(a)    (*(volatile uint64_t *)(a))
-#define putreg64(v,a)  (*(volatile uint64_t *)(a) = (v))
-
-#define modreg8(v,m,a)  putreg8((getreg8(a) & ~(m)) | ((v) & (m)), (a))
-#define modreg16(v,m,a) putreg16((getreg16(a) & ~(m)) | ((v) & (m)), (a))
-#define modreg32(v,m,a) putreg32((getreg32(a) & ~(m)) | ((v) & (m)), (a))
-#define modreg64(v,m,a) putreg64((getreg64(a) & ~(m)) | ((v) & (m)), (a))
-
 
 /****************************************************************************
  * EXIT IO Periphal
@@ -130,8 +101,6 @@
 #else
 #define CONFIG_STM32_CAN_NUM (0)
 #endif
-
-
 
 #endif
 

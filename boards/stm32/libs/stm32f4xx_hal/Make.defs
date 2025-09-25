@@ -65,3 +65,8 @@ LIBHAL_CINCDIRS += hal_driver/Legacy
 LIBHAL_CSRCS += hal_driver/Legacy/stm32f4xx_hal_can.c
 endif
 
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_MMCSD),y)
+LIBHAL_CSRCS += hal_driver/stm32f4xx_hal_sd.c
+LIBHAL_CSRCS += hal_driver/stm32f4xx_hal_smartcard.c
+LIBHAL_CSRCS += hal_driver/stm32f4xx_ll_sdmmc.c
+endif

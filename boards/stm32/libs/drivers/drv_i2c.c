@@ -183,7 +183,7 @@ static void _i2c_set_clocksrc(struct i2c_master_s *dev)
 }
 #endif
 
-bool _i2c_pin_cfg(struct i2c_master_s *dev)
+void _i2c_pin_cfg(struct i2c_master_s *dev, uint32_t mode)
 {
     struct up_i2c_master_s *priv = dev->priv;
     struct periph_pin_t *sclpin = &priv->sclpin;
@@ -269,7 +269,7 @@ void _i2c_set_clock(struct i2c_master_s *dev, uint32_t freq)
                 (scl_h_period << I2C_TIMINGR_SCLH_Pos) |
                 (scl_l_period << I2C_TIMINGR_SCLL_Pos);
 
-        priv->hi2c.Instance->TIMINGR = timingr & TIMING_CLEAR_MASK;
+        priv->hi2c.Instance->TIMINGR = timingr & (0xF0FFFFFFU);
         priv->frequency = freq;
     }
 
@@ -295,9 +295,9 @@ void _i2c_set_clock(struct i2c_master_s *dev, uint32_t freq)
         freqmhz = (uint16_t)(pclk1 / 1000000);
         ccr = 0;
 
-        if (frequency <= 100000) {
+        if (freq <= 100000) {
             /* Standard mode speed calculation */
-            speed = (uint16_t)(pclk1 / (frequency << 1));
+            speed = (uint16_t)(pclk1 / (freq << 1));
 
             /* The CCR fault must be >= 4 */
             if (speed < 4) {
@@ -308,17 +308,17 @@ void _i2c_set_clock(struct i2c_master_s *dev, uint32_t freq)
             /* Set Maximum Rise Time for standard mode */
             trise = freqmhz + 1;
         } else {
-            /* (frequency <= 400000) */
+            /* (freq <= 400000) */
             if (priv->hi2c.Init.DutyCycle == I2C_DUTYCYCLE_16_9) {
                 /* Fast mode speed calculation with Tlow/Thigh = 16/9 */ 
-                speed = (uint16_t)(pclk1 / (frequency * 25));
+                speed = (uint16_t)(pclk1 / (freq * 25));
 
                 /* Set fast speed bit */
                 ccr |= (I2C_CCR_DUTY | I2C_CCR_FS);
             } else if (priv->hi2c.Init.DutyCycle == I2C_DUTYCYCLE_2) {
 
                 /* Fast mode speed calculation with Tlow/Thigh = 2 */
-                speed = (uint16_t)(pclk1 / (frequency * 3));
+                speed = (uint16_t)(pclk1 / (freq * 3));
 
                 /* Set DUTY and fast speed bits */
                 ccr |= I2C_CCR_FS;
@@ -347,14 +347,13 @@ void _i2c_set_clock(struct i2c_master_s *dev, uint32_t freq)
         priv->hi2c.Instance->CR1 = cr1;
 
         /* Save the new I2C frequency */
-        dev->cfg.frequency = frequency;
+        priv->frequency = freq;
     }
 #endif
 }
 
 void _i2c_setup(struct i2c_master_s *dev)
 {
-    struct up_i2c_master_s *priv = dev->priv;
     struct up_i2c_master_s *priv = dev->priv;
 
     priv->clock = HAL_RCC_GetPCLK1Freq();
@@ -504,6 +503,8 @@ int up_i2c_setup(struct i2c_master_s *dev)
 #if defined (DRV_STM32_H7)
 	_i2c_set_clocksrc(dev); 
 #endif
+
+    _i2c_rcc_init(priv->id);
 
     _i2c_pin_cfg(dev, IOMODE_AFOD);
 

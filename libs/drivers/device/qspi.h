@@ -6,13 +6,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
-#include <FreeRTOS.h>
-#include <semphr.h>
-#endif
-
-#include "dnode.h"
-
 /****************************************************************************
  * Name: QSPI_LOCK
  *
@@ -236,6 +229,24 @@ struct qspi_meminfo_s
   void *buffer;          /* Data buffer */
 };
 
+struct qspi_msg_s
+{
+  uint8_t cmd;
+  uint8_t cmd_lines;
+
+  uint32_t addr;
+  uint8_t addr_sz;
+  uint8_t addr_lines;
+
+  uint32_t alt_bytes;
+  uint8_t alt_bytes_sz;
+  uint8_t alt_bytes_lines;
+
+  uint32_t dummies;
+
+  uint8_t xfer_lines;
+};
+
 /* The QSPI vtable */
 
 struct qspi_dev_s;
@@ -263,8 +274,6 @@ struct qspi_ops_s
 
 struct qspi_dev_s
 {
-  uint32_t medium_size;
-
   const struct qspi_ops_s *ops;
   void                    *priv; /* Used by the arch-specific logic */
 };

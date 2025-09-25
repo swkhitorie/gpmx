@@ -2,6 +2,45 @@
 
 struct irq_pin_t irq_pin_list[CONFIG_STM32_IO_IRQ_LINE_NUM];
 
+void low_init_pin(GPIO_TypeDef* port, uint16_t pin, uint32_t mode, uint32_t pull, uint32_t speed)
+{
+    GPIO_InitTypeDef obj_tmp;
+    if      (port == GPIOA)     __HAL_RCC_GPIOA_CLK_ENABLE();
+    else if (port == GPIOB)     __HAL_RCC_GPIOB_CLK_ENABLE();
+#if defined(GPIOC)
+    else if (port == GPIOC)     __HAL_RCC_GPIOC_CLK_ENABLE();
+#endif
+#if defined(GPIOD)
+    else if (port == GPIOD)     __HAL_RCC_GPIOD_CLK_ENABLE();
+#endif
+#if defined(GPIOE)
+    else if (port == GPIOE)     __HAL_RCC_GPIOE_CLK_ENABLE();
+#endif
+#if defined(GPIOF)
+    else if (port == GPIOF)     __HAL_RCC_GPIOF_CLK_ENABLE();
+#endif
+#if defined(GPIOG)
+    else if (port == GPIOG)     __HAL_RCC_GPIOG_CLK_ENABLE();
+#endif
+#if defined(GPIOH)
+    else if (port == GPIOH)     __HAL_RCC_GPIOH_CLK_ENABLE();
+#endif
+#if defined(GPIOI)
+    else if (port == GPIOI)     __HAL_RCC_GPIOI_CLK_ENABLE();
+#endif
+#if defined(GPIOJ)
+    else if (port == GPIOJ)     __HAL_RCC_GPIOJ_CLK_ENABLE();
+#endif
+#if defined(GPIOK)
+    else if (port == GPIOK)     __HAL_RCC_GPIOK_CLK_ENABLE();
+#endif
+    obj_tmp.Pin = 1<<pin;
+    obj_tmp.Mode = mode;
+    obj_tmp.Pull = pull;
+    obj_tmp.Speed = speed;
+    HAL_GPIO_Init(port, &obj_tmp);
+}
+
 void stm32_gpio_setup(GPIO_TypeDef *port, uint32_t pin, 
     uint32_t mode, uint32_t pull, uint32_t speed, uint32_t alternate, 
     io_irq_entry entry, void *arg, uint32_t priority)

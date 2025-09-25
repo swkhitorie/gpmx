@@ -47,11 +47,15 @@ BOARD_CSRCS += board_init.c
 BOARD_CSRCS += board_bsp.c
 BOARD_CSRCS += board_msp.c
 
-BOARD_ASMSOURCES += stm32h743_eval_startup_gcc.s
-BOARD_LNK_FILE   += stm32h743_eval_lnk_gcc.ld
-
-# BOARD_ASMSOURCES += stm32h743_eval_startup_arm.s
-# BOARD_LNK_FILE   += stm32h743_eval_lnk_arm.sct
+ifeq (${PROJ_TC},gae)
+BOARD_ASMSOURCES += fanketech_h7_startup_gcc.s
+BOARD_LNK_FILE   += fanketech_h7_lnk_gcc.ld
+else ifeq ($(PROJ_TC),armclang)
+BOARD_ASMSOURCES += fanketech_h7_startup_arm.s
+BOARD_LNK_FILE   += fanketech_h7_lnk_arm.sct
+else
+$(error invalid compiler selection)
+endif
 
 TMPBOARD_CSRCS = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_CSRCS}}
 TMPBOARD_ASMSOURCES = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_ASMSOURCES}}

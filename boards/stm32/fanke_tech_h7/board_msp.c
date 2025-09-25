@@ -1,5 +1,6 @@
 #include <board_config.h>
 #include <drv_uart.h>
+#include <drv_mmcsd.h>
 
 void DMA1_Stream0_IRQHandler()
 {
@@ -9,4 +10,25 @@ void DMA1_Stream0_IRQHandler()
 void DMA2_Stream0_IRQHandler()
 {
     STM32_USART_DMA_RX_IRQ(1);
+}
+
+void HAL_SD_MspInit(SD_HandleTypeDef *hsd)
+{
+    /**
+     * MMCSD 
+     *  CLK - PC12
+     *  CMD - PD2
+     *  D0 - PC8
+     *  D1 - PC9
+     *  D2 - PC10
+     *  D3 - PC11
+     */
+
+    LOW_PERIPH_INITPIN(GPIOC, 12, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, GPIO_AF12_SDIO1);  
+    LOW_PERIPH_INITPIN(GPIOD, 2,  IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, GPIO_AF12_SDIO1);
+
+    LOW_PERIPH_INITPIN(GPIOC, 8,  IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, GPIO_AF12_SDIO1);
+    LOW_PERIPH_INITPIN(GPIOC, 9,  IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, GPIO_AF12_SDIO1);
+    LOW_PERIPH_INITPIN(GPIOC, 10, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, GPIO_AF12_SDIO1);
+    LOW_PERIPH_INITPIN(GPIOC, 11, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, GPIO_AF12_SDIO1);
 }

@@ -12,7 +12,7 @@ CONFIG_LIB_USE_NANO:=y
 TARGET_POSTBUILD := ${TARGET_DEST_FILENAME_BIN}
 
 # board bsp config
-include ${SDK_ROOTDIR}/boards/stm32/stm32f407_ebf_bth/make.mk
+include ${SDK_ROOTDIR}/boards/stm32/embedfire_bth_v2/make.mk
 
 # os and library config
 MK_RTOS=none

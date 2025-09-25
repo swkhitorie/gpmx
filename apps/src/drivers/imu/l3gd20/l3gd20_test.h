@@ -3,11 +3,10 @@
 
 #include <board_config.h>
 
-
 /* SPI protocol address bits */
 #define DIR_READ				(1<<7)
 #define DIR_WRITE				(0<<7)
-#define ADDR_INCREMENT				(1<<6)
+#define ADDR_INCREMENT			(1<<6)
 
 /* register addresses */
 #define ADDR_WHO_AM_I			0x0F

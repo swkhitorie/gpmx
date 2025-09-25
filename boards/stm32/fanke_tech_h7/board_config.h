@@ -2,8 +2,8 @@
 #define BOARD_CONFIG_H_
 
 /** 
- * FankeTech STM32H743IIT6 Board Config Header File
- * HSE 25MHZ
+ * FankeTech H7 Board Config Header File
+ * cpu: stm32h743iit6, oscillator: 25HMz
  */
 #include <stm32h7xx_hal.h>
 #include <stdint.h>
@@ -22,21 +22,8 @@
 /** 
  * std stream macro:
  * CONFIG_BOARD_COM_STDINOUT
- * 
  * os macro:
  * CONFIG_BOARD_FREERTOS_ENABLE
- * 
- * mtd macro: 
- * CONFIG_BOARD_MTD_QSPIFLASH_ENABLE
- * CONFIG_BOARD_MTD_QSPIFLASH_FATFS_SUPPORT
- * CONFIG_BOARD_MTD_QSPIFLASH_RAW_RW_TEST
- * 
- * mmcsd macro:
- * CONFIG_BOARD_MMCSD_ENABLE
- * CONFIG_BOARD_MMCSD_FATFS_SUPPORT
- * CONFIG_BOARD_MMCSD_RAW_RW_TEST
- * CONFIG_BOARD_MMCSD_INFO_CHECK
- * 
  * usb macro:
  * CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
  * 

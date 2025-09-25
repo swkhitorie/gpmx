@@ -56,6 +56,19 @@ endif # BSP_LIBCONFIG_STM32_DRV_LEGACY
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ifeq ($(BSP_LIBCONFIG_STM32_DRV_LEGACY),n)
 
 LIBDRV_CINCDIRS += include
@@ -68,6 +81,26 @@ endif
 
 ifeq ($(BSP_LIBCONFIG_STM32_HAL_RTC),y)
 LIBDRV_CSRCS += drv_rtc.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_QSPI),y)
+LIBDRV_CSRCS += drv_qspi.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_MMCSD),y)
+LIBDRV_CSRCS += drv_mmcsd.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_I2C),y)
+LIBDRV_CSRCS += drv_i2c.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_SPI),y)
+LIBDRV_CSRCS += drv_spi.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_CAN)$(BSP_LIBCONFIG_STM32_HAL_CAN_LEGACY),y)
+LIBDRV_CSRCS += drv_can.c
 endif
 
 ifeq ($(BSP_LIBCONFIG_STM32_HAL_FLASH),y)

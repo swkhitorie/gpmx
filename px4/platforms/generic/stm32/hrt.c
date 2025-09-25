@@ -43,14 +43,23 @@
 
 #include "hrt_stm32.h"
 
-#ifdef CONFIG_BOARD_FREERTOS_ENABLE
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_HRT_PRIMASK_CONTROL)
 #include "FreeRTOS.h"
 #include "portmacro.h"
+/** please set basepri control priority higher than ccr irq */
+#define px4_enter_critical_section()            portSET_INTERRUPT_MASK_FROM_ISR()
+#define px4_leave_critical_section(x)           portCLEAR_INTERRUPT_MASK_FROM_ISR(x)
+#ifndef CONFIG_HRT_CCR_PRIORITY
+#define CONFIG_HRT_CCR_PRIORITY 0x0a
+#endif
 #else
 #include <board_config.h>
-#define portSET_INTERRUPT_MASK_FROM_ISR()		(0); __disable_irq()
-#define portCLEAR_INTERRUPT_MASK_FROM_ISR(x)    __enable_irq()
+#define px4_enter_critical_section()            (0); __disable_irq()
+#define px4_leave_critical_section(x)           __enable_irq()
 typedef uint32_t UBaseType_t;
+#ifndef CONFIG_HRT_CCR_PRIORITY
+#define CONFIG_HRT_CCR_PRIORITY 0x00
+#endif
 #endif
 
 #ifdef CONFIG_DEBUG_HRT
@@ -286,8 +295,7 @@ static void hrt_tim_init(void)
 
 	/* enable interrupts */
 	up_enable_irq(HRT_TIMER_VECTOR);
-
-	up_prioritize_irq(HRT_TIMER_VECTOR, 0);
+	up_prioritize_irq(HRT_TIMER_VECTOR, CONFIG_HRT_CCR_PRIORITY);
 
 	base_time = 0;
 
@@ -332,7 +340,7 @@ hrt_abstime hrt_absolute_time(void)
 	UBaseType_t	flags;
 
 	/* prevent re-entry */
-	flags = portSET_INTERRUPT_MASK_FROM_ISR();
+	flags = px4_enter_critical_section();
 
 	/* get the current counter value */
 	count = rCNT;
@@ -354,27 +362,29 @@ hrt_abstime hrt_absolute_time(void)
 	/* compute the current time */
 	abstime = HRT_COUNTER_SCALE(base_time + count);
 
-	portCLEAR_INTERRUPT_MASK_FROM_ISR(flags);
+	px4_leave_critical_section(flags);
 
 	return abstime;
 }
 
 hrt_abstime hrt_elapsed_time_atomic(const volatile hrt_abstime *then)
 {
-	UBaseType_t flags = portSET_INTERRUPT_MASK_FROM_ISR();
+	UBaseType_t flags = px4_enter_critical_section();
 
     hrt_abstime delta = hrt_absolute_time() - *then;
 
-	portCLEAR_INTERRUPT_MASK_FROM_ISR(flags);
+	px4_leave_critical_section(flags);
 
 	return delta;
 }
 
 void hrt_store_absolute_time(volatile hrt_abstime *t)
 {
-	UBaseType_t flags = portSET_INTERRUPT_MASK_FROM_ISR();
+    UBaseType_t flags = px4_enter_critical_section();
+
     *t = hrt_absolute_time();
-	portCLEAR_INTERRUPT_MASK_FROM_ISR(flags);
+
+    px4_leave_critical_section(flags);
 }
 
 void hrt_init(void)
@@ -408,7 +418,7 @@ void hrt_call_every(struct hrt_call *entry, hrt_abstime delay, hrt_abstime inter
 
 static void hrt_call_internal(struct hrt_call *entry, hrt_abstime deadline, hrt_abstime interval, hrt_callout callout, void *arg)
 {
-    UBaseType_t flags = portSET_INTERRUPT_MASK_FROM_ISR();
+    UBaseType_t flags = px4_enter_critical_section();
 
 	/* if the entry is currently queued, remove it */
 	/*  note that we are using a potentially uninitialised
@@ -429,7 +439,7 @@ static void hrt_call_internal(struct hrt_call *entry, hrt_abstime deadline, hrt_
 
 	hrt_call_enter(entry);
 
-	portCLEAR_INTERRUPT_MASK_FROM_ISR(flags);
+    px4_leave_critical_section(flags);
 }
 
 bool hrt_called(struct hrt_call *entry)
@@ -439,7 +449,7 @@ bool hrt_called(struct hrt_call *entry)
 
 void hrt_cancel(struct hrt_call *entry)
 {
-    UBaseType_t flags = portSET_INTERRUPT_MASK_FROM_ISR();
+    UBaseType_t flags = px4_enter_critical_section();
 
 	sq_rem(&entry->link, &callout_queue);
 	entry->deadline = 0;
@@ -449,7 +459,7 @@ void hrt_cancel(struct hrt_call *entry)
 	 */
 	entry->period = 0;
 
-	portCLEAR_INTERRUPT_MASK_FROM_ISR(flags);
+    px4_leave_critical_section(flags);
 }
 
 static void hrt_call_enter(struct hrt_call *entry)

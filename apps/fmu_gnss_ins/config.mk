@@ -1,5 +1,5 @@
 PROJ_NAME  :=  fmu_gnss_ins
-PROJ_TC    :=  armclang
+PROJ_TC    :=  gae
 APP_PROJ_DIR = apps/fmu_gnss_ins
 
 # compile config
@@ -13,16 +13,16 @@ TARGET_POSTBUILD := ${TARGET_DEST_FILENAME_BIN}
 
 # board bsp config
 #include ${SDK_ROOTDIR}/boards/stm32/stm32f427_fmuv2/make.mk
-include ${SDK_ROOTDIR}/boards/stm32/stm32h743_fmuv6/make.mk
+include ${SDK_ROOTDIR}/boards/stm32/pixhawk_fmuv2/make.mk
 
 # os and library config
 MK_RTOS=frtos
 MK_RTOS_PLATFORM=gcc
 MK_RTOS_MEM_METHOD=4
-MK_USE_POSIX=y
+MK_USE_POSIX=n
 MK_USE_LIB_CPP=n
 
-MK_USE_FS_FATFS=n
+MK_USE_FS_FATFS=y
 MK_USE_CRUSB=y
 MK_USE_CRUSB_CDC=y
 MK_CRUSB_IP=dwc2_st
@@ -40,12 +40,19 @@ PROJ_CDEFS += CONFIG_FR_IDLE_TIMER_TASKCREATE_HANDLE
 PROJ_CDEFS += CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
 PROJ_CDEFS += CONFIG_CRUSB_CRUSB_CDC_ACM_STDOUT_BUFFER
 PROJ_CDEFS += CONFIG_BOARD_CRUSB_CDC_ACM_STDINOUT
+
+PROJ_CDEFS += CONFIG_HRT_PRIMASK_CONTROL
+
 # PROJ_CDEFS += CONFIG_BOARD_COM_STDINOUT
 # PROJ_CDEFS += CONFIG_BOARD_COM_STDOUT_DMA
+PROJ_CDEFS += CONFIG_STM32_MMCSD_FATFS_SUPPORT
 
 PROJ_CINCDIRS += ${APP_PROJ_DIR}
 CPPSOURCES += ${APP_PROJ_DIR}/app_main.cpp
+CPPSOURCES += ${APP_PROJ_DIR}/sensor_task.cpp
+CPPSOURCES += ${APP_PROJ_DIR}/upgrade_task.cpp
 
-
+PROJ_CINCDIRS += apps/src/drivers/rgb/tca62724
+CPPSOURCES +=  apps/src/drivers/rgb/tca62724/tca62724.cpp
 
 

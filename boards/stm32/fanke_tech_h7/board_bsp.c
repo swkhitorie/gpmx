@@ -1,5 +1,7 @@
 #include "board_config.h"
 #include <drv_uart.h>
+#include <drv_mmcsd.h>
+
 #include <device/dnode.h>
 #include <device/serial.h>
 
@@ -9,12 +11,12 @@
 
 /* COM1 */
 uint8_t com1_dma_rxbuff[4096];
-uint8_t com1_dma_txbuff[64];
-uint8_t com1_txbuff[64];
+uint8_t com1_dma_txbuff[256];
+uint8_t com1_txbuff[256];
 uint8_t com1_rxbuff[2048];
 struct up_uart_dev_s com1_dev = {
     .dev = {
-        .baudrate = 115200,
+        .baudrate = 921600,
         .wordlen = 8,
         .stopbitlen = 1,
         .parity = 'n',
@@ -23,7 +25,7 @@ struct up_uart_dev_s com1_dev = {
             .buffer = com1_rxbuff,
         },
         .xmit = {
-            .capacity = 64,
+            .capacity = 256,
             .buffer = com1_txbuff,
         },
         .dmarx = {
@@ -31,23 +33,15 @@ struct up_uart_dev_s com1_dev = {
             .buffer = com1_dma_rxbuff,
         },
         .dmatx = {
-            .capacity = 64,
+            .capacity = 256,
             .buffer = com1_dma_txbuff,
         },
         .ops       = &g_uart_ops,
         .priv      = &com1_dev,
     },
     .id = 1,
-    .txpin = {
-        .port = GPIOA,
-        .pin = 9,
-        .alternate = GPIO_AF7_USART1,
-    },
-    .rxpin = {
-        .port = GPIOA,
-        .pin = 10,
-        .alternate = GPIO_AF7_USART1,
-    },
+    .txpin = { .port = GPIOA, .pin = 9,  .alternate = GPIO_AF7_USART1,},
+    .rxpin = { .port = GPIOA, .pin = 10, .alternate = GPIO_AF7_USART1,},
     .txdma_cfg = {
         .instance = DMA1_Stream0,
         .dma_rcc = RCC_AHB1ENR_DMA1EN,
@@ -67,29 +61,35 @@ struct up_uart_dev_s com1_dev = {
     .priority = 1,
 };
 
+#ifdef CONFIG_BOARD_COM_STDINOUT
 uart_dev_t *dstdout;
 uart_dev_t *dstdin;
+#endif
 
 void board_bsp_init()
 {
-    __HAL_RCC_GPIOH_CLK_ENABLE();
-
-    LOW_INITPIN(GPIOH, 7, IOMODE_OUTPP, IO_NOPULL, IO_SPEEDHIGH);
-
-    serial_register(&com1_dev.dev, 1);
-
-    serial_bus_initialize(1);
-
-    dstdout = serial_bus_get(1);
-    dstdin = serial_bus_get(1);
-
 #ifdef CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
     HAL_Delay(300);
     cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
-    HAL_Delay(100);  // wait cdc init completed
+    HAL_Delay(100); // wait cdc init completed
 #endif
 
-    stm32_rtc_setup();
+    LOW_INITPIN(GPIOH, 7, IOMODE_OUTPP, IO_NOPULL, IO_SPEEDHIGH);
+    LOW_IOSET(GPIOH, 7, 1);
+
+    serial_register(&com1_dev.dev, 1);
+    serial_bus_initialize(1);
+
+#ifdef CONFIG_BOARD_COM_STDINOUT
+    dstdout = serial_bus_get(1);
+    dstdin = serial_bus_get(1);
+#endif
+
+    hw_stm32_rtc_setup();
+
+    hw_stm32_mmcsd_init(1, 1, 4);
+    hw_stm32_mmcsd_info(1);
+    hw_stm32_mmcsd_fs_init(1);
 }
 
 void board_bsp_deinit()
@@ -127,12 +127,12 @@ void board_debug()
 
 time_t board_rtc_get_timestamp(struct timeval *now)
 {
-    return stm32_rtc_get_timeval(now);
+    return hw_stm32_rtc_get_timeval(now);
 }
 
 bool board_rtc_set_timestamp(time_t now)
 {
-    return stm32_rtc_set_time_stamp(now);
+    return hw_stm32_rtc_set_time_stamp(now);
 }
 
 #ifdef CONFIG_BOARD_COM_STDINOUT
@@ -175,8 +175,8 @@ size_t fread(void *ptr, size_t size, size_t n_items, FILE *stream)
 {
     return _read(stream->_file, ptr, size*n_items);
 }
-
 #endif
+
 
 #ifdef CONFIG_BOARD_HRT_TIMEBASE
 #include <drivers/drv_hrt.h>

@@ -161,12 +161,14 @@ uint32_t _uart_get_mask(uint32_t word_length, uint32_t parity)
         } else {
             mask = 0x00FFU ;
         }
+#if defined (DRV_STM32_H7) && defined (DRV_STM32_WL)
     } else if (word_length == UART_WORDLENGTH_7B) {
         if (parity == UART_PARITY_NONE) {
             mask = 0x007FU ;
         } else {
             mask = 0x003FU ;
         }
+#endif
     } else {
         mask = 0x0000U;
     }
@@ -428,6 +430,9 @@ int up_usart_setup(struct uart_dev_s *dev)
     _usart_dma_setup(dev, DEVICE_USART_DMA_TX);
     _usart_dma_setup(dev, DEVICE_USART_DMA_RX);
 
+	HAL_NVIC_SetPriority(_uart_irq_get(priv->id), priv->priority, 0);
+	HAL_NVIC_EnableIRQ(_uart_irq_get(priv->id));
+
     if (priv->rxdma_cfg.enable) {
         CLEAR_BIT(priv->com.Instance->CR3, USART_CR3_EIE);
         __HAL_UART_ENABLE_IT(&priv->com, UART_IT_IDLE);
@@ -435,9 +440,6 @@ int up_usart_setup(struct uart_dev_s *dev)
         CLEAR_BIT(priv->com.Instance->CR3, USART_CR3_EIE);
         __HAL_UART_ENABLE_IT(&priv->com, UART_IT_RXNE);
     }
-
-	HAL_NVIC_SetPriority(USART1_IRQn, priv->priority, 0);
-	HAL_NVIC_EnableIRQ(USART1_IRQn);
 
     g_uart_list[priv->id - 1] = dev;
 
@@ -476,7 +478,7 @@ int up_usart_dmasend(struct uart_dev_s *dev, const uint8_t *p, uint16_t len)
     uint16_t bufsize = (uint32_t)dev->xmit.size;
     bufsize = (bufsize <= dev->dmatx.capacity) ? bufsize : dev->dmatx.capacity;
     serial_buf_read(&dev->xmit, &dev->dmatx.buffer[0], bufsize);
-#if defined (DRV_BSP_H7)
+#if defined (DRV_STM32_H7)
     /* save SRAM(DMA) data to D-Cache data */
     SCB_InvalidateDCache_by_Addr((uint32_t *)&dev->dmatx.buffer[0], dev->dmatx.capacity);
 #endif

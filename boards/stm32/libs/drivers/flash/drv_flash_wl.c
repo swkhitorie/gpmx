@@ -1,6 +1,8 @@
 #include "drv_flash.h"
 
+#ifndef FLASH_PAGE_SIZE
 #define FLASH_PAGE_SIZE              (2*1024)
+#endif
 #define STM32_FLASH_START_ADRESS     (0x08000000)
 
 static uint32_t GetPage(uint32_t addr)
@@ -104,10 +106,6 @@ int stm32_flash_erase(uint32_t addr, size_t size)
 
     /*Variable used for Erase procedure*/
     FLASH_EraseInitTypeDef EraseInitStruct;
-
-    if ((addr + size) > STM32_FLASH_END_ADDRESS) {
-        return -1;
-    }
 
     HAL_FLASH_Unlock();
 

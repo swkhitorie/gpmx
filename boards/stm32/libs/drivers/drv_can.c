@@ -30,7 +30,9 @@ static struct can_dev_s *can_list[2] = {0, 0};
  *	can bus baudrate  = -------------------------- = ------------------------ = (500KHz)
  *						(ntsg1 + ntsg2 + 1) * presc 	(31 + 8 + 1) * 10
 */
-#if defined (DRV_BSP_F1)/* APB1 36MHz(max) */
+#if defined (DRV_STM32_F1)
+
+/* APB1 36MHz(max) */
 static const struct stm32_baud_rate_tab can_baud_rate_tab[] =
 {
     {1000000, (CAN_SJW_2TQ | CAN_BS1_8TQ  | CAN_BS2_3TQ | 3)},
@@ -43,9 +45,11 @@ static const struct stm32_baud_rate_tab can_baud_rate_tab[] =
     {20000, (CAN_SJW_2TQ | CAN_BS1_8TQ  | CAN_BS2_3TQ | 150)},
     {10000, (CAN_SJW_2TQ | CAN_BS1_8TQ  | CAN_BS2_3TQ | 300)}
 };
-#elif defined (DRV_BSP_F4)  /* 42MHz or 45MHz */
+#elif defined (DRV_STM32_F4)
+
+/* APB1 42MHz(max) */
 #if defined(STM32F405xx) || defined(STM32F415xx) || defined(STM32F407xx)|| defined(STM32F417xx) ||\
-    defined(STM32F401xC) || defined(STM32F401xE) /* 42MHz(max) */
+    defined(STM32F401xC) || defined(STM32F401xE) || defined(STM32F427xx)
 static const struct stm32_baud_rate_tab can_baud_rate_tab[] =
 {
     {1000000, (CAN_SJW_2TQ | CAN_BS1_9TQ  | CAN_BS2_4TQ | 3)},
@@ -100,23 +104,23 @@ const struct can_ops_s g_can_master_ops =
 /****************************************************************************
  * Private Function
  ****************************************************************************/
-void _can_pin_config(struct can_dev_s *dev);
+void _can_pin_config(struct can_dev_s *dev)
 {
     struct up_can_dev_s *priv = dev->cd_priv;
     struct periph_pin_t *txpin = &priv->txpin;
     struct periph_pin_t *rxpin = &priv->rxpin;
 
-#if defined (DRV_BSP_H7)
+#if defined (DRV_STM32_H7)
     LOW_PERIPH_INITPIN(txpin->port, txpin->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDHIGH, txpin->alternate);
     LOW_PERIPH_INITPIN(rxpin->port, rxpin->pin, IOMODE_AFPP, IO_PULLUP, IO_SPEEDHIGH, rxpin->alternate);
 #endif
 
-#if defined (DRV_BSP_F4)
+#if defined (DRV_STM32_F4)
     LOW_PERIPH_INITPIN(txpin->port, txpin->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, txpin->alternate);
     LOW_PERIPH_INITPIN(rxpin->port, rxpin->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH, rxpin->alternate);
 #endif
 
-#if defined (DRV_BSP_F1)
+#if defined (DRV_STM32_F1)
     LOW_PERIPH_INITPIN(txpin->port, txpin->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH);
     LOW_PERIPH_INITPIN(rxpin->port, rxpin->pin, IOMODE_AFPP, IO_NOPULL, IO_SPEEDHIGH);
 #endif
@@ -289,7 +293,7 @@ int _can_config(struct can_dev_s *dev)
     priv->hcan.Init.TimeSeg2 = BAUD_DATA(BS2, baud_index);
     priv->hcan.Init.Prescaler = BAUD_DATA(RRESCL, baud_index);
 
-    _can_pinconfig(dev);
+    _can_pin_config(dev);
 
     if (HAL_CAN_Init(&priv->hcan) != HAL_OK) {
         return -1;
