@@ -6,6 +6,7 @@ app_subpath=$1
 make_thread=$2
 make_rebuild=$3
 param_num=$#
+isvm=$(systemd-detect-virt)
 
 echo "Path[gcc-arm ]:" ${armgcc_path}
 echo "Path[armcc   ]:" ${armcc_path}
@@ -52,6 +53,45 @@ make all ${make_thread} \
     TC_PATH_INST_ARMCC=${armcc_path} \
     TC_PATH_INST_ARMCLANG=${armclang_path}
 
-# make/build.sh test/app_bsp_test -j2 -r 
+build_status=$?
+if [ $build_status -ne 0 ]; then
+    echo "Build failed with exit code: $build_status"
+    exit $build_status
+fi
+
+proj_name=$(grep '^PROJ_NAME\s*:=' "$find_app_config" | awk -F':=' '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+proj_tc=$(grep '^PROJ_TC\s*:=' "$find_app_config" | awk -F':=' '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+proj_bin=${current_dir}/bin/${proj_name}_${proj_tc}_.bin
+proj_hex=${current_dir}/bin/${proj_name}_${proj_tc}_.hex
+
+if [ ! -f ${proj_bin} ] || [ ! -f ${proj_hex} ];then
+    echo "proj file not exist"
+    exit 1
+fi
+
+if [ ${isvm} == "vmware" ]
+then
+    shared_path=/mnt/hgfs/
+elif [ ${isvm} == "virualbox" ]
+then
+    shared_path=/mnt/media/
+else
+    echo "unsupported vm platform ${isvm}"
+    exit 1
+fi
+
+sub_shared_path=("$shared_path"/*/)
+
+# default 
+target_shared_path=${sub_shared_path[0]}
+
+if [ ! -d ${shared_path} ] || [ ! -d ${target_shared_path} ];then
+    echo "vm shared path not existed"
+    exit 1
+fi
+
+echo "copy to shared path ${target_shared_path}"
+cp ${proj_bin} ${target_shared_path}
+cp ${proj_hex} ${target_shared_path}
 
 exit 0
