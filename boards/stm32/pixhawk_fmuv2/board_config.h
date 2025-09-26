@@ -3,8 +3,11 @@
 
 /** 
  * Pixhawk FMU v2 Board Config Header File
- * cpu: stm32f427vit6, oscillator: 24MHz
- *
+ * cpu: stm32f427vit6
+ * oscillator: 24MHz
+ * frequency: 168MHz
+ * memory: 256K = (192K + 64K)
+ * flash:  1024K
  */
 #include "stm32f4xx_hal.h"
 #include <stdint.h>

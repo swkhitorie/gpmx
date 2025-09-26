@@ -3,7 +3,11 @@
 
 /**
  * Pixhawk FMU v6c Board Config Header File
- * cpu: stm32h743vit6, oscillator: 16MHz
+ * cpu: stm32h743vit6
+ * oscillator: 16MHz
+ * frequency: 480MHz
+ * memory: 992K = (128K + 512K + 288K + 64K)
+ * flash:  2048K
  * 
  * bug 1: v6c can not enter SysTick_Handler() irq
  *       -> fixed: call __set_BASEPRI(0); of set it priority higher, default 15

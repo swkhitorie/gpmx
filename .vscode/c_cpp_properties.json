@@ -1,8 +1,7 @@
 {
     "env" : {
-        "arm_cc_path" : "C:/Keil_v5/ARM/ARMCC",
-        "arm_clang_path" : "C:/Keil_v5/ARM/ARMCLANG",
-        "gcc_arm_path" : "D:/envir/gcc-arm-none-eabi/bin"
+        "arm_clang_path" : "~/__toolchain/arm_clang_6.24/",
+        "gcc_arm_path" : "~/__toolchain/gcc-arm-none-eabi-10.3-2021.10"
     },
 
     "configurations": [
@@ -10,27 +9,41 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${arm_cc_path}/include",
                 "${arm_clang_path}/include",
 
-                "${gcc_arm_path}/../lib/gcc/arm-none-eabi/10.3.1/include",
-                "${gcc_arm_path}/../lib/gcc/arm-none-eabi/10.3.1/include-fixed",
-                "${gcc_arm_path}/../lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/include",
+                "${gcc_arm_path}/lib/gcc/arm-none-eabi/10.3.1/include",
+                "${gcc_arm_path}/lib/gcc/arm-none-eabi/10.3.1/include-fixed",
+                "${gcc_arm_path}/lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/include",
 
-                "${workspaceFolder}/bsp/stm32/libs/cmsis",
-                "${workspaceFolder}/bsp/stm32/libs/drivers/include",
-                "${workspaceFolder}/bsp/stm32/libs/stm32f1xx_hal/device",
-                "${workspaceFolder}/bsp/stm32/libs/stm32f1xx_hal/hal_driver",
-                "${workspaceFolder}/bsp/stm32/libs/stm32f4xx_hal/device",
-                "${workspaceFolder}/bsp/stm32/libs/stm32f4xx_hal/hal_driver",
-                "${workspaceFolder}/bsp/stm32/libs/stm32h7xx_hal/device",
-                "${workspaceFolder}/bsp/stm32/libs/stm32h7xx_hal/hal_driver",
-                "${workspaceFolder}/bsp/stm32/libs/stm32g0xx_hal/device",
-                "${workspaceFolder}/bsp/stm32/libs/stm32g0xx_hal/hal_driver",
+                "${workspaceFolder}/boards/stm32/libs/cmsis",
+                "${workspaceFolder}/boards/stm32/libs/drivers/include",
+                "${workspaceFolder}/boards/stm32/libs/stm32f1xx_hal/device",
+                "${workspaceFolder}/boards/stm32/libs/stm32f1xx_hal/hal_driver",
+                "${workspaceFolder}/boards/stm32/libs/stm32f4xx_hal/device",
+                "${workspaceFolder}/boards/stm32/libs/stm32f4xx_hal/hal_driver",
+                "${workspaceFolder}/boards/stm32/libs/stm32h7xx_hal/device",
+                "${workspaceFolder}/boards/stm32/libs/stm32h7xx_hal/hal_driver",
 
-                "${workspaceFolder}/bsp/gd32/libs/drivers/include",
-                "${workspaceFolder}/bsp/gd32/libs/gd32c10x_lib/device",
-                "${workspaceFolder}/bsp/gd32/libs/gd32c10x_lib/std_periph_driver"
+                "${workspaceFolder}/boards/stm32/libs/drivers/legacy/include",
+                "${workspaceFolder}/boards/stm32/libs/drivers/legacy/flash",
+                "${workspaceFolder}/boards/stm32/libs/drivers/include",
+                "${workspaceFolder}/boards/stm32/libs/drivers/flash",
+
+                "${workspaceFolder}/kernel/rt_nano/include",
+
+                "${workspaceFolder}/kernel/freertos/include",
+                "${workspaceFolder}/kernel/freertos/arch/cortex_m0/gcc",
+                "${workspaceFolder}/kernel/freertos/arch/cortex_m0/rvds",
+                "${workspaceFolder}/kernel/freertos/arch/cortex_m3/gcc",
+                "${workspaceFolder}/kernel/freertos/arch/cortex_m3/rvds",
+                "${workspaceFolder}/kernel/freertos/arch/cortex_m4/gcc",
+                "${workspaceFolder}/kernel/freertos/arch/cortex_m4/rvds",
+                "${workspaceFolder}/kernel/freertos/arch/cortex_m7/gcc",
+                "${workspaceFolder}/kernel/freertos/arch/cortex_m7/rvds",
+
+                "${workspaceFolder}/libs/drivers/device",
+                "${workspaceFolder}/libs/fs/fat"
+
             ],
             "intelliSenseMode": "gcc-x64",
             "cStandard": "c17",
