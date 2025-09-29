@@ -1,14 +1,11 @@
 #include <device/dnode.h>
 #include <string.h>
 
-#include <board_config.h>
-
 #ifndef CONFIG_DRIVER_DEVICE_NODE_NUM
 #define CONFIG_DRIVER_DEVICE_NODE_NUM    (20)
 #endif
 
-static uint16_t _dev_len = CONFIG_DRIVER_DEVICE_NODE_NUM;
-
+static uint16_t     _dev_len= CONFIG_DRIVER_DEVICE_NODE_NUM;
 static struct dnode _dev_list[CONFIG_DRIVER_DEVICE_NODE_NUM];
 
 bool dn_register(const char *name, void *dev)
@@ -47,37 +44,9 @@ void *dn_bind(const char *name)
     return NULL;
 }
 
-uint32_t dn_timems()
+#include <board_config.h>
+uint32_t dn_time()
 {
-    uint32_t tms;
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
-    tms = xTaskGetTickCount() * portTICK_PERIOD_MS;
-#else
-
-#if defined (USE_HAL_DRIVER)
-    tms = HAL_GetTick();
-#else 
-    tms = 0;
-#endif
-
-#endif
-    return tms;
+    return HAL_GetTick();
 }
 
-void dn_disable_irq()
-{
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
-    portDISABLE_INTERRUPTS();
-#else
-    __disable_irq();
-#endif
-}
-
-void dn_enable_irq()
-{
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
-    portENABLE_INTERRUPTS();
-#else
-    __enable_irq();
-#endif
-}

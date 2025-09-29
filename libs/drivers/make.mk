@@ -1,12 +1,27 @@
-
 PROJ_CINCDIRS   +=  libs/drivers
 
-# default simple device driver interface
+ifeq (${MK_GPDRIVE_RINGBUFFER},y)
+CSOURCES   +=  libs/drivers/gringbuffer.c
+endif
+
+ifeq (${MK_GPDRIVE_DNODE},y)
 CSOURCES   +=  libs/drivers/dnode.c
-CSOURCES   +=  libs/drivers/rbdrv.c
 
+ifeq (${MK_GPDRIVE_SERIAL},y)
+PROJ_CDEFS +=  CONFIG_GPDRIVE_SERIAL
 CSOURCES   +=  libs/drivers/serial.c
+endif
+ifeq (${MK_GPDRIVE_I2C},y)
+PROJ_CDEFS +=  CONFIG_GPDRIVE_I2C
 CSOURCES   +=  libs/drivers/i2c_master.c
+endif
+ifeq (${MK_GPDRIVE_SPI},y)
+PROJ_CDEFS +=  CONFIG_GPDRIVE_SPI
 CSOURCES   +=  libs/drivers/spi.c
+endif
+ifeq (${MK_GPDRIVE_CAN},y)
+PROJ_CDEFS +=  CONFIG_GPDRIVE_CAN
 CSOURCES   +=  libs/drivers/can.c
+endif
 
+endif

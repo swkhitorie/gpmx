@@ -2,9 +2,9 @@
 #ifndef DEV_OPS_QUAD_SPI_H_
 #define DEV_OPS_QUAD_SPI_H_
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <stddef.h>
+#ifdef CONFIG_GPDRIVE_QUADSPI
+
+#include "dnode.h"
 
 /****************************************************************************
  * Name: QSPI_LOCK
@@ -286,5 +286,7 @@ extern "C" {
 #if defined(__cplusplus)
 }
 #endif
+
+#endif // end with macro CONFIG_GPDRIVE_QUADSPI
 
 #endif

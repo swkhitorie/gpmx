@@ -78,10 +78,11 @@ TC_TARGETTHUMB:=-mthumb
 ########################################
 TC_SOURCEOPTS+= -c
 TC_SOURCEOPTS+= -g3
-TC_SOURCEOPTS+= -gdwarf-2
+TC_SOURCEOPTS+= -gdwarf-4
 TC_SOURCEOPTS+= -fstack-usage
 TC_SOURCEOPTS+= -fdata-sections
 TC_SOURCEOPTS+= -ffunction-sections
+TC_SOURCEOPTS+= -fno-common
 ifeq (${CONFIG_COMPILE_OPTIMIZE},)
 TC_SOURCEOPTS+= -O1
 else
@@ -107,14 +108,17 @@ TC_ASMDEFS:=
 # C compiler options
 TC_COPTS:=\
   ${TC_SOURCEOPTS}     \
-  ${TC_LIB_SELECT}
+  ${TC_LIB_SELECT}  
 ifneq (${CONFIG_C_STANDARD},)
 TC_COPTS += -std=${CONFIG_C_STANDARD}
 endif
 
 TC_CPPOPTS:=\
   ${TC_SOURCEOPTS}     \
-  ${TC_LIB_SELECT}
+  ${TC_LIB_SELECT}     \
+  -fno-exceptions      \
+  -fno-rtti            \
+  -fno-use-cxa-atexit
 ifneq (${CONFIG_CXX_STANDARD},)
 TC_CPPOPTS += -std=${CONFIG_CXX_STANDARD}
 endif
@@ -126,13 +130,18 @@ TC_DBG_COPTS:=
 # C compiler defines
 TC_CDEFS:=
 
+#  debug:  -Wl,--print-gc-sections   
 # Linker options
 TC_LIBOPTS:=\
-  -W                        \
+  -W                         \
   -Wl,--gc-sections --static \
-  --data-sections           \
-  -lc                       \
-  -lm                       \
+  -Wl,--sort-section=alignment \
+  -Wl,--sort-common \
+  -Wl,--print-memory-usage   \
+  -Wl,--cref                 \
+  --data-sections            \
+  -lc                        \
+  -lm                        \
   ${TC_LIB_SELECT}
 
 ifeq (${CONFIG_LINK_PRINTF_FLOAT},y)
@@ -193,3 +202,7 @@ MK_TC_GENHEX=$(if $(and ${1},${2}),@${TC_GENHEX} -O ihex ${1} ${2})
 # 1 - input file
 # 2 - output file
 MK_TC_DISASSEMBLY=$(if $(and ${1},${2}), @${TC_DUMP} -h -S ${1} > "${2}")
+
+# more accurate compilation result analysis cmd
+# 1 - input file
+MK_TC_COMPILE_ANALYZE=$(if $(and ${1},$(wildcard MK_COMPILE_ANALYZE_GCC)), @${MK_PYTHON} ${MK_COMPILE_ANALYZE_GCC} ${1})

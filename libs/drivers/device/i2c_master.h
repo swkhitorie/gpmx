@@ -1,15 +1,7 @@
 #ifndef DEV_OPS_I2C_MASTER_H_
 #define DEV_OPS_I2C_MASTER_H_
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <stddef.h>
-
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
-#include <FreeRTOS.h>
-#include <semphr.h>
-#endif
-
+#ifdef CONFIG_GPDRIVE_I2C
 #include "dnode.h"
 
 /* I2C address calculation.  Convert 7- and 10-bit address to 8-bit and
@@ -208,5 +200,6 @@ int  i2c_dev_transfer_completed(struct i2c_master_s *dev);
 }
 #endif
 
+#endif // end with macro CONFIG_GPDRIVE_I2C
 
 #endif

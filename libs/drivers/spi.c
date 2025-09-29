@@ -5,13 +5,14 @@
 
 int spi_register(struct spi_dev_s *spi, int bus)
 {
-    int ret = 0;
     char devname[SPI_DEVNAME_FMTLEN];
     snprintf(devname, SPI_DEVNAME_FMTLEN, SPI_DEVNAME_FMT, bus);
 
-    ret = dn_register(devname, spi);
+    if (!dn_register(devname, spi)) {
+        return -1;
+    }
 
-    return ret;
+    return GOK;
 }
 
 struct spi_dev_s *spi_bus_get(int bus)
@@ -57,96 +58,95 @@ int spi_bus_initialize(int bus)
 
 int spi_devlock(struct spi_dev_s *dev, bool lock)
 {
-    int ret = DTRUE;
+    int ret = GOK;
 
 #if defined(CONFIG_BOARD_FREERTOS_ENABLE)
 
     if (lock) {
-        ret = xSemaphoreTake(dev->exclsem, 1000);
+        if (pdTRUE == xSemaphoreTake(dev->exclsem, 10)) {
+            return GOK;
+        } else {
+            return -1;
+        }
 	} else {
-        ret = xSemaphoreGive(dev->exclsem);
+        xSemaphoreGive(dev->exclsem);
+        return GOK;
     }
 #else
 
     if (lock) {
         if (dev->flag_excl == 0x01) {
             dev->flag_excl = 0x00;
-            ret = DTRUE;
+            return GOK;
         } else {
-            ret = DFALSE;
+            return -1;
         }
 	} else {
         dev->flag_excl = 0x01;
+        return GOK;
     }
 #endif
-
-    return ret;
 }
 
 int spi_dmarxwait(struct spi_dev_s *dev)
 {
-    int ret = DTRUE;
-
 #if defined(CONFIG_BOARD_FREERTOS_ENABLE)
 
+    int ret = GOK;
     /* Take the semaphore (perhaps waiting).  If the result is zero, then the
      * DMA must not really have completed???
      */
 
     do {
-        ret = xSemaphoreTake(dev->rxsem, portMAX_DELAY);
+        ret = xSemaphoreTake(dev->rxsem, 20);
     }while (dev->rxresult == 0 && ret == pdFALSE);
+
+    return GOK;
 #else
 
     uint32_t timeout_ms = 20;
-    uint32_t time_start = dn_timems();
+    uint32_t time_start = dn_time();
     do {
         if (dev->flag_rx == 0x01) {
             dev->flag_rx = 0x00;
-            ret = DTRUE;
-            break;
+            return GOK;
         }
-    } while ((dn_timems() - time_start) <= timeout_ms);
+    } while ((dn_time() - time_start) <= timeout_ms);
 
-    if ((dn_timems() - time_start) > timeout_ms) {
-        ret = DFALSE;
+    if ((dn_time() - time_start) > timeout_ms) {
+        return -1;
     }
 #endif
-
-    return ret;
 }
 
 int spi_dmatxwait(struct spi_dev_s *dev)
 {
-    int ret = DTRUE;
-
 #if defined(CONFIG_BOARD_FREERTOS_ENABLE)
 
+    int ret = GOK;
     /* Take the semaphore (perhaps waiting).  If the result is zero, then the
      * DMA must not really have completed???
      */
 
     do {
-        ret = xSemaphoreTake(dev->txsem, portMAX_DELAY);
+        ret = xSemaphoreTake(dev->txsem, 20);
     }while (dev->txresult == 0 && ret == pdFALSE);
+    return GOK;
 #else
 
     uint32_t timeout_ms = 20;
-    uint32_t time_start = dn_timems();
+    uint32_t time_start = dn_time();
     do {
         if (dev->flag_tx == 0x01) {
             dev->flag_tx = 0x00;
-            ret = DTRUE;
-            break;
+            return GOK;
         }
-    } while ((dn_timems() - time_start) <= timeout_ms);
+    } while ((dn_time() - time_start) <= timeout_ms);
 
-    if ((dn_timems() - time_start) > timeout_ms) {
-        ret = DFALSE;
+    if ((dn_time() - time_start) > timeout_ms) {
+        return -1;
     }
 #endif
-
-    return ret;
 }
 
 void spi_dmarxwakeup(struct spi_dev_s *dev)

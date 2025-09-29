@@ -1,39 +1,33 @@
-#include <device/rbdrv.h>
+#include <device/gringbuffer.h>
 
-void rbdrv_init(struct rbdrv *obj, uint8_t *p, uint16_t capacity)
+void grb_init(struct gringbuffer *obj, uint8_t *p, uint16_t capacity)
 {
     obj->buffer = p;
     obj->capacity = capacity;
-    rbdrv_clear(obj);
+    grb_clear(obj);
 }
 
-void rbdrv_clear(struct rbdrv *obj)
+void grb_clear(struct gringbuffer *obj)
 {
     obj->in = 0;
     obj->out = 0;
     obj->size = 0;
 }
 
-uint16_t rbdrv_size(struct rbdrv *obj)
+uint16_t grb_size(struct gringbuffer *obj)
 {
     uint16_t rt = 0;
-    
-    __disable_irq();
 
     rt = obj->size;
-
-    __enable_irq();
 
     return rt;
 }
 
-int rbdrv_write(struct rbdrv *obj, const uint8_t *p, uint16_t len)
+int grb_write(struct gringbuffer *obj, const uint8_t *p, uint16_t len)
 {
 	uint16_t i;
 	uint16_t wlen = 0;
 	uint16_t rssize = 0;
-
-    __disable_irq();
 
 	rssize = obj->capacity - obj->size;
 	if (rssize >= len) {
@@ -51,16 +45,13 @@ int rbdrv_write(struct rbdrv *obj, const uint8_t *p, uint16_t len)
         obj->size++;
 	}
 
-    __enable_irq();
 	return wlen;
 }
 
-uint16_t rbdrv_read(struct rbdrv *obj, uint8_t *p, uint16_t len)
+uint16_t grb_read(struct gringbuffer *obj, uint8_t *p, uint16_t len)
 {
 	uint16_t i;
 	uint16_t rlen = 0;
-
-    __disable_irq();
 
 	if (obj->size >= len) {
 		rlen = len;
@@ -77,7 +68,6 @@ uint16_t rbdrv_read(struct rbdrv *obj, uint8_t *p, uint16_t len)
         obj->size--;
 	}
 
-    __enable_irq();
 	return rlen;
 }
 

@@ -2,11 +2,11 @@
 
 #include <stdio.h>
 
-void NMI_Handler(void) { printf("%s\r\n", __func__); }
-void MemManage_Handler(void) { printf("%s\r\n", __func__); }
-void BusFault_Handler(void) { printf("%s\r\n", __func__); }
-void UsageFault_Handler(void) { printf("%s\r\n", __func__); }
-void DebugMon_Handler(void) { printf("%s\r\n", __func__); }
+void NMI_Handler(void) { }//printf("%s\r\n", __func__); }
+void MemManage_Handler(void) { }//printf("%s\r\n", __func__); }
+void BusFault_Handler(void) { }//printf("%s\r\n", __func__); }
+void UsageFault_Handler(void) { }//printf("%s\r\n", __func__); }
+void DebugMon_Handler(void) { }//printf("%s\r\n", __func__); }
 
 static int readlr()
 {
@@ -50,13 +50,13 @@ void HardFault_Handler(void)
 
     while (1) {
 
-        printf("%s LR:0x%08X, PC:0x%08X HFSR:0x%08X CFSR:0x%08X BFAR:0x%08X\r\n", 
-            __func__, 
-            lr,
-            stacked_pc, 
-            hfsr, 
-            cfsr, 
-            bfar); 
+        // printf("%s LR:0x%08X, PC:0x%08X HFSR:0x%08X CFSR:0x%08X BFAR:0x%08X\r\n", 
+        //     __func__, 
+        //     lr,
+        //     stacked_pc, 
+        //     hfsr, 
+        //     cfsr, 
+        //     bfar); 
 
         for(int i = 10000;i>0;i--)
         for(int j = 1000;j>0;j--);

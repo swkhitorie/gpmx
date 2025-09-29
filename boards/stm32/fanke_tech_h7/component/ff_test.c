@@ -38,10 +38,10 @@ void ff_ls(const char *path)
 
 	result = f_opendir(&dirinfo, path);
 	if (result != FR_OK) {
-		printf("[fat] open root dir failed %s \r\n", FR_Table[result]);
+		//printf("[fat] open root dir failed %s \r\n", FR_Table[result]);
 	}
 
-	printf("properties  |  size |    name     \r\n");
+	//printf("properties  |  size |    name     \r\n");
 	for (cnt = 0; ;cnt++) {
 		result = f_readdir(&dirinfo, &fileinfo);
 		if (result != FR_OK || fileinfo.fname[0] == 0) {
@@ -53,13 +53,13 @@ void ff_ls(const char *path)
 		}
 
 		if (fileinfo.fattrib & AM_DIR) {
-			printf("dir(0x%x)\t",(uint32_t)fileinfo.fattrib);
+			//printf("dir(0x%x)\t",(uint32_t)fileinfo.fattrib);
 		}else {
-			printf("file(0x%x)\t",(uint32_t)fileinfo.fattrib);
+			//printf("file(0x%x)\t",(uint32_t)fileinfo.fattrib);
 		}
 
-		printf(" %d \t",(uint32_t)fileinfo.fsize);
-		printf(" %s\r\n",fileinfo.fname);
+		//printf(" %d \t",(uint32_t)fileinfo.fsize);
+		//printf(" %s\r\n",fileinfo.fname);
 	}
 }
 
@@ -74,18 +74,18 @@ void ff_cat(char *path)
 
 	ret = f_open(&rd_fp, path, FA_OPEN_EXISTING | FA_READ);
 	if (ret != FR_OK) {
-		printf("[fat] %s open file failed: %s \r\n", path, FR_Table[ret]);
+		//printf("[fat] %s open file failed: %s \r\n", path, FR_Table[ret]);
 		return;
 	}
 
 	ret = f_read(&rd_fp, rd_buf, rd_fp.obj.objsize, &bw);
 	if (ret != FR_OK) {
-		printf("[fat] %s read file failed %s \r\n", path, FR_Table[ret]);
+		//printf("[fat] %s read file failed %s \r\n", path, FR_Table[ret]);
         return;
 	}
 
-    printf("file: %s:\r\n", path);
-    printf("%s", rd_buf);
+    //printf("file: %s:\r\n", path);
+    //printf("%s", rd_buf);
 
 	f_close(&rd_fp);
 }

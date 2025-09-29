@@ -186,3 +186,7 @@ MK_TC_GENHEX=$(if $(and ${1},${2}),@${TC_GENHEX} -c --i32 -o ${2} ${1})
 # 1 - input file
 # 2 - output file
 MK_TC_DISASSEMBLY=$(if $(and ${1},${2}), @${TC_DUMP} -c -a ${1} -o ${2})
+
+# more accurate compilation result analysis cmd
+# 1 - input file
+MK_TC_COMPILE_ANALYZE=$(if $(and ${1},$(wildcard ${MK_COMPILE_ANALYZE_ARM})), @${MK_PYTHON} ${MK_COMPILE_ANALYZE_ARM} ${1})

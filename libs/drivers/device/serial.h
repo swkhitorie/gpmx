@@ -1,13 +1,7 @@
 #ifndef DEV_OPS_SERIAL_H_
 #define DEV_OPS_SERIAL_H_
 
-#include <stdint.h>
-#include <stdbool.h>
-
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
-#include <FreeRTOS.h>
-#include <semphr.h>
-#endif
+#ifdef CONFIG_GPDRIVE_SERIAL
 
 #include "dnode.h"
 
@@ -122,5 +116,7 @@ void     serial_buf_clear(struct uart_buffer_s *obj);
 #if defined(__cplusplus)
 }
 #endif
+
+#endif  // end with macro CONFIG_GPDRIVE_SERIAL
 
 #endif

@@ -5,13 +5,14 @@
 
 int serial_register(struct uart_dev_s *dev, int bus)
 {
-    int ret = 0;
     char devname[SERIAL_DEVNAME_FMTLEN];
     snprintf(devname, SERIAL_DEVNAME_FMTLEN, SERIAL_DEVNAME_FMT, bus);
 
-    ret = dn_register(devname, dev);
+    if (!dn_register(devname, dev)) {
+        return -1;
+    }
 
-    return ret;
+    return GOK;
 }
 
 struct uart_dev_s* serial_bus_get(int bus)
@@ -43,7 +44,7 @@ int serial_bus_initialize(int bus)
     dev->xmitsem = xSemaphoreCreateBinary();
 
     xSemaphoreGive(dev->exclsem);
-	xSemaphoreGive(dev->xmitsem);
+    xSemaphoreGive(dev->xmitsem);
 #else
 
     dev->flag_excl = 0x01;
@@ -57,14 +58,18 @@ int serial_dev_lock(struct uart_dev_s *dev)
 {
 #if defined(CONFIG_BOARD_FREERTOS_ENABLE)
 
-    return xSemaphoreTake(dev->exclsem, 1000);
+    if (pdTRUE == xSemaphoreTake(dev->exclsem, 0)) {
+        return GOK;
+    } else {
+        return -1;
+    }
 #else
 
     if (dev->flag_excl == 0x01) {
         dev->flag_excl = 0x00;
-        return DTRUE;
+        return GOK;
     } else {
-        return DFALSE;
+        return -1;
     }
 #endif
 }
@@ -73,33 +78,36 @@ int serial_dev_unlock(struct uart_dev_s *dev)
 {
 #if defined(CONFIG_BOARD_FREERTOS_ENABLE)
 
-    return xSemaphoreGive(dev->exclsem);
+    xSemaphoreGive(dev->exclsem);
+    return GOK;
 #else
 
     dev->flag_excl = 0x01;
-    return DTRUE;
+    return GOK;
 #endif
 }
 
 int serial_tx_wait(struct uart_dev_s *dev)
 {
-	int ret = DTRUE;
 #if defined(CONFIG_BOARD_FREERTOS_ENABLE)
 
-    return xSemaphoreTake(dev->xmitsem, 0);
+    if (pdTRUE == xSemaphoreTake(dev->xmitsem, 5)) {
+        return -1;
+    } else {
+        return GOK;
+    }
 #else
 
     if (dev->flag_tx != 0x01) {
-		return DFALSE;
+		return -1;
 	}
     dev->flag_tx = 0x00;
-    return DTRUE;
+    return GOK;
 #endif
 }
 
 void serial_tx_post(struct uart_dev_s *dev)
 {
-	int ret = DTRUE;
 #if defined(CONFIG_BOARD_FREERTOS_ENABLE)
 
     BaseType_t h_pri = pdFALSE;
@@ -117,7 +125,7 @@ uint16_t serial_buf_write(struct uart_buffer_s *obj, const uint8_t *p, uint16_t 
 	uint16_t wlen = 0;
 	uint16_t rssize = 0;
 
-    dn_disable_irq();
+    gpdrv_irq_disable();
 
 	rssize = obj->capacity - obj->size;
 	if (rssize >= len) {
@@ -135,7 +143,7 @@ uint16_t serial_buf_write(struct uart_buffer_s *obj, const uint8_t *p, uint16_t 
         obj->size++;
 	}
 
-    dn_enable_irq();
+    gpdrv_irq_enable();
 
 	return wlen;
 }
@@ -145,7 +153,7 @@ uint16_t serial_buf_read(struct uart_buffer_s *obj, uint8_t *p, uint16_t len)
 	uint16_t i;
 	uint16_t rlen = 0;
 
-    dn_disable_irq();
+    gpdrv_irq_disable();
 
 	if (obj->size >= len) {
 		rlen = len;
@@ -162,14 +170,14 @@ uint16_t serial_buf_read(struct uart_buffer_s *obj, uint8_t *p, uint16_t len)
         obj->size--;
 	}
 
-    dn_enable_irq();
+    gpdrv_irq_enable();
 
 	return rlen;
 }
 
 void serial_buf_clear(struct uart_buffer_s *obj)
 {
-    dn_disable_irq();
+    gpdrv_irq_disable();
 
 	for (int i = 0; i < obj->capacity; i++) {
 		obj->buffer[i] = 0;
@@ -178,6 +186,6 @@ void serial_buf_clear(struct uart_buffer_s *obj)
 	obj->in = 0;
 	obj->out = 0;
 
-    dn_enable_irq();
+    gpdrv_irq_enable();
 }
 

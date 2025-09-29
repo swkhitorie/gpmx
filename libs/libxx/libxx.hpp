@@ -3,10 +3,14 @@
 
 #include <new>
 
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
 #include <FreeRTOS.h>
 #include <portable.h>
 #define lib_malloc(s)    pvPortMalloc(s)
 #define lib_free(p)      vPortFree(p)
+#else
+#error libxx.hpp: please define operator new method
+#endif
 
 #define sys_mem_malloc(s)   lib_malloc(s)
 #define sys_mem_free(p)     lib_free(p)

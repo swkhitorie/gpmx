@@ -6,7 +6,7 @@
 #include <device/serial.h>
 
 #ifdef CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
-#include "dev_cdc_acm.h"
+#include "board_usb_cdc.h"
 #endif
 
 /* COM1 */
@@ -61,7 +61,7 @@ struct up_uart_dev_s com1_dev = {
     .priority = 1,
 };
 
-#ifdef CONFIG_BOARD_COM_STDINOUT
+#if (CONFIG_BOARD_STDINOUT==1)
 uart_dev_t *dstdout;
 uart_dev_t *dstdin;
 #endif
@@ -74,14 +74,14 @@ void board_bsp_init()
     serial_register(&com1_dev.dev, 1);
     serial_bus_initialize(1);
 
-#ifdef CONFIG_BOARD_COM_STDINOUT
+#if (CONFIG_BOARD_STDINOUT==1)
     dstdout = serial_bus_get(1);
     dstdin = serial_bus_get(1);
 #endif
 
 #ifdef CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
     HAL_Delay(300);
-    cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
+    board_cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
     HAL_Delay(100); // wait cdc init completed
 #endif
 
@@ -138,7 +138,7 @@ bool board_rtc_set_timestamp(time_t now)
     return hw_stm32_rtc_set_time_stamp(now);
 }
 
-#ifdef CONFIG_BOARD_COM_STDINOUT
+#if defined(CONFIG_BOARD_STDINOUT) || (CONFIG_BOARD_STDINOUT > 0)
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -149,14 +149,17 @@ int _write(int file, const char *ptr, int len)
     const int stdout_fileno = 1;
     const int stderr_fileno = 2;
     if (file == stdout_fileno) {
-#ifdef CONFIG_BOARD_COM_STDOUT_DMA
-        SERIAL_DMASEND(dstdout, ptr, len);
-#else
+#if (CONFIG_BOARD_STDINOUT == 1)
         SERIAL_SEND(dstdout, ptr, len);
+        // SERIAL_DMASEND(dstdout, ptr, len);
+#elif (CONFIG_BOARD_STDINOUT == 2) && defined(CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE)
+        board_cdc_acm_send(0, ptr, len, 1);
 #endif
     }
+
     return len;
 }
+
 // nonblock
 int _read(int file, char *ptr, int len)
 {
@@ -165,7 +168,11 @@ int _read(int file, char *ptr, int len)
     const int stderr_fileno = 2;
     int rsize = 0;
     if (file == stdin_fileno) {
+#if (CONFIG_BOARD_STDINOUT == 1)
         rsize = SERIAL_RDBUF(dstdin, ptr, len);
+#elif (CONFIG_BOARD_STDINOUT == 2) && defined(CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE)
+        rsize = board_cdc_acm_read(0, ptr, len);
+#endif
     }
     return rsize;
 }
@@ -173,7 +180,6 @@ size_t fwrite(const void *ptr, size_t size, size_t n_items, FILE *stream)
 {
     return _write(stream->_file, ptr, size*n_items);
 }
-
 size_t fread(void *ptr, size_t size, size_t n_items, FILE *stream)
 {
     return _read(stream->_file, ptr, size*n_items);
@@ -212,15 +218,6 @@ hrt_abstime hrt_absolute_time(void)
 }
 #endif
 
-
-
-
-
-
-
-
-
-
 #ifdef CONFIG_FR_IDLE_TIMER_TASKCREATE_HANDLE
 #include "FreeRTOS.h"
 #include "task.h"
@@ -255,4 +252,3 @@ void vApplicationMallocFailedHook( void )
     // printf("[ERROR] memory allocate failed, free: %d bytes\r\n", xPortGetFreeHeapSize());
 }
 #endif
-

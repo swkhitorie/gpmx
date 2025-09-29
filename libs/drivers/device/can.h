@@ -1,14 +1,7 @@
 #ifndef DEV_OPS_CAN_H_
 #define DEV_OPS_CAN_H_
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <stddef.h>
-
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE) && defined(CONFIG_I2C_TASKSYNC)
-#include <FreeRTOS.h>
-#include <semphr.h>
-#endif
+#ifdef CONFIG_GPDRIVE_CAN
 
 #include "dnode.h"
 
@@ -604,8 +597,10 @@ struct can_dev_s
   struct can_rxfifo_s       cd_rxfifo;
 
 #if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+  SemaphoreHandle_t  sem_excl;     /* Prevent devices from being occupied by multiple threads */
   SemaphoreHandle_t  sem_tx;
 #else
+  volatile uint32_t flag_excl;
   volatile uint32_t flag_tx;
 #endif
 
@@ -622,6 +617,9 @@ int               can_register(struct can_dev_s *dev, int bus);
 struct can_dev_s* can_bus_get(int bus);
 int               can_bus_initialize(int bus);
 
+int  can_dev_lock(struct can_dev_s *dev);
+int  can_dev_unlock(struct can_dev_s *dev);
+
 int  can_tx_wait(struct can_dev_s *dev);
 void can_tx_post(struct can_dev_s *dev);
 
@@ -632,6 +630,8 @@ void can_rxfifo_clear(struct can_rxfifo_s *rfifo);
 #if defined(__cplusplus)
 }
 #endif
+
+#endif  // end with macro CONFIG_GPDRIVE_CAN
 
 #endif
 

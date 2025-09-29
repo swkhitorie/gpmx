@@ -174,3 +174,8 @@ else
 #$(warning Nested call)
 endif
 
+MK_PYTHON=python3
+
+MK_COMPILE_ANALYZE_GCC=${SDK_ROOTDIR}/make/analyze_gccmap.py
+
+MK_COMPILE_ANALYZE_ARM=${SDK_ROOTDIR}/make/analyze_armmap.py

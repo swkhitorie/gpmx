@@ -5,14 +5,14 @@
 
 int can_register(struct can_dev_s *dev, int bus)
 {
-    int ret = 0;
-
     char devname[CAN_DEVNAME_FMTLEN];
     snprintf(devname, CAN_DEVNAME_FMTLEN, CAN_DEVNAME_FMT, bus);
 
-    ret = dn_register(devname, dev);
+    if (!dn_register(devname, dev)) {
+        return -1;
+    }
 
-    return ret;
+    return GOK;
 }
 
 struct can_dev_s* can_bus_get(int bus)
@@ -35,31 +35,69 @@ int can_bus_initialize(int bus)
     }
 
 #if defined(CONFIG_BOARD_FREERTOS_ENABLE)
-
+    dev->sem_excl = xSemaphoreCreateBinary();
     dev->sem_tx = xSemaphoreCreateBinary();
     xSemaphoreGive(dev->sem_tx);
+    xSemaphoreGive(dev->sem_excl);
 #else
 
+    dev->flag_excl = 0x01;
     dev->flag_tx = 0x01;
 #endif
 
     return dev->cd_ops->co_setup(dev);
 }
 
-int can_tx_wait(struct can_dev_s *dev)
+int can_dev_lock(struct can_dev_s *dev)
 {
-    int ret = DTRUE;
 #if defined(CONFIG_BOARD_FREERTOS_ENABLE)
 
-    xSemaphoreTake(dev->sem_tx, portMAX_DELAY);
+    if (pdTRUE == xSemaphoreTake(dev->sem_excl, 0)) {
+        return GOK;
+    } else {
+        return -1;
+    }
+#else
+
+    if (dev->flag_excl == 0x01) {
+        dev->flag_excl = 0x00;
+        return GOK;
+    } else {
+        return -1;
+    }
+#endif
+}
+
+int can_dev_unlock(struct can_dev_s *dev)
+{
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+
+    xSemaphoreGive(dev->sem_excl);
+    return GOK;
+#else
+
+    dev->flag_excl = 0x01;
+    return GOK;
+#endif
+}
+
+int can_tx_wait(struct can_dev_s *dev)
+{
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+
+    if (pdTRUE == xSemaphoreTake(dev->sem_tx, 5)) {
+        return -1;
+    } else {
+        return GOK;
+    }
 #else
 
     if (dev->flag_tx != 0x01) {
-        return DFALSE;
+        return -1;
     }
     dev->flag_tx = 0x00;
+    return GOK;
 #endif
-    return ret;
 }
 
 void can_tx_post(struct can_dev_s *dev)
@@ -77,53 +115,48 @@ void can_tx_post(struct can_dev_s *dev)
 
 void can_rxfifo_clear(struct can_rxfifo_s *rfifo)
 {
-    dn_disable_irq();
+    gpdrv_irq_disable();
 
     rfifo->rx_head = 0;
     rfifo->rx_tail = 0;
 
-    dn_enable_irq();
+    gpdrv_irq_enable();
 }
 
 int can_rxfifo_put(struct can_rxfifo_s *rfifo, void *buf)
 {
-    int ret = DTRUE;
+    struct can_msg_s *pmsg = (struct can_msg_s *)buf;
 
-    dn_disable_irq();
-
-    struct can_msg_s *pmsg;
-    pmsg = (struct can_msg_s *)buf;
+    gpdrv_irq_disable();
 
     if(((rfifo->rx_tail + 1) % CONFIG_CAN_FIFOSIZE == rfifo->rx_head)) {
         // full
-        ret = DFALSE; 
+        gpdrv_irq_enable();
+        return -1;
     } else {
-        SMEMCPY(&rfifo->rx_buffer[rfifo->rx_tail], pmsg, sizeof(struct can_msg_s));
-
+        gmemcpy(&rfifo->rx_buffer[rfifo->rx_tail], pmsg, sizeof(struct can_msg_s));
         rfifo->rx_tail = (rfifo->rx_tail + 1) % CONFIG_CAN_FIFOSIZE;
     }
 
-    dn_enable_irq();
+    gpdrv_irq_enable();
 
-    return ret;
+    return GOK;
 }
 
 int can_rxfifo_get(struct can_rxfifo_s *rfifo, void *buf)
 {
-    int ret = DTRUE;
-
-    dn_disable_irq();
+    gpdrv_irq_disable();
 
     if(rfifo->rx_tail == rfifo->rx_head) {
         // empty
-        ret = DFALSE;
+        gpdrv_irq_enable();
+        return -1;
     } else {
-        SMEMCPY(buf, &rfifo->rx_buffer[rfifo->rx_head], sizeof(struct can_msg_s));
-
+        gmemcpy(buf, &rfifo->rx_buffer[rfifo->rx_head], sizeof(struct can_msg_s));
         rfifo->rx_head = (rfifo->rx_head + 1) % CONFIG_CAN_FIFOSIZE;
     }
 
-    dn_enable_irq();
+    gpdrv_irq_enable();
 
-    return ret;
+    return GOK;
 }

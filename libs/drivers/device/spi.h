@@ -1,14 +1,7 @@
 #ifndef DEV_OPS_SPI_H_
 #define DEV_OPS_SPI_H_
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <stddef.h>
-
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
-#include <FreeRTOS.h>
-#include <semphr.h>
-#endif
+#ifdef CONFIG_GPDRIVE_SPI
 
 #include "dnode.h"
 
@@ -334,5 +327,7 @@ void spi_dmatxwakeup(struct spi_dev_s *dev);
 #if defined(__cplusplus)
 }
 #endif
+
+#endif // end with macro CONFIG_GPDRIVE_SPI
 
 #endif

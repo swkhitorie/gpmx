@@ -65,7 +65,7 @@ void _uart_rcc_init(uint8_t id)
 
 uint8_t _uart_instance_judge(UART_HandleTypeDef *huart)
 {
-    uint8_t idx;
+    uint8_t idx=0;
     if      (huart->Instance == USART1) idx = 0;
     else if (huart->Instance == USART2) idx = 1;
 #if defined(USART3)
@@ -443,7 +443,7 @@ int up_usart_setup(struct uart_dev_s *dev)
 
     g_uart_list[priv->id - 1] = dev;
 
-    return 0;
+    return GOK;
 }
 
 bool up_usart_txready(struct uart_dev_s *dev)
@@ -464,15 +464,15 @@ int up_usart_dmasend(struct uart_dev_s *dev, const uint8_t *p, uint16_t len)
         return -1;
     }
 
-    if (serial_dev_lock(dev) != DTRUE) {
-        return 1;
+    if (serial_dev_lock(dev) != GOK) {
+        return -2;
     }
 
     serial_buf_write(&dev->xmit, &p[0], len);
 
-    if (serial_tx_wait(dev) != DTRUE) {
+    if (serial_tx_wait(dev) != GOK) {
         serial_dev_unlock(dev);
-        return 1;
+        return -3;
     }
 
     uint16_t bufsize = (uint32_t)dev->xmit.size;
@@ -490,17 +490,16 @@ int up_usart_dmasend(struct uart_dev_s *dev, const uint8_t *p, uint16_t len)
 
 int up_usart_send(struct uart_dev_s *dev, const uint8_t *p, uint16_t len)
 {
-    int ret = 0;
     struct up_uart_dev_s *priv = dev->priv;
 
-    if (serial_dev_lock(dev) != DTRUE) {
-        return 1;
+    if (serial_dev_lock(dev) != GOK) {
+        return -1;
     }
 
     HAL_UART_Transmit(&priv->com, (uint8_t *)p, len, 3000);
     serial_dev_unlock(dev);
 
-    return ret;
+    return GOK;
 }
 
 int up_usart_readbuf(struct uart_dev_s *dev, uint8_t *p, uint16_t len)

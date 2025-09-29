@@ -68,9 +68,9 @@ static int stm32_eth_init()
 
     /* configure ethernet peripheral (GPIOs, clocks, MAC, DMA) */
     if (HAL_ETH_Init(&EthHandle) != HAL_OK) {
-        DLOG_E("eth hardware init failed");
+        drvlog_e("[eth] hardware init failed");
     } else {
-        DLOG_D("eth hardware init success");
+        drvlog_d("[eth] hardware init success");
     }
 
     /* Initialize Tx Descriptors list: Chain Mode */
@@ -85,9 +85,9 @@ static int stm32_eth_init()
 
     /* Enable MAC and DMA transmission and reception */
     if (HAL_ETH_Start(&EthHandle) == HAL_OK) {
-        DLOG_D("emac hardware start");
+        drvlog_d("[eth] emac hardware start");
     } else {
-        DLOG_E("emac hardware start faild");
+        drvlog_e("[eth] emac hardware start faild");
         return -1;
     }
 
@@ -116,7 +116,7 @@ int stm32_eth_tx(struct pbuf *p)
 
         /* Is this buffer available? If not, goto error */
         if ((DmaTxDesc->Status & ETH_DMATXDESC_OWN) != (uint32_t)RESET) {
-            DLOG_D("buffer not valid");
+            drvlog_d("[eth] buffer not valid");
             ret = -2;
             goto error;
         }
@@ -157,16 +157,16 @@ int stm32_eth_tx(struct pbuf *p)
 
     /* Prepare transmit descriptors to give to DMA */
     /* TODO Optimize data send speed*/
-    DLOG_D("transmit frame length :%d", framelength);
+    drvlog_d("[eth] transmit frame length :%d", framelength);
 
     /* wait for unlocked */
     while (EthHandle.Lock == HAL_LOCKED) {
-        DLOG_D("wait eth lock \r\n");
+        drvlog_d("[eth] wait eth lock \r\n");
     }
 
     state = HAL_ETH_TransmitFrame(&EthHandle, framelength);
     if (state != HAL_OK) {
-        DLOG_E("eth transmit frame faild: %d", state);
+        drvlog_e("[eth] transmit frame faild: %d", state);
     }
 
     ret = ERR_OK;
@@ -202,7 +202,7 @@ struct pbuf *stm32_eth_rx()
     /* Get received frame */
     state = HAL_ETH_GetReceivedFrame_IT(&EthHandle);
     if (state != HAL_OK) {
-        DLOG_D("receive frame faild");
+        drvlog_d("[eth] receive frame faild");
         return NULL;
     }
 
@@ -210,7 +210,7 @@ struct pbuf *stm32_eth_rx()
     len = EthHandle.RxFrameInfos.length;
     buffer = (uint8_t *)EthHandle.RxFrameInfos.buffer;
 
-    DLOG_D("receive frame len : %d", len);
+    drvlog_d("[eth] receive frame len : %d", len);
 
     if (len > 0) {
         /* We allocate a pbuf chain of pbufs from the Lwip buffer pool */
@@ -278,13 +278,13 @@ void HAL_ETH_RxCpltCallback(ETH_HandleTypeDef *heth)
     int result = 0;
     result = eth_device_ready(&(stm32_eth_device.dev));
     if (result != 0) {
-        DLOG_E("RxCpltCallback err = %d", result);
+        drvlog_e("[eth] RxCpltCallback err = %d", result);
     }
 }
 
 void HAL_ETH_ErrorCallback(ETH_HandleTypeDef *heth)
 {
-    DLOG_E("eth err");
+    drvlog_e("[eth] err callback");
 }
 
 static int stm32_eth_control(int cmd, void *args)
@@ -332,9 +332,9 @@ int hw_stm32_eth_init(void)
     /* register eth device */
     state = eth_device_init(&(stm32_eth_device.dev), "e0");
     if (0 == state) {
-        DLOG_D("emac device init success");
+        drvlog_d("[eth] emac device init success");
     } else {
-        DLOG_E("emac device init faild: %d", state);
+        drvlog_e("[eth] emac device init faild: %d", state);
         state = -1;
         goto __exit;
     }

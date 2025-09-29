@@ -20,10 +20,16 @@ BSP_LIBCONFIG_STM32_HAL_IWDG=y
 BSP_LIBCONFIG_STM32_HAL_RTC=y
 BSP_LIBCONFIG_STM32_HAL_FLASH=y
 BSP_LIBCONFIG_STM32_HAL_BASTIM=n
-BSP_LIBCONFIG_STM32_HAL_I2C=y
-BSP_LIBCONFIG_STM32_HAL_SPI=y
-BSP_LIBCONFIG_STM32_HAL_QSPI=y
+BSP_LIBCONFIG_STM32_HAL_I2C=n
+BSP_LIBCONFIG_STM32_HAL_SPI=n
+BSP_LIBCONFIG_STM32_HAL_QSPI=n
 BSP_LIBCONFIG_STM32_HAL_MMCSD=y
+
+MK_GPDRIVE_RINGBUFFER=y
+MK_GPDRIVE_DNODE=y
+MK_GPDRIVE_SERIAL=y
+MK_GPDRIVE_I2C=n
+MK_GPDRIVE_SPI=n
 
 # include all cubelibrary files and low level driver files
 include ${SDK_ROOTDIR}/boards/stm32/libs/bsp_libs_stm32.mk
@@ -35,41 +41,31 @@ BOARD_BSP_PATH := boards/stm32/fanke_tech_h7
 #########################################################################
 # BSP macros, sources + asm + link files, includes, and entry address
 #########################################################################
-BOARD_CDEFS += ${BSP_LIBCONFIG_STM32_LLDRV_SERIES}
-BOARD_CDEFS += STM32H743xx
-BOARD_CDEFS += USE_HAL_DRIVER
-BOARD_CDEFS += CONFIG_RTC_USING_LSE
+PROJ_CDEFS += ${BSP_LIBCONFIG_STM32_LLDRV_SERIES}
+PROJ_CDEFS += STM32H743xx
+PROJ_CDEFS += USE_HAL_DRIVER
+PROJ_CDEFS += CONFIG_RTC_USING_LSE
 
-BOARD_CSRCS += board_irq.c
-BOARD_CSRCS += board_rcc_init.c
-BOARD_CSRCS += board_usb.c
-BOARD_CSRCS += board_init.c
-BOARD_CSRCS += board_bsp.c
-BOARD_CSRCS += board_msp.c
+MOD_ARCH = m7
+PROJ_ENTRY_POINT := Reset_Handler
+
+PROJ_CINCDIRS += ${BOARD_BSP_PATH}
+PROJ_CINCDIRS += ${BOARD_BSP_PATH}/component
+CSOURCES += ${BOARD_BSP_PATH}/component/board_usb_cdc.c
+CSOURCES += ${BOARD_BSP_PATH}/component/board_usb_msp.c
+
+CSOURCES += ${BOARD_BSP_PATH}/board_irq.c
+CSOURCES += ${BOARD_BSP_PATH}/board_rcc_init.c
+CSOURCES += ${BOARD_BSP_PATH}/board_init.c
+CSOURCES += ${BOARD_BSP_PATH}/board_bsp.c
+CSOURCES += ${BOARD_BSP_PATH}/board_msp.c
 
 ifeq (${PROJ_TC},gae)
-BOARD_ASMSOURCES += fanketech_h7_startup_gcc.s
-BOARD_LNK_FILE   += fanketech_h7_lnk_gcc.ld
+ASMSOURCES += ${BOARD_BSP_PATH}/fanketech_h7_startup_gcc.s
+SCF_FILE   += ${BOARD_BSP_PATH}/fanketech_h7_lnk_gcc.ld
 else ifeq ($(PROJ_TC),armclang)
-BOARD_ASMSOURCES += fanketech_h7_startup_arm.s
-BOARD_LNK_FILE   += fanketech_h7_lnk_arm.sct
+ASMSOURCES += ${BOARD_BSP_PATH}/fanketech_h7_startup_arm.s
+SCF_FILE   += ${BOARD_BSP_PATH}/fanketech_h7_lnk_arm.sct
 else
 $(error invalid compiler selection)
 endif
-
-TMPBOARD_CSRCS = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_CSRCS}}
-TMPBOARD_ASMSOURCES = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_ASMSOURCES}}
-TMPBOARD_LNK_FILE = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_LNK_FILE}}
-
-#######################################
-# Add all setting to root make variable
-#######################################
-MOD_ARCH                 = m7
-PROJ_ENTRY_POINT        := Reset_Handler
-SCF_FILE                := ${TMPBOARD_LNK_FILE}
-
-PROJ_CDEFS              += ${BOARD_CDEFS}
-
-PROJ_CINCDIRS           += ${BOARD_BSP_PATH}
-CSOURCES                += ${TMPBOARD_CSRCS}
-ASMSOURCES              := ${TMPBOARD_ASMSOURCES}

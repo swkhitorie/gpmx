@@ -51,7 +51,7 @@ const struct spi_ops_s g_spi_ops =
  ****************************************************************************/
 uint8_t _spi_instance_judge(SPI_HandleTypeDef *hspi)
 {
-    uint8_t idx = 0;
+    uint8_t idx=0;
     if      (hspi->Instance == SPI1)    idx = 0;
 #if defined(SPI2)
     else if (hspi->Instance == SPI2)    idx = 1;
@@ -761,10 +761,10 @@ int up_spi_select(struct spi_dev_s *dev, uint32_t devid, bool selected)
 	for (; i < CONFIG_SPI_ATTACH_CS_NUM; i++) {
         if (devid == priv->dev_cs[i].id && priv->dev_cs[i].port != NULL) {
 			HAL_GPIO_WritePin(priv->dev_cs[i].port, (0x01 << priv->dev_cs[i].pin), !selected);
-			return 0;
+			return GOK;
 		}
 	}
-	return 1;
+	return -1;
 }
 
 int up_spi_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbuffer, size_t nwords)
@@ -780,15 +780,21 @@ int up_spi_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbuffer,
 
 	if (!nc_txbuffer && rxbuffer) {
 		dev->rxresult = 0x00;
-		ret = HAL_SPI_Receive_DMA(&priv->hspi, rxbuffer, nwords);
+		if (HAL_OK != HAL_SPI_Receive_DMA(&priv->hspi, rxbuffer, nwords)) {
+            return -1;
+        }
         ret = spi_dmarxwait(dev);
 	} else if (nc_txbuffer && !rxbuffer) {
 		dev->txresult = 0x00;
-		ret = HAL_SPI_Transmit_DMA(&priv->hspi, nc_txbuffer, nwords);
+		if (HAL_OK != HAL_SPI_Transmit_DMA(&priv->hspi, nc_txbuffer, nwords)) {
+            return -1;
+        }
         ret = spi_dmatxwait(dev);
 	} else if (nc_txbuffer && rxbuffer) {
 		dev->txresult = 0x00;
-		ret = HAL_SPI_TransmitReceive_DMA(&priv->hspi, nc_txbuffer, rxbuffer, nwords);
+		if (HAL_OK != HAL_SPI_TransmitReceive_DMA(&priv->hspi, nc_txbuffer, rxbuffer, nwords)) {
+            return -1;
+        }
         ret = spi_dmatxwait(dev);
 	}
 
@@ -798,22 +804,26 @@ int up_spi_exchange(struct spi_dev_s *dev, const void *txbuffer, void *rxbuffer,
 int up_spi_exchangeblock(struct spi_dev_s *dev,
 	const void *txbuffer, void *rxbuffer, size_t nwords)
 {
-	int ret = 0;
 	struct up_spi_dev_s *priv = dev->priv;
     void *nc_txbuffer = (void *)txbuffer;
 
-	ret = HAL_SPI_TransmitReceive(&priv->hspi, nc_txbuffer, rxbuffer, nwords, 1000);
-	return ret;
+    if (HAL_OK != HAL_SPI_TransmitReceive(&priv->hspi, nc_txbuffer, rxbuffer, nwords, 1000)) {
+        return -1;
+    }
+
+	return GOK;
 }
 
 int up_spi_sndblock(struct spi_dev_s *dev, const void *buffer, size_t nwords)
 {
-	int ret = 0;
 	struct up_spi_dev_s *priv = dev->priv;
 	void *nc_buffer = (void *)buffer;
 
-	ret = HAL_SPI_Transmit(&priv->hspi, nc_buffer, nwords, 1000);
-	return ret;
+    if (HAL_OK != HAL_SPI_Transmit(&priv->hspi, nc_buffer, nwords, 1000)) {
+        return -1;
+    }
+
+	return GOK;
 }
 
 int up_spi_recvblock(struct spi_dev_s *dev, void *buffer, size_t nwords)
@@ -821,8 +831,11 @@ int up_spi_recvblock(struct spi_dev_s *dev, void *buffer, size_t nwords)
 	int ret = 0;
 	struct up_spi_dev_s *priv = dev->priv;
 
-	ret = HAL_SPI_Receive(&priv->hspi, buffer, nwords, 1000);
-	return ret;
+    if (HAL_OK != HAL_SPI_Receive(&priv->hspi, buffer, nwords, 1000)) {
+        return -1;
+    }
+
+	return GOK;
 }
 
 int up_spi_setup(struct spi_dev_s *dev)
@@ -846,7 +859,7 @@ int up_spi_setup(struct spi_dev_s *dev)
 
     g_spi_list[priv->id-1] = dev;
 
-    return 0;
+    return GOK;
 }
 
 /****************************************************************************

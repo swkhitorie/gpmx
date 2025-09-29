@@ -16,10 +16,6 @@ PROJ_CINCDIRS += libs/usb/CherryUSB/class/cdc
 PROJ_CINCDIRS += libs/usb/CherryUSB/class/hub
 CSOURCES += libs/usb/CherryUSB/class/cdc/usbd_cdc_acm.c
 CSOURCES += libs/usb/CherryUSB/class/cdc/usbd_cdc_ecm.c
-
-PROJ_CINCDIRS += libs/usb/dev_cdc_acm
-CSOURCES += libs/usb/dev_cdc_acm/dev_cdc_acm.c
-CSOURCES += libs/usb/dev_cdc_acm/dev_cdc_fifo.c
 endif  # end with MK_USE_CRUSB_CDC
 
 endif  # end with MK_USE_CRUSB

@@ -25,13 +25,14 @@
 
 int i2c_register(struct i2c_master_s *dev, int bus)
 {
-    int ret = 0;
     char devname[I2C_DEVNAME_FMTLEN];
     snprintf(devname, I2C_DEVNAME_FMTLEN, I2C_DEVNAME_FMT, bus);
 
-    ret = dn_register(devname, dev);
+    if (!dn_register(devname, dev)) {
+        return -1;
+    }
 
-    return ret;
+    return GOK;
 }
 
 struct i2c_master_s *i2c_bus_get(int bus)
@@ -75,14 +76,18 @@ int i2c_dev_lock(struct i2c_master_s *dev)
 {
 #if defined(CONFIG_BOARD_FREERTOS_ENABLE)
 
-    return xSemaphoreTake(dev->sem_excl, 1000);
+    if (pdTRUE == xSemaphoreTake(dev->sem_excl, 10)) {
+        return GOK;
+    } else {
+        return -1;
+    }
 #else
 
     if (dev->flag_excl == 0x01) {
         dev->flag_excl = 0x00;
-        return DTRUE;
+        return GOK;
     } else {
-        return DFALSE;
+        return -1;
     }
 #endif
 }
@@ -91,44 +96,42 @@ int i2c_dev_unlock(struct i2c_master_s *dev)
 {
 #if defined(CONFIG_BOARD_FREERTOS_ENABLE)
 
-    return xSemaphoreGive(dev->sem_excl);
+    xSemaphoreGive(dev->sem_excl);
+    return GOK;
 #else
 
     dev->flag_excl = 0x01;
-    return DTRUE;
+    return GOK;
 #endif
 }
 
 int i2c_dev_transfer_wait(struct i2c_master_s *dev, uint32_t timeout)
 {
-    int ret = DTRUE;
-
 #if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+
+    int ret = GOK;
 
     do {
         /* Take the semaphore (perhaps waiting) */
-        ret = xSemaphoreTake(dev->sem_isr, 1000);
+        ret = xSemaphoreTake(dev->sem_isr, 20);
     } while (ret == pdFALSE);
 
-    return ret;
+    return GOK;
 #else
 
     uint32_t timeout_ms = 20;
-    uint32_t time_start = dn_timems();
+    uint32_t time_start = dn_time();
     do {
         if (dev->flag_isr == 0x01) {
             dev->flag_isr = 0x00;
-            ret = DTRUE;
-            break;
+            return GOK;
         }
-    } while ((dn_timems() - time_start) <= timeout_ms);
+    } while ((dn_time() - time_start) <= timeout_ms);
 
-    if ((dn_timems() - time_start) > timeout_ms) {
-        ret = DFALSE;
+    if ((dn_time() - time_start) > timeout_ms) {
+        return -1;
     } 
 #endif
-
-    return ret;
 }
 
 int i2c_dev_transfer_completed(struct i2c_master_s *dev)
@@ -138,10 +141,10 @@ int i2c_dev_transfer_completed(struct i2c_master_s *dev)
     BaseType_t h_pri;
     xSemaphoreGiveFromISR(dev->sem_isr, &h_pri);
     portYIELD_FROM_ISR(h_pri);
-    return DTRUE;
+    return GOK;
 #else
 
     dev->flag_isr = 0x01;
-    return DTRUE;
+    return GOK;
 #endif
 }

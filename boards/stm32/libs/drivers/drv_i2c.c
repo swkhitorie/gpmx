@@ -32,7 +32,7 @@ const struct i2c_ops_s g_i2c_master_ops =
  ****************************************************************************/
 uint8_t _i2c_instance_judge(I2C_HandleTypeDef *hi2c)
 {
-    uint8_t idx;
+    uint8_t idx=0;
     if      (hi2c->Instance == I2C1) idx = 0;
 #if defined(I2C2)
     else if (hi2c->Instance == I2C2) idx = 1;
@@ -414,7 +414,7 @@ int _i2c_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
             if (ret != HAL_OK) {
                 goto out;
             }
-            if (i2c_dev_transfer_wait(dev, timeout) != DTRUE) {
+            if (i2c_dev_transfer_wait(dev, timeout) != GOK) {
                 goto out;
             }
         } else {
@@ -424,7 +424,7 @@ int _i2c_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
             if (ret != HAL_OK) {
                 goto out;
             }
-            if (i2c_dev_transfer_wait(dev, timeout) != DTRUE) {
+            if (i2c_dev_transfer_wait(dev, timeout) != GOK) {
                 goto out;
             }
         }
@@ -446,7 +446,7 @@ int _i2c_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
         if (ret != HAL_OK) {
             goto out;
         }
-        if (i2c_dev_transfer_wait(dev, timeout) != DTRUE) {
+        if (i2c_dev_transfer_wait(dev, timeout) != GOK) {
             goto out;
         }
     } else {
@@ -456,7 +456,7 @@ int _i2c_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
         if (ret != HAL_OK) {
             goto out;
         }
-        if (i2c_dev_transfer_wait(dev, timeout) != DTRUE) {
+        if (i2c_dev_transfer_wait(dev, timeout) != GOK) {
             goto out;
         }
     }
@@ -465,14 +465,16 @@ int _i2c_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
 
 out:
     if (priv->hi2c.ErrorCode == HAL_I2C_ERROR_AF) {
-        printf("I2C NACK Error now stoped \r\n");
+        drvlog_e("[i2c] NACK Error now stoped \r\n");
+
         /* Send stop signal to prevent bus lock-up */
 #if defined(DRV_STM32_H7)
         priv->hi2c.Instance->CR1 |= I2C_IT_STOPI;
 #endif
     }
     if (priv->hi2c.ErrorCode == HAL_I2C_ERROR_BERR) {
-        printf("I2C BUS Error now stoped \r\n");
+        drvlog_e("[i2c] BUS Error now stoped \r\n");
+
 #if defined(DRV_STM32_H7)
         priv->hi2c.Instance->CR1 |= I2C_IT_STOPI;
 #else
@@ -490,7 +492,7 @@ void _i2c_completed_irq(struct i2c_master_s *dev)
 
 int _i2c_reset(struct i2c_master_s *dev)
 {
-    return 0;
+    return GOK;
 }
 
 /****************************************************************************
@@ -520,21 +522,23 @@ int up_i2c_setup(struct i2c_master_s *dev)
 
     g_i2c_list[priv->id - 1] = dev;
 
-    return 0;
+    return GOK;
 }
 
 int up_i2c_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
 {
-    int ret = 0;
-
-    if (i2c_dev_lock(dev) != DTRUE) {
-        return 1;
+    if (i2c_dev_lock(dev) != GOK) {
+        return -1;
     }
 
-    _i2c_transfer(dev, msgs, count);
+    if (count != _i2c_transfer(dev, msgs, count)) {
+        i2c_dev_unlock(dev);
+        return -2;
+    }
+
     i2c_dev_unlock(dev);
 
-    return ret;
+    return GOK;
 }
 
 int up_i2c_reset(struct i2c_master_s *dev)

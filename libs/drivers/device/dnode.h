@@ -3,26 +3,51 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <string.h>
-#include <stdio.h>
+#include <stddef.h>
+
+#if defined (__CC_ARM)
+#include "cmsis_armcc.h"
+#elif defined(__clang__) && (__GNUC__)
+#include "cmsis_armclang.h"
+#elif defined(__GNUC__)
+#include "cmsis_gcc.h"
+#endif
+
+#define gpdrv_irq_disable()                 __disable_irq()
+#define gpdrv_irq_enable()                  __enable_irq()
 
 #if defined(CONFIG_BOARD_FREERTOS_ENABLE)
 #include <FreeRTOS.h>
 #include <task.h>
 #include <semphr.h>
+#include <portmacro.h>
+
+#define gpdrv_isisr()                       xPortIsInsideInterrupt()
+#define gpdrv_enter_critical_section()      ulPortRaiseBASEPRI()
+#define gpdrv_leave_critical_section(x)     vPortSetBASEPRI(x)
+#define gpdrv_time()       (xTaskGetTickCount()*(1000/configTICK_RATE_HZ))
+#else
+#define gpdrv_isisr()
+#define gpdrv_enter_critical_section()      gpdrv_irq_disable()
+#define gpdrv_leave_critical_section(x)     gpdrv_irq_enable()
+#define gpdrv_time()                        dn_time()
 #endif
 
-#define DTRUE      (1)
-#define DFALSE     (0)
+#include <stdio.h>
+#ifndef drvlog_d
+#define drvlog_d(...)
+#endif
+#ifndef drvlog_w
+#define drvlog_w(...)
+#endif
+#ifndef drvlog_e
+#define drvlog_e(...)
+#endif
 
-#define DEV_OK     (0)
-#define DEV_NOINIT (1)
-#define DEV_ERROR  (2)
+#include <string.h>
+#define gmemcpy(dst,src,len)   memcpy(dst,src,len)
 
-#define DLOG_D(...)        // do{ printf(__VA_ARGS__); printf("\r\n"); }while(0);
-#define DLOG_E(...)     
-
-#define SMEMCPY(dst,src,len)   memcpy(dst,src,len)
+#define GOK             (0)
 
 #define _IOC(type,nr)   ((type)|(nr))
 
@@ -81,15 +106,9 @@ struct dnode {
 extern "C"{
 #endif
 
-bool dn_register(const char *name, void *dev);
-
-void *dn_bind(const char *name);
-
-uint32_t dn_timems(void);
-
-void dn_disable_irq(void);
-
-void dn_enable_irq(void);
+bool     dn_register(const char *name, void *dev);
+void    *dn_bind(const char *name);
+uint32_t dn_time();
 
 #if defined(__cplusplus)
 }

@@ -84,7 +84,7 @@ extern uint32_t SystemCoreClock;
 #define configUSE_TIMERS				        1                       /* 1: Enable Soft Timer */
 #define configUSE_CO_ROUTINES 			        0                       /* 1: Enable Croutine, default 0 */
 #define configUSE_TRACE_FACILITY				1                       /* 1: Enable Visible Debug */
-#define configUSE_STATS_FORMATTING_FUNCTIONS	1                       /* 1: with USE_TRACE_FACILITY 1, Enbale some debug functions */
+#define configUSE_STATS_FORMATTING_FUNCTIONS	0                       /* 1: with USE_TRACE_FACILITY 1, Enbale some debug functions */
 
 #define configTIMER_TASK_PRIORITY		        (configMAX_PRIORITIES-1)        /* Soft Timer Priority */
 #define configTIMER_QUEUE_LENGTH		        5                               /* Soft Timer Queue length */
