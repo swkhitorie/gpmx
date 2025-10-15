@@ -1,9 +1,13 @@
 #include "board_config.h"
 #include <drv_uart.h>
 #include <drv_mmcsd.h>
+#include <drv_qspi.h>
 
 #include <device/dnode.h>
 #include <device/serial.h>
+#include <device/qspi.h>
+
+#include "w25qxx_driver.h"
 
 #ifdef CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
 #include "board_usb_cdc.h"
@@ -61,6 +65,27 @@ struct up_uart_dev_s com1_dev = {
     .priority = 1,
 };
 
+struct up_qspi_dev_s quadspi_dev = 
+{
+    .dev = {
+        .ops       = &g_qspi_ops,
+        .priv      = &quadspi_dev,
+    },
+    .medium_size = 8*1024*1024,
+    .memmap = false,
+    .ddr_mode = 0,
+    .id = 1,
+    .ncspin = { .port = GPIOB, .pin = 6,  .alternate = GPIO_AF10_QUADSPI,},
+    .sckpin = { .port = GPIOB, .pin = 2,  .alternate = GPIO_AF9_QUADSPI,},
+    .io0pin = { .port = GPIOD, .pin = 11, .alternate = GPIO_AF9_QUADSPI,},
+    .io1pin = { .port = GPIOD, .pin = 12, .alternate = GPIO_AF9_QUADSPI,},
+    .io2pin = { .port = GPIOE, .pin = 2,  .alternate = GPIO_AF9_QUADSPI,},
+    .io3pin = { .port = GPIOD, .pin = 13, .alternate = GPIO_AF9_QUADSPI,},
+    .mdma_enable = false,
+    .mdma_priority = 0,
+    .priority = 10,
+};
+
 #if (CONFIG_BOARD_STDINOUT==1)
 uart_dev_t *dstdout;
 uart_dev_t *dstdin;
@@ -73,6 +98,9 @@ void board_bsp_init()
 
     serial_register(&com1_dev.dev, 1);
     serial_bus_initialize(1);
+
+    qspi_register(&quadspi_dev.dev, 1);
+    qspi_bus_initialize(1);
 
 #if (CONFIG_BOARD_STDINOUT==1)
     dstdout = serial_bus_get(1);

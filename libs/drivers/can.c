@@ -1,5 +1,7 @@
 #include <device/can.h>
 
+#ifdef CONFIG_GPDRIVE_CAN
+
 #define CAN_DEVNAME_FMT    "/dev/can%d"
 #define CAN_DEVNAME_FMTLEN (8 + 3 + 1)
 
@@ -160,3 +162,5 @@ int can_rxfifo_get(struct can_rxfifo_s *rfifo, void *buf)
 
     return GOK;
 }
+
+#endif  // end with macro CONFIG_GPDRIVE_CAN

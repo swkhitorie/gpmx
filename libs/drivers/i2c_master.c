@@ -1,5 +1,7 @@
 #include <device/i2c_master.h>
 
+#ifdef CONFIG_GPDRIVE_I2C
+
 #define I2C_DEVNAME_FMT    "/dev/i2c%d"
 #define I2C_DEVNAME_FMTLEN (8 + 3 + 1)
 
@@ -148,3 +150,5 @@ int i2c_dev_transfer_completed(struct i2c_master_s *dev)
     return GOK;
 #endif
 }
+
+#endif // end with macro CONFIG_GPDRIVE_I2C

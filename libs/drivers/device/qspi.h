@@ -274,6 +274,20 @@ struct qspi_ops_s
 
 struct qspi_dev_s
 {
+
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+    SemaphoreHandle_t  rxsem;    /* Wait for RX DMA to complete */
+    SemaphoreHandle_t  txsem;    /* Wait for TX DMA to complete */
+
+    /* exclsem handle by SPI_LOCK() */
+    SemaphoreHandle_t  exclsem;  /* Held while chip is selected for mutual exclusion */
+#else
+    volatile uint32_t flag_tx;
+    volatile uint32_t flag_rx;
+
+    volatile uint32_t flag_excl;
+#endif
+
   const struct qspi_ops_s *ops;
   void                    *priv; /* Used by the arch-specific logic */
 };
@@ -282,6 +296,15 @@ struct qspi_dev_s
 extern "C" {
 #endif
 
+int                qspi_register(struct qspi_dev_s *qspi, int bus);
+struct qspi_dev_s* qspi_bus_get(int bus);
+int                qspi_bus_initialize(int bus);
+
+int  qspi_devlock(struct qspi_dev_s *dev, bool lock);
+int  qspi_txwait(struct qspi_dev_s *dev);
+void qspi_txwakeup(struct qspi_dev_s *dev);
+int  qspi_rxwait(struct qspi_dev_s *dev);
+void qspi_rxwakeup(struct qspi_dev_s *dev);
 
 #if defined(__cplusplus)
 }

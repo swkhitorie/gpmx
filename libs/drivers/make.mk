@@ -2,7 +2,7 @@ PROJ_CINCDIRS   +=  libs/drivers
 
 ifeq (${MK_GPDRIVE_RINGBUFFER},y)
 CSOURCES   +=  libs/drivers/gringbuffer.c
-endif
+endif # end with MK_GPDRIVE_RINGBUFFER
 
 ifeq (${MK_GPDRIVE_DNODE},y)
 CSOURCES   +=  libs/drivers/dnode.c
@@ -23,5 +23,9 @@ ifeq (${MK_GPDRIVE_CAN},y)
 PROJ_CDEFS +=  CONFIG_GPDRIVE_CAN
 CSOURCES   +=  libs/drivers/can.c
 endif
-
+ifeq (${MK_GPDRIVE_QUADSPI},y)
+PROJ_CDEFS +=  CONFIG_GPDRIVE_QUADSPI
+CSOURCES   +=  libs/drivers/qspi.c
 endif
+
+endif # end with MK_GPDRIVE_DNODE

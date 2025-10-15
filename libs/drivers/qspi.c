@@ -1,14 +1,14 @@
-#include <device/spi.h>
+#include <device/qspi.h>
 
-#ifdef CONFIG_GPDRIVE_SPI
+#ifdef CONFIG_GPDRIVE_QUADSPI
 
-#define SPI_DEVNAME_FMT    "/dev/spi%d"
-#define SPI_DEVNAME_FMTLEN (8 + 3 + 1)
+#define QUADSPI_DEVNAME_FMT    "/dev/qspi%d"
+#define QUADSPI_DEVNAME_FMTLEN (9 + 3 + 1)
 
-int spi_register(struct spi_dev_s *spi, int bus)
+int qspi_register(struct qspi_dev_s *spi, int bus)
 {
-    char devname[SPI_DEVNAME_FMTLEN];
-    snprintf(devname, SPI_DEVNAME_FMTLEN, SPI_DEVNAME_FMT, bus);
+    char devname[QUADSPI_DEVNAME_FMTLEN];
+    snprintf(devname, QUADSPI_DEVNAME_FMTLEN, QUADSPI_DEVNAME_FMT, bus);
 
     if (!dn_register(devname, spi)) {
         return -1;
@@ -17,20 +17,20 @@ int spi_register(struct spi_dev_s *spi, int bus)
     return GOK;
 }
 
-struct spi_dev_s *spi_bus_get(int bus)
+struct qspi_dev_s *qspi_bus_get(int bus)
 {
-    struct spi_dev_s *dev;
-    char devname[SPI_DEVNAME_FMTLEN];
-    snprintf(devname, SPI_DEVNAME_FMTLEN, SPI_DEVNAME_FMT, bus);
+    struct qspi_dev_s *dev;
+    char devname[QUADSPI_DEVNAME_FMTLEN];
+    snprintf(devname, QUADSPI_DEVNAME_FMTLEN, QUADSPI_DEVNAME_FMT, bus);
 
     dev = dn_bind(devname);
 
     return dev;
 }
 
-int spi_bus_initialize(int bus)
+int qspi_bus_initialize(int bus)
 {
-    struct spi_dev_s *dev = spi_bus_get(bus);
+    struct qspi_dev_s *dev = qspi_bus_get(bus);
 
     if (!dev) {
         return -1;
@@ -58,7 +58,7 @@ int spi_bus_initialize(int bus)
     return dev->ops->setup(dev);
 }
 
-int spi_devlock(struct spi_dev_s *dev, bool lock)
+int  qspi_devlock(struct qspi_dev_s *dev, bool lock)
 {
     int ret = GOK;
 
@@ -90,7 +90,49 @@ int spi_devlock(struct spi_dev_s *dev, bool lock)
 #endif
 }
 
-int spi_dmarxwait(struct spi_dev_s *dev)
+int qspi_txwait(struct qspi_dev_s *dev)
+{
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+
+    int ret = GOK;
+    /* Take the semaphore (perhaps waiting).  If the result is zero, then the
+     * DMA must not really have completed???
+     */
+
+    do {
+        ret = xSemaphoreTake(dev->txsem, 20);
+    }while (ret == pdFALSE);
+
+    return GOK;
+#else
+
+    uint32_t timeout_ms = 20;
+    uint32_t time_start = dn_time();
+    do {
+        if (dev->flag_tx == 0x01) {
+            dev->flag_tx = 0x00;
+            return GOK;
+        }
+    } while ((dn_time() - time_start) <= timeout_ms);
+
+    if ((dn_time() - time_start) > timeout_ms) {
+        return -1;
+    }
+#endif
+}
+
+void qspi_txwakeup(struct qspi_dev_s *dev)
+{
+#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+
+    xSemaphoreGive(dev->txsem);
+#else
+
+    dev->flag_tx = 0x01;
+#endif
+}
+
+int qspi_rxwait(struct qspi_dev_s *dev)
 {
 #if defined(CONFIG_BOARD_FREERTOS_ENABLE)
 
@@ -101,7 +143,7 @@ int spi_dmarxwait(struct spi_dev_s *dev)
 
     do {
         ret = xSemaphoreTake(dev->rxsem, 20);
-    }while (dev->rxresult == 0 && ret == pdFALSE);
+    }while (ret == pdFALSE);
 
     return GOK;
 #else
@@ -121,37 +163,7 @@ int spi_dmarxwait(struct spi_dev_s *dev)
 #endif
 }
 
-int spi_dmatxwait(struct spi_dev_s *dev)
-{
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
-
-    int ret = GOK;
-    /* Take the semaphore (perhaps waiting).  If the result is zero, then the
-     * DMA must not really have completed???
-     */
-
-    do {
-        ret = xSemaphoreTake(dev->txsem, 20);
-    }while (dev->txresult == 0 && ret == pdFALSE);
-    return GOK;
-#else
-
-    uint32_t timeout_ms = 20;
-    uint32_t time_start = dn_time();
-    do {
-        if (dev->flag_tx == 0x01) {
-            dev->flag_tx = 0x00;
-            return GOK;
-        }
-    } while ((dn_time() - time_start) <= timeout_ms);
-
-    if ((dn_time() - time_start) > timeout_ms) {
-        return -1;
-    }
-#endif
-}
-
-void spi_dmarxwakeup(struct spi_dev_s *dev)
+void qspi_rxwakeup(struct qspi_dev_s *dev)
 {
 #if defined(CONFIG_BOARD_FREERTOS_ENABLE)
 
@@ -162,15 +174,4 @@ void spi_dmarxwakeup(struct spi_dev_s *dev)
 #endif
 }
 
-void spi_dmatxwakeup(struct spi_dev_s *dev)
-{
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
-
-    xSemaphoreGive(dev->txsem);
-#else
-
-    dev->flag_tx = 0x01;
-#endif
-}
-
-#endif // end with macro CONFIG_GPDRIVE_SPI
+#endif // end with macro CONFIG_GPDRIVE_QUADSPI

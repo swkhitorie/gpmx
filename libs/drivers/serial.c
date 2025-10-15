@@ -1,5 +1,7 @@
 #include <device/serial.h>
 
+#ifdef CONFIG_GPDRIVE_SERIAL
+
 #define SERIAL_DEVNAME_FMT    "/dev/ttyS%d"
 #define SERIAL_DEVNAME_FMTLEN (9 + 3 + 1)
 
@@ -189,3 +191,4 @@ void serial_buf_clear(struct uart_buffer_s *obj)
     gpdrv_irq_enable();
 }
 
+#endif  // end with macro CONFIG_GPDRIVE_SERIAL

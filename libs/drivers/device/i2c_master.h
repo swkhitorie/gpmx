@@ -2,6 +2,7 @@
 #define DEV_OPS_I2C_MASTER_H_
 
 #ifdef CONFIG_GPDRIVE_I2C
+
 #include "dnode.h"
 
 /* I2C address calculation.  Convert 7- and 10-bit address to 8-bit and
