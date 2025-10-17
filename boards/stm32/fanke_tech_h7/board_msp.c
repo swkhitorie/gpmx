@@ -1,6 +1,7 @@
 #include <board_config.h>
 #include <drv_uart.h>
 #include <drv_mmcsd.h>
+#include <drv_qspi.h>
 
 void DMA1_Stream0_IRQHandler()
 {
@@ -31,4 +32,9 @@ void HAL_SD_MspInit(SD_HandleTypeDef *hsd)
     LOW_PERIPH_INITPIN(GPIOC, 9,  IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, GPIO_AF12_SDIO1);
     LOW_PERIPH_INITPIN(GPIOC, 10, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, GPIO_AF12_SDIO1);
     LOW_PERIPH_INITPIN(GPIOC, 11, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, GPIO_AF12_SDIO1);
+}
+
+void MDMA_IRQHandler(void)
+{
+    // STM32_QSPI_MDMA_IRQ(0);
 }

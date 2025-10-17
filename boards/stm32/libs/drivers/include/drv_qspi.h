@@ -32,10 +32,10 @@ struct up_qspi_dev_s
 
 extern const struct qspi_ops_s g_qspi_ops;
 
-extern struct qspi_dev_s *g_qspi;
+extern struct qspi_dev_s *g_qspidev;
 
 #define STM32_QSPI_MDMA_IRQ(num)  \
-    struct up_qspi_dev_s *priv = g_qspi->priv; \
+    struct up_qspi_dev_s *priv = g_qspidev->priv; \
     HAL_MDMA_IRQHandler(priv->hqspi.hmdma);
 
 #endif

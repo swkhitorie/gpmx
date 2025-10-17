@@ -5,10 +5,13 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <lfs.h>
 #include <board_config.h>
 #define W25QXX_WAIT_TIMESTAMP          HAL_GetTick
 
 #define W25QXX_PAGESIZE                256
+#define W25QXX_SECTORSIZE              4096
+
 #define W25QXX_CHIPERASE_TIMEOUT_MAX   100000U
 #define W25QXX_MEM_ADDR                0x90000000
 
@@ -60,6 +63,9 @@ uint8_t   w25qxx_chiperase(); // refer option times: 20s
 uint8_t   w25qxx_writepage(uint32_t addr, uint8_t *p, uint16_t size);	// page write, max 256bytes
 uint8_t   w25qxx_writebuffer(uint32_t addr, uint8_t *p, uint32_t size);
 uint8_t   w25qxx_readbuffer(uint32_t addr, uint8_t *p, uint32_t size);
+void      w25qxx_debug(int nbus);
+
+struct lfs_config *w25qxx_get_lfs_ops();
 
 #ifdef __cplusplus
 }

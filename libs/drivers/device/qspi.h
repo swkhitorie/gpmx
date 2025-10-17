@@ -141,6 +141,8 @@
 #define QSPIMEM_RANDOM        (1 << 6)  /* Bit 6: Use random key in scrambler  */
 #define QSPIMEM_IDUAL         (1 << 7)  /* Bit 7: Instruction on two lines     */
 #define QSPIMEM_IQUAD         (1 << 0)  /* Bit 0: Instruction on four lines    */
+#define QSPIMEM_ADUAL         (1 << 8)  /* Bit 8: Address on two lines         */
+#define QSPIMEM_AQUAD         (1 << 9)  /* Bit 9: Address on four lines        */
 
 #define QSPIMEM_ISREAD(f)     (((f) & QSPIMEM_WRITE) == 0)
 #define QSPIMEM_ISWRITE(f)    (((f) & QSPIMEM_WRITE) != 0)
@@ -149,6 +151,8 @@
 #define QSPIMEM_ISSCRAMBLE(f) (((f) & QSPIMEM_SCRAMBLE) != 0)
 #define QSPIMEM_ISIDUAL(f)    (((f) & QSPIMEM_IDUAL) != 0)
 #define QSPIMEM_ISIQUAD(f)    (((f) & QSPIMEM_IQUAD) != 0)
+#define QSPIMEM_ISADUAL(f)    (((f) & QSPIMEM_ADUAL) != 0)
+#define QSPIMEM_ISAQUAD(f)    (((f) & QSPIMEM_AQUAD) != 0)
 
 #define QSPIMEM_ISRANDOM(f) \
   (((f) & (QSPIMEM_SCRAMBLE|QSPIMEM_RANDOM)) == \
@@ -219,13 +223,13 @@ struct qspi_cmdinfo_s
 
 struct qspi_meminfo_s
 {
-  uint8_t   flags;       /* See QSPIMEM_* definitions */
-  uint8_t   addrlen;     /* Address length in bytes */
-  uint8_t   dummies;     /* Number of dummy read cycles (READ only) */
-  uint16_t  buflen;      /* Data buffer length in bytes */
-  uint16_t  cmd;         /* Memory access command */
-  uint32_t  addr;        /* Memory Address */
-  uint32_t  key;         /* Scrambler key */
+  uint8_t    addrlen;     /* Address length in bytes */
+  uint8_t    dummies;     /* Number of dummy read cycles (READ only) */
+  uint16_t   flags;       /* See QSPIMEM_* definitions */
+  uint16_t   buflen;      /* Data buffer length in bytes */
+  uint16_t   cmd;         /* Memory access command */
+  uint32_t   addr;        /* Memory Address */
+  uint32_t   key;         /* Scrambler key */
   void *buffer;          /* Data buffer */
 };
 

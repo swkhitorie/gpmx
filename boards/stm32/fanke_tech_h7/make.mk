@@ -48,6 +48,10 @@ PROJ_CDEFS += STM32H743xx
 PROJ_CDEFS += USE_HAL_DRIVER
 PROJ_CDEFS += CONFIG_RTC_USING_LSE
 
+ifeq (${MK_USE_FS_LITTLEFS},y)
+PROJ_CDEFS += LFS_DEFINES=lfs_conf.h
+endif
+
 MOD_ARCH = m7
 PROJ_ENTRY_POINT := Reset_Handler
 
@@ -61,7 +65,9 @@ CSOURCES += ${BOARD_BSP_PATH}/board_rcc_init.c
 CSOURCES += ${BOARD_BSP_PATH}/board_init.c
 CSOURCES += ${BOARD_BSP_PATH}/board_bsp.c
 CSOURCES += ${BOARD_BSP_PATH}/board_msp.c
+
 CSOURCES += ${BOARD_BSP_PATH}/w25qxx_driver.c
+CSOURCES += ${BOARD_BSP_PATH}/component/lfs_sflash_drv.c
 
 ifeq (${PROJ_TC},gae)
 ASMSOURCES += ${BOARD_BSP_PATH}/fanketech_h7_startup_gcc.s

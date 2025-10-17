@@ -7,7 +7,7 @@
 #include <device/serial.h>
 #include <device/qspi.h>
 
-#include "w25qxx_driver.h"
+#include "lfs_sflash_drv.h"
 
 #ifdef CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
 #include "board_usb_cdc.h"
@@ -82,7 +82,7 @@ struct up_qspi_dev_s quadspi_dev =
     .io2pin = { .port = GPIOE, .pin = 2,  .alternate = GPIO_AF9_QUADSPI,},
     .io3pin = { .port = GPIOD, .pin = 13, .alternate = GPIO_AF9_QUADSPI,},
     .mdma_enable = false,
-    .mdma_priority = 0,
+    .mdma_priority = 7,
     .priority = 10,
 };
 
@@ -119,6 +119,16 @@ void board_bsp_init()
     hw_stm32_mmcsd_init(1, 1, 4);
     hw_stm32_mmcsd_info(1);
     hw_stm32_mmcsd_fs_init(1);
+#endif
+
+#if defined(CONFIG_STM32_MTD_LFS_SUPPORT)
+    int ret = lfs_sflash_init(1);
+    if (ret != 0) {
+        printf("lfs sflash init failed: %d\r\n", ret);
+    } else {
+        printf("lfs sflash success\r\n");
+        lfs_sflasg_rwtest();
+    }
 #endif
 
 }
@@ -277,6 +287,6 @@ void vApplicationGetTimerTaskMemory( StaticTask_t **ppxTimerTaskTCBBuffer,
 #include "task.h"
 void vApplicationMallocFailedHook( void )
 {
-    // printf("[ERROR] memory allocate failed, free: %d bytes\r\n", xPortGetFreeHeapSize());
+    printf("[ERROR] memory allocate failed, free: %d bytes\r\n", xPortGetFreeHeapSize());
 }
 #endif

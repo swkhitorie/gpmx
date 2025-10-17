@@ -2,7 +2,7 @@
 
 typedef QSPI_CommandTypeDef qcmd_t;
 
-struct qspi_dev_s *qspi_dev = NULL;
+struct qspi_dev_s *g_qspidev = NULL;
 
 static void    _qspi_pin_config(struct qspi_dev_s *dev);
 static void    _qspi_dma_setup(struct qspi_dev_s *dev);
@@ -189,7 +189,7 @@ qcmd_t _qspi_setmem(struct qspi_meminfo_s *meminfo)
     stm32_quadspi_cmd.Instruction = meminfo->cmd;
 
     /* XXX III option bits for 'send instruction only once' */
-    stm32_quadspi_cmd.SIOOMode = QSPI_SIOO_INST_ONLY_FIRST_CMD;
+    stm32_quadspi_cmd.SIOOMode = QSPI_SIOO_INST_EVERY_CMD;
 
     /* XXX III options for alt bytes, dummy cycles */
     stm32_quadspi_cmd.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;
@@ -204,9 +204,9 @@ qcmd_t _qspi_setmem(struct qspi_meminfo_s *meminfo)
      * of i,a,d
      */
 
-    if (QSPIMEM_ISDUALIO(meminfo->flags)) {
+    if (QSPIMEM_ISADUAL(meminfo->flags)) {
         stm32_quadspi_cmd.AddressMode = QSPI_ADDRESS_2_LINES;
-    } else if (QSPIMEM_ISQUADIO(meminfo->flags)) {
+    } else if (QSPIMEM_ISAQUAD(meminfo->flags)) {
         stm32_quadspi_cmd.AddressMode = QSPI_ADDRESS_4_LINES;
     } else {
         stm32_quadspi_cmd.AddressMode = QSPI_ADDRESS_1_LINE;
@@ -264,7 +264,7 @@ int up_qspi_setup(struct qspi_dev_s *dev)
     HAL_NVIC_SetPriority(QUADSPI_IRQn, priv->priority, 0);
     HAL_NVIC_EnableIRQ(QUADSPI_IRQn);
 
-    qspi_dev = dev;
+    g_qspidev = dev;
 }
 
 int _qspi_command(struct qspi_dev_s *dev, struct qspi_cmdinfo_s *cmdinfo)
@@ -357,16 +357,16 @@ int up_qspi_memory(struct qspi_dev_s *dev, struct qspi_meminfo_s *meminfo)
 
 void HAL_QSPI_TxCpltCallback(QSPI_HandleTypeDef *hqspi)
 {
-    qspi_txwakeup(qspi_dev); 
+    qspi_txwakeup(g_qspidev); 
 }
 
 void HAL_QSPI_RxCpltCallback(QSPI_HandleTypeDef *hqspi)
 {
-    qspi_rxwakeup(qspi_dev);
+    qspi_rxwakeup(g_qspidev);
 }
 
 void QUADSPI_IRQHandler(void)
 {
-    struct up_qspi_dev_s *priv = qspi_dev->priv;
+    struct up_qspi_dev_s *priv = g_qspidev->priv;
     HAL_QSPI_IRQHandler(&priv->hqspi);
 }
