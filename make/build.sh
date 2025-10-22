@@ -7,6 +7,13 @@ make_thread=$2
 make_rebuild=$3
 param_num=$#
 
+if [ ${makefile_os} != "Linux" ]
+then
+    armcc_path=$4
+    armclang_path=$5
+    armgcc_path=$6
+fi
+
 echo "Path[gcc-arm ]:" ${armgcc_path}
 echo "Path[armcc   ]:" ${armcc_path}
 echo "Path[armclang]:" ${armclang_path}

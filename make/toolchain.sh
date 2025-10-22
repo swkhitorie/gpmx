@@ -9,9 +9,4 @@ then
     openocd_path=~/__toolchain/xpack-openocd-0.12.0-6/
     armcc_path=~/__toolchain/arm_cc_v5_06
     armclang_path=~/__toolchain/arm_clang_6.24/
-else
-    armgcc_path=
-    openocd_path=
-    armcc_path=
-    armclang_path=
 fi
