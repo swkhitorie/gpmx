@@ -1,5 +1,4 @@
 #include "nvm_board.h"
-#include <drv_flash.h>
 
 static uint32_t
 crc32(const uint8_t *src, unsigned len, unsigned state)
@@ -41,9 +40,10 @@ uint32_t fm_load_crc_32(uint32_t addr, uint32_t size)
 
     for (unsigned p = 0; p < size; p += 4) {
 
-        bytes_read = stm32_flash_read(p+addr, (uint8_t *)&bytes, 4);
+        bytes_read = NVM_FLASH_READ(p+addr, (uint8_t *)&bytes, 4);
         if (bytes_read != 4) {
             // printf("[flash] read error %x \r\n", bytes_read);
+            return 0;
         }
 
         sum = crc32((uint8_t *)&bytes, sizeof(bytes), sum);
@@ -52,25 +52,29 @@ uint32_t fm_load_crc_32(uint32_t addr, uint32_t size)
     return sum;
 }
 
-void nvm_write(struct __nvm_data *pnvm)
+bool nvm_write(struct __nvm_data *pnvm)
 {
     int ret = 0;
 
-    ret = stm32_flash_erase(NVM_FLASH_ADDR, sizeof(struct __nvm_data));
+    ret = NVM_FLASH_ERASE(NVM_FLASH_ADDR, sizeof(struct __nvm_data));
     if (ret != sizeof(struct __nvm_data)) {
-        // printf("[bl] nvm erase error \r\n");
+        return false;
     }
 
-    ret = stm32_flash_write(NVM_FLASH_ADDR, (uint8_t *)pnvm, sizeof(struct __nvm_data));
+    ret = NVM_FLASH_WRITE(NVM_FLASH_ADDR, (uint8_t *)pnvm, sizeof(struct __nvm_data));
     if (ret != sizeof(struct __nvm_data)) {
-        // printf("[bl] nvm write error \r\n");
+        return false;
     }
+
+    return true;
 }
 
-void nvm_read(struct __nvm_data *pnvm)
+bool nvm_read(struct __nvm_data *pnvm)
 {
-    int rsz = stm32_flash_read(NVM_FLASH_ADDR, (uint8_t *)pnvm, sizeof(struct __nvm_data));
+    int rsz = NVM_FLASH_READ(NVM_FLASH_ADDR, (uint8_t *)pnvm, sizeof(struct __nvm_data));
     if (rsz != sizeof(struct __nvm_data)) {
-        // printf("[bl] nvm read error \r\n");
+        return false;
     }
+
+    return true;
 }

@@ -9,6 +9,17 @@
 #define LOW_PERIPH_INITPIN(port, pin, mode, pull, speed, alternate) \
         n32_gpio_init(port, pin, mode, pull, speed, alternate)
 
+struct io_pin_t {
+    GPIO_Module *port;
+    uint16_t pin;
+};
+
+struct periph_pin_t {
+    GPIO_Module *port;
+    uint16_t pin;
+    uint32_t alternate;
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif

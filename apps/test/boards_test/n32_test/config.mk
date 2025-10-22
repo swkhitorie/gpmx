@@ -1,6 +1,6 @@
 
 PROJ_NAME  :=  n32_test
-PROJ_TC    :=  armclang
+PROJ_TC    :=  armcc
 APP_PROJ_DIR = apps/test/boards_test/n32_test
 
 # compile config
@@ -13,7 +13,7 @@ CONFIG_CXX_STANDARD:=c++11
 TARGET_POSTBUILD := ${TARGET_DEST_FILENAME_BIN}
 
 # board bsp config
-include ${SDK_ROOTDIR}/boards/n32/n32g430_eval/make.mk
+include ${SDK_ROOTDIR}/boards/n32/n32g430_evk/make.mk
 
 # os and library config
 MK_RTOS=none

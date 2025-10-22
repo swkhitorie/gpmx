@@ -12,11 +12,10 @@ struct n32_uart_dev tty_module = {
     .wordlen = USART_WL_8B,
     .stopbits = USART_STPB_1,
     .parity = USART_PE_NO,
-
     .priority = 2,
-    .rxdma_channel = DMA_CH4,
-    .rxdma_buffer = module_rxdma_buffer,
-    .rxdma_size = 800,
+
+    .txpin = { .port = GPIOB, .pin = 0, .alternate = GPIO_AF7_UART4},
+    .rxpin = { .port = GPIOB, .pin = 1, .alternate = GPIO_AF7_UART4},
 
     .rxbuf = {
         .in = 0,
@@ -26,13 +25,9 @@ struct n32_uart_dev tty_module = {
         .buffer = (uint8_t *)&module_rx_buffer[0],
     },
 
-    .txport = GPIOB,
-    .txpin = 0,
-    .txalternate = GPIO_AF7_UART4,
-    
-    .rxport = GPIOB,
-    .rxpin = 1,
-    .rxalternate = GPIO_AF7_UART4,
+    .rxdma_channel = DMA_CH4,
+    .rxdma_buffer = module_rxdma_buffer,
+    .rxdma_size = 800,
 };
 
 static uint8_t shlog_rxdma_buffer[64];
@@ -43,11 +38,10 @@ struct n32_uart_dev tty_shlog = {
     .wordlen = USART_WL_8B,
     .stopbits = USART_STPB_1,
     .parity = USART_PE_NO,
-
     .priority = 4,
-    .rxdma_channel = DMA_CH1,
-    .rxdma_buffer = shlog_rxdma_buffer,
-    .rxdma_size = 64,
+
+    .txpin = { .port = GPIOA, .pin = 9, .alternate = GPIO_AF5_USART1},
+    .rxpin = { .port = GPIOA, .pin =10, .alternate = GPIO_AF5_USART1},
 
     .rxbuf = {
         .in = 0,
@@ -57,13 +51,9 @@ struct n32_uart_dev tty_shlog = {
         .buffer = (uint8_t *)&shlog_rx_buffer[0],
     },
 
-    .txport = GPIOA,
-    .txpin = 9,
-    .txalternate = GPIO_AF5_USART1,
-    
-    .rxport = GPIOA,
-    .rxpin = 10,
-    .rxalternate = GPIO_AF5_USART1,
+    .rxdma_channel = DMA_CH1,
+    .rxdma_buffer = shlog_rxdma_buffer,
+    .rxdma_size = 64,
 };
 
 struct n32_spimaster_dev lora_dev = {
@@ -71,20 +61,10 @@ struct n32_spimaster_dev lora_dev = {
     .mode = 0,
     .words = 8,
 
-    .clk_port = GPIOB,
-    .clk_pin = 3,
-    .clk_alternate = GPIO_AF2_SPI1,
-
-    .mosi_port = GPIOB,
-    .mosi_pin = 5,
-    .mosi_alternate = GPIO_AF1_SPI1,
-
-    .miso_port = GPIOB,
-    .miso_pin = 4,
-    .miso_alternate = GPIO_AF2_SPI1,
-
-    .cs_port = GPIOB,
-    .cs_pin = 6,
+    .clkpin  = { .port = GPIOB, .pin = 3, .alternate = GPIO_AF2_SPI1},
+    .mosipin = { .port = GPIOB, .pin = 5, .alternate = GPIO_AF1_SPI1},
+    .misopin = { .port = GPIOB, .pin = 4, .alternate = GPIO_AF2_SPI1},
+    .cspin   = { .port = GPIOB, .pin = 6, .alternate = 0},
 };
 
 void board_bsp_init()
@@ -126,7 +106,7 @@ uint8_t board_spi_exchange_byte(uint8_t val)
 
 uint16_t board_tty_module_read(uint8_t *p, uint16_t len)
 {
-    return rbdrv_read(&tty_module.rxbuf, p, len);    
+    return grb_read(&tty_module.rxbuf, p, len);    
 }
 
 uint16_t board_tty_module_send(uint8_t *p, uint16_t len)

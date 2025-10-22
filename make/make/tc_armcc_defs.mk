@@ -4,11 +4,6 @@
 include ${MAKEFILES_ROOTDIR}/make/macros.mk
 
 #
-# This is the default installation path for Keil/MDK. Change it if different
-# 
-# TC_PATH_INST_ARMCC := D:\__dev_envir\__env\mdk5\CORE\ARM\ARMCC
-
-#
 # ARM Compiler related section
 #
 ifneq ($(OS),Linux)
@@ -21,9 +16,9 @@ TC_PATH_INC:=${TC_PATH_INST_ARMCC}/include
 TC_PATH_LIB:=${TC_PATH_INST_ARMCC}/lib
 endif
 
-#
-# toolchain executables
-#
+########################################
+# toolchain executables                #
+########################################
 ifneq ($(OS),Linux)
 TC_MAKEDEP:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/armcc.exe -M --no_depend_system_headers)
 TC_CC:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/armcc.exe)
@@ -33,6 +28,7 @@ TC_LINK:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/armlink.exe)
 TC_AR:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/armar.exe)
 TC_GENSCF:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/armcc.exe)
 TC_GENBIN:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/fromelf.exe)
+TC_GENHEX:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/fromelf.exe)
 TC_SIZE:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/fromelf.exe -z)
 TC_DUMP:=$(call MK_PATHTOUNX,${TC_PATH_BIN}/fromelf.exe)
 else
@@ -44,13 +40,14 @@ TC_LINK:=${TC_PATH_BIN}/armlink
 TC_AR:=${TC_PATH_BIN}/armar
 TC_GENSCF:=${TC_PATH_BIN}/armcc
 TC_GENBIN:=${TC_PATH_BIN}/fromelf
+TC_GENHEX:=${TC_PATH_BIN}/fromelf
 TC_SIZE:=${TC_PATH_BIN}/fromelf -z
 TC_DUMP:=${TC_PATH_BIN}/fromelf
 endif
 
-#
-# toolchain switches macros
-#
+########################################
+# toolchain switches macros            #
+########################################
 TC_ASM_VIA=--via ${1}
 TC_CC_VIA=--via ${1}
 TC_LINK_VIA=--via ${1}
@@ -58,9 +55,9 @@ TC_LINK_ENTRY=--entry=${1}
 TC_LINK_SCF=--scatter=${1}
 TC_LINK_LIST=--list=${1}
 
-#
-# constants
-#
+########################################
+# constants                            #
+########################################
 
 # toolchain identifiers
 TC_NAME:=armcc
@@ -73,38 +70,39 @@ TC_ASMEXT:=s
 TC_TARGETTHUMB:=--thumb
 TC_TARGETARM:=--arm
 
-# Assembly compiler options
+########################################
+# compile/assembly/link options        #
+########################################
+TC_SOURCEOPTS+= -c
+TC_SOURCEOPTS+= -g
+TC_SOURCEOPTS+= -W
+TC_SOURCEOPTS+= --split_sections
+ifeq (${CONFIG_COMPILE_OPTIMIZE},)
+TC_SOURCEOPTS+= -O1
+else
+TC_SOURCEOPTS+= ${CONFIG_COMPILE_OPTIMIZE}
+endif
+ifeq (${CONFIG_LIB_USE_NANO},y)
+TC_CDEFS+= __MICROLIB
+TC_LIB_SELECT+= --library_type=microlib
+endif
+
 TC_ASMOPTS:=\
-  -g                          \
-  --diag_style=gnu            \
-  --diag_suppress=9931
-# --list ".\Obj\*.lst" 
-# --xref -o "*.o" 
-#  --depend "*.d" 
+  -g --16                    \
+  --diag_style=gnu
+ifeq (${CONFIG_LIB_USE_NANO},y)
+TC_ASMOPTS+= --pd "__MICROLIB SETA 1"
+endif
 
 # Assembly compiler defines
 TC_ASMDEFS:=
+
 # C compiler options
-TC_COPTS:=\
-  --c99                       \
-  -c                          \
-  -O0                         \
-  -g                          \
-  --diag_style=gnu            \
-  --diag_suppress=1267,9931   \
-  --split_sections                   
+TC_COPTS:= --c99 \
+  ${TC_SOURCEOPTS}           
 
-TC_CPPOPTS:=\
-  --cpp                       \
-  -c                          \
-  -O0                         \
-  -g                          \
-  --diag_style=gnu            \
-  --diag_suppress=1267,9931   \
-  --split_sections 
-
-# C compiler defines
-TC_CDEFS:=
+TC_CPPOPTS:= --cpp   \
+  ${TC_SOURCEOPTS}
 
 # Linker options
 TC_LIBOPTS:=\
@@ -116,14 +114,13 @@ TC_LIBOPTS:=\
   --callgraph                             \
   --symbols                               \
   --verbose                               \
-  --info=summarysizes                     \
-  --info=sizes                            \
-  --info=totals                           \
-  --info=unused                           \
-  --info=veneers                          \
-  --info=stack                            \
-  --diag_style=gnu                        \
-  --diag_suppress=6314,9931
+  --info summarysizes                     \
+  --info sizes                            \
+  --info totals                           \
+  --info unused                           \
+  --info veneers                          \
+  --info stack                            \
+  ${TC_LIB_SELECT}
 
 # Scatter file extension
 TC_SCFEXT:=sct
@@ -156,7 +153,16 @@ MK_TC_GENSCF=$(if $(and ${1},${2},${3}),@${TC_GENSCF} -E ${1} -o ${2} ${3})
 # 2 - output file
 MK_TC_GENBIN=$(if $(and ${1},${2}),@${TC_GENBIN} -c --bin -o ${2} ${1})
 
+# command to generate hex file
+# 1 - input file
+# 2 - output file
+MK_TC_GENHEX=$(if $(and ${1},${2}),@${TC_GENHEX} -c --i32 -o ${2} ${1})
+
 # command to disassembly output file
 # 1 - input file
 # 2 - output file
 MK_TC_DISASSEMBLY=$(if $(and ${1},${2}), @${TC_DUMP} -c -a ${1} -o ${2})
+
+# more accurate compilation result analysis cmd
+# 1 - input file
+MK_TC_COMPILE_ANALYZE=$(if $(and ${1},$(wildcard ${MK_COMPILE_ANALYZE_ARM})), @${MK_PYTHON} ${MK_COMPILE_ANALYZE_ARM} ${1})

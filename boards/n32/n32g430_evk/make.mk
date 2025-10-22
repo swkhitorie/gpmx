@@ -17,36 +17,29 @@ BSP_LIBCONFIG_N32_STD_USART=y
 BSP_LIBCONFIG_N32_STD_SPI=y
 BSP_LIBCONFIG_N32_STD_FLASH=y
 
+MK_GPDRIVE_RINGBUFFER=y
+
 # include all cubelibrary files and low level driver files
 include ${SDK_ROOTDIR}/boards/n32/libs/bsp_libs_n32.mk
 CSOURCES += ${LIB_CSRCS}
 PROJ_CINCDIRS += ${LIB_CINCDIRS}
 
-BOARD_BSP_PATH := boards/n32/n32g430_eval
+BOARD_BSP_PATH := boards/n32/n32g430_evk
 
 #########################################################################
 # BSP macros, sources + asm + link files, includes, and entry address
 #########################################################################
-BOARD_CDEFS += N32G430
-BOARD_CDEFS += USE_STDPERIPH_DRIVER
+PROJ_CDEFS += N32G430
+PROJ_CDEFS += USE_STDPERIPH_DRIVER
 
-BOARD_CSRCS += ${BOARD_BSP_PATH}/board_irq.c
-BOARD_CSRCS += ${BOARD_BSP_PATH}/board_rcc_init.c
-BOARD_CSRCS += ${BOARD_BSP_PATH}/board_init.c
-BOARD_CSRCS += ${BOARD_BSP_PATH}/board_bsp.c
+PROJ_CINCDIRS += ${BOARD_BSP_PATH}
+CSOURCES += ${BOARD_BSP_PATH}/board_irq.c
+CSOURCES += ${BOARD_BSP_PATH}/board_rcc_init.c
+CSOURCES += ${BOARD_BSP_PATH}/board_init.c
+CSOURCES += ${BOARD_BSP_PATH}/board_bsp.c
 
-BOARD_ASMSOURCES += ${BOARD_BSP_PATH}/n32g430_startup.s
-BOARD_LNK_FILE   += ${BOARD_BSP_PATH}/n32g430_linker.sct
+MOD_ARCH = m4
+PROJ_ENTRY_POINT := Reset_Handler
 
-#######################################
-# Add all setting to root make variable
-#######################################
-MOD_ARCH                 = m4
-PROJ_ENTRY_POINT        := Reset_Handler
-SCF_FILE                := ${BOARD_LNK_FILE}
-
-PROJ_CDEFS              += ${BOARD_CDEFS}
-
-PROJ_CINCDIRS           += ${BOARD_BSP_PATH}
-CSOURCES                += ${BOARD_CSRCS}
-ASMSOURCES              := ${BOARD_ASMSOURCES}
+ASMSOURCES += ${BOARD_BSP_PATH}/n32g430_startup.s
+SCF_FILE   += ${BOARD_BSP_PATH}/n32g430_linker.sct

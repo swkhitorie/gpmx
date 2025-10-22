@@ -89,10 +89,8 @@ void p2p_antenna_switch(uint8_t idx)
 {
     switch (idx) {
     case 0:
-        // printf("Antenna switch to 0\r\n");
         break;
     case 1:
-        // printf("Antenna switch to 1\r\n");
         break;
     }
 }
@@ -136,7 +134,6 @@ void p2p_cfg_ack_sender(void *arg)
 void p2p_cfg_ack_receiver(void *arg)
 {
     uint32_t rt = *((uint32_t *)arg);
-
 }
 
 

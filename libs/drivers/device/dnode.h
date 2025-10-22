@@ -16,6 +16,12 @@
 #define gpdrv_irq_disable()                 __disable_irq()
 #define gpdrv_irq_enable()                  __enable_irq()
 
+#ifndef dn_time
+#include <board_config.h>
+/** return cpu running time units in ms */
+#define dn_time()      HAL_GetTick()
+#endif
+
 #if defined(CONFIG_BOARD_FREERTOS_ENABLE)
 #include <FreeRTOS.h>
 #include <task.h>
@@ -108,7 +114,6 @@ extern "C"{
 
 bool     dn_register(const char *name, void *dev);
 void    *dn_bind(const char *name);
-uint32_t dn_time();
 
 #if defined(__cplusplus)
 }

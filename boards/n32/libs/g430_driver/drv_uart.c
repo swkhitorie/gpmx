@@ -76,7 +76,7 @@ void _usart_rxdma_config(uint8_t id, DMA_ChannelType *channel, uint8_t *buf, uin
     h_rdma.CircularMode    = DMA_CIRCULAR_MODE_DISABLE;
     h_rdma.Priority        = DMA_CH_PRIORITY_HIGHEST;
     h_rdma.Mem2Mem         = DMA_MEM2MEM_DISABLE;
-    
+
     DMA_Initializes(channel, &h_rdma);
     DMA_Channel_Request_Remap(channel, dma_req[id-1]);
     DMA_Channel_Enable(channel);
@@ -98,7 +98,7 @@ void _usart_rxdma_idle_irq(struct n32_uart_dev *dev)
 
         count = dev->rxdma_size - DMA_Current_Data_Transfer_Number_Get(dev->rxdma_channel);
 
-        rbdrv_write(&dev->rxbuf, dev->rxdma_buffer, count);
+        grb_write(&dev->rxbuf, dev->rxdma_buffer, count);
         // printf("%s %d %d %d \n", (char *)dev->rxdma_buffer, count, dev->rxdma_size, 
         //         DMA_Current_Data_Transfer_Number_Get(dev->rxdma_channel));
         // memset(dev->rxdma_buffer, 0, dev->rxdma_size);
@@ -116,8 +116,8 @@ void _usart_rxdma_idle_irq(struct n32_uart_dev *dev)
 
 void n32_uart_init(struct n32_uart_dev *dev)
 {
-    _usart_pin_config(dev->txport, dev->txpin, dev->txalternate,
-        dev->rxport, dev->rxpin, dev->rxalternate);
+    _usart_pin_config(dev->txpin.port, dev->txpin.pin, dev->txpin.alternate,
+        dev->rxpin.port, dev->rxpin.pin, dev->rxpin.alternate);
 
     _usart_config(dev->id, dev->baud, dev->wordlen, dev->stopbits, dev->parity);
     _usart_rxdma_config(dev->id, dev->rxdma_channel, dev->rxdma_buffer, dev->rxdma_size);
@@ -143,7 +143,7 @@ uint16_t n32_uart_dmasend(struct n32_uart_dev *dev, uint8_t *p, uint16_t size)
 {
     int i = 0;
     USART_Module *uart_list[4] = {USART1, USART2, UART3, UART4};
-    
+
     return size;
 }
 

@@ -31,7 +31,7 @@ int main(void)
         if (board_get_tmstamp() - m1 >= 1000) {
             m1 = board_get_tmstamp();
             board_led_toggle(2);
-            printf("hello armv6 bin build in linux2\r\n");
+            printf("hello armv6 bin build in linux3\r\n");
         }
     }
 

@@ -25,7 +25,7 @@ void _spi_pin_config(
 
     LOW_PERIPH_INITPIN(mosiport, mosipin, GPIO_MODE_AF_PP, GPIO_NO_PULL, GPIO_SLEW_RATE_FAST, mosi_alternate);
     LOW_PERIPH_INITPIN(misoport, misopin, GPIO_MODE_AF_PP, GPIO_NO_PULL, GPIO_SLEW_RATE_FAST, miso_alternate);
-    
+
     LOW_PERIPH_INITPIN(ncsport, ncspin, GPIO_MODE_OUT_PP, GPIO_NO_PULL, GPIO_SLEW_RATE_FAST, 0);
 }
 
@@ -83,10 +83,11 @@ void _spi_config(uint8_t id, uint8_t mode, uint8_t words)
 
 void n32_spimaster_init(struct n32_spimaster_dev *dev)
 {
-    _spi_pin_config(dev->mode, dev->clk_port, dev->clk_pin, dev->clk_alternate,
-        dev->mosi_port, dev->mosi_pin, dev->mosi_alternate,
-        dev->miso_port, dev->miso_pin, dev->miso_alternate,
-        dev->cs_port, dev->cs_pin);
+    _spi_pin_config(dev->mode, 
+        dev->clkpin.port, dev->clkpin.pin, dev->clkpin.alternate,
+        dev->mosipin.port, dev->mosipin.pin, dev->mosipin.alternate,
+        dev->misopin.port, dev->misopin.pin, dev->misopin.alternate,
+        dev->cspin.port, dev->cspin.pin);
 
     _spi_config(dev->id, dev->mode, dev->words);
 }

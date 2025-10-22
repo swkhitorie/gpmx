@@ -2,6 +2,13 @@
 #define _NVM_BOARD_H_
 
 #include <stdint.h>
+#include <stdbool.h>
+
+#include <drv_flash.h>
+// return sz if operation success
+#define NVM_FLASH_ERASE(addr, sz)        stm32_flash_erase(addr, sz)
+#define NVM_FLASH_READ(addr, buf, sz)    stm32_flash_read(addr, buf, sz)
+#define NVM_FLASH_WRITE(addr, buf, sz)   stm32_flash_write(addr, buf, sz)
 
 #define NVM_FLASH_ADDR              (0x0800b800)
 #define APP_A_LOAD_FLASH_ADDR       (0x0800c000)
@@ -27,8 +34,8 @@ extern "C" {
 #endif
 
 uint32_t fm_load_crc_32(uint32_t addr, uint32_t size);
-void nvm_write(struct __nvm_data *pnvm);
-void nvm_read(struct __nvm_data *pnvm);
+bool nvm_write(struct __nvm_data *pnvm);
+bool nvm_read(struct __nvm_data *pnvm);
 
 #ifdef __cplusplus
 }

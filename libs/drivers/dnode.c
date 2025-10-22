@@ -44,9 +44,3 @@ void *dn_bind(const char *name)
     return NULL;
 }
 
-#include <board_config.h>
-uint32_t dn_time()
-{
-    return HAL_GetTick();
-}
-

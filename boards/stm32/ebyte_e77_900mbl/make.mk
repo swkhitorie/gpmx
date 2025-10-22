@@ -33,6 +33,14 @@ BSP_LIBCONFIG_STM32WL_UTILITIES_TIMER=y
 BSP_LIBCONFIG_STM32WL_MIDDLEWARE_SUBGHZ_PHY=y
 BSP_LIBCONFIG_STM32WL_MIDDLEWARE_LORAWAN=n
 
+MK_GPDRIVE_RINGBUFFER=y
+MK_GPDRIVE_DNODE=y
+MK_GPDRIVE_SERIAL=y
+MK_GPDRIVE_I2C=n
+MK_GPDRIVE_SPI=n
+MK_GPDRIVE_CAN=n
+MK_GPDRIVE_QUADSPI=n
+
 # include all cubelibrary files and low level driver files
 include ${SDK_ROOTDIR}/boards/stm32/libs/bsp_libs_stm32.mk
 CSOURCES += ${LIB_CSRCS}
@@ -43,57 +51,32 @@ BOARD_BSP_PATH := boards/stm32/ebyte_e77_900mbl
 #########################################################################
 # BSP macros, sources + asm + link files, includes, and entry address
 #########################################################################
-BOARD_CDEFS += ${BSP_LIBCONFIG_STM32_LLDRV_SERIES}
-BOARD_CDEFS += STM32WLE5xx
-BOARD_CDEFS += USE_HAL_DRIVER
-BOARD_CDEFS += CORE_CM4
+PROJ_CDEFS += ${BSP_LIBCONFIG_STM32_LLDRV_SERIES}
+PROJ_CDEFS += STM32WLE5xx
+PROJ_CDEFS += USE_HAL_DRIVER
+PROJ_CDEFS += CORE_CM4
 
-BOARD_CSRCS += board_irq.c
-BOARD_CSRCS += board_rcc_init.c
-BOARD_CSRCS += board_init.c
-BOARD_CSRCS += board_bsp.c
-BOARD_CSRCS += board_msp.c
-BOARD_CSRCS += board_rand.c
-BOARD_CSRCS += board_crc.c
-BOARD_CSRCS += board_subghz.c
+PROJ_CINCDIRS += ${BOARD_BSP_PATH}
+CSOURCES += ${BOARD_BSP_PATH}/board_irq.c
+CSOURCES += ${BOARD_BSP_PATH}/board_rcc_init.c
+CSOURCES += ${BOARD_BSP_PATH}/board_init.c
+CSOURCES += ${BOARD_BSP_PATH}/board_bsp.c
+CSOURCES += ${BOARD_BSP_PATH}/board_msp.c
+CSOURCES += ${BOARD_BSP_PATH}/board_rand.c
+CSOURCES += ${BOARD_BSP_PATH}/board_crc.c
+CSOURCES += ${BOARD_BSP_PATH}/board_subghz.c
 
+PROJ_CINCDIRS += ${BOARD_BSP_PATH}/middleware_subghz_if/
+CSOURCES += ${BOARD_BSP_PATH}/middleware_subghz_if/radio_board.c
+CSOURCES += ${BOARD_BSP_PATH}/middleware_subghz_if/radio_board_if.c
 
-BOARD_MIDDLEWARE_SUBGHZ_IF_CSRCS += middleware_subghz_if/radio_board.c
-BOARD_MIDDLEWARE_SUBGHZ_IF_CSRCS += middleware_subghz_if/radio_board_if.c
-BOARD_MIDDLEWARE_SUBGHZ_IF_INCDIRS += ${BOARD_BSP_PATH}/middleware_subghz_if
+PROJ_CINCDIRS += ${BOARD_BSP_PATH}/utilities_if/
+CSOURCES += ${BOARD_BSP_PATH}/utilities_if/stm32_adv_trace_if.c
+CSOURCES += ${BOARD_BSP_PATH}/utilities_if/stm32_lpm_if.c
+CSOURCES += ${BOARD_BSP_PATH}/utilities_if/timer_if.c
 
-# BOARD_MIDDLEWARE_LORAWAN_IF_CSRCS += middleware_lorawan_if/lora_info.c
-# BOARD_MIDDLEWARE_LORAWAN_IF_INCDIRS += ${BOARD_BSP_PATH}/middleware_lorawan_if
+MOD_ARCH = m4
+PROJ_ENTRY_POINT := Reset_Handler
 
-BOARD_UTILITIES_IF_CSRCS += utilities_if/stm32_adv_trace_if.c
-BOARD_UTILITIES_IF_CSRCS += utilities_if/stm32_lpm_if.c
-BOARD_UTILITIES_IF_CSRCS += utilities_if/timer_if.c
-BOARD_UTILITIES_IF_INCDIRS += ${BOARD_BSP_PATH}/utilities_if
-
-BOARD_ASMSOURCES += e77_900mbl_startup.s
-BOARD_LNK_FILE   += e77_900mbl_linker.ld
-
-# TMPBOARD_LORAWAN_CSRCS = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_MIDDLEWARE_LORAWAN_IF_CSRCS}}
-TMPBOARD_SUBGHZ_CSRCS = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_MIDDLEWARE_SUBGHZ_IF_CSRCS}}
-TMPBOARD_UTILITIES_CSRCS = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_UTILITIES_IF_CSRCS}}
-TMPBOARD_CSRCS = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_CSRCS}}
-TMPBOARD_ASMSOURCES = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_ASMSOURCES}}
-TMPBOARD_LNK_FILE = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_LNK_FILE}}
-
-#######################################
-# Add all setting to root make variable
-#######################################
-MOD_ARCH                 = m4
-PROJ_ENTRY_POINT        := Reset_Handler
-SCF_FILE                := ${TMPBOARD_LNK_FILE}
-PROJ_CDEFS              += ${BOARD_CDEFS}
-
-PROJ_CINCDIRS          += ${BOARD_MIDDLEWARE_SUBGHZ_IF_INCDIRS} \
-                            ${BOARD_UTILITIES_IF_INCDIRS} \
-							${BOARD_BSP_PATH}
-
-CSOURCES          += ${TMPBOARD_CSRCS} \
-                            ${TMPBOARD_SUBGHZ_CSRCS} \
-							${TMPBOARD_UTILITIES_CSRCS}
-
-ASMSOURCES        := ${TMPBOARD_ASMSOURCES}
+ASMSOURCES += ${BOARD_BSP_PATH}/e77_900mbl_startup.s
+SCF_FILE   += ${BOARD_BSP_PATH}/e77_900mbl_linker.ld

@@ -1,7 +1,7 @@
 
-PROJ_NAME  :=  lora_ota_slave
+PROJ_NAME  :=  rawlorap2p_sample
 PROJ_TC    :=  gae
-APP_PROJ_DIR = apps/lorap2p_ota_sample/slave
+APP_PROJ_DIR = apps/lorap2p_sample/rawp2p_onefirmware
 
 CONFIG_LINK_PRINTF_FLOAT:=n
 CONFIG_LINK_SCANF_FLOAT:=n
@@ -11,7 +11,10 @@ CONFIG_CXX_STANDARD:=gnu++11
 CONFIG_LIB_USE_NANO:=y
 TARGET_POSTBUILD := ${TARGET_DEST_FILENAME_BIN}
 
-include ${SDK_ROOTDIR}/boards/stm32/stm32wle5_e77_900mbl/make.mk
+# board configuration
+# ebyte_e77_900mbl
+# nucleo_wl55jc
+include ${SDK_ROOTDIR}/boards/stm32/ebyte_e77_900mbl/make.mk
 
 # os and library config
 MK_RTOS=none
@@ -30,30 +33,20 @@ MK_USE_PX4_COMPONENT=n
 MK_USE_PX4_UORB=n
 MK_USE_PX4_WORKQUEUE=n
 
+# stm32wle5 load addr
 PROJ_SCF_DEFS += -DLR_CODE_BASE=0x08000000
-PROJ_SCF_DEFS += -DLR_CODE_SIZE=254K
+PROJ_SCF_DEFS += -DLR_CODE_SIZE=255K
 
-PROJ_SCF_DEFS += -DNVM_DATA_BASE=0x0803f800
-PROJ_SCF_DEFS += -DNVM_DATA_SIZE=2K
+PROJ_SCF_DEFS += -DNVM_DATA_BASE=0x0803FC00
+PROJ_SCF_DEFS += -DNVM_DATA_SIZE=1K
 
 PROJ_CDEFS += CONFIG_BOARD_COM_STDINOUT
 #PROJ_CDEFS += CONFIG_BOARD_COM_STDOUT_DMA
-
-PROJ_CDEFS += RADIO_BOARD_ROLE=2
-PROJ_CDEFS += LORAP2P_SAVE
 PROJ_CDEFS += P2P_REGION_EU868
-PROJ_CDEFS += P2P_ROLE_SLAVE
-PROJ_CDEFS += P2P_MODE_RAWACK_FHSS
+PROJ_CDEFS += RADIO_BOARD_ROLE=1
 
 PROJ_CINCDIRS += ${APP_PROJ_DIR}
 CPPSOURCES += ${APP_PROJ_DIR}/app_main.cpp
-
-PROJ_CINCDIRS += apps/src/libs/ymodem/
-CSOURCES += apps/src/libs/ymodem/ymdm_cmn.c
-CSOURCES += apps/src/libs/ymodem/ymdm_rcv.c
-
-PROJ_CINCDIRS += ${APP_PROJ_DIR}/../
-CPPSOURCES += ${APP_PROJ_DIR}/../nvm_board.cpp
 
 CPPSOURCES += ${APP_PROJ_DIR}/lorap2p.cpp
 PROJ_CINCDIRS += apps/src/libs/LoRaP2P/

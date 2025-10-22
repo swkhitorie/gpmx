@@ -1,4 +1,5 @@
-platform: stm32wle5
+
+BootLoader+App in STM32WLE5
 flash map:
     namne      region
     boot       0x08000000 ~ 0x0800b7ff

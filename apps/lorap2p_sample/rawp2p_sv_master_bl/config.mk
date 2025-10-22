@@ -1,7 +1,7 @@
 
-PROJ_NAME  :=  lora_ota_master_bl
+PROJ_NAME  :=  rawlorap2p_ota_bl
 PROJ_TC    :=  gae
-APP_PROJ_DIR = apps/lorap2p_ota_sample/master_bl
+APP_PROJ_DIR = apps/lorap2p_sample/rawp2p_sv_master_app
 
 CONFIG_LINK_PRINTF_FLOAT:=n
 CONFIG_LINK_SCANF_FLOAT:=n
@@ -12,7 +12,7 @@ CONFIG_LIB_USE_NANO:=y
 TARGET_POSTBUILD := ${TARGET_DEST_FILENAME_BIN}
 
 # board bsp config
-include ${SDK_ROOTDIR}/boards/stm32/stm32wle5_e77_900mbl/make.mk
+include ${SDK_ROOTDIR}/boards/stm32/nucleo_wl55jc/make.mk
 
 # os and library config
 MK_RTOS=none
@@ -51,5 +51,5 @@ PROJ_CINCDIRS += ${APP_PROJ_DIR}
 CPPSOURCES += ${APP_PROJ_DIR}/app_main.cpp
 
 
-PROJ_CINCDIRS += ${APP_PROJ_DIR}/../
-CPPSOURCES += ${APP_PROJ_DIR}/../nvm_board.cpp
+PROJ_CINCDIRS += ${APP_PROJ_DIR}/../nvm/
+CPPSOURCES += ${APP_PROJ_DIR}/../nvm/nvm_board.cpp
