@@ -13,7 +13,7 @@ echo "Path[armcc   ]:" ${armcc_path}
 echo "Path[armclang]:" ${armclang_path}
 
 if [ ${param_num} -lt 1 ]; then
-    echo "Params error, usage: ./make/build.sh <app subpath> <make thread> <-r>"
+    echo "Params error, usage: build.sh <app subpath> <make thread> <-r>"
     exit 1
 fi
 
@@ -36,7 +36,7 @@ if [ ${make_rebuild} ]
 then
     if [ ${make_rebuild} == "-r" ]
     then
-        ./make/clean.sh $1
+        ${script_dir}/clean.sh $1
         echo "Rebuilding..."
     else
         echo "Building..."

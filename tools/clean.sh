@@ -21,6 +21,6 @@ make clean distclean \
     TC_PATH_INST_ARMCLANG=${armclang_path}\
     MAKE_TARGET_CLEANS=y
 
-# make/clean.sh test/app_bsp_test
+# clean.sh test/app_bsp_test
 
 exit 0

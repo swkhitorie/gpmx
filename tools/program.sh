@@ -35,7 +35,7 @@ if [ ${make_rebuild} ]
 then
     if [ ${make_rebuild} == "-r" ]
     then
-        ./make/clean.sh $1
+        ${script_dir}/clean.sh $1
         echo "Rebuilding..."
     else
         echo "Building..."
@@ -67,7 +67,7 @@ make program ${make_thread} \
     PROJ_OPENOCD_CHIP=${prog_target} \
     PROJ_OPENOCD_LOAD_ADDR=${target_addr}
 
-# make/program.sh test/app_bsp_test -j2 -r stlink stm32f4x 
-# make/program.sh test/app_bsp_test -j2 -r stlink stm32h7x 
+# program.sh test/app_bsp_test -j2 -r stlink stm32f4x 
+# program.sh test/app_bsp_test -j2 -r stlink stm32h7x 
 
 exit 0

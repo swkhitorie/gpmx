@@ -205,4 +205,4 @@ MK_TC_DISASSEMBLY=$(if $(and ${1},${2}), @${TC_DUMP} -h -S ${1} > "${2}")
 
 # more accurate compilation result analysis cmd
 # 1 - input file
-MK_TC_COMPILE_ANALYZE=$(if $(and ${1},$(wildcard MK_COMPILE_ANALYZE_GCC)), @${MK_PYTHON} ${MK_COMPILE_ANALYZE_GCC} ${1})
+MK_TC_COMPILE_ANALYZE=$(if $(and ${1},$(wildcard ${MK_COMPILE_ANALYZE_GCC})), @python3 ${MK_COMPILE_ANALYZE_GCC} ${1} || python ${MK_COMPILE_ANALYZE_GCC} ${1})

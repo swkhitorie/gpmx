@@ -14,7 +14,7 @@ set subpath=%1
 set thread=%2
 set rebuild=%3
 set buildscript=%proj_dir%build.sh
-set busybox=%proj_dir%buildtools_win\busybox.exe
+set busybox=%proj_dir%busybox.exe
 
 @REM Find arm-none-eabi-gcc
 for /f "tokens=*" %%i in ('where arm-none-eabi-gcc 2^>nul') do (

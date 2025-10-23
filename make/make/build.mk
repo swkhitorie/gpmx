@@ -41,25 +41,25 @@ MK_LOOKUPSRC=$(filter %/$(notdir ${1}),${2})
 
 # C thumb sources
 BUILD_CSOURCES:=$(foreach src,${PROJ_CSOURCES},${SDK_ROOTDIR}/$(src))
-ifneq (${PUSER_ROOTDIR},)
-BUILD_CSOURCES+=$(foreach src,${PUSER_CSOURCES},${PUSER_ROOTDIR}/$(src))
+ifneq (${USR_ROOTDIR},)
+BUILD_CSOURCES+=$(foreach src,${USR_CSOURCES},${USR_ROOTDIR}/$(src))
 endif
 
 BUILD_CPPSOURCES:=$(foreach src,${PROJ_CPPSOURCES},${SDK_ROOTDIR}/$(src))
-ifneq (${PUSER_ROOTDIR},)
-BUILD_CPPSOURCES+=$(foreach src,${PUSER_CPPSOURCES},${PUSER_ROOTDIR}/$(src))
+ifneq (${USR_ROOTDIR},)
+BUILD_CPPSOURCES+=$(foreach src,${USR_CPPSOURCES},${USR_ROOTDIR}/$(src))
 endif
 
 # C ARM sources
 BUILD_CARMSOURCES:=$(foreach src,${PROJ_CARMSOURCES},${SDK_ROOTDIR}/$(src))
-ifneq (${PUSER_ROOTDIR},)
-BUILD_CARMSOURCES+=$(foreach src,${PUSER_CARMSOURCES},${PUSER_ROOTDIR}/$(src))
+ifneq (${USR_ROOTDIR},)
+BUILD_CARMSOURCES+=$(foreach src,${USR_CARMSOURCES},${USR_ROOTDIR}/$(src))
 endif
 
 # Assembly sources
 BUILD_ASMSOURCES:=$(foreach src,${PROJ_ASMSOURCES},${SDK_ROOTDIR}/$(src))
-ifneq (${PUSER_ROOTDIR},)
-BUILD_ASMSOURCES+=$(foreach src,${PUSER_ASMSOURCES},${PUSER_ROOTDIR}/$(src))
+ifneq (${USR_ROOTDIR},)
+BUILD_ASMSOURCES+=$(foreach src,${USR_ASMSOURCES},${USR_ROOTDIR}/$(src))
 endif
 
 # All sources

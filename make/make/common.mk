@@ -22,8 +22,8 @@ MAKEFILES_COMMONDIR := ${MAKEFILES_ROOTDIR}/make
 MAKEFILES_PROJDIR := ${MAKEFILES_ROOTDIR}/${PROJ_NAME}
 
 # folder for target files
-ifneq (${PUSER_ROOTDIR},)
-TARGET_ROOTDIR := ${PUSER_ROOTDIR}/build/output/${MOD_CORE}/${PROJ_NAME}
+ifneq (${USR_ROOTDIR},)
+TARGET_ROOTDIR := ${USR_ROOTDIR}/build/output/${MOD_CORE}/${PROJ_NAME}
 else
 TARGET_ROOTDIR := ${SDK_ROOTDIR}/build/output/${MOD_CORE}/${PROJ_NAME}
 endif
@@ -52,8 +52,8 @@ include ${COREDEFSINC}
 endif
 
 # definitions for binary folder target outputs
-ifneq (${PUSER_ROOTDIR},)
-TARGET_DEST_ROOTDIR       := ${PUSER_ROOTDIR}/${COMMON_BINDIR}
+ifneq (${USR_ROOTDIR},)
+TARGET_DEST_ROOTDIR       := ${USR_ROOTDIR}/${COMMON_BINDIR}
 else
 TARGET_DEST_ROOTDIR       := ${SDK_ROOTDIR}/${COMMON_BINDIR}
 endif
@@ -83,8 +83,8 @@ LOPTS_FILE := ${TARGET_ROOTDIR}/lopts.via
 PROJ_MAKEFILE := ${SDK_ROOTDIR}/Makefile
 
 # scatter file name
-ifneq (${PUSER_ROOTDIR},)
-SCF_TEMPLATE_FILE_NAME := ${PUSER_ROOTDIR}/${SCF_FILE}
+ifneq (${USCF_FILE},)
+SCF_TEMPLATE_FILE_NAME := ${USR_ROOTDIR}/${USCF_FILE}
 else
 SCF_TEMPLATE_FILE_NAME := ${SDK_ROOTDIR}/${SCF_FILE}
 endif
@@ -133,8 +133,8 @@ CPPOPTS:=$(strip ${TC_CPPOPTS} ${TC_DBG_COPTS} ${CORE_COPTS} ${PROJ_COPTS} ${EXT
 CDEFS:=$(foreach def,$(strip ${TC_CDEFS} ${PROJ_CDEFS} ${OS_CDEFS} ${EXT_CDEFS}),-D${def})
 
 CINCDIRS:=$(foreach inc,$(strip ${PROJ_CINCDIRS} ${OS_CINCDIRS} ${EXT_CINCDIRS}),-I$(call MK_TC_PATH,${SDK_ROOTDIR}/${inc}))
-ifneq (${PUSER_ROOTDIR},)
-CINCDIRS+=$(foreach inc,$(strip ${PUSER_CINCDIRS}),-I$(call MK_TC_PATH,${PUSER_ROOTDIR}/${inc}))
+ifneq (${USR_ROOTDIR},)
+CINCDIRS+=$(foreach inc,$(strip ${USR_CINCDIRS}),-I$(call MK_TC_PATH,${USR_ROOTDIR}/${inc}))
 endif
 
 #####################################

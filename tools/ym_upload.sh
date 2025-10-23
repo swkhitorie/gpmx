@@ -11,7 +11,7 @@ SYSTYPE=`uname -s`
 UPLOADBIN=$1
 SERIAL_PORTS=$2
 
-python3 $SCRIPTDIR/ymdm_uploader.py --port $SERIAL_PORTS $UPLOADBIN
+python3 $SCRIPTDIR/ym_uploader.py --port $SERIAL_PORTS $UPLOADBIN
 
-# ./tools/ymdm_upload.sh <bin> /dev/ttyUSB0
+# ym_upload.sh <bin> /dev/ttyUSB0
 
