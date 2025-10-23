@@ -56,21 +56,21 @@ PROJ_CINCDIRS += ${APP_PROJ_DIR}/../nvm/
 CPPSOURCES += ${APP_PROJ_DIR}/../nvm/nvm_board.cpp
 
 CPPSOURCES += ${APP_PROJ_DIR}/lorap2p.cpp
-PROJ_CINCDIRS += apps/src/libs/LoRaP2P/
-CSOURCES += apps/src/libs/LoRaP2P/platforms/p2p_platform_wlxx.c
-CSOURCES += apps/src/libs/LoRaP2P/proto/p2p_proto.c
-CSOURCES += apps/src/libs/LoRaP2P/proto/p2p_rbuffer.c
-CSOURCES += apps/src/libs/LoRaP2P/region/region_EU868.c
-CSOURCES += apps/src/libs/LoRaP2P/region/region_US915.c
-CSOURCES += apps/src/libs/LoRaP2P/region/region_CN470.c
-CSOURCES += apps/src/libs/LoRaP2P/rand_lcg_series.c
-CSOURCES += apps/src/libs/LoRaP2P/p2p_common.c
-CSOURCES += apps/src/libs/LoRaP2P/p2p_state.c
-CSOURCES += apps/src/libs/LoRaP2P/p2p_linkfind.c
-CSOURCES += apps/src/libs/LoRaP2P/p2p_raw.c
-CSOURCES += apps/src/libs/LoRaP2P/p2p_rawack.c
-CSOURCES += apps/src/libs/LoRaP2P/p2p_rawack_fhss.c
-CSOURCES += apps/src/libs/LoRaP2P/p2p_pconfig.c
+PROJ_CINCDIRS += apps/lorap2p_sample/LoRaP2P/
+CSOURCES += apps/lorap2p_sample/LoRaP2P/platforms/p2p_platform_wlxx.c
+CSOURCES += apps/lorap2p_sample/LoRaP2P/proto/p2p_proto.c
+CSOURCES += apps/lorap2p_sample/LoRaP2P/proto/p2p_rbuffer.c
+CSOURCES += apps/lorap2p_sample/LoRaP2P/region/region_EU868.c
+CSOURCES += apps/lorap2p_sample/LoRaP2P/region/region_US915.c
+CSOURCES += apps/lorap2p_sample/LoRaP2P/region/region_CN470.c
+CSOURCES += apps/lorap2p_sample/LoRaP2P/rand_lcg_series.c
+CSOURCES += apps/lorap2p_sample/LoRaP2P/p2p_common.c
+CSOURCES += apps/lorap2p_sample/LoRaP2P/p2p_state.c
+CSOURCES += apps/lorap2p_sample/LoRaP2P/p2p_linkfind.c
+CSOURCES += apps/lorap2p_sample/LoRaP2P/p2p_raw.c
+CSOURCES += apps/lorap2p_sample/LoRaP2P/p2p_rawack.c
+CSOURCES += apps/lorap2p_sample/LoRaP2P/p2p_rawack_fhss.c
+CSOURCES += apps/lorap2p_sample/LoRaP2P/p2p_pconfig.c
 
 
 
