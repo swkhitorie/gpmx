@@ -134,6 +134,8 @@ CDEFS:=$(foreach def,$(strip ${TC_CDEFS} ${PROJ_CDEFS} ${OS_CDEFS} ${EXT_CDEFS})
 
 CINCDIRS:=$(foreach inc,$(strip ${PROJ_CINCDIRS} ${OS_CINCDIRS} ${EXT_CINCDIRS}),-I$(call MK_TC_PATH,${SDK_ROOTDIR}/${inc}))
 ifneq (${USR_ROOTDIR},)
+# wtf?? bug occurs because of no space front of next CINCDIRS add
+CINCDIRS+=
 CINCDIRS+=$(foreach inc,$(strip ${USR_CINCDIRS}),-I$(call MK_TC_PATH,${USR_ROOTDIR}/${inc}))
 endif
 
