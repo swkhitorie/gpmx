@@ -25,10 +25,8 @@
  * 
  */
 
-#define BOARD_DEBUG(...) do {\
-    printf("[%d.%03d] ", HAL_GetTick()/1000, HAL_GetTick()%1000); \
-    printf(__VA_ARGS__); \
-    } while(0)
+#define BOARD_DEBUG(...) printf(__VA_ARGS__)
+
 #ifdef __cplusplus
 extern "C" {
 #endif

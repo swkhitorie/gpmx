@@ -3,7 +3,7 @@
 # remove SDK_ROOTDIR := ${SDK_DIR_MK}
 #        CONFIG_FILE := ${SDK_ROOTDIR}/apps/app_config.mk
 #
-# add    SDK_ROOTDIR := ${SDK_DIR_MK}/your_gpmx_path/gpmx 
+# add    SDK_ROOTDIR := ${SDK_DIR_MK}/your_gpmx_path/gpmx
 #        USR_ROOTDIR := ${SDK_DIR_MK}
 #        CONFIG_FILE := ${USR_ROOTDIR}/your_config_path/app_config.mk
 # file(src/inc) mk variable our of gpmx should change prefix to USR_ 
