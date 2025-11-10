@@ -25,12 +25,6 @@
  * CONFIG_BOARD_FREERTOS_ENABLE
  */
 
-#define RADIO_BOARD_TRANSMITTER  1
-#define RADIO_BOARD_RECEIVER     2
-#ifndef RADIO_BOARD_ROLE
-#define RADIO_BOARD_ROLE         RADIO_BOARD_TRANSMITTER
-#endif
-
 #define BOARD_DEBUG(...) do {\
     printf("[%d.%03d] ", HAL_GetTick()/1000, HAL_GetTick()%1000); \
     printf(__VA_ARGS__); \
@@ -39,12 +33,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-extern uart_dev_t *_tty_log_out;
-extern uart_dev_t *_tty_log_in;
-
-extern uart_dev_t *_tty_msg_out;
-extern uart_dev_t *_tty_msg_in;
 
 void board_irq_reset();
 
@@ -81,8 +69,6 @@ uint32_t board_elapsed_tick(const uint32_t tick);
 bool board_subghz_tx_ready();
 
 uint32_t board_crc_key_get(uint32_t *uid, uint32_t key);
-
-int board_get_role();
 
 #ifdef __cplusplus
 }

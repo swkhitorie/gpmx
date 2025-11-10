@@ -3,57 +3,67 @@
 #include <device/dnode.h>
 #include <device/serial.h>
 
-#define MSG_SENDER_DMA_TX_SIZE      (128)
-#define MSG_SENDER_TX_SIZE          (128)
-#define MSG_SENDER_DMA_RX_SIZE      (1024*4)
-#define MSG_SENDER_RX_SIZE          (1024*2)
+#if defined(SERIAL1_CONFIG)
+uint8_t serial1_txdma_bufer[SERIAL1_TXBUFFER_DMA_SIZE];
+uint8_t serial1_rxdma_bufer[SERIAL1_RXBUFFER_DMA_SIZE];
+uint8_t serial1_tx_bufer[SERIAL1_TXBUFFER_SIZE];
+uint8_t serial1_rx_bufer[SERIAL1_RXBUFFER_SIZE];
+#else
+#define SERIAL1_TXBUFFER_DMA_SIZE  (128)
+#define SERIAL1_RXBUFFER_DMA_SIZE  (128)
+#define SERIAL1_TXBUFFER_SIZE      (64)
+#define SERIAL1_RXBUFFER_SIZE      (64)
+uint8_t serial1_txdma_bufer[SERIAL1_TXBUFFER_DMA_SIZE];
+uint8_t serial1_rxdma_bufer[SERIAL1_RXBUFFER_DMA_SIZE];
+uint8_t serial1_tx_bufer[SERIAL1_TXBUFFER_SIZE];
+uint8_t serial1_rx_bufer[SERIAL1_RXBUFFER_SIZE];
+#endif
 
-#define MSG_RECEIVER_DMA_TX_SIZE      (1024)
-#define MSG_RECEIVER_TX_SIZE          (1024)
-#define MSG_RECEIVER_DMA_RX_SIZE      (128)
-#define MSG_RECEIVER_RX_SIZE          (128)
+#if defined(SERIAL2_CONFIG)
+uint8_t serial2_txdma_bufer[SERIAL2_TXBUFFER_DMA_SIZE];
+uint8_t serial2_rxdma_bufer[SERIAL2_RXBUFFER_DMA_SIZE];
+uint8_t serial2_tx_bufer[SERIAL2_TXBUFFER_SIZE];
+uint8_t serial2_rx_bufer[SERIAL2_RXBUFFER_SIZE];
+#else
+#define SERIAL2_TXBUFFER_DMA_SIZE  (128)
+#define SERIAL2_RXBUFFER_DMA_SIZE  (128)
+#define SERIAL2_TXBUFFER_SIZE      (64)
+#define SERIAL2_RXBUFFER_SIZE      (64)
+uint8_t serial2_txdma_bufer[SERIAL2_TXBUFFER_DMA_SIZE];
+uint8_t serial2_rxdma_bufer[SERIAL2_RXBUFFER_DMA_SIZE];
+uint8_t serial2_tx_bufer[SERIAL2_TXBUFFER_SIZE];
+uint8_t serial2_rx_bufer[SERIAL2_RXBUFFER_SIZE];
+#endif
 
-int board_role;
+#if !defined(SERIAL1_BAUD)
+#define SERIAL1_BAUD      (115200)
+#endif
 
-/* log com buffer config */
-uint8_t log_dma_rxbuff[128];
-uint8_t log_dma_txbuff[256];
-uint8_t log_txbuff[256];
-uint8_t log_rxbuff[128];
-
-/* lora msg com buffer config, ROLE: Sender */
-uint8_t msg_dma_txbuff_sender[MSG_SENDER_DMA_TX_SIZE];
-uint8_t msg_txbuff_sender[MSG_SENDER_TX_SIZE];
-uint8_t msg_dma_rxbuff_sender[MSG_SENDER_DMA_RX_SIZE];
-uint8_t msg_rxbuff_sender[MSG_SENDER_RX_SIZE];
-
-/* lora msg com buffer config, ROLE: Receiver */
-uint8_t msg_dma_txbuff_receiver[MSG_RECEIVER_DMA_TX_SIZE];
-uint8_t msg_txbuff_receiver[MSG_RECEIVER_TX_SIZE];
-uint8_t msg_dma_rxbuff_receiver[MSG_RECEIVER_DMA_RX_SIZE];
-uint8_t msg_rxbuff_receiver[MSG_RECEIVER_RX_SIZE];
+#if !defined(SERIAL2_BAUD)
+#define SERIAL2_BAUD      (115200)
+#endif
 
 struct up_uart_dev_s com2_dev = {
     .dev = {
-        .baudrate = 115200,
+        .baudrate = SERIAL2_BAUD,
         .wordlen = 8,
         .stopbitlen = 1,
         .parity = 'n',
         .recv = {
-            .capacity = 128,
-            .buffer = log_rxbuff,
+            .capacity = SERIAL2_RXBUFFER_SIZE,
+            .buffer = serial2_rx_bufer,
         },
         .xmit = {
-            .capacity = 256,
-            .buffer = log_txbuff,
+            .capacity = SERIAL2_TXBUFFER_SIZE,
+            .buffer = serial2_tx_bufer,
         },
         .dmarx = {
-            .capacity = 128,
-            .buffer = log_dma_rxbuff,
+            .capacity = SERIAL2_RXBUFFER_DMA_SIZE,
+            .buffer = serial2_rxdma_bufer,
         },
         .dmatx = {
-            .capacity = 256,
-            .buffer = log_dma_txbuff,
+            .capacity = SERIAL2_TXBUFFER_DMA_SIZE,
+            .buffer = serial2_txdma_bufer,
         },
         .ops       = &g_uart_ops,
         .priv      = &com2_dev,
@@ -82,25 +92,25 @@ struct up_uart_dev_s com2_dev = {
 
 struct up_uart_dev_s com1_dev = {
     .dev = {
-        .baudrate = 115200,
+        .baudrate = SERIAL1_BAUD,
         .wordlen = 8,
         .stopbitlen = 1,
         .parity = 'n',
         .recv = {
-            .capacity = 0,
-            .buffer = NULL,
+            .capacity = SERIAL1_RXBUFFER_SIZE,
+            .buffer = serial1_rx_bufer,
         },
         .xmit = {
-            .capacity = 0,
-            .buffer = NULL,
+            .capacity = SERIAL1_TXBUFFER_SIZE,
+            .buffer = serial1_tx_bufer,
         },
         .dmarx = {
-            .capacity = 0,
-            .buffer = NULL,
+            .capacity = SERIAL1_RXBUFFER_DMA_SIZE,
+            .buffer = serial1_rxdma_bufer,
         },
         .dmatx = {
-            .capacity = 0,
-            .buffer = NULL,
+            .capacity = SERIAL1_TXBUFFER_DMA_SIZE,
+            .buffer = serial1_txdma_bufer,
         },
         .ops       = &g_uart_ops,
         .priv      = &com1_dev,
@@ -127,11 +137,12 @@ struct up_uart_dev_s com1_dev = {
     .priority = 1,
 };
 
-uart_dev_t *_tty_log_out;
-uart_dev_t *_tty_log_in;
+#if !defined(SERIALNO_STDINOUT)
+#define SERIALNO_STDINOUT   (1)
+#endif
 
-uart_dev_t *_tty_msg_out;
-uart_dev_t *_tty_msg_in;
+uart_dev_t *_std_out;
+uart_dev_t *_std_in;
 
 void board_bsp_init()
 {
@@ -143,54 +154,19 @@ void board_bsp_init()
     LOW_INITPIN(GPIOB, 9, IOMODE_OUTPP, IO_NOPULL, IO_SPEEDHIGH);
     LOW_INITPIN(GPIOB, 11, IOMODE_OUTPP, IO_NOPULL, IO_SPEEDHIGH);
 
-    board_role = RADIO_BOARD_ROLE;
-
     serial_register(&com1_dev.dev, 1);
     serial_register(&com2_dev.dev, 2);
-
-    switch (board_role) {
-    case RADIO_BOARD_TRANSMITTER: {
-        com1_dev.dev.recv.capacity = MSG_SENDER_RX_SIZE;
-        com1_dev.dev.recv.buffer = msg_rxbuff_sender;
-        com1_dev.dev.xmit.capacity = MSG_SENDER_TX_SIZE;
-        com1_dev.dev.xmit.buffer = msg_txbuff_sender;
-
-        com1_dev.dev.dmarx.capacity = MSG_SENDER_DMA_RX_SIZE;
-        com1_dev.dev.dmarx.buffer = msg_dma_rxbuff_sender;
-        com1_dev.dev.dmatx.capacity = MSG_SENDER_DMA_TX_SIZE;
-        com1_dev.dev.dmatx.buffer = msg_dma_txbuff_sender;
-        }
-        break;
-    case RADIO_BOARD_RECEIVER: {
-        com1_dev.dev.recv.capacity = MSG_RECEIVER_RX_SIZE;
-        com1_dev.dev.recv.buffer = msg_rxbuff_receiver;
-        com1_dev.dev.xmit.capacity = MSG_RECEIVER_TX_SIZE;
-        com1_dev.dev.xmit.buffer = msg_txbuff_receiver;
-
-        com1_dev.dev.dmarx.capacity = MSG_RECEIVER_DMA_RX_SIZE;
-        com1_dev.dev.dmarx.buffer = msg_dma_rxbuff_receiver;
-        com1_dev.dev.dmatx.capacity = MSG_RECEIVER_DMA_TX_SIZE;
-        com1_dev.dev.dmatx.buffer = msg_dma_txbuff_receiver;
-        }
-        break;
-    default:break;
-    }
 
     serial_bus_initialize(1);
     serial_bus_initialize(2);
 
-    _tty_log_out = serial_bus_get(2);
-    _tty_log_in = serial_bus_get(2);
-    _tty_msg_out = serial_bus_get(1);
-    _tty_msg_in = serial_bus_get(1);
-
-    SERIAL_RXCLEAR(_tty_msg_in);
-    SERIAL_RXCLEAR(_tty_log_in);
+    _std_out = serial_bus_get(SERIALNO_STDINOUT);
+    _std_in = serial_bus_get(SERIALNO_STDINOUT);
+    SERIAL_RXCLEAR(_std_in);
 
     board_rng_init();
     board_crc_init();
     board_subghz_init();
-
 }
 
 void board_bsp_deinit()
@@ -264,9 +240,9 @@ int _write(int file, const char *ptr, int len)
     const int stderr_fileno = 2;
     if (file == stdout_fileno) {
 #ifdef CONFIG_BOARD_COM_STDOUT_DMA
-        SERIAL_DMASEND(_tty_log_out, ptr, len);
+        SERIAL_DMASEND(_std_out, ptr, len);
 #else
-        SERIAL_SEND(_tty_log_out, ptr, len);
+        SERIAL_SEND(_std_out, ptr, len);
 #endif
     }
     return len;
@@ -279,7 +255,7 @@ int _read(int file, char *ptr, int len)
     const int stderr_fileno = 2;
     int rsize = 0;
     if (file == stdin_fileno) {
-        rsize = SERIAL_RDBUF(_tty_log_in, ptr, len);
+        rsize = SERIAL_RDBUF(_std_in, ptr, len);
     }
     return rsize;
 }
@@ -309,4 +285,3 @@ uint32_t board_elapsed_tick(const uint32_t tick)
     return now - tick;
 }
 
-int board_get_role() { return board_role; }
