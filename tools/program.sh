@@ -2,12 +2,33 @@
 
 script_dir="$(cd "$(dirname "$0")" && pwd)"
 source ${script_dir}/toolchain.sh
-source ${script_dir}/openocd.sh
+
 app_subpath=$1
 make_thread=$2
 make_rebuild=$3
 prog_interface=$4
 prog_target=$5
+
+if [ ${makefile_os} != "Linux" ]
+then
+    armcc_path=$6
+    armclang_path=$7
+    armgcc_path=$8
+    openocd_path=$9
+    openocd_ver=$10
+fi
+
+result=$(${script_dir}/openocd.sh ${makefile_os} ${openocd_path} "${openocd_ver}")
+exit_code=$?
+if [ ${exit_code} != 0 ]
+then
+    echo "openocd.sh exec failed"
+    exit 1
+fi
+openocd_interface_path=$(echo "$result" | cut -d'#' -f1)
+openocd_target_path=$(echo "$result" | cut -d'#' -f2)
+# echo ${openocd_interface_path}
+# echo ${openocd_target_path}
 
 echo "Path[gcc-arm ]:" ${armgcc_path}
 echo "Path[armcc   ]:" ${armcc_path}
