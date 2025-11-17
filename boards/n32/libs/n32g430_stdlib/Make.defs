@@ -22,3 +22,11 @@ endif
 ifeq ($(BSP_LIBCONFIG_N32_STD_SPI),y)
 LIBSTD_CSRCS += std_driver/n32g430_spi.c
 endif
+
+ifeq ($(BSP_LIBCONFIG_N32_STD_TIM),y)
+LIBSTD_CSRCS += std_driver/n32g430_tim.c
+endif
+
+ifeq ($(BSP_LIBCONFIG_N32_STD_I2C),y)
+LIBSTD_CSRCS += std_driver/n32g430_i2c.c
+endif
