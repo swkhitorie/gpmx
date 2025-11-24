@@ -251,7 +251,7 @@ int main(int argc, char *argv[])
 
         if (HAL_GetTick() - m3 >= 20) {
             m3 = HAL_GetTick();
-            run_tag = 0x0030;
+            run_tag = 0x0030;   // bug tag: 0x30 -> can send while-wait bug?
             obd_request_speed();
             obd_rx_speed_detect();
             speed_obd = (int32_t)obd_read_speed();
