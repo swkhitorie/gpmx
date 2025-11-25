@@ -5,13 +5,13 @@ BASEDIR=$(dirname $0)
 SCRIPTDIR="$(cd "$(dirname "$0")" && pwd)"
 SYSTYPE=`uname -s`
 
-# $1: fmu bin
-# $2: serial usb port
+# $1: serial usb port
+# $2: fmu bin
 
-UPLOADBIN=$1
-SERIAL_PORTS=$2
+UPLOADBIN=$2
+SERIAL_PORTS=$1
 
-python3 $SCRIPTDIR/ym_uploader.py --port $SERIAL_PORTS $UPLOADBIN
+python $SCRIPTDIR/ym_uploader.py $SERIAL_PORTS $UPLOADBIN
 
 # ym_upload.sh <bin> /dev/ttyUSB0
 

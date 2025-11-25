@@ -1,103 +1,367 @@
 #!/usr/bin/env python3
 
-# for python2.7 compatibility
-from __future__ import print_function
-
 import sys
-import argparse
-import binascii
-import serial
-import socket
-import struct
-import json
-import zlib
-import base64
-import time
-import array
 import os
+import time
+import argparse
+import platform
 
-from sys import platform as _platform
+def check_dependencies():
+    missing_deps = []
 
-# Detect python version
-if sys.version_info[0] < 3:
-    runningPython3 = False
-else:
-    runningPython3 = True
+    try:
+        import serial
+    except ImportError:
+        missing_deps.append("pyserial - serial communication lib")
 
-class firmware(object):
-    '''Loads a firmware file'''
-    image = bytes()
-    image_size = 0
+    try:
+        import serial.tools.list_ports
+    except ImportError:
+        missing_deps.append("pyserial tool module")
 
-    def __init__(self, path):
+    try:
+        import crcmod
+    except ImportError:
+        try:
+            import binascii
+        except ImportError:
+            missing_deps.append("crcmod or binascii - crc calculate module")
 
-        # read the file
-        f = open(path, "rb")
-        self.image_size = os.path.getsize(path)
-        self.image = f.read()
-        f.close()
+    if missing_deps:
+        print("error: lack of necessary Python components:")
+        for dep in missing_deps:
+            print(f"  - {dep}")
+        print("\nPlease use the following command to install:")
+        if platform.system() == "Windows":
+            print("pip install pyserial crcmod")
+        else:
+            print("sudo pip3 install pyserial crcmod")
+        return False
 
-    def crc(self):
+    return True
 
-        wCRCin = 0x0000
-        wCPoly = 0x1021
-        size = self.image_size
-        idx = 0
-        while size:
-            wCRCin ^= (self.image[idx] << 8)
-            idx += 1
-            size -= 1
-            for num in range(1,8+1):
-                if wCRCin & 0x8000:
-                    wCRCin = (wCRCin << 1) ^ wCPoly
-                else:
-                    wCRCin = wCRCin << 1
-        return wCRCin
+class YModemSender:
 
+    SOH = 0x01
+    STX = 0x02
+    EOT = 0x04
+    ACK = 0x06
+    NAK = 0x15
+    CAN = 0x18
+    CRC = 0x43
+
+    def __init__(self, port, baudrate=115200, timeout=3, verbose=False):
+        self.port = port
+        self.baudrate = baudrate
+        self.timeout = timeout
+        self.verbose = verbose
+        self.serial = None
+        self.packet_size = 1024  #  default
+
+        self._init_crc16()
+
+    def _init_crc16(self):
+        try:
+            import crcmod
+            self.crc16 = crcmod.mkCrcFun(0x11021, rev=False, initCrc=0x0000, xorOut=0x0000)
+            self.use_crcmod = True
+        except ImportError:
+            self.use_crcmod = False
+            if self.verbose:
+                print("use inner crc method")
+
+    def calculate_crc16(self, data):
+        if self.use_crcmod:
+            return self.crc16(data)
+        else:
+            crc = 0x0000
+            for byte in data:
+                crc ^= byte << 8
+                for _ in range(8):
+                    if crc & 0x8000:
+                        crc = (crc << 1) ^ 0x1021
+                    else:
+                        crc <<= 1
+                    crc &= 0xFFFF
+            return crc
+
+    def open_serial(self):
+        try:
+            import serial
+            self.serial = serial.Serial(
+                port=self.port,
+                baudrate=self.baudrate,
+                bytesize=serial.EIGHTBITS,
+                parity=serial.PARITY_NONE,
+                stopbits=serial.STOPBITS_ONE,
+                timeout=self.timeout
+            )
+            return True
+        except Exception as e:
+            print(f"can not open serial {self.port}: {e}")
+            return False
+
+    def close_serial(self):
+        if self.serial and self.serial.is_open:
+            self.serial.close()
+
+    def send_byte(self, byte):
+        self.serial.write(bytes([byte]))
+
+    def receive_byte(self, timeout=None):
+        old_timeout = self.serial.timeout
+        if timeout is not None:
+            self.serial.timeout = timeout
+
+        data = self.serial.read(1)
+
+        if timeout is not None:
+            self.serial.timeout = old_timeout
+
+        return data[0] if data else None
+
+    def wait_for_signal(self, signal, timeout=10):
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            received = self.receive_byte(timeout=1)
+            if received == signal:
+                return True
+            elif received is not None and self.verbose:
+                print(f"receive unexpected signal : 0x{received:02X}")
+        return False
+
+    def send_reboot(self):
+        reboot_msg="reboot\r\n"
+        self.serial.write(reboot_msg.encode('utf-8'))
+        return True
+
+    def send_packet(self, packet_num, data, is_header=False):
+        start_byte = self.STX if len(data) > 128 else self.SOH
+
+        packet_num_byte = packet_num % 256
+        packet_num_complement = 255 - packet_num_byte
+
+        packet = bytearray()
+        packet.append(start_byte)
+        packet.append(packet_num_byte)
+        packet.append(packet_num_complement)
+
+        if start_byte == self.STX:
+            data_length = 1024
+        else:
+            data_length = 128
+
+        packet.extend(data)
+        if is_header == True:
+            packet.extend([0x00] * (data_length - len(data)))
+        else:
+            packet.extend([0x1A] * (data_length - len(data)))
+
+        # calculate crc
+        data_for_crc = packet[3:]
+        crc = self.calculate_crc16(data_for_crc)
+        packet.append((crc >> 8) & 0xFF)
+        packet.append(crc & 0xFF)
+
+        # send data
+        self.serial.write(packet)
+
+        if self.verbose:
+            print(f"send {packet_num}, len: {len(data)} byte")
+
+        # wait for ack
+        response = self.receive_byte(timeout=10)
+        if response == self.ACK:
+            return True
+        elif response == self.NAK:
+            if self.verbose:
+                print(f"datapack {packet_num} rejected, retry...")
+            return False
+        elif response == self.CAN:
+            print("canceled by receiver")
+            return None
+        else:
+            if self.verbose:
+                print(f"unknown ack: {response}")
+            return False
+
+    def send_file(self, filename):
+        if not os.path.exists(filename):
+            print(f"err: file '{filename}' not exist")
+            return False
+
+        file_size = os.path.getsize(filename)
+        file_basename = os.path.basename(filename)
+
+        print(f"ready to send: {file_basename} ({file_size} byte)")
+
+        print("wait receiver ready signal...")
+        if not self.wait_for_signal(self.CRC, timeout=30):
+            print("err: no responed")
+            return False
+
+        print("start ymodem transmission...")
+
+        # send head
+        header_data = f"{file_basename}\0{file_size}\0".encode('utf-8')
+        if not self.send_packet(0, header_data, is_header=True):
+            print("err: fail to send fileheader")
+            return False
+
+        # wait init 0x43 C
+        if self.wait_for_signal(self.CRC, timeout=10):
+            print("")
+        else:
+            print("err: no get init C")
+            return False
+
+        # send file
+        packet_num = 1
+        with open(filename, 'rb') as file:
+            while True:
+                data = file.read(self.packet_size)
+                if not data:
+                    break
+
+                # retry
+                max_retries = 5
+                for retry in range(max_retries):
+                    result = self.send_packet(packet_num, data)
+                    if result is True:
+                        break
+                    elif result is None:
+                        return False
+                    elif retry == max_retries - 1:
+                        print(f"err: pack {packet_num} fail to send, reach to max retry times")
+                        return False
+                    else:
+                        time.sleep(1)
+
+                packet_num += 1
+                if packet_num > 255:
+                    packet_num = 1
+
+                # show process
+                progress = min(file.tell() / file_size * 100, 100)
+                print(f"\rprogress: {progress:.1f}%", end='', flush=True)
+
+        print("\nsend end signal...")
+
+        # send EOT
+        self.send_byte(self.EOT)
+
+        # wait final ACK
+        if self.wait_for_signal(self.NAK, timeout=10):
+            print("")
+        else:
+            print("err: fail to get NAK")
+            return False
+
+        # send EOT
+        self.send_byte(self.EOT)
+
+        # wait ACK
+        if self.wait_for_signal(self.ACK, timeout=10):
+            print("")
+        else:
+            print("err: fail to get ACK")
+            return False
+
+        # wait 0x43 C
+        if self.wait_for_signal(self.CRC, timeout=10):
+            print("")
+        else:
+            print("err: fail to get C")
+            return False
+
+        enddata=[0]*128
+        result = self.send_packet(0, enddata)
+        if result is True:
+            print("get Final ACK!")
+            return True
+        elif result is None:
+            print("err: fail to get Final ACK")
+            return False
+
+
+def list_serial_ports():
+    try:
+        import serial.tools.list_ports
+        ports = serial.tools.list_ports.comports()
+
+        if not ports:
+            print("can not find usable serial port")
+            return
+
+        print("serial port available:")
+        for port in ports:
+            print(f"  {port.device} - {port.description}")
+    except ImportError:
+        print("can't list serial port (pyserial not installed)")
 
 def main():
+    parser = argparse.ArgumentParser(
+        description="YMODEM file send tool",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+example:
+  %(prog)s COM1 firmware.bin
+  %(prog)s /dev/ttyUSB0 image.bin -b 9600
+  %(prog)s --list-ports
+        """
+    )
 
-    # Parse commandline arguments
-    parser = argparse.ArgumentParser(description="Firmware uploader for the YModem Receiver.")
-    parser.add_argument('--port', action="store", required=True, help="Comma-separated list of serial port(s)")
-    parser.add_argument('--baud-bootloader', action="store", type=int, default=115200, help="Baud rate of the serial port (default is 115200) when communicating with bootloader, only required for true serial ports.")
-    parser.add_argument('firmware', action="store", help="Firmware file to be uploaded")
+    parser.add_argument('port', nargs='?', help='serial port (COM1, /dev/ttyUSB0)')
+    parser.add_argument('file', nargs='?', help='file will be sended')
+    parser.add_argument('-b', '--baudrate', type=int, default=115200, 
+                       help='baudrate (default: 115200)')
+    parser.add_argument('-t', '--timeout', type=int, default=3,
+                       help='timeout(s) (default: 3s)')
+    parser.add_argument('-v', '--verbose', action='store_true',
+                       help='debug message')
+    parser.add_argument('--list-ports', action='store_true',
+                       help='list all serial port available')
+
     args = parser.parse_args()
 
-    # We need to check for pyserial because the import itself doesn't
-    # seem to fail, at least not on macOS.
-    pyserial_installed = False
-    try:
-        if serial.__version__:
-            pyserial_installed = True
-    except:
-        pass
-
-    try:
-        if serial.VERSION:
-            pyserial_installed = True
-    except:
-        pass
-
-    if not pyserial_installed:
-        print("Error: pyserial not installed!")
-        print("")
-        print("You may need to install it using:")
-        print("    pip3 install --user pyserial")
-        print("")
+    if not check_dependencies():
         sys.exit(1)
 
-    # print(args.firmware)
-    # print(args.port)
-    # print(args.baud_bootloader)
+    if args.list_ports:
+        list_serial_ports()
+        sys.exit(0)
 
-    print("hello")
-    fw = firmware(args.firmware)
-    print(fw.image_size)
-    print(fw.crc())
+    if not args.port or not args.file:
+        parser.print_help()
+        print(f"\nerr: port and file must be specified")
+        sys.exit(1)
 
+    if not os.path.exists(args.file):
+        print(f"err: file '{args.file}' not exist")
+        sys.exit(1)
 
-if __name__ == '__main__':
+    sender = YModemSender(
+        port=args.port,
+        baudrate=args.baudrate,
+        timeout=args.timeout,
+        verbose=args.verbose
+    )
+
+    try:
+        if sender.open_serial():
+            sender.send_reboot()
+            success = sender.send_file(args.file)
+            sys.exit(0 if success else 1)
+        else:
+            sys.exit(1)
+    except KeyboardInterrupt:
+        print("\ntransmission interrupted by user")
+        sys.exit(1)
+    except Exception as e:
+        print(f"err: {e}")
+        sys.exit(1)
+    finally:
+        sender.close_serial()
+
+if __name__ == "__main__":
     main()
-
-# vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
