@@ -7,7 +7,9 @@
 #include <device/serial.h>
 #include <device/qspi.h>
 
+#if defined(CONFIG_STM32_MTD_LFS_SUPPORT)
 #include "lfs_sflash_drv.h"
+#endif
 
 #ifdef CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
 #include "board_usb_cdc.h"

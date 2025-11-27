@@ -117,10 +117,16 @@ static const uint8_t cdc_descriptor[] = {
 static volatile bool ep_tx_busy_flag = false;
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t cdc_rbuf[CDC_MAX_MPS];
 USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t cdc_wbuf[CDC_MAX_MPS];
-static uint8_t rb_tx_buffer[512];
-static uint8_t rb_rx_buffer[512];
-static struct gringbuffer usb_rb_tx = {.capacity = 512, .buffer = rb_tx_buffer};
-static struct gringbuffer usb_rb_rx = {.capacity = 512, .buffer = rb_rx_buffer};
+#ifndef BOARD_USB_CDC1_TX_BUFFER_LEN
+#define BOARD_USB_CDC1_TX_BUFFER_LEN 1024
+#endif
+#ifndef BOARD_USB_CDC1_RX_BUFFER_LEN
+#define BOARD_USB_CDC1_RX_BUFFER_LEN 1024
+#endif
+static uint8_t rb_tx_buffer[BOARD_USB_CDC1_TX_BUFFER_LEN];
+static uint8_t rb_rx_buffer[BOARD_USB_CDC1_RX_BUFFER_LEN];
+static struct gringbuffer usb_rb_tx = {.capacity = BOARD_USB_CDC1_TX_BUFFER_LEN, .buffer = rb_tx_buffer};
+static struct gringbuffer usb_rb_rx = {.capacity = BOARD_USB_CDC1_RX_BUFFER_LEN, .buffer = rb_rx_buffer};
 #if defined(CONFIG_BOARD_FREERTOS_ENABLE)
 static SemaphoreHandle_t tx_sem;
 #endif

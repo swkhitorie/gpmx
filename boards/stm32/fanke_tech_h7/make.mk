@@ -50,6 +50,8 @@ PROJ_CDEFS += CONFIG_RTC_USING_LSE
 
 ifeq (${MK_USE_FS_LITTLEFS},y)
 PROJ_CDEFS += LFS_DEFINES=lfs_conf.h
+CSOURCES += ${BOARD_BSP_PATH}/w25qxx_driver.c
+CSOURCES += ${BOARD_BSP_PATH}/component/lfs_sflash_drv.c
 endif
 
 MOD_ARCH = m7
@@ -57,17 +59,13 @@ PROJ_ENTRY_POINT := Reset_Handler
 
 PROJ_CINCDIRS += ${BOARD_BSP_PATH}
 PROJ_CINCDIRS += ${BOARD_BSP_PATH}/component
-CSOURCES += ${BOARD_BSP_PATH}/component/board_usb_cdc.c
-CSOURCES += ${BOARD_BSP_PATH}/component/board_usb_msp.c
-
 CSOURCES += ${BOARD_BSP_PATH}/board_irq.c
 CSOURCES += ${BOARD_BSP_PATH}/board_rcc_init.c
 CSOURCES += ${BOARD_BSP_PATH}/board_init.c
 CSOURCES += ${BOARD_BSP_PATH}/board_bsp.c
 CSOURCES += ${BOARD_BSP_PATH}/board_msp.c
-
-CSOURCES += ${BOARD_BSP_PATH}/w25qxx_driver.c
-CSOURCES += ${BOARD_BSP_PATH}/component/lfs_sflash_drv.c
+CSOURCES += ${BOARD_BSP_PATH}/component/board_usb_cdc.c
+CSOURCES += ${BOARD_BSP_PATH}/component/board_usb_msp.c
 
 ifeq (${PROJ_TC},gae)
 ASMSOURCES += ${BOARD_BSP_PATH}/fanketech_h7_startup_gcc.s

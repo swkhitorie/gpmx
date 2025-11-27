@@ -7,7 +7,7 @@
 #include <drv_flash.h>
 
 static volatile uint32_t boot_app_addr = 0x08020000;
-static volatile uint32_t boot_app_addr_wd = boot_app_addr;
+static volatile uint32_t boot_app_addr_wd = 0x08020000;
 
 struct __ymodem_receiver yrv; 
 int total_ysize_cal = 0;
@@ -115,7 +115,7 @@ static void exec_app()
 
 void ymodem_send(uint8_t c)
 {
-    SERIAL_SEND(bus, &c, 1);
+	board_cdc_acm_send(0, &c, 1, 1);
 }
 
 void ymodem_receiver_callback(uint32_t seq, uint8_t *p, uint16_t size)
@@ -158,6 +158,7 @@ int main(int argc, char *argv[])
     ymodem_start(&yrv);
 
 	uint32_t m = HAL_GetTick();
+	uint32_t m2 = HAL_GetTick();
     for (;;) {
 
         if (HAL_GetTick() >= 2*1000 && (ymodem_state(&yrv) == YMODEM_SYNC_WAIT)) {
@@ -167,12 +168,15 @@ int main(int argc, char *argv[])
         if (HAL_GetTick() - m >= 100) {
             m = HAL_GetTick();
 
-            sz = SERIAL_RDBUF(bus, bf_bl1, 1200);
+			sz = board_cdc_acm_read(0, bf_bl1, 1200);
             if (sz > 0) {
                 ymodem_rx_process(&yrv, bf_bl1, sz);
             } else {
                 if (ymodem_state(&yrv) == YMODEM_SYNC_WAIT) {
-                    ymodem_send(YMODEM_C);
+					if (HAL_GetTick() - m2 >= 1000) {
+                        m2 = HAL_GetTick();
+						ymodem_send(YMODEM_C);
+					}
                 }
             }
 
