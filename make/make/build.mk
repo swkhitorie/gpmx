@@ -74,6 +74,12 @@ BUILD_DEPENDS:=$(patsubst %.c,%.d,${BUILD_CSOURCES} ${BUILD_CARMSOURCES})
 
 # All sources
 PROJ_OBJS:=$(foreach obj,$(basename $(notdir ${BUILD_SOURCES})),${OBJS_FOLDER}/${obj}.o)
+BUILD_OBJS:=${PROJ_OBJS}
+PROJ_OBJS+=$(foreach src,${EXT_OBJS},${SDK_ROOTDIR}/$(src))
+ifneq (${USR_ROOTDIR},)
+PROJ_OBJS+=
+PROJ_OBJS+=$(foreach src,${USR_EXT_OBJS},${USR_ROOTDIR}/$(src))
+endif
 
 #
 # dependency file or dependency variable
@@ -228,7 +234,7 @@ postbuild: ${TARGET_POSTBUILD}
 #
 clean:
 	$(call MK_ECHO,Executing clean on target ${PROJ_NAME})
-	$(call MK_RMFILE,${PROJ_OBJS})
+	$(call MK_RMFILE,${BUILD_OBJS})
 	$(call MK_RMFILE,${TARGET_SRC_FILENAME_EXE})
 	$(call MK_RMFILE,${TARGET_SRC_FILENAME_LIST})
 	$(call MK_RMFILE,${SCF_FILE_NAME})
