@@ -28,7 +28,7 @@ def parse_armclang_map(map_file_path):
         # 解析压缩大小（如果有）
         compressed_pattern = re.compile(r'COMPRESSED\[(0x[0-9a-fA-F]+)\]')
 
-        # 查找所有Load Region
+        # 动态识别所有Load Region
         load_regions = load_region_pattern.findall(content)
         for region_name, base_hex, used_hex, max_hex in load_regions:
             used_bytes = int(used_hex, 16)
@@ -47,7 +47,7 @@ def parse_armclang_map(map_file_path):
             percentage = (used_bytes / max_bytes) * 100 if max_bytes > 0 else 0
             regions.append(('Load:' + region_name, used_bytes, max_bytes, percentage))
 
-        # 查找所有Execution Region
+        # 动态识别所有Execution Region
         exec_regions = exec_region_pattern.findall(content)
         for region_name, base_hex, used_hex, max_hex in exec_regions:
             used_bytes = int(used_hex, 16)
@@ -67,7 +67,7 @@ def parse_armclang_map(map_file_path):
         return None
 
 def analyze_section_details(content):
-    """分析详细的段信息 - 基于实际map文件结构修正"""
+    """分析详细的段信息 - 支持多执行区域"""
     print("\nanalyzing section details...")
     
     # 从Image component sizes部分提取准确的数据
@@ -101,22 +101,6 @@ def analyze_section_details(content):
         rom_rw_data = int(elf_totals_match.group(4))  # ROM中的RW Data初始值
         print(f"  RW Data in ROM: {format_size(rom_rw_data)} (initial values in Flash)")
     
-    # 从ROM Totals中验证
-    rom_totals_pattern = re.compile(
-        r'ROM Totals.*?(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)',
-        re.DOTALL
-    )
-    
-    rom_totals_match = rom_totals_pattern.search(content)
-    if rom_totals_match:
-        rom_code = int(rom_totals_match.group(1))
-        rom_ro_data = int(rom_totals_match.group(3))
-        rom_rw_data = int(rom_totals_match.group(4))
-        print(f"From ROM Totals:")
-        print(f"  Code:     {format_size(rom_code)}")
-        print(f"  RO Data:  {format_size(rom_ro_data)}")
-        print(f"  RW Data:  {format_size(rom_rw_data)} (initial values in Flash)")
-    
     # 计算正确的ROM大小
     if grand_totals_match and elf_totals_match:
         total_code = int(grand_totals_match.group(1))
@@ -132,11 +116,15 @@ def analyze_section_details(content):
         print(f"Total RAM Size: {format_size(total_ram_size)}")
         print(f"  = RW Data({format_size(total_rw_data)}) + ZI Data({format_size(total_zi_data)})")
     
-    # 解析Execution Region的详细段信息
+    # 解析所有Execution Region的详细段信息
     print(f"\nDetailed Execution Region Analysis:")
     
-    # 查找所有Execution Region部分
+    # 动态查找所有Execution Region部分
     exec_sections = re.finditer(r'Execution Region (\w+) \(.*?\)\s*\n\s*Base Addr\s+Size\s+Type\s+Attr\s+Idx\s+E Section Name\s+Object\s*\n(.*?)(?=\n\s*\n|\Z)', content, re.DOTALL)
+    
+    # 按区域类型分类统计
+    rom_regions = {}
+    ram_regions = {}
     
     for match in exec_sections:
         region_name = match.group(1)
@@ -152,7 +140,6 @@ def analyze_section_details(content):
         for line in lines:
             line = line.strip()
             if line and not line.startswith('Base Addr'):
-                # 使用更灵活的正则表达式来匹配段行
                 pattern = r'^(0x[0-9a-fA-F]+)\s+(0x[0-9a-fA-F]+)\s+(\w+)\s+(\w+)\s+(\d+)\s+(\S.*)$'
                 match_line = re.match(pattern, line)
                 
@@ -171,16 +158,42 @@ def analyze_section_details(content):
                                 region_ro_data += size
                         elif attr == 'RW':
                             if 'Data' in mem_type:
-                                # Data RW - 有初始值的变量
                                 region_data_rw += size
                             elif 'Zero' in mem_type:
-                                # Zero RW - 零初始化变量
                                 region_zero_rw += size
                     except ValueError:
                         continue
         
-        if region_code + region_ro_data + region_data_rw + region_zero_rw > 0:
-            print(f"{region_name}: Code={format_size(region_code)}, RO Data={format_size(region_ro_data)}, Data RW={format_size(region_data_rw)}, Zero RW={format_size(region_zero_rw)}")
+        # 根据区域名称分类
+        if region_name.startswith('ER_IROM'):
+            rom_regions[region_name] = {
+                'code': region_code,
+                'ro_data': region_ro_data,
+                'data_rw': region_data_rw,
+                'zero_rw': region_zero_rw
+            }
+        elif region_name.startswith('RW_IRAM'):
+            ram_regions[region_name] = {
+                'code': region_code,
+                'ro_data': region_ro_data,
+                'data_rw': region_data_rw,
+                'zero_rw': region_zero_rw
+            }
+        else:
+            # 处理其他未知类型的区域
+            print(f"Unknown region type: {region_name}")
+    
+    # 显示ROM区域统计
+    if rom_regions:
+        print(f"\nROM Regions:")
+        for region_name, stats in sorted(rom_regions.items()):
+            print(f"  {region_name}: Code={format_size(stats['code'])}, RO Data={format_size(stats['ro_data'])}, Data RW={format_size(stats['data_rw'])}, Zero RW={format_size(stats['zero_rw'])}")
+    
+    # 显示RAM区域统计
+    if ram_regions:
+        print(f"\nRAM Regions:")
+        for region_name, stats in sorted(ram_regions.items()):
+            print(f"  {region_name}: Code={format_size(stats['code'])}, RO Data={format_size(stats['ro_data'])}, Data RW={format_size(stats['data_rw'])}, Zero RW={format_size(stats['zero_rw'])}")
 
 def format_size(size_bytes):
     """格式化大小为可读的格式"""
@@ -222,7 +235,7 @@ def main():
         print(f"error: file '{map_file_path}' not exist")
         sys.exit(1)
 
-    print("ARMCLANG Map File Analyzer - Based on Actual Map Structure")
+    print("ARMCLANG Map File Analyzer - Multi-Region Support Version")
 
     # 解析map文件
     regions = parse_armclang_map(map_file_path)
