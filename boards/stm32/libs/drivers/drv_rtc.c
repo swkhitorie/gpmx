@@ -125,90 +125,66 @@ void hw_stm32_rtc_deinit()
     HAL_RTC_DeInit(&RTC_Handler);
 }
 
-time_t hw_stm32_rtc_get_timeval(struct timeval *tv)
+rclk_time_t hw_stm32_rtc_get_timeval(struct rclk_timeval *tv)
 {
     RTC_TimeTypeDef RTC_TimeStruct = {0};
     RTC_DateTypeDef RTC_DateStruct = {0};
-    struct tm tm_new = {0};
+    struct rclk_tm tm_new = {0};
 
     HAL_RTC_GetTime(&RTC_Handler, &RTC_TimeStruct, RTC_FORMAT_BIN);
     HAL_RTC_GetDate(&RTC_Handler, &RTC_DateStruct, RTC_FORMAT_BIN);
 
-    tm_new.tm_sec  = RTC_TimeStruct.Seconds;
-    tm_new.tm_min  = RTC_TimeStruct.Minutes;
-    tm_new.tm_hour = RTC_TimeStruct.Hours;
-    tm_new.tm_mday = RTC_DateStruct.Date;
-    tm_new.tm_mon  = RTC_DateStruct.Month - 1;
-    tm_new.tm_year = RTC_DateStruct.Year + 100;
+    tm_new._sec  = RTC_TimeStruct.Seconds;
+    tm_new._min  = RTC_TimeStruct.Minutes;
+    tm_new._hour = RTC_TimeStruct.Hours;
+    tm_new._mday = RTC_DateStruct.Date;
+    tm_new._mon  = RTC_DateStruct.Month - 1;
+    tm_new._year = RTC_DateStruct.Year + 100;
 
-#ifdef RT_ALARM_USING_LOCAL_TIME
-    tv->tv_sec = mktime(&tm_new);
-#else
-    tv->tv_sec = mktime(&tm_new);
-#endif
-
-#if defined(DRV_STM32_H7) || defined(DRV_STM32_F4) || defined(DRV_STM32_WL)
-    tv->tv_usec = (255.0 - RTC_TimeStruct.SubSeconds * 1.0) / 256.0 * 1000.0 * 1000.0;
-#endif
-
-    return tv->tv_sec;
-}
-
-void hw_stm32_rtc_get_tm(struct tm *now)
-{
-    RTC_TimeTypeDef RTC_TimeStruct = {0};
-    RTC_DateTypeDef RTC_DateStruct = {0};
-
-    HAL_RTC_GetTime(&RTC_Handler, &RTC_TimeStruct, RTC_FORMAT_BIN);
-    HAL_RTC_GetDate(&RTC_Handler, &RTC_DateStruct, RTC_FORMAT_BIN);
-
-    now->tm_sec  = RTC_TimeStruct.Seconds;
-    now->tm_min  = RTC_TimeStruct.Minutes;
-    now->tm_hour = RTC_TimeStruct.Hours;
-    now->tm_mday = RTC_DateStruct.Date;
-    now->tm_mon  = RTC_DateStruct.Month - 1;
-    now->tm_year = RTC_DateStruct.Year + 100;
-}
-
-bool hw_stm32_rtc_set_time_stamp(time_t time_stamp)
-{
-    RTC_TimeTypeDef RTC_TimeStruct = {0};
-    RTC_DateTypeDef RTC_DateStruct = {0};
-
-#ifdef RT_ALARM_USING_LOCAL_TIME
-    localtime_r(&time_stamp,&tm);
-#else
-
-#if defined(__clang__) || defined(__CC_ARM)
-
-    struct tm *tma = NULL;
-    tma = gmtime(&time_stamp);
-
-    RTC_TimeStruct.Seconds = tma->tm_sec ;
-    RTC_TimeStruct.Minutes = tma->tm_min ;
-    RTC_TimeStruct.Hours   = tma->tm_hour;
-    RTC_DateStruct.Date    = tma->tm_mday;
-    RTC_DateStruct.Month   = tma->tm_mon + 1 ;
-    RTC_DateStruct.Year    = tma->tm_year - 100;
-    RTC_DateStruct.WeekDay = tma->tm_wday + 1;
-#elif defined(__GNUC__)
-
-    struct tm tm = {0};
-    gmtime_r(&time_stamp, &tm);
-    if (tm.tm_year < 100) {
-        return false;
+    if (!rclk_tm_to_timstamp(&tm_new, &tv->_sec)) {
+        return 0xff;
     }
 
-    RTC_TimeStruct.Seconds = tm.tm_sec ;
-    RTC_TimeStruct.Minutes = tm.tm_min ;
-    RTC_TimeStruct.Hours   = tm.tm_hour;
-    RTC_DateStruct.Date    = tm.tm_mday;
-    RTC_DateStruct.Month   = tm.tm_mon + 1 ;
-    RTC_DateStruct.Year    = tm.tm_year - 100;
-    RTC_DateStruct.WeekDay = tm.tm_wday + 1;
+#if defined(DRV_STM32_H7) || defined(DRV_STM32_F4) || defined(DRV_STM32_WL)
+        tv->_usec = (255.0 - RTC_TimeStruct.SubSeconds * 1.0) / 256.0 * 1000.0 * 1000.0;
 #endif
 
-#endif
+    return tv->_sec;
+}
+
+void hw_stm32_rtc_get_tm(struct rclk_tm *now)
+{
+    RTC_TimeTypeDef RTC_TimeStruct = {0};
+    RTC_DateTypeDef RTC_DateStruct = {0};
+
+    HAL_RTC_GetTime(&RTC_Handler, &RTC_TimeStruct, RTC_FORMAT_BIN);
+    HAL_RTC_GetDate(&RTC_Handler, &RTC_DateStruct, RTC_FORMAT_BIN);
+
+    now->_sec  = RTC_TimeStruct.Seconds;
+    now->_min  = RTC_TimeStruct.Minutes;
+    now->_hour = RTC_TimeStruct.Hours;
+    now->_mday = RTC_DateStruct.Date;
+    now->_mon  = RTC_DateStruct.Month - 1;
+    now->_year = RTC_DateStruct.Year + 100;
+}
+
+bool hw_stm32_rtc_set_time_stamp(rclk_time_t time_stamp)
+{
+    RTC_TimeTypeDef RTC_TimeStruct = {0};
+    RTC_DateTypeDef RTC_DateStruct = {0};
+
+    struct rclk_tm tma = {0};
+    if (!rclk_timstamp_to_tm(time_stamp, &tma)) {
+        false;
+    }
+
+    RTC_TimeStruct.Seconds = tma._sec ;
+    RTC_TimeStruct.Minutes = tma._min ;
+    RTC_TimeStruct.Hours   = tma._hour;
+    RTC_DateStruct.Date    = tma._mday;
+    RTC_DateStruct.Month   = tma._mon + 1 ;
+    RTC_DateStruct.Year    = tma._year - 100;
+    RTC_DateStruct.WeekDay = tma._wday + 1;
 
     if (HAL_RTC_SetTime(&RTC_Handler, &RTC_TimeStruct, RTC_FORMAT_BIN) != HAL_OK) {
         return false;

@@ -4,6 +4,10 @@ ifeq (${MK_GPDRIVE_RINGBUFFER},y)
 CSOURCES   +=  libs/drivers/gringbuffer.c
 endif # end with MK_GPDRIVE_RINGBUFFER
 
+ifeq (${MK_GPDRIVE_RTC},y)
+CSOURCES   +=  libs/drivers/rtc.c
+endif # end with MK_GPDRIVE_RTC
+
 ifeq (${MK_GPDRIVE_DNODE},y)
 CSOURCES   +=  libs/drivers/dnode.c
 

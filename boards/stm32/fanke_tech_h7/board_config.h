@@ -72,8 +72,8 @@ void board_led_toggle(uint8_t idx);
 
 void board_debug();
 
-time_t board_rtc_get_timestamp(struct timeval *now);
-bool   board_rtc_set_timestamp(time_t now);
+rclk_time_t board_rtc_get_timestamp(struct rclk_timeval *now);
+bool   board_rtc_set_timestamp(rclk_time_t now);
 
 #ifdef __cplusplus
 }

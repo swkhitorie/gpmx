@@ -168,12 +168,12 @@ void board_debug()
     board_led_toggle(0);
 }
 
-time_t board_rtc_get_timestamp(struct timeval *now)
+rclk_time_t board_rtc_get_timestamp(struct rclk_timeval *now)
 {
     return hw_stm32_rtc_get_timeval(now);
 }
 
-bool board_rtc_set_timestamp(time_t now)
+bool board_rtc_set_timestamp(rclk_time_t now)
 {
     return hw_stm32_rtc_set_time_stamp(now);
 }
