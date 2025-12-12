@@ -6,8 +6,19 @@
 #include <device/serial.h>
 #include <drv_flash.h>
 
-static volatile uint32_t boot_app_addr = 0x08020000;
-static volatile uint32_t boot_app_addr_wd = 0x08020000;
+#ifndef APP_LOAD_ADDRESS_INBL
+#define APP_LOAD_ADDRESS_INBL 0x08020000
+#endif
+
+#ifndef APP_LOAD_BINSIZE_INBL
+#define APP_LOAD_BINSIZE_INBL 15*128*1024
+#endif
+
+// #define YMODEM_BL_DEBUG(...)
+#define YMODEM_BL_DEBUG(...)   printf(__VA_ARGS__)
+
+static volatile uint32_t boot_app_addr = APP_LOAD_ADDRESS_INBL;
+static volatile uint32_t boot_app_addr_wd = APP_LOAD_ADDRESS_INBL;
 
 struct __ymodem_receiver yrv; 
 int total_ysize_cal = 0;
@@ -63,7 +74,7 @@ static bool check_appbin(uint32_t appAddr, uint8_t *appbuf, uint32_t appsize)
 		if (word_value != *(volatile uint32_t *)((appAddr + i * 4))) {
 			check_error_cnt++;
 
-            printf("appbin flash error addr: wordval: %x, flashval: %x, %x\r\n",
+            YMODEM_BL_DEBUG("appbin flash error addr: wordval: %x, flashval: %x, %x\r\n",
                 word_value,
                 (appAddr + i * 4), *(volatile uint32_t *)((appAddr + i * 4)));
 		}
@@ -81,10 +92,21 @@ static void exec_app()
 
 	void (*AppJump)(void);
 
-	if (*(volatile uint32_t *) (boot_app_addr + 4) == 0xffffffff ||
-        *(volatile uint32_t *) (boot_app_addr)) {
+	const uint32_t *app_base = (const uint32_t *)APP_LOAD_ADDRESS_INBL;
+
+    if (app_base[0] == 0xffffffff) {
+        // stack pointer
         return;
-	}
+    }
+
+    if (app_base[1] < APP_LOAD_ADDRESS_INBL) {
+        // board reset vector
+        return;
+    }
+
+    if (app_base[1] >= (APP_LOAD_ADDRESS_INBL + APP_LOAD_BINSIZE_INBL)) {
+        return;
+    }
 
 	board_bsp_deinit();
 
@@ -124,8 +146,8 @@ void ymodem_receiver_callback(uint32_t seq, uint8_t *p, uint16_t size)
 
     if (seq == 1) {
         total_ysize = ymodem_filesz(&yrv);
-        printf("total rcv filesz: %d, ready to flash\r\n", total_ysize);
-        stm32_flash_erase(boot_app_addr, 1024*256);
+        YMODEM_BL_DEBUG("total rcv filesz: %d, ready to flash\r\n", total_ysize);
+        stm32_flash_erase(boot_app_addr, total_ysize);
     }
 
     write_appbin(boot_app_addr_wd, p, size);
@@ -133,14 +155,14 @@ void ymodem_receiver_callback(uint32_t seq, uint8_t *p, uint16_t size)
     ck_val = check_appbin(boot_app_addr_wd, p, size);
 
     if (!ck_val) {
-        printf("error write flash \r\n");
+        YMODEM_BL_DEBUG("error write flash \r\n");
         while(1) {}
     }
 
     boot_app_addr_wd += size;
 
     total_ysize_cal += size;
-    printf("write rseq: %d, size: %d total: %d\r\n", seq, size, total_ysize_cal);
+    YMODEM_BL_DEBUG("write rseq: %d, size: %d total: %d\r\n", seq, size, total_ysize_cal);
 }
 
 int main(int argc, char *argv[])
@@ -184,7 +206,8 @@ int main(int argc, char *argv[])
         }
 
         if (total_ysize_cal == total_ysize && ymodem_state(&yrv) == YMODEM_RCV_COMPLETED) {
-            exec_app();
+			HAL_Delay(1000);
+			exec_app();
         }
     }
 }

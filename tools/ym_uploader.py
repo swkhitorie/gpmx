@@ -49,6 +49,7 @@ class YModemSender:
     NAK = 0x15
     CAN = 0x18
     CRC = 0x43
+    identify_flag = 0
 
     def __init__(self, port, baudrate=115200, timeout=3, verbose=False):
         self.port = port
@@ -185,7 +186,7 @@ class YModemSender:
                 print(f"unknown ack: {response}")
             return False
 
-    def send_file(self, filename):
+    def send_file(self, filename, counter):
         if not os.path.exists(filename):
             print(f"err: file '{filename}' not exist")
             return False
@@ -193,13 +194,15 @@ class YModemSender:
         file_size = os.path.getsize(filename)
         file_basename = os.path.basename(filename)
 
-        print(f"ready to send: {file_basename} ({file_size} byte)")
+        if counter == 0:
+            print(f"ready to send: {file_basename} ({file_size} byte)")
 
-        print("wait receiver ready signal...")
-        if not self.wait_for_signal(self.CRC, timeout=30):
-            print("err: no responed")
+        print(f"wait receiver ready signal {counter}...")
+        if not self.wait_for_signal(self.CRC, timeout=2):
+            identify_flag = 0
             return False
 
+        identify_flag = 1
         print("start ymodem transmission...")
 
         # send head
@@ -210,7 +213,8 @@ class YModemSender:
 
         # wait init 0x43 C
         if self.wait_for_signal(self.CRC, timeout=10):
-            print("")
+            # print("")
+            pass
         else:
             print("err: no get init C")
             return False
@@ -252,7 +256,8 @@ class YModemSender:
 
         # wait final ACK
         if self.wait_for_signal(self.NAK, timeout=10):
-            print("")
+            # print("")
+            pass
         else:
             print("err: fail to get NAK")
             return False
@@ -262,14 +267,16 @@ class YModemSender:
 
         # wait ACK
         if self.wait_for_signal(self.ACK, timeout=10):
-            print("")
+            # print("")
+            pass
         else:
             print("err: fail to get ACK")
             return False
 
         # wait 0x43 C
         if self.wait_for_signal(self.CRC, timeout=10):
-            print("")
+            # print("")
+            pass
         else:
             print("err: fail to get C")
             return False
@@ -349,8 +356,19 @@ example:
 
     try:
         if sender.open_serial():
-            sender.send_reboot()
-            success = sender.send_file(args.file)
+            count_try_link = 0
+            while count_try_link < 20:
+                success = sender.send_file(args.file, count_try_link)
+                if (success == False and sender.identify_flag == 0):
+                    sender.send_reboot()
+                    time.sleep(0.25)
+                    sender.close_serial()
+                    time.sleep(1.3)
+                    sender.open_serial()
+                    count_try_link=count_try_link+1;
+                    continue
+                else:
+                    break
             sys.exit(0 if success else 1)
         else:
             sys.exit(1)

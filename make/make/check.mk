@@ -41,3 +41,7 @@ ifeq (${TC_OPENOCD_CHIP_CFG_PATH},)
 $(error Invalid empty openocd target path)
 endif
 endif
+
+ifeq (${TC_FPU_OPTION},)
+$(error empty fpu select)
+endif

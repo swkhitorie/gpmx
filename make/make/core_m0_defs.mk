@@ -4,6 +4,12 @@
 #
 ################################################################################
 
+VALID_FPU_OPTIONS := none
+TC_FPU_OPTION := $(strip $(TC_FPU_OPTION))
+ifeq ($(filter $(TC_FPU_OPTION),$(VALID_FPU_OPTIONS)),)
+  $(error m0-fpu only support 'none', current option->'$(TC_FPU_OPTION)')
+endif
+
 ####################
 #      armcc       #
 ####################

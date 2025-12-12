@@ -2,6 +2,21 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#include <board_usb_cdc.h>
+void reboot_detect()
+{
+    uint8_t cmd_rx[64];
+    int sz = board_cdc_acm_read(0, cmd_rx, 8);
+    if (sz >= 8) {
+        if (cmd_rx[0] == 'r' && cmd_rx[1] == 'e' &&
+            cmd_rx[2] == 'b' && cmd_rx[3] == 'o' &&
+            cmd_rx[4] == 'o' && cmd_rx[5] == 't' &&
+            cmd_rx[6] == '\r' && cmd_rx[7] == '\n') {
+            board_reboot();
+        }
+    }
+}
+
 int main(int argc, char *argv[])
 {
     board_init();
@@ -12,7 +27,9 @@ int main(int argc, char *argv[])
         if (HAL_GetTick() - m >= 100) {
             m = HAL_GetTick();
 
+            reboot_detect();
             board_debug();
+            printf("hello2\r\n");
         }
     }
 }

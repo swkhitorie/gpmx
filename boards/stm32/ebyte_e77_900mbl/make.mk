@@ -76,6 +76,7 @@ CSOURCES += ${BOARD_BSP_PATH}/utilities_if/stm32_lpm_if.c
 CSOURCES += ${BOARD_BSP_PATH}/utilities_if/timer_if.c
 
 MOD_ARCH = m4
+TC_FPU_OPTION = none
 PROJ_ENTRY_POINT := Reset_Handler
 
 ASMSOURCES += ${BOARD_BSP_PATH}/e77_900mbl_startup.s

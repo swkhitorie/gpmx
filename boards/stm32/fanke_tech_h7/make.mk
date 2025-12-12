@@ -56,6 +56,7 @@ CSOURCES += ${BOARD_BSP_PATH}/component/lfs_sflash_drv.c
 endif
 
 MOD_ARCH = m7
+TC_FPU_OPTION = dp
 PROJ_ENTRY_POINT := Reset_Handler
 
 PROJ_CINCDIRS += ${BOARD_BSP_PATH}

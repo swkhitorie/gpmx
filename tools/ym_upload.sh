@@ -10,8 +10,14 @@ SYSTYPE=`uname -s`
 
 UPLOADBIN=$2
 SERIAL_PORTS=$1
+PYTHON_EXE=python3
 
-python3 $SCRIPTDIR/ym_uploader.py $SERIAL_PORTS $UPLOADBIN
+if [ ${SYSTYPE} != "Linux" ]
+then
+    PYTHON_EXE=python
+fi
+
+$PYTHON_EXE $SCRIPTDIR/ym_uploader.py $SERIAL_PORTS $UPLOADBIN
 
 # ym_upload.sh <bin> /dev/ttyUSB0
 

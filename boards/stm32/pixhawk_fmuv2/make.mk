@@ -61,6 +61,7 @@ CSOURCES += ${BOARD_BSP_PATH}/board_msp.c
 # BOARD_CPPSRCS += px4_spi.cpp
 
 MOD_ARCH = m4
+TC_FPU_OPTION = sp
 PROJ_ENTRY_POINT := Reset_Handler
 
 ASMSOURCES += ${BOARD_BSP_PATH}/fmuv2_startup.s

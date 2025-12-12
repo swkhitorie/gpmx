@@ -54,6 +54,7 @@ CSOURCES += ${BOARD_BSP_PATH}/board_bsp.c
 CSOURCES += ${BOARD_BSP_PATH}/board_msp.c
 
 MOD_ARCH = m3
+TC_FPU_OPTION = none
 PROJ_ENTRY_POINT := Reset_Handler
 
 ASMSOURCES += ${BOARD_BSP_PATH}/stm32f103_eval_startup_gcc.s

@@ -61,6 +61,7 @@ TMPBOARD_LNK_FILE = ${addprefix ${BOARD_BSP_PATH}/,${BOARD_LNK_FILE}}
 # Add all setting to root make variable
 #######################################
 MOD_ARCH                 = m4
+TC_FPU_OPTION            = sp
 PROJ_ENTRY_POINT        := Reset_Handler
 SCF_FILE                := ${TMPBOARD_LNK_FILE}
 
