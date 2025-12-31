@@ -16,6 +16,17 @@
 
 #define STM32_PLLCFG_PLLMUL       (9)        /* RCC_PLL_MUL9 */
 
+#define BOARD_PRINTF(...)    board_printf(__VA_ARGS__)
+
+#define BOARD_CRUSH_PRINTF(...)    board_stream_printf(0, __VA_ARGS__)
+
+#define BOARD_FIRMWARE_NAME   "toolboard"
+#define BOARD_HARDWARE_VERSION   "v1.0.0"
+
+#ifndef BOARD_SOFTWARE_VERSION
+#define BOARD_SOFTWARE_VERSION   "v1.0.1"
+#endif
+
 /** 
  * std stream macro:
  * CONFIG_BOARD_COM_STDINOUT
@@ -29,15 +40,28 @@
 extern "C" {
 #endif
 
-void board_irq_reset();
-
 void board_reboot();
 
 void board_init();
+void board_deinit();
 
 void board_bsp_init();
+void board_bsp_deinit();
 
 /*-------------- board bsp interface --------------*/
+void board_led_toggle(uint8_t idx);
+
+void board_get_uid(uint32_t *p);
+
+uint32_t board_get_time();
+void     board_delay(uint32_t ms);
+uint32_t board_elapsed_time(const uint32_t timestamp);
+
+int  board_stream_in(int port, void *p, int size);
+int  board_stream_out(int port, const void *p, int size, int way);
+void board_stream_printf(int port, const char *format, ...);
+void board_printf(const char *format, ...);
+
 void board_debug();
 
 #ifdef __cplusplus

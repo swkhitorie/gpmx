@@ -1,4 +1,5 @@
 #include "board_config.h"
+
 #include <drv_uart.h>
 #include <drv_mmcsd.h>
 #include <drv_qspi.h>
@@ -7,12 +8,26 @@
 #include <device/serial.h>
 #include <device/qspi.h>
 
+#include <stdarg.h>
+
+#if defined(CONFIG_BOARD_CMBACKTRACE)
+#include "cm_backtrace.h"
+#endif
+
+#if defined(CONFIG_BOARD_EMBEDPRINTF)
+#include <lib_eprintf.h>
+#endif
+
 #if defined(CONFIG_STM32_MTD_LFS_SUPPORT)
 #include "lfs_sflash_drv.h"
 #endif
 
-#ifdef CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
+#if defined(CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE)
 #include "board_usb_cdc.h"
+#endif
+
+#if !defined(CONFIG_BOARD_PRINT_BUFFERLEN)
+#define CONFIG_BOARD_PRINT_BUFFERLEN (1024)
 #endif
 
 /* COM1 */
@@ -88,9 +103,8 @@ struct up_qspi_dev_s quadspi_dev =
     .priority = 10,
 };
 
-#if (CONFIG_BOARD_STDINOUT==1)
+#if (CONFIG_BOARD_PRINTF_SOURCE == 1)
 uart_dev_t *dstdout;
-uart_dev_t *dstdin;
 #endif
 
 void board_bsp_init()
@@ -104,15 +118,14 @@ void board_bsp_init()
     qspi_register(&quadspi_dev.dev, 1);
     qspi_bus_initialize(1);
 
-#if (CONFIG_BOARD_STDINOUT==1)
-    dstdout = serial_bus_get(1);
-    dstdin = serial_bus_get(1);
-#endif
-
-#ifdef CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
+#if defined(CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE)
     HAL_Delay(300);
     board_cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
     HAL_Delay(100); // wait cdc init completed
+#endif
+
+#if (CONFIG_BOARD_PRINTF_SOURCE == 1)
+    dstdout = serial_bus_get(1);
 #endif
 
     hw_stm32_rtc_setup();
@@ -133,6 +146,9 @@ void board_bsp_init()
     }
 #endif
 
+#if defined(CONFIG_BOARD_CMBACKTRACE)
+    cm_backtrace_init(BOARD_FIRMWARE_NAME, BOARD_HARDWARE_VERSION, BOARD_SOFTWARE_VERSION);
+#endif
 }
 
 void board_bsp_deinit()
@@ -145,11 +161,18 @@ void board_bsp_deinit()
     HAL_DMA_DeInit(com1_dev.com.hdmarx);
     HAL_NVIC_DisableIRQ(USART1_IRQn);
 
-#ifdef CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
+#if defined(CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE)
     usbd_deinitialize(0);
 #endif
 
     HAL_DeInit();
+}
+
+void board_get_uid(uint32_t *p)
+{
+    p[0] = *(volatile uint32_t*)(0x1FF1E800);
+    p[1] = *(volatile uint32_t*)(0x1FF1E804);
+    p[2] = *(volatile uint32_t*)(0x1FF1E808);
 }
 
 void board_led_toggle(uint8_t idx)
@@ -168,6 +191,31 @@ void board_debug()
     board_led_toggle(0);
 }
 
+/****************************************************************************
+ * Board Tickms interface
+ ****************************************************************************/
+uint32_t board_get_time()
+{
+    return HAL_GetTick();
+}
+
+void board_delay(uint32_t ms)
+{
+    HAL_Delay(ms);
+}
+
+uint32_t board_elapsed_time(const uint32_t timestamp)
+{
+    uint32_t now = HAL_GetTick();
+    if (now > timestamp) {
+        return 0;
+    }
+    return now - timestamp;
+}
+
+/****************************************************************************
+ * Board RTC interface
+ ****************************************************************************/
 rclk_time_t board_rtc_get_timestamp(struct rclk_timeval *now)
 {
     return hw_stm32_rtc_get_timeval(now);
@@ -178,87 +226,133 @@ bool board_rtc_set_timestamp(rclk_time_t now)
     return hw_stm32_rtc_set_time_stamp(now);
 }
 
-#if defined(CONFIG_BOARD_STDINOUT) || (CONFIG_BOARD_STDINOUT > 0)
+/****************************************************************************
+ * Board Stream serial/usb interface
+ ****************************************************************************/
+void board_stream_outc(char character, void* arg)
+{
+    int port = *(int *)arg;
+    board_stream_out(port, &character, 1, 0);
+}
+
+int board_stream_in(int port, void *p, int size)
+{
+    switch (port) {
+    case 0: return SERIAL_RDBUF(&com1_dev.dev, p, size);
+    case 1: return board_cdc_acm_read(0, p, size);
+    }
+    return 0;
+}
+
+int board_stream_out(int port, const void *p, int size, int way)
+{
+    switch (port) {
+    case 0: {
+            if (way == 0) {
+                return SERIAL_SEND(&com1_dev.dev, p, size);
+            } else {
+                return SERIAL_DMASEND(&com1_dev.dev, p, size);
+            }
+        }
+    case 1: {
+            return board_cdc_acm_send(0, p, size, 1);
+        }
+    }
+    return 0;
+}
+
+void board_stream_printf(int port, const char *format, ...)
+{
+    int idx;
+    int iport = port;
+    va_list args;
+
+#if defined(CONFIG_BOARD_STDPRINTF)
+    char tmp_buffer[512];
+    va_start(args, format);
+    idx = vsnprintf(tmp_buffer, 512, format, args);
+    if (idx > 512) {
+        idx = 512;
+    }
+    board_stream_out(port, tmp_buffer, idx, 0);
+#endif
+
+#if defined(CONFIG_BOARD_EMBEDPRINTF)
+    va_start(args, format);
+    vfctprintf_(board_stream_outc, &iport, format, args);
+#endif
+
+    va_end(args);
+}
+
+/****************************************************************************
+ * Board printf setting
+ ****************************************************************************/
+#if defined(CONFIG_BOARD_STDPRINTF)
 #include <string.h>
 #include <stdio.h>
-#include <stdarg.h>
-FILE __stdin, __stdout, __stderr;
+
+#if defined (__CC_ARM) || defined(__ARMCC_VERSION)
+
+int fputc(int c, FILE *f)
+{
+#if (CONFIG_BOARD_PRINTF_SOURCE == 1)
+    SERIAL_SEND(dstdout, ptr, len);
+#elif (CONFIG_BOARD_PRINTF_SOURCE == 2) && defined(CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE)
+    board_cdc_acm_send(0, ptr, len, 1);
+#endif
+}
+#elif defined(__GNUC__)
+
 int _write(int file, const char *ptr, int len)
 {
     const int stdin_fileno = 0;
     const int stdout_fileno = 1;
     const int stderr_fileno = 2;
     if (file == stdout_fileno) {
-#if (CONFIG_BOARD_STDINOUT == 1)
+#if (CONFIG_BOARD_PRINTF_SOURCE == 1)
         SERIAL_SEND(dstdout, ptr, len);
-        // SERIAL_DMASEND(dstdout, ptr, len);
-#elif (CONFIG_BOARD_STDINOUT == 2) && defined(CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE)
+#elif (CONFIG_BOARD_PRINTF_SOURCE == 2) && defined(CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE)
         board_cdc_acm_send(0, ptr, len, 1);
 #endif
     }
 
     return len;
 }
-
-// nonblock
-int _read(int file, char *ptr, int len)
-{
-    const int stdin_fileno = 0;
-    const int stdout_fileno = 1;
-    const int stderr_fileno = 2;
-    int rsize = 0;
-    if (file == stdin_fileno) {
-#if (CONFIG_BOARD_STDINOUT == 1)
-        rsize = SERIAL_RDBUF(dstdin, ptr, len);
-#elif (CONFIG_BOARD_STDINOUT == 2) && defined(CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE)
-        rsize = board_cdc_acm_read(0, ptr, len);
 #endif
-    }
-    return rsize;
-}
-size_t fwrite(const void *ptr, size_t size, size_t n_items, FILE *stream)
+#endif
+
+#if defined(CONFIG_BOARD_EMBEDPRINTF)
+void _putchar(char ch)
 {
-    return _write(stream->_file, ptr, size*n_items);
-}
-size_t fread(void *ptr, size_t size, size_t n_items, FILE *stream)
-{
-    return _read(stream->_file, ptr, size*n_items);
+#if (CONFIG_BOARD_PRINTF_SOURCE == 1)
+    SERIAL_SEND(dstdout, &ch, 1);
+#elif (CONFIG_BOARD_PRINTF_SOURCE == 2) && defined(CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE)
+    board_cdc_acm_send(0, &ch, 1, 1);
+#endif
 }
 #endif
 
-
-#ifdef CONFIG_BOARD_HRT_TIMEBASE
-#include <drivers/drv_hrt.h>
-hrt_abstime hrt_absolute_time(void)
+void board_printf(const char *format, ...)
 {
-    // uint64_t m0 = HAL_GetTick();
-    // volatile uint64_t u0 = SysTick->VAL;
-    // const uint64_t tms = SysTick->LOAD + 1;
-    // volatile uint64_t abs_time = (m0 * 1000 + ((tms - u0) * 1000) / tms);
-    // return abs_time;
+    va_list args;
+    va_start(args, format);
 
-    uint32_t primask = __get_PRIMASK();
-    __disable_irq();
-
-    uint32_t m = HAL_GetTick();
-    volatile uint32_t v = SysTick->VAL;
-    // If an overflow happened since we disabled irqs, it cannot have been
-    // processed yet, so increment m and reload VAL to ensure we get the
-    // post-overflow value.
-    if (SCB->ICSR & SCB_ICSR_PENDSTSET_Msk) {
-        ++m;
-        v = SysTick->VAL;
-    }
-
-    // Restore irq status
-    __set_PRIMASK(primask);
-
-    const uint32_t tms = SysTick->LOAD + 1;
-    return (m * 1000 + ((tms - v) * 1000) / tms);
-}
+#if defined(CONFIG_BOARD_STDPRINTF)
+    vprintf(format, args);
 #endif
 
-#ifdef CONFIG_FR_IDLE_TIMER_TASKCREATE_HANDLE
+#if defined(CONFIG_BOARD_EMBEDPRINTF)
+    vprintf_(format, args);
+#endif
+
+    va_end(args);
+}
+
+/****************************************************************************
+ * FreeRTOS setting
+ ****************************************************************************/
+#if defined(CONFIG_FR_IDLE_TIMER_TASKCREATE_HANDLE)
 #include "FreeRTOS.h"
 #include "task.h"
 StackType_t xTaskIdle_stack[configMINIMAL_STACK_SIZE];
@@ -284,7 +378,7 @@ void vApplicationGetTimerTaskMemory( StaticTask_t **ppxTimerTaskTCBBuffer,
 }
 #endif
 
-#ifdef CONFIG_FR_MALLOC_FAILED_HANDLE
+#if defined(CONFIG_FR_MALLOC_FAILED_HANDLE)
 #include "FreeRTOS.h"
 #include "task.h"
 void vApplicationMallocFailedHook( void )

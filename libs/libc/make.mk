@@ -3,6 +3,11 @@ ifeq (${PROJ_TC},gae)
 CSOURCES   +=  libs/libc/noneuse_syscall.c
 endif
 
+ifeq (${MK_USE_EMBED_PRINTF},y)
+PROJ_CINCDIRS   +=  libs/libc/printf
+CSOURCES   +=  libs/libc/printf/lib_eprintf.c
+endif
+
 ifeq (${MK_RTOS},frtos)
 
 ifeq (${MK_USE_POSIX},y)

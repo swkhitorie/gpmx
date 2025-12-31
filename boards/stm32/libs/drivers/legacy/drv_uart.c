@@ -683,13 +683,13 @@ int up_usart_dmasend(struct uart_dev_s *dev, const uint8_t *p, uint16_t len)
 {
     struct up_uart_dev_s *priv = dev->priv;
 
-    if (serial_dev_lock(dev) != DTRUE) {
+    if (serial_dev_lock(dev) != GOK) {
         return 1;
     }
 
     serial_buf_write(&dev->xmit, &p[0], len);
 
-    if (serial_tx_wait(dev) != DTRUE) {
+    if (serial_tx_wait(dev) != GOK) {
         serial_dev_unlock(dev);
         return 1;
     }
@@ -718,7 +718,7 @@ int up_usart_send(struct uart_dev_s *dev, const uint8_t *p, uint16_t len)
     int ret = 0;
     struct up_uart_dev_s *priv = dev->priv;
 
-    if (serial_dev_lock(dev) != DTRUE) {
+    if (serial_dev_lock(dev) != GOK) {
         return 1;
     }
 

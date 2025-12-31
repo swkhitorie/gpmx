@@ -255,25 +255,7 @@ int board_cdc_acm_send(uint8_t busid, const uint8_t *p, uint16_t len, uint8_t wa
     (void)busid;
 
     if (way == 0) {
-        for (fsize = len; fsize > 0;) {
-            ep_tx_busy_flag = true;
-
-            if (fsize > CDC_MAX_MPS) {
-                for (int i = 0; i < CDC_MAX_MPS; i++) {
-                    cdc_wbuf[i] = p[pidx];
-                    pidx++;
-                }
-                usbd_ep_start_write(0, CDC_IN_EP, cdc_wbuf, CDC_MAX_MPS);
-                fsize -= CDC_MAX_MPS;
-            } else {
-                for (int i = 0; i < fsize; i++) {
-                    cdc_wbuf[i] = p[i];
-                }
-                usbd_ep_start_write(0, CDC_IN_EP, cdc_wbuf, fsize);
-                fsize = 0;
-            }
-            while (ep_tx_busy_flag);
-        }
+        return 0;
     } else if (way == 1) {
 #if defined(CONFIG_BOARD_FREERTOS_ENABLE)
         if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {

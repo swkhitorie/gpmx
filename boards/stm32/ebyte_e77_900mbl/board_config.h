@@ -19,6 +19,18 @@
 // #define __FPU_PRESENT         1    /* need change __FPU_PRESENT macro in stm32wlE5xx.h into 1UL */
 
 #define USE_BSP_DRIVER
+
+#define BOARD_PRINTF(...)    board_printf(__VA_ARGS__)
+
+#define BOARD_CRUSH_PRINTF(...)    board_stream_printf(0, __VA_ARGS__)
+
+#define BOARD_FIRMWARE_NAME   "ebyte_e77_900mbl"
+#define BOARD_HARDWARE_VERSION   "v1.0.0"
+
+#ifndef BOARD_SOFTWARE_VERSION
+#define BOARD_SOFTWARE_VERSION   "v1.0.1"
+#endif
+
 /** 
  * CONFIG_BOARD_COM_STDINOUT
  * CONFIG_BOARD_FREERTOS_ENABLE
@@ -51,20 +63,23 @@ void board_subghz_init();
 void board_subghz_deinit();
 
 /*-------------- board bsp interface --------------*/
+void board_led_toggle(uint8_t idx);  //0:red, 1:green, 2:blue
+
+void board_get_uid(uint32_t *p);
+
+uint32_t board_get_time();
+void     board_delay(uint32_t ms);
+uint32_t board_elapsed_time(const uint32_t timestamp);
+
+int  board_stream_in(int port, void *p, int size);
+int  board_stream_out(int port, const void *p, int size, int way);
+void board_stream_printf(int port, const char *format, ...);
+void board_printf(const char *format, ...);
 
 void board_debug();
 
 uint32_t board_rng_get();
-
-void board_get_uid(uint32_t *p);
-
-//0:red, 1:green, 2:blue
-void board_led_toggle(int i);
-
-uint32_t board_elapsed_tick(const uint32_t tick);
-
-bool board_subghz_tx_ready();
-
+bool     board_subghz_tx_ready();
 uint32_t board_crc_key_get(uint32_t *uid, uint32_t key);
 
 #ifdef __cplusplus

@@ -212,9 +212,9 @@ int main(int argc, char *argv[])
                 SCH1_ret_data.Rate1[AXIS_Z],
                 imu_seq);
 
-            // printf("ins: %.3f, %.3f, %.3f, %.3f, %.3f, %.3f \r\n",
-            //     SCH1_ret_data.Acc1[AXIS_X], SCH1_ret_data.Acc1[AXIS_Y], SCH1_ret_data.Acc1[AXIS_Z],
-            //     SCH1_ret_data.Rate1[AXIS_X], SCH1_ret_data.Rate1[AXIS_Y], SCH1_ret_data.Rate1[AXIS_Z]);
+            printf("ins: %.3f, %.3f, %.3f, %.3f, %.3f, %.3f \r\n",
+                SCH1_ret_data.Acc1[AXIS_X], SCH1_ret_data.Acc1[AXIS_Y], SCH1_ret_data.Acc1[AXIS_Z],
+                SCH1_ret_data.Rate1[AXIS_X], SCH1_ret_data.Rate1[AXIS_Y], SCH1_ret_data.Rate1[AXIS_Z]);
 #endif
 
 #if defined(CONFIG_SPI_IMU_ASM330LHH)

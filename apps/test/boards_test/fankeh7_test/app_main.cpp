@@ -1,8 +1,8 @@
 #include <board_config.h>
 #include <stdio.h>
 #include <stdint.h>
-
 #include <board_usb_cdc.h>
+
 void reboot_detect()
 {
     uint8_t cmd_rx[64];
@@ -17,10 +17,26 @@ void reboot_detect()
     }
 }
 
+void fault_test_by_div0()
+{
+    volatile int *SCB_CCR = (volatile int *)0xE000ED14; // SCB->CCR
+    int x, y, z;
+
+    *SCB_CCR |= (1 << 4); /* bit4: DIV_0_TRP */ 
+
+    x = 10;
+    y = 0;
+    z = x / y;
+
+    board_printf("z:%d\r\n",z);
+}
+
 int main(int argc, char *argv[])
 {
     board_init();
     board_bsp_init();
+
+    // fault_test_by_div0();
 
     uint32_t m = HAL_GetTick();
     for (;;) {
@@ -29,7 +45,11 @@ int main(int argc, char *argv[])
 
             reboot_detect();
             board_debug();
-            printf("hello2\r\n");
+
+            int length = 3;
+
+            board_printf("std print write: %d\r\n", length);
+            board_stream_printf(1, "board print write: %d\r\n", length);
         }
     }
 }

@@ -38,11 +38,11 @@ void obd_request_speed()
 static struct can_msg_s rmsg;
 void obd_rx_speed_detect()
 {
-    if (can_rxfifo_get(&obdbus->cd_rxfifo, &rmsg) == DTRUE &&
+    if (can_rxfifo_get(&obdbus->cd_rxfifo, &rmsg) == GOK &&
         rmsg.cm_hdr.ch_id == 0x7E8) {
 
         vehicle_speed = (int8_t)(rmsg.cm_data[3]);  // byte3 [2]: 0D
-    } else if (can_rxfifo_get(&obdbus->cd_rxfifo, &rmsg) == DTRUE) {
+    } else if (can_rxfifo_get(&obdbus->cd_rxfifo, &rmsg) == GOK) {
         // printf("id: %x \r\n ", rmsg.cm_hdr.ch_id);
     }
 }

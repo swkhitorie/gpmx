@@ -39,6 +39,7 @@ CSOURCES += ${BOARD_BSP_PATH}/board_init.c
 CSOURCES += ${BOARD_BSP_PATH}/board_bsp.c
 
 MOD_ARCH = m4
+TC_FPU_OPTION = sp
 PROJ_ENTRY_POINT := Reset_Handler
 
 ASMSOURCES += ${BOARD_BSP_PATH}/n32g430_startup.s

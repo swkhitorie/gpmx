@@ -1646,6 +1646,28 @@ void vQueueSetQueueNumber( QueueHandle_t xQueue, UBaseType_t uxQueueNumber ) PRI
 UBaseType_t uxQueueGetQueueNumber( QueueHandle_t xQueue ) PRIVILEGED_FUNCTION;
 uint8_t ucQueueGetQueueType( QueueHandle_t xQueue ) PRIVILEGED_FUNCTION;
 
+/*
+ * The queue registry is just a means for kernel aware debuggers to locate
+ * queue structures.  It has no other purpose so is an optional component.
+ */
+#if ( configQUEUE_REGISTRY_SIZE > 0 )
+
+	/* The type stored within the queue registry array.  This allows a name
+	to be assigned to each queue making kernel aware debugging a little
+	more user friendly. */
+	typedef struct QUEUE_REGISTRY_ITEM
+	{
+		const char *pcQueueName; /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+		QueueHandle_t xHandle;
+	} xQueueRegistryItem;
+
+	/* The old xQueueRegistryItem name is maintained above then typedefed to the
+	new xQueueRegistryItem name below to enable the use of older kernel aware
+	debuggers. */
+	typedef xQueueRegistryItem QueueRegistryItem_t;
+
+#endif /* configQUEUE_REGISTRY_SIZE */
+UBaseType_t uxQueueRegistyListGet( QueueRegistryItem_t *list ) PRIVILEGED_FUNCTION;
 
 #ifdef __cplusplus
 }

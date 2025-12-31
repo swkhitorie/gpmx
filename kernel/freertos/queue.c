@@ -109,6 +109,8 @@ typedef struct QueueDefinition 		/* The old naming convention is used to prevent
 	List_t xTasksWaitingToReceive;	/*< List of tasks that are blocked waiting to read from this queue.  Stored in priority order. */
 
 	volatile UBaseType_t uxMessagesWaiting;/*< The number of items currently in the queue. */
+	volatile UBaseType_t uxMaxMessagesWaiting;
+
 	UBaseType_t uxLength;			/*< The length of the queue defined as the number of items it will hold, not the number of bytes. */
 	UBaseType_t uxItemSize;			/*< The size of each items that the queue will hold. */
 
@@ -141,20 +143,6 @@ typedef xQUEUE Queue_t;
  * queue structures.  It has no other purpose so is an optional component.
  */
 #if ( configQUEUE_REGISTRY_SIZE > 0 )
-
-	/* The type stored within the queue registry array.  This allows a name
-	to be assigned to each queue making kernel aware debugging a little
-	more user friendly. */
-	typedef struct QUEUE_REGISTRY_ITEM
-	{
-		const char *pcQueueName; /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
-		QueueHandle_t xHandle;
-	} xQueueRegistryItem;
-
-	/* The old xQueueRegistryItem name is maintained above then typedefed to the
-	new xQueueRegistryItem name below to enable the use of older kernel aware
-	debuggers. */
-	typedef xQueueRegistryItem QueueRegistryItem_t;
 
 	/* The queue registry is simply an array of QueueRegistryItem_t structures.
 	The pcQueueName member of a structure being NULL is indicative of the
@@ -463,6 +451,8 @@ static void prvInitialiseNewQueue( const UBaseType_t uxQueueLength, const UBaseT
 		pxNewQueue->pxQueueSetContainer = NULL;
 	}
 	#endif /* configUSE_QUEUE_SETS */
+
+	pxNewQueue->uxMaxMessagesWaiting = 0;
 
 	traceQUEUE_CREATE( pxNewQueue );
 }
@@ -2142,6 +2132,10 @@ UBaseType_t uxMessagesWaiting;
 
 	pxQueue->uxMessagesWaiting = uxMessagesWaiting + ( UBaseType_t ) 1;
 
+	if (pxQueue->uxMessagesWaiting > pxQueue->uxMaxMessagesWaiting) {
+		pxQueue->uxMaxMessagesWaiting = pxQueue->uxMessagesWaiting;
+	}
+
 	return xReturn;
 }
 /*-----------------------------------------------------------*/
@@ -2725,6 +2719,11 @@ Queue_t * const pxQueue = xQueue;
 
 	} /*lint !e818 xQueue could not be pointer to const because it is a typedef. */
 
+	UBaseType_t uxQueueRegistyListGet( QueueRegistryItem_t *list )
+	{
+		list = &xQueueRegistry[0];
+		return configQUEUE_REGISTRY_SIZE;
+	}
 #endif /* configQUEUE_REGISTRY_SIZE */
 /*-----------------------------------------------------------*/
 

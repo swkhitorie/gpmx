@@ -5,7 +5,7 @@
 /* Entry Point */
 ENTRY(Reset_Handler)
 
-/* Highest address of the user mode stack */
+/* Highest address of the user mode c */
 _estack = ORIGIN(RAM_D1) + LENGTH(RAM_D1);    /* end of RAM */
 /* Generate a link error if heap and stack don't fit into RAM */
 _Min_Heap_Size = 0x1000;      /* required amount of heap  */
@@ -37,6 +37,7 @@ SECTIONS
   .text :
   {
     . = ALIGN(4);
+    _stext = .;
     *(.text)           /* .text sections (code) */
     *(.text*)          /* .text* sections (code) */
     *(.glue_7)         /* glue arm to thumb code */
@@ -141,8 +142,17 @@ SECTIONS
     PROVIDE ( end = . );
     PROVIDE ( _end = . );
     . = . + _Min_Heap_Size;
+    . = ALIGN(8);
+  } >RAM_D1
+
+  .stack(NOLOAD) :
+  {
+    . = ALIGN(8);
+    _sstack = .;
     . = . + _Min_Stack_Size;
     . = ALIGN(8);
+    _estack = .;
+    PROVIDE(__stack = _estack);
   } >RAM_D1
 
   /* Remove information from the standard libraries */

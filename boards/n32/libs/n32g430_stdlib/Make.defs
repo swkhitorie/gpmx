@@ -30,3 +30,8 @@ endif
 ifeq ($(BSP_LIBCONFIG_N32_STD_I2C),y)
 LIBSTD_CSRCS += std_driver/n32g430_i2c.c
 endif
+
+ifeq ($(BSP_LIBCONFIG_N32_STD_IDWG),y)
+LIBSTD_CSRCS += std_driver/n32g430_iwdg.c
+endif
+

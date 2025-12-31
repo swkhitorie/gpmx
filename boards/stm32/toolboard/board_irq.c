@@ -1,11 +1,14 @@
 #include "board_config.h"
 
-void NMI_Handler(void) {}
-void HardFault_Handler(void) {}
-void MemManage_Handler(void) {}
-void BusFault_Handler(void) {}
-void UsageFault_Handler(void) {}
-void DebugMon_Handler(void) {}
+void NMI_Handler(void) { BOARD_CRUSH_PRINTF("%s\r\n", __func__); }
+void MemManage_Handler(void) { BOARD_CRUSH_PRINTF("%s\r\n", __func__); }
+void BusFault_Handler(void) { BOARD_CRUSH_PRINTF("%s\r\n", __func__); }
+void UsageFault_Handler(void) { BOARD_CRUSH_PRINTF("%s\r\n", __func__); }
+void DebugMon_Handler(void) { BOARD_CRUSH_PRINTF("%s\r\n", __func__); }
+
+#if !defined(CONFIG_BOARD_CMBACKTRACE)
+void HardFault_Handler(void) { BOARD_CRUSH_PRINTF("%s\r\n", __func__); }
+#endif
 
 #ifndef CONFIG_BOARD_FREERTOS_ENABLE
 void SVC_Handler(void) {}

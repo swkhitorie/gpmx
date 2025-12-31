@@ -173,3 +173,23 @@ void board_init()
 
     board_config_power_rcc();
 }
+
+void board_deinit()
+{
+    int i = 0;
+
+    __set_PRIMASK(1); 
+
+    HAL_RCC_DeInit();
+
+    SysTick->CTRL = 0;
+    SysTick->LOAD = 0;
+    SysTick->VAL = 0;
+
+    for (i = 0; i < 8; i++) {
+        NVIC->ICER[i]=0xFFFFFFFF;
+        NVIC->ICPR[i]=0xFFFFFFFF;
+    }	
+
+    __set_PRIMASK(0);
+}

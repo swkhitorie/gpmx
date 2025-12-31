@@ -424,7 +424,7 @@ int _i2c_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
             if (ret != HAL_OK) {
                 goto out;
             }
-            if (i2c_dev_transfer_wait(dev, timeout) != DTRUE) {
+            if (i2c_dev_transfer_wait(dev, timeout) != GOK) {
                 goto out;
             }
         } else {
@@ -433,7 +433,7 @@ int _i2c_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
             if (ret != HAL_OK) {
                 goto out;
             }
-            if (i2c_dev_transfer_wait(dev, timeout) != DTRUE) {
+            if (i2c_dev_transfer_wait(dev, timeout) != GOK) {
                 goto out;
             }
         }
@@ -454,7 +454,7 @@ int _i2c_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
         if (ret != HAL_OK) {
             goto out;
         }
-        if (i2c_dev_transfer_wait(dev, timeout) != DTRUE) {
+        if (i2c_dev_transfer_wait(dev, timeout) != GOK) {
             goto out;
         }
     } else {
@@ -463,7 +463,7 @@ int _i2c_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
         if (ret != HAL_OK) {
             goto out;
         }
-        if (i2c_dev_transfer_wait(dev, timeout) != DTRUE) {
+        if (i2c_dev_transfer_wait(dev, timeout) != GOK) {
             goto out;
         }
     }
@@ -519,7 +519,7 @@ int up_i2c_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
 {
     int ret = 0;
 
-    if (i2c_dev_lock(dev) != DTRUE) {
+    if (i2c_dev_lock(dev) != GOK) {
         return 1;
     }
 
