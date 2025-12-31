@@ -67,7 +67,7 @@ endif
 ifeq (${TC_NAME},gae)
 
 ifeq (${TC_FPU_OPTION},none)
-TC_FPU_OPTS:= -mfpu=none -mfloat-abi=soft
+TC_FPU_OPTS:= -mfloat-abi=soft
 endif
 ifeq (${TC_FPU_OPTION},sp)
 TC_FPU_OPTS:= -mfpu=fpv5-sp-d16 -mfloat-abi=hard
