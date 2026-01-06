@@ -207,7 +207,7 @@ void board_delay(uint32_t ms)
 uint32_t board_elapsed_time(const uint32_t timestamp)
 {
     uint32_t now = HAL_GetTick();
-    if (now > timestamp) {
+    if (timestamp > now) {
         return 0;
     }
     return now - timestamp;
