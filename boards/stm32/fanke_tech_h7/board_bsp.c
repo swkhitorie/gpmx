@@ -119,9 +119,10 @@ void board_bsp_init()
     qspi_bus_initialize(1);
 
 #if defined(CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE)
-    HAL_Delay(300);
     board_cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
-    HAL_Delay(100); // wait cdc init completed
+    while(!usb_device_is_configured(0))
+    {
+    }
 #endif
 
 #if (CONFIG_BOARD_PRINTF_SOURCE == 1)
@@ -313,7 +314,11 @@ int _write(int file, const char *ptr, int len)
 #if (CONFIG_BOARD_PRINTF_SOURCE == 1)
         SERIAL_SEND(dstdout, ptr, len);
 #elif (CONFIG_BOARD_PRINTF_SOURCE == 2) && defined(CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE)
+#if defined(CONFIG_BOARD_CRUSB_CDC_ACM_PRINTF_BLOCK)
+        board_cdc_acm_send(0, ptr, len, 0);
+#else
         board_cdc_acm_send(0, ptr, len, 1);
+#endif
 #endif
     }
 
@@ -328,7 +333,11 @@ void _putchar(char ch)
 #if (CONFIG_BOARD_PRINTF_SOURCE == 1)
     SERIAL_SEND(dstdout, &ch, 1);
 #elif (CONFIG_BOARD_PRINTF_SOURCE == 2) && defined(CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE)
+#if defined(CONFIG_BOARD_CRUSB_CDC_ACM_PRINTF_BLOCK)
+    board_cdc_acm_send(0, &ch, 1, 0);
+#else
     board_cdc_acm_send(0, &ch, 1, 1);
+#endif
 #endif
 }
 #endif

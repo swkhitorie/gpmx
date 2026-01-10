@@ -241,6 +241,10 @@ void board_cdc_acm_init(uint8_t busid, uintptr_t reg_base)
 int board_cdc_acm_read(uint8_t busid, uint8_t *p, uint16_t len)
 {
     int sz=0;
+    if (!usb_device_is_configured(busid)) {
+        return 0;
+    }
+
     gpdrv_irq_disable();
     sz = grb_read(&usb_rb_rx, p, len);
     gpdrv_irq_enable();
@@ -250,12 +254,36 @@ int board_cdc_acm_read(uint8_t busid, uint8_t *p, uint16_t len)
 int board_cdc_acm_send(uint8_t busid, const uint8_t *p, uint16_t len, uint8_t way)
 {
     uint16_t fsize = 0;
+    int tlen = len;
     uint16_t rsize = 0;
     int pidx = 0;
     (void)busid;
+    if (!usb_device_is_configured(busid)) {
+        return 0;
+    }
 
     if (way == 0) {
-        return 0;
+        gpdrv_irq_disable();
+        rsize = grb_write(&usb_rb_tx, &p[0], len);
+        gpdrv_irq_enable();
+
+        if (rsize == 0) {
+            return -1;
+        }
+
+        while (tlen > 0) {
+            ep_tx_busy_flag = true;
+
+            gpdrv_irq_disable();
+            fsize = grb_read(&usb_rb_tx, &cdc_wbuf[0], CDC_MAX_MPS);
+            gpdrv_irq_enable();
+
+            usbd_ep_start_write(0, CDC_IN_EP, cdc_wbuf, fsize);
+
+            while (ep_tx_busy_flag);
+            tlen -= fsize;
+        }
+        return len;
     } else if (way == 1) {
 #if defined(CONFIG_BOARD_FREERTOS_ENABLE)
         if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
@@ -270,7 +298,7 @@ int board_cdc_acm_send(uint8_t busid, const uint8_t *p, uint16_t len, uint8_t wa
 
                 if (rsize == 0 || ep_tx_busy_flag) {
                     xSemaphoreGive(tx_sem);
-                    return 0;
+                    return (rsize == 0) ? -1 : 0;
                 }
 
                 ep_tx_busy_flag = true;
@@ -288,7 +316,7 @@ int board_cdc_acm_send(uint8_t busid, const uint8_t *p, uint16_t len, uint8_t wa
         gpdrv_irq_enable();
 
         if (rsize == 0 || ep_tx_busy_flag) {
-            return 0;
+            return (rsize == 0) ? -1 : 0;
         }
 
         ep_tx_busy_flag = true;

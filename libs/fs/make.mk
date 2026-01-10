@@ -14,3 +14,8 @@ CSOURCES += libs/fs/littlefs/lfs_util.c
 CSOURCES += libs/fs/littlefs/lfs.c
 endif
 
+ifeq (${MK_USE_FS_ROMFS},y)
+PROJ_CINCDIRS += libs/fs/romfs/
+CSOURCES += libs/fs/romfs/gromfs.c
+endif
+
