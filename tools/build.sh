@@ -2,16 +2,22 @@
 
 script_dir="$(cd "$(dirname "$0")" && pwd)"
 source ${script_dir}/toolchain.sh
-app_subpath=$1
-make_thread=$2
-make_rebuild=$3
 param_num=$#
 
 if [ ${makefile_os} != "Linux" ]
 then
-    armcc_path=$4
-    armclang_path=$5
-    armgcc_path=$6
+    armcc_path=$1
+    armclang_path=$2
+    armgcc_path=$3
+    app_subpath=$4
+    make_thread=$5
+    make_rebuild=$6
+    shift 6
+else
+    app_subpath=$1
+    make_thread=$2
+    make_rebuild=$3
+    shift 3
 fi
 
 echo "Path[gcc-arm ]:" ${armgcc_path}
@@ -42,7 +48,7 @@ if [ ${make_rebuild} ]
 then
     if [ ${make_rebuild} == "-r" ]
     then
-        ${script_dir}/clean.sh $1
+        ${script_dir}/clean.sh $app_subpath "$@"
         echo "Rebuilding..."
     else
         echo "Building..."
@@ -57,7 +63,8 @@ make all ${make_thread} \
     MAKE_TARGET_CLEANS=n \
     TC_PATH_INST_GCC=${armgcc_path} \
     TC_PATH_INST_ARMCC=${armcc_path} \
-    TC_PATH_INST_ARMCLANG=${armclang_path}
+    TC_PATH_INST_ARMCLANG=${armclang_path} \
+    "$@"
 
 # build.sh test/app_bsp_test -j2 -r 
 

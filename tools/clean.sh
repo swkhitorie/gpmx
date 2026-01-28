@@ -13,13 +13,16 @@ if [ ! -d ${find_sub_path} ];then
     exit 1
 fi
 
+shift 1
+
 make clean distclean \
     APP_SUBPATH=${app_subpath} \
     OS=${makefile_os} \
     TC_PATH_INST_GCC=${armgcc_path} \
     TC_PATH_INST_ARMCC=${armcc_path} \
     TC_PATH_INST_ARMCLANG=${armclang_path}\
-    MAKE_TARGET_CLEANS=y
+    MAKE_TARGET_CLEANS=y \
+    "$@"
 
 # clean.sh test/app_bsp_test
 
