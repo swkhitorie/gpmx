@@ -173,6 +173,16 @@ void SystemInit(void)
 #endif /* USER_VECT_TAB_ADDRESS */
 }
 
+void SystemInit_bsp(void)
+{
+  extern void board_init();
+  board_init();
+#ifndef CONFIG_FREERTOS_ENABLE
+  extern void board_bsp_init();
+  board_bsp_init();
+#endif
+}
+
 /**
    * @brief  Update SystemCoreClock variable according to Clock Register Values.
   *         The SystemCoreClock variable contains the core clock (HCLK), it can

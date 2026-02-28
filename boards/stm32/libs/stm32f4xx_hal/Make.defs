@@ -70,3 +70,9 @@ LIBHAL_CSRCS += hal_driver/stm32f4xx_hal_sd.c
 LIBHAL_CSRCS += hal_driver/stm32f4xx_hal_smartcard.c
 LIBHAL_CSRCS += hal_driver/stm32f4xx_ll_sdmmc.c
 endif
+
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_SDRAM),y)
+LIBHAL_CSRCS += hal_driver/stm32f4xx_hal_sdram.c
+LIBHAL_CSRCS += hal_driver/stm32f4xx_hal_sram.c
+LIBHAL_CSRCS += hal_driver/stm32f4xx_ll_fsmc.c
+endif

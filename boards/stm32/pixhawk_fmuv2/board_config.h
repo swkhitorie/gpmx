@@ -12,12 +12,22 @@
 #include "stm32f4xx_hal.h"
 #include <stdint.h>
 #include <stdbool.h>
+#include <drv_rtc.h>
 
 #define APP_LOAD_ADDRESS      (0x08004000)
 // #define HSE_VALUE             (24000000UL)
 // #define LSE_VALUE             (32768UL)
 // #define __FPU_PRESENT         1
 // #define __FPU_USED            1
+
+#if !defined(CONFIG_BOARD_PRINTF_SOURCE) || \
+    (!defined(CONFIG_CRUSB_DEVICE_ENABLE) || !defined(CONFIG_CRUSB_DEVICE_CDC_ACM_ENABLE))
+#define CONFIG_BOARD_PRINTF_SOURCE  (2)
+#endif
+
+#define BOARD_PRINTF(...)    board_printf(__VA_ARGS__)
+
+#define BOARD_CRUSH_PRINTF(...)    board_stream_printf(0, __VA_ARGS__)
 
 #define BOARD_IO_GET(port, pin)       HAL_GPIO_ReadPin(port, (uint16_t)(0x01<<pin))
 #define BOARD_IO_SET(port, pin, val)  HAL_GPIO_WritePin(port, (uint16_t)(0x01<<pin), val)
@@ -97,18 +107,28 @@
     extern "C" {
 #endif
 
-void board_irqreset();
+void board_init();
+void board_deinit();
+void board_bsp_init();
+void board_bsp_deinit();
 
 void board_reboot();
-
-void board_init();
-
-void board_bsp_init();
-
+void board_get_uid(uint32_t *p);
+uint32_t board_get_time();
+void board_delay(uint32_t ms);
+uint32_t board_elapsed_time(const uint32_t timestamp);
 /*-------------- board bsp interface --------------*/
+
+void board_test();
 void board_led_toggle(uint8_t idx);
 
-void board_debug();
+int  board_stream_in(int port, void *p, int size);
+int  board_stream_out(int port, const void *p, int size, int way);
+void board_stream_printf(int port, const char *format, ...);
+void board_printf(const char *format, ...);
+
+bool board_rtc_set_timestamp(rclk_time_t now);
+rclk_time_t board_rtc_get_timestamp(struct rclk_timeval *now);
 
 #ifdef __cplusplus
 }

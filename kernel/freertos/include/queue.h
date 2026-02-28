@@ -1652,12 +1652,16 @@ uint8_t ucQueueGetQueueType( QueueHandle_t xQueue ) PRIVILEGED_FUNCTION;
  */
 #if ( configQUEUE_REGISTRY_SIZE > 0 )
 
+    #if !defined(configQUEUE_MAX_NAMELEN)
+	#define configQUEUE_MAX_NAMELEN 16
+	#endif
 	/* The type stored within the queue registry array.  This allows a name
 	to be assigned to each queue making kernel aware debugging a little
 	more user friendly. */
 	typedef struct QUEUE_REGISTRY_ITEM
 	{
-		const char *pcQueueName; /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+		UBaseType_t registered;
+		char pcQueueName[configQUEUE_MAX_NAMELEN]; /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
 		QueueHandle_t xHandle;
 	} xQueueRegistryItem;
 
@@ -1667,7 +1671,11 @@ uint8_t ucQueueGetQueueType( QueueHandle_t xQueue ) PRIVILEGED_FUNCTION;
 	typedef xQueueRegistryItem QueueRegistryItem_t;
 
 #endif /* configQUEUE_REGISTRY_SIZE */
-UBaseType_t uxQueueRegistyListGet( QueueRegistryItem_t *list ) PRIVILEGED_FUNCTION;
+UBaseType_t uxQueueRegistyListGet( QueueRegistryItem_t **list ) PRIVILEGED_FUNCTION;
+
+void uxQueueStatus(const QueueHandle_t xQueue, UBaseType_t *CurrentMsgWait, UBaseType_t *MaxMsgWait,
+	 UBaseType_t *QueueCapacity, UBaseType_t *QueueItemSize);
+
 
 #ifdef __cplusplus
 }

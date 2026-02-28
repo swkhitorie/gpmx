@@ -279,7 +279,7 @@ struct qspi_ops_s
 struct qspi_dev_s
 {
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
     SemaphoreHandle_t  rxsem;    /* Wait for RX DMA to complete */
     SemaphoreHandle_t  txsem;    /* Wait for TX DMA to complete */
 

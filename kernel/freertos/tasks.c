@@ -265,6 +265,8 @@ typedef struct tskTaskControlBlock 			/* The old naming convention is used to pr
 
 	#if ( ( portSTACK_GROWTH > 0 ) || ( configRECORD_STACK_HIGH_ADDRESS == 1 ) )
 		StackType_t		*pxEndOfStack;		/*< Points to the highest valid address for the stack. */
+	#else
+        UBaseType_t     uxSizeOfStack;
 	#endif
 
 	#if ( portCRITICAL_NESTING_IN_TCB == 1 )
@@ -863,6 +865,10 @@ UBaseType_t x;
 
 		/* Check the alignment of the calculated top of stack is correct. */
 		configASSERT( ( ( ( portPOINTER_SIZE_TYPE ) pxTopOfStack & ( portPOINTER_SIZE_TYPE ) portBYTE_ALIGNMENT_MASK ) == 0UL ) );
+
+        #if ( ( portSTACK_GROWTH <= 0 ) && ( configRECORD_STACK_HIGH_ADDRESS == 0 ) )
+            pxNewTCB->uxSizeOfStack = ulStackDepth;   /*< Support For CmBacktrace >*/
+        #endif
 
 		#if( configRECORD_STACK_HIGH_ADDRESS == 1 )
 		{
@@ -5243,4 +5249,38 @@ when performing module tests). */
 
 #endif
 
+uint32_t *vTaskStackAddr()
+{
+    return pxCurrentTCB->pxStack;
+}
 
+uint32_t vTaskStackSize()
+{
+#if ( ( portSTACK_GROWTH > 0 ) || ( configRECORD_STACK_HIGH_ADDRESS == 1 ) )
+    return (pxNewTCB->pxEndOfStack - pxNewTCB->pxStack + 1);
+#else
+    return pxCurrentTCB->uxSizeOfStack;
+#endif
+}
+
+char * vTaskName()
+{
+	return pxCurrentTCB->pcTaskName;
+}
+
+void uxTaskStatus(TaskHandle_t xTask, UBaseType_t *stackBase, UBaseType_t *stackHighWater, 
+	UBaseType_t *stackSize, UBaseType_t *stackUsed)
+{
+	TCB_t *pxTCB;
+	pxTCB = prvGetTCBFromHandle( xTask );
+
+#if ( ( portSTACK_GROWTH > 0 ) || ( configRECORD_STACK_HIGH_ADDRESS == 1 ) )
+    *stackSize = (pxTCB->pxEndOfStack - pxTCB->pxStack + 1);
+#else
+    *stackSize = pxTCB->uxSizeOfStack * sizeof(StackType_t);
+#endif
+
+	*stackBase = (UBaseType_t)(pxTCB->pxStack);
+	*stackUsed = (*stackSize) - (uxTaskGetStackHighWaterMark(pxTCB) * sizeof(StackType_t));
+    *stackHighWater = (UBaseType_t)((*stackBase) + (*stackUsed));
+}

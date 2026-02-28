@@ -1,6 +1,5 @@
 #include "board_config.h"
 
-#ifdef CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE
 void HAL_PCD_MspInit(PCD_HandleTypeDef *hpcd)
 {
 	/* select usb clock -> PLL3Q 48M, from HSE */
@@ -41,4 +40,3 @@ void HAL_PCD_MspDeInit(PCD_HandleTypeDef *hpcd)
     HAL_GPIO_DeInit(GPIOA, GPIO_PIN_11|GPIO_PIN_12);
     HAL_NVIC_DisableIRQ(OTG_FS_IRQn);
 }
-#endif

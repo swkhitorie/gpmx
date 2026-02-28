@@ -2411,6 +2411,8 @@ TaskHandle_t pvTaskIncrementMutexHeldCount( void ) PRIVILEGED_FUNCTION;
  */
 void vTaskInternalSetTimeOutState( TimeOut_t * const pxTimeOut ) PRIVILEGED_FUNCTION;
 
+void uxTaskStatus(TaskHandle_t xTask, UBaseType_t *stackBase, UBaseType_t *stackHighWater, 
+	UBaseType_t *stackSize, UBaseType_t *stackUsed);
 
 #ifdef __cplusplus
 }

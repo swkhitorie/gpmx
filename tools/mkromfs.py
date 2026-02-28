@@ -264,3 +264,6 @@ if __name__ == '__main__':
         output = sys.stdout
 
     output.write(data)
+
+# cmd example
+# python .\tools\mkromfs.py --dump .\libs\fs\romfs\romfs_test\test_file\ .\libs\fs\romfs\romfs_test\romfs_test_data.c

@@ -11,7 +11,7 @@ extern uint32_t SystemCoreClock;
 /****************************************************************************
  * FreeRTOS Interrupt Configuration
  ****************************************************************************/
-#ifdef CONFIG_BOARD_FREERTOS_ENABLE
+#ifdef CONFIG_FREERTOS_ENABLE
 #define xPortPendSVHandler 	PendSV_Handler
 #define vPortSVCHandler 	SVC_Handler
 #endif
@@ -61,7 +61,7 @@ extern uint32_t SystemCoreClock;
 #define configMINIMAL_STACK_SIZE				((unsigned short)130)   /* Idle Task Stack Size, unit in word */
 #define configMAX_TASK_NAME_LEN					(16)                    /* Task NameString Max Len */
 
-#define configGENERATE_RUN_TIME_STATS	        1                       /* 1: Enable Task cpu utilization analyze */
+#define configGENERATE_RUN_TIME_STATS	        0                       /* 1: Enable Task cpu utilization analyze */
 #define configSUPPORT_DYNAMIC_ALLOCATION        1                       /* 1: support dynamic allocation */
 #define configSUPPORT_STATIC_ALLOCATION         1                       /* 1: support static allocation */
 
@@ -77,7 +77,7 @@ extern uint32_t SystemCoreClock;
 #define configUSE_COUNTING_SEMAPHORES			1                       /* 1: Enable Counting Mutex Semaphore */
 #define configUSE_QUEUE_SETS					1                       /* 1: Enable message queue */
 #define configUSE_PREEMPTION					1                       /* 1: preemption core, 0: croutine core */
-#define configUSE_MALLOC_FAILED_HOOK			1                       /* 1: Enable Malloc Failed Hook */
+#define configUSE_MALLOC_FAILED_HOOK			0                       /* 1: Enable Malloc Failed Hook */
 #define configUSE_IDLE_HOOK						0                       /* 1: Enable Idle Task Hook */
 #define configUSE_TICK_HOOK						0                       /* 1: Enable Tick interrupt Hook */
 #define configUSE_APPLICATION_TASK_TAG			1 
@@ -91,7 +91,7 @@ extern uint32_t SystemCoreClock;
 #define configTIMER_TASK_STACK_DEPTH	        (configMINIMAL_STACK_SIZE*2)    /* Soft Timer Task Stack depth, unit in word */
 #define configMAX_CO_ROUTINE_PRIORITIES         2                               /* Croutine Valid Priority num */
 #define configIDLE_SHOULD_YIELD					1     /* if 1, Idle Task will give cpu up to other task having same priority */
-#define configQUEUE_REGISTRY_SIZE				8     /* if not 0, value can indicate queue and sempahore recorded num */
+#define configQUEUE_REGISTRY_SIZE				16    /* if not 0, value can indicate queue and sempahore recorded num */
 #define configCHECK_FOR_STACK_OVERFLOW			0     /* if bigger than 0, user add a stack overflow detection hook function, 1 and 2 means two detection method */
 
 /****************************************************************************
@@ -107,7 +107,7 @@ extern uint32_t SystemCoreClock;
 #define INCLUDE_xTaskGetHandle                  0
 #define INCLUDE_xTaskGetIdleTaskHandle          0
 #define INCLUDE_xTaskGetSchedulerState          1
-#define INCLUDE_uxTaskGetStackHighWaterMark     0
+#define INCLUDE_uxTaskGetStackHighWaterMark     1
 #define INCLUDE_uxTaskPriorityGet		        1
 #define INCLUDE_vTaskPrioritySet		        1
 #define INCLUDE_vTaskCleanUpResources	        1

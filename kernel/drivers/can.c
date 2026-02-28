@@ -36,7 +36,7 @@ int can_bus_initialize(int bus)
         return -1;
     }
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
     dev->sem_excl = xSemaphoreCreateBinary();
     dev->sem_tx = xSemaphoreCreateBinary();
     xSemaphoreGive(dev->sem_tx);
@@ -52,7 +52,7 @@ int can_bus_initialize(int bus)
 
 int can_dev_lock(struct can_dev_s *dev)
 {
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
 
     if (pdTRUE == xSemaphoreTake(dev->sem_excl, 0)) {
         return GOK;
@@ -72,7 +72,7 @@ int can_dev_lock(struct can_dev_s *dev)
 
 int can_dev_unlock(struct can_dev_s *dev)
 {
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
 
     xSemaphoreGive(dev->sem_excl);
     return GOK;
@@ -85,7 +85,7 @@ int can_dev_unlock(struct can_dev_s *dev)
 
 int can_tx_wait(struct can_dev_s *dev)
 {
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
 
     if (pdTRUE == xSemaphoreTake(dev->sem_tx, 5)) {
         return -1;
@@ -104,7 +104,7 @@ int can_tx_wait(struct can_dev_s *dev)
 
 void can_tx_post(struct can_dev_s *dev)
 {
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
 
     BaseType_t h_pri;
     xSemaphoreGiveFromISR(dev->sem_tx, &h_pri);

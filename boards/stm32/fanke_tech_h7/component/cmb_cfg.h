@@ -50,7 +50,7 @@
 #define CMB_PRINT_LANGUAGE_CHINESE_UTF8   2
  */
 
-#ifndef CONFIG_BOARD_FREERTOS_ENABLE
+#ifndef CONFIG_FREERTOS_ENABLE
 
 /* enable bare metal(no OS) platform */
 #define CMB_USING_BARE_METAL_PLATFORM

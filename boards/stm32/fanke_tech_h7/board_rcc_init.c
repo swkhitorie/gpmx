@@ -223,9 +223,17 @@ void SystemInit (void)
   SCB->VTOR = D1_AXISRAM_BASE  | VECT_TAB_OFFSET;       /* Vector Table Relocation in Internal SRAM */
 #else
   SCB->VTOR = FLASH_BANK1_BASE | VECT_TAB_OFFSET;       /* Vector Table Relocation in Internal FLASH */
-#endif  
+#endif
+}
 
-
+void SystemInit_bsp(void)
+{
+  extern void board_init();
+  board_init();
+#ifndef CONFIG_FREERTOS_ENABLE
+  extern void board_bsp_init();
+  board_bsp_init();
+#endif
 }
 
 /**

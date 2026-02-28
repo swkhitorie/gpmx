@@ -36,8 +36,7 @@ int serial_bus_initialize(int bus)
         return -1;
     }
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
-
+#if defined(CONFIG_FREERTOS_ENABLE)
     dev->exclsem = xSemaphoreCreateBinary();
 
     /* This semaphore is used for signaling and, hence, should not have
@@ -58,7 +57,7 @@ int serial_bus_initialize(int bus)
 
 int serial_dev_lock(struct uart_dev_s *dev)
 {
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
 
     if (pdTRUE == xSemaphoreTake(dev->exclsem, 0)) {
         return GOK;
@@ -78,7 +77,7 @@ int serial_dev_lock(struct uart_dev_s *dev)
 
 int serial_dev_unlock(struct uart_dev_s *dev)
 {
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
 
     xSemaphoreGive(dev->exclsem);
     return GOK;
@@ -91,7 +90,7 @@ int serial_dev_unlock(struct uart_dev_s *dev)
 
 int serial_tx_wait(struct uart_dev_s *dev)
 {
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
 
     if (pdTRUE == xSemaphoreTake(dev->xmitsem, 5)) {
         return -1;
@@ -110,7 +109,7 @@ int serial_tx_wait(struct uart_dev_s *dev)
 
 void serial_tx_post(struct uart_dev_s *dev)
 {
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
 
     BaseType_t h_pri = pdFALSE;
     xSemaphoreGiveFromISR(dev->xmitsem, &h_pri);

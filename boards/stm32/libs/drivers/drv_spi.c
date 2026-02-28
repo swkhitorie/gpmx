@@ -338,7 +338,7 @@ void _spi_setup(struct spi_dev_s *dev)
     int ret = 0;
     struct up_spi_dev_s *priv = dev->priv;
 
-    priv->hspi.Instance               = _spi_obj_get(priv->id-1);
+    priv->hspi.Instance               = _spi_obj_get(priv->id);
     priv->hspi.Init.Mode              = SPI_MODE_MASTER;
     priv->hspi.Init.Direction         = SPI_DIRECTION_2LINES;
     switch (dev->nbits) {
@@ -807,9 +807,19 @@ int up_spi_exchangeblock(struct spi_dev_s *dev,
 	struct up_spi_dev_s *priv = dev->priv;
     void *nc_txbuffer = (void *)txbuffer;
 
-    if (HAL_OK != HAL_SPI_TransmitReceive(&priv->hspi, nc_txbuffer, rxbuffer, nwords, 1000)) {
-        return -1;
-    }
+	if (!nc_txbuffer && rxbuffer) {
+        if (HAL_OK != HAL_SPI_Receive(&priv->hspi, rxbuffer, nwords, 1000)) {
+            return -1;
+        }
+	} else if (nc_txbuffer && !rxbuffer) {
+        if (HAL_OK != HAL_SPI_Transmit(&priv->hspi, nc_txbuffer, nwords, 1000)) {
+            return -1;
+        }
+	} else if (nc_txbuffer && rxbuffer) {
+        if (HAL_OK != HAL_SPI_TransmitReceive(&priv->hspi, nc_txbuffer, rxbuffer, nwords, 1000)) {
+            return -1;
+        }
+	}
 
 	return GOK;
 }

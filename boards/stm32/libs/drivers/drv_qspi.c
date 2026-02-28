@@ -265,6 +265,8 @@ int up_qspi_setup(struct qspi_dev_s *dev)
     HAL_NVIC_EnableIRQ(QUADSPI_IRQn);
 
     g_qspidev = dev;
+
+    return 0;
 }
 
 int _qspi_command(struct qspi_dev_s *dev, struct qspi_cmdinfo_s *cmdinfo)

@@ -22,7 +22,7 @@
 #define dn_time()      HAL_GetTick()
 #endif
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
 #include <FreeRTOS.h>
 #include <task.h>
 #include <semphr.h>

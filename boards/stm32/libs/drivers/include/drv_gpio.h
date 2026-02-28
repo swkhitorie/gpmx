@@ -41,9 +41,12 @@
 #if defined (DRV_STM32_F4) || defined(DRV_STM32_H7) || defined(DRV_STM32_WL)
 #define LOW_PERIPH_INITPIN(port, pin, mode, pull, speed, alternate) \
         stm32_gpio_setup(port, pin, mode, pull, speed, alternate, NULL, NULL, 0)
+#define LOW_INITPINF(port, pin, mode, pull, speed) \
+        stm32_gpio_setup(port, pin, mode, pull, speed, 0, NULL, NULL, 0)
 #else
 #define LOW_PERIPH_INITPIN(port, pin, mode, pull, speed) \
         stm32_gpio_setup(port, pin, mode, pull, speed, 0, NULL, NULL, 0)
+#define LOW_INITPINF LOW_PERIPH_INITPIN
 #endif
 
 enum pullstate {

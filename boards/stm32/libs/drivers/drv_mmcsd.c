@@ -345,7 +345,7 @@ void SDMMC2_IRQHandler(void)
 /****************************************************************************
  * FatFS Support
  ****************************************************************************/
-#ifdef CONFIG_STM32_MMCSD_FATFS_SUPPORT
+#ifdef CONFIG_STM32_MMCSD_FATFS_ENABLE
 #include "ff.h"
 #include "ff_drv.h"
 
@@ -487,5 +487,5 @@ DRESULT mmcsd_ioctl(BYTE lun, BYTE cmd, void *buff)
 }
 #endif
 
-#endif // end with CONFIG_STM32_MMCSD_FATFS_SUPPORT
+#endif // end with CONFIG_STM32_MMCSD_FATFS_ENABLE
 

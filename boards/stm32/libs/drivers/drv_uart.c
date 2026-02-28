@@ -201,16 +201,20 @@ void _usart_dma_setup(struct uart_dev_s *dev, uint8_t flag)
     struct dma_config *dmacfg = ((void *)0);
     DMA_HandleTypeDef *dmaobj = ((void *)0);
 
+    if (DEVICE_USART_DMA_RX == flag) {
+        dmacfg = &priv->rxdma_cfg;
+    } else if (DEVICE_USART_DMA_TX == flag) {
+        dmacfg = &priv->txdma_cfg;
+    }
+
     if (!dmacfg->enable) {
         return;
     }
 
     if (DEVICE_USART_DMA_RX == flag) {
-        dmacfg = &priv->rxdma_cfg;
         dmaobj = &priv->rxdma;
         __HAL_LINKDMA(&priv->com, hdmarx, priv->rxdma);
     } else if (DEVICE_USART_DMA_TX == flag) {
-        dmacfg = &priv->txdma_cfg;
         dmaobj = &priv->txdma;
         __HAL_LINKDMA(&priv->com, hdmatx, priv->txdma);
     }

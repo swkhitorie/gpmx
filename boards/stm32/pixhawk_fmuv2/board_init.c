@@ -1,7 +1,37 @@
 #include "board_config.h"
 
-
 static void board_config_power_rcc();
+
+void board_reboot()
+{
+    NVIC_SystemReset();
+}
+
+void board_get_uid(uint32_t *p)
+{
+    p[0] = *(volatile uint32_t*)(0x1FFF7A10);
+    p[1] = *(volatile uint32_t*)(0x1FFF7A14);
+    p[2] = *(volatile uint32_t*)(0x1FFF7A18);
+}
+
+uint32_t board_get_time()
+{
+    return HAL_GetTick();
+}
+
+void board_delay(uint32_t ms)
+{
+    HAL_Delay(ms);
+}
+
+uint32_t board_elapsed_time(const uint32_t timestamp)
+{
+    uint32_t now = HAL_GetTick();
+    if (timestamp > now) {
+        return 0;
+    }
+    return now - timestamp;
+}
 
 void board_irqreset()
 {
@@ -19,11 +49,6 @@ void board_irqreset()
     // __set_FAULTMASK(0);
     // __set_BASEPRI(0);
     // __enable_irq();
-}
-
-void board_reboot()
-{
-    NVIC_SystemReset();
 }
 
 void board_config_power_rcc()
@@ -66,6 +91,7 @@ void board_config_power_rcc()
 void board_init()
 {
     SCB->VTOR = APP_LOAD_ADDRESS;
+
     // board_irqreset();
 
     board_config_power_rcc();
@@ -73,3 +99,22 @@ void board_init()
     HAL_Init();
 }
 
+void board_deinit()
+{
+    int i = 0;
+
+    __set_PRIMASK(1); 
+
+    HAL_RCC_DeInit();
+
+    SysTick->CTRL = 0;
+    SysTick->LOAD = 0;
+    SysTick->VAL = 0;
+
+    for (i = 0; i < 8; i++) {
+        NVIC->ICER[i]=0xFFFFFFFF;
+        NVIC->ICPR[i]=0xFFFFFFFF;
+    }	
+
+    __set_PRIMASK(0);
+}

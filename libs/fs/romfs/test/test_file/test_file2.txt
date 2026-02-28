@@ -1,0 +1,6 @@
+
+   rssi < -90 : channel free
+   -90 < rssi < -85: little environment acceptable noise
+   -85 < rssi < -80: small noise that may affect communication 
+   -80 < rssi: noise that can't ignore
+

@@ -3,18 +3,18 @@ setlocal enabledelayedexpansion
 
 set proj_dir=%~sdp0
 
-if "%2" neq "" (
-    echo program in win
-) else (
-    echo program.bat subpath -j1/2/... -r stlink stm32f1
-    exit 1
-)
+@REM if "%2" neq "" (
+@REM     echo program in win
+@REM ) else (
+@REM     echo program.bat subpath -j1/2/... -r stlink stm32f1
+@REM     exit 1
+@REM )
 
-set subpath=%1
-set thread=%2
-set rebuild=%3
-set interface=%4
-set target=%5
+@REM set subpath=%1
+@REM set thread=%2
+@REM set rebuild=%3
+@REM set interface=%4
+@REM set target=%5
 set buildscript=%proj_dir%program.sh
 set busybox=%proj_dir%busybox.exe
 
@@ -84,4 +84,30 @@ if not defined tc_ver_openocd (
     exit 1
 )
 
-%busybox% bash %buildscript% %subpath% %thread% %rebuild% %interface% %target% %tc_path_inst_armcc% %tc_path_inst_armclang% %tc_path_inst_gcc% %tc_path_openocd% "%tc_ver_openocd%"
+set "param_string=%*"
+set "make_cmd="
+set "current_token="
+
+:: 1. Ensure we process the string character by character.
+for /f "delims=" %%C in ('cmd /u /c echo !param_string!^| find /v ""') do (
+    set "char=%%C"
+    if "!char!"==" " (
+        :: 2. A space marks the end of a token.
+        if defined current_token (
+            @REM echo [ADD] Token: !current_token!
+            set "make_cmd=!make_cmd! "!current_token!""
+            set "current_token="
+        )
+    ) else (
+        :: 3. Non-space character, append to current token.
+        set "current_token=!current_token!!char!"
+    )
+)
+
+:: 4. Don't forget the last token.
+if defined current_token (
+    @REM echo [ADD] Token: !current_token!
+    set "make_cmd=!make_cmd! "!current_token!""
+)
+
+%busybox% bash %buildscript% %tc_path_inst_armcc% %tc_path_inst_armclang% %tc_path_inst_gcc% %tc_path_openocd% "%tc_ver_openocd%" !make_cmd!

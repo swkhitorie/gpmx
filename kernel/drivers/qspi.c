@@ -36,7 +36,7 @@ int qspi_bus_initialize(int bus)
         return -1;
     }
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
 
     dev->exclsem = xSemaphoreCreateBinary();
 
@@ -62,7 +62,7 @@ int  qspi_devlock(struct qspi_dev_s *dev, bool lock)
 {
     int ret = GOK;
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
 
     if (lock) {
         if (pdTRUE == xSemaphoreTake(dev->exclsem, 10)) {
@@ -92,7 +92,7 @@ int  qspi_devlock(struct qspi_dev_s *dev, bool lock)
 
 int qspi_txwait(struct qspi_dev_s *dev)
 {
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
 
     int ret = GOK;
     /* Take the semaphore (perhaps waiting).  If the result is zero, then the
@@ -118,12 +118,14 @@ int qspi_txwait(struct qspi_dev_s *dev)
     if ((dn_time() - time_start) > timeout_ms) {
         return -1;
     }
+
+    return GOK;
 #endif
 }
 
 void qspi_txwakeup(struct qspi_dev_s *dev)
 {
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
 
     xSemaphoreGive(dev->txsem);
 #else
@@ -134,7 +136,7 @@ void qspi_txwakeup(struct qspi_dev_s *dev)
 
 int qspi_rxwait(struct qspi_dev_s *dev)
 {
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
 
     int ret = GOK;
     /* Take the semaphore (perhaps waiting).  If the result is zero, then the
@@ -160,12 +162,14 @@ int qspi_rxwait(struct qspi_dev_s *dev)
     if ((dn_time() - time_start) > timeout_ms) {
         return -1;
     }
+
+    return GOK;
 #endif
 }
 
 void qspi_rxwakeup(struct qspi_dev_s *dev)
 {
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
 
     xSemaphoreGive(dev->rxsem);
 #else

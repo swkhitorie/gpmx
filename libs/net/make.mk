@@ -1,5 +1,6 @@
 
 ifeq (${MK_USE_NET_LWIP_CORE},y)
+PROJ_CDEFS += CONFIG_NET_LWIP_ENABLE
 PROJ_CINCDIRS += libs/net/lwip/src/include
 PROJ_CINCDIRS += libs/net/lwip/src/include/netif
 PROJ_CINCDIRS += libs/net/lwip/src/include/compat/posix

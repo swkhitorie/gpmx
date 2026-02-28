@@ -67,7 +67,7 @@ struct uart_dev_s {
     struct uart_dmaxfer_s dmatx;  /* Describes transmit DMA transfer */
     struct uart_dmaxfer_s dmarx;  /* Describes receive DMA transfer */
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
     SemaphoreHandle_t  exclsem;     /* Prevent devices from being occupied by multiple threads */
     /**
      * Asynch Bus:

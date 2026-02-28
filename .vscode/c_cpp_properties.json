@@ -1,20 +1,10 @@
 {
-    "env" : {
-        "arm_clang_path" : "~/__toolchain/arm_clang_6.24/",
-        "gcc_arm_path" : "~/__toolchain/gcc-arm-none-eabi-10.3-2021.10"
-    },
-
     "configurations": [
         {
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${arm_clang_path}/include",
-
-                "${gcc_arm_path}/lib/gcc/arm-none-eabi/10.3.1/include",
-                "${gcc_arm_path}/lib/gcc/arm-none-eabi/10.3.1/include-fixed",
-                "${gcc_arm_path}/lib/gcc/arm-none-eabi/10.3.1/../../../../arm-none-eabi/include",
-
+                "${workspaceFolder}/build/uorb/topics",
                 "${workspaceFolder}/boards/stm32/libs/cmsis",
                 "${workspaceFolder}/boards/stm32/libs/drivers/include",
                 "${workspaceFolder}/boards/stm32/libs/stm32f1xx_hal/device",
@@ -29,8 +19,9 @@
                 "${workspaceFolder}/boards/stm32/libs/drivers/include",
                 "${workspaceFolder}/boards/stm32/libs/drivers/flash",
 
-                "${workspaceFolder}/kernel/rt_nano/include",
-
+                "${workspaceFolder}/kernel/drivers/device",
+                "${workspaceFolder}/kernel/drivers/hardfault_info",
+                "${workspaceFolder}/kernel/drivers/hardfault_info/Languages/en-US",
                 "${workspaceFolder}/kernel/freertos/include",
                 "${workspaceFolder}/kernel/freertos/arch/cortex_m0/gcc",
                 "${workspaceFolder}/kernel/freertos/arch/cortex_m0/rvds",
@@ -40,10 +31,19 @@
                 "${workspaceFolder}/kernel/freertos/arch/cortex_m4/rvds",
                 "${workspaceFolder}/kernel/freertos/arch/cortex_m7/gcc",
                 "${workspaceFolder}/kernel/freertos/arch/cortex_m7/rvds",
+                "${workspaceFolder}/kernel/freertos/tests",
+                "${workspaceFolder}/kernel/rt_nano/include",
+                "${workspaceFolder}/kernel/module/kprintf",
+                "${workspaceFolder}/kernel/module/libc/include",
+                "${workspaceFolder}/kernel/module/libc/tests",
+                "${workspaceFolder}/kernel/module/libc/cxx",
 
-                "${workspaceFolder}/libs/drivers/device",
-                "${workspaceFolder}/libs/fs/fat"
-
+                "${workspaceFolder}/libs/fs/fat",
+                "${workspaceFolder}/libs/fs/fat/test",
+                "${workspaceFolder}/libs/fs/littlefs",
+                "${workspaceFolder}/libs/fs/littlefs/test",
+                "${workspaceFolder}/libs/fs/romfs",
+                "${workspaceFolder}/libs/fs/romfs/test"
             ],
             "intelliSenseMode": "gcc-x64",
             "cStandard": "c17",

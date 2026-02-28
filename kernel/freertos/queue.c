@@ -2638,17 +2638,22 @@ Queue_t * const pxQueue = xQueue;
 	void vQueueAddToRegistry( QueueHandle_t xQueue, const char *pcQueueName ) /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
 	{
 	UBaseType_t ux;
-
+    UBaseType_t i;
 		/* See if there is an empty space in the registry.  A NULL name denotes
 		a free slot. */
 		for( ux = ( UBaseType_t ) 0U; ux < ( UBaseType_t ) configQUEUE_REGISTRY_SIZE; ux++ )
 		{
-			if( xQueueRegistry[ ux ].pcQueueName == NULL )
+			if( xQueueRegistry[ ux ].registered == 0 )
 			{
-				/* Store the information on this queue. */
-				xQueueRegistry[ ux ].pcQueueName = pcQueueName;
+				xQueueRegistry[ ux ].registered = 1;
+				for (i = 0; i < configQUEUE_MAX_NAMELEN; i++) {
+					if(pcQueueName[i] == (char)0x00) {
+                        break;
+                    } else {
+						xQueueRegistry[ ux ].pcQueueName[i] = pcQueueName[i];
+					}
+				}
 				xQueueRegistry[ ux ].xHandle = xQueue;
-
 				traceQUEUE_REGISTRY_ADD( xQueue, pcQueueName );
 				break;
 			}
@@ -2695,7 +2700,7 @@ Queue_t * const pxQueue = xQueue;
 	void vQueueUnregisterQueue( QueueHandle_t xQueue )
 	{
 	UBaseType_t ux;
-
+    UBaseType_t i;
 		/* See if the handle of the queue being unregistered in actually in the
 		registry. */
 		for( ux = ( UBaseType_t ) 0U; ux < ( UBaseType_t ) configQUEUE_REGISTRY_SIZE; ux++ )
@@ -2703,7 +2708,10 @@ Queue_t * const pxQueue = xQueue;
 			if( xQueueRegistry[ ux ].xHandle == xQueue )
 			{
 				/* Set the name to NULL to show that this slot if free again. */
-				xQueueRegistry[ ux ].pcQueueName = NULL;
+				for (i = 0; i < configQUEUE_MAX_NAMELEN; i++) {
+					xQueueRegistry[ ux ].pcQueueName[i] = '\0';
+				}
+				xQueueRegistry[ux].registered = 0;
 
 				/* Set the handle to NULL to ensure the same queue handle cannot
 				appear in the registry twice if it is added, removed, then
@@ -2719,9 +2727,9 @@ Queue_t * const pxQueue = xQueue;
 
 	} /*lint !e818 xQueue could not be pointer to const because it is a typedef. */
 
-	UBaseType_t uxQueueRegistyListGet( QueueRegistryItem_t *list )
+	UBaseType_t uxQueueRegistyListGet( QueueRegistryItem_t **list )
 	{
-		list = &xQueueRegistry[0];
+		*list = &xQueueRegistry[0];
 		return configQUEUE_REGISTRY_SIZE;
 	}
 #endif /* configQUEUE_REGISTRY_SIZE */
@@ -2927,14 +2935,18 @@ Queue_t * const pxQueue = xQueue;
 
 #endif /* configUSE_QUEUE_SETS */
 
+void uxQueueStatus(const QueueHandle_t xQueue, UBaseType_t *CurrentMsgWait, UBaseType_t *MaxMsgWait,
+	 UBaseType_t *QueueCapacity, UBaseType_t *QueueItemSize)
+{
+	Queue_t * const pxQueue = xQueue;
+	configASSERT( pxQueue );
 
-
-
-
-
-
-
-
-
-
-
+	taskENTER_CRITICAL();
+	{
+		*CurrentMsgWait = pxQueue->uxMessagesWaiting;
+		*MaxMsgWait = pxQueue->uxMaxMessagesWaiting;
+		*QueueCapacity = pxQueue->uxLength;
+		*QueueItemSize = pxQueue->uxItemSize;
+	}
+	taskEXIT_CRITICAL();
+}

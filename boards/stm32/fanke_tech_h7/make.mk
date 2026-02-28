@@ -49,25 +49,38 @@ PROJ_CDEFS += STM32H743xx
 PROJ_CDEFS += USE_HAL_DRIVER
 PROJ_CDEFS += CONFIG_RTC_USING_LSE
 
-ifeq (${MK_USE_FS_LITTLEFS},y)
-PROJ_CDEFS += LFS_DEFINES=lfs_conf.h
-CSOURCES += ${BOARD_BSP_PATH}/w25qxx_driver.c
-CSOURCES += ${BOARD_BSP_PATH}/component/lfs_sflash_drv.c
-endif
-
 MOD_ARCH = m7
 TC_FPU_OPTION = dp
 PROJ_ENTRY_POINT := Reset_Handler
 
 PROJ_CINCDIRS += ${BOARD_BSP_PATH}
+PROJ_CINCDIRS += ${BOARD_BSP_PATH}/driver
 PROJ_CINCDIRS += ${BOARD_BSP_PATH}/component
 CSOURCES += ${BOARD_BSP_PATH}/board_irq.c
 CSOURCES += ${BOARD_BSP_PATH}/board_rcc_init.c
 CSOURCES += ${BOARD_BSP_PATH}/board_init.c
 CSOURCES += ${BOARD_BSP_PATH}/board_bsp.c
 CSOURCES += ${BOARD_BSP_PATH}/board_msp.c
+CSOURCES += ${BOARD_BSP_PATH}/driver/w25qxx_driver.c
+
+ifeq (${MK_USE_FS_LITTLEFS},y)
+PROJ_CDEFS += LFS_DEFINES=lfs_conf.h
+endif
+
+ifeq (${MK_USE_FS_FATFS},y)
+PROJ_CDEFS += CONFIG_STM32_MMCSD_FATFS_ENABLE
+endif
+
+ifeq (${MK_USE_CRUSB},y)
+ifeq (${MK_USE_CRUSB_CLASS},cdc_acm)
+ifeq (${MK_USE_CRUSB_IP},dwc2_st)
 CSOURCES += ${BOARD_BSP_PATH}/component/board_usb_cdc.c
 CSOURCES += ${BOARD_BSP_PATH}/component/board_usb_msp.c
+else
+$(error Invalid USB IP setting in board fanke_tech_h7)
+endif # end with MK_USE_CRUSB_IP
+endif # end with MK_USE_CRUSB_CLASS
+endif # end with MK_USE_CRUSB
 
 ifeq (${PROJ_TC},gae)
 ASMSOURCES += ${BOARD_BSP_PATH}/fanketech_h7_startup_gcc.s

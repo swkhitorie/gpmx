@@ -10,24 +10,23 @@
 
 #include <stdarg.h>
 
-#if defined(CONFIG_BOARD_CMBACKTRACE)
+#include "w25qxx_driver.h"
+
+#if defined(CONFIG_FREERTOS_ENABLE)
+#include <FreeRTOS.h>
+#include <task.h>
+#endif
+
+#if defined(CONFIG_MODULE_CMBACKTRACE)
 #include "cm_backtrace.h"
 #endif
 
-#if defined(CONFIG_BOARD_EMBEDPRINTF)
-#include <lib_eprintf.h>
+#if defined(CONFIG_MODULE_KPRINTF)
+#include "kprintf.h"
 #endif
 
-#if defined(CONFIG_STM32_MTD_LFS_SUPPORT)
-#include "lfs_sflash_drv.h"
-#endif
-
-#if defined(CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE)
+#if defined(CONFIG_CRUSB_DEVICE_ENABLE) && defined(CONFIG_CRUSB_DEVICE_CDC_ACM_ENABLE)
 #include "board_usb_cdc.h"
-#endif
-
-#if !defined(CONFIG_BOARD_PRINT_BUFFERLEN)
-#define CONFIG_BOARD_PRINT_BUFFERLEN (1024)
 #endif
 
 /* COM1 */
@@ -103,10 +102,6 @@ struct up_qspi_dev_s quadspi_dev =
     .priority = 10,
 };
 
-#if (CONFIG_BOARD_PRINTF_SOURCE == 1)
-uart_dev_t *dstdout;
-#endif
-
 void board_bsp_init()
 {
     LOW_INITPIN(GPIOH, 7, IOMODE_OUTPP, IO_NOPULL, IO_SPEEDHIGH);
@@ -118,37 +113,33 @@ void board_bsp_init()
     qspi_register(&quadspi_dev.dev, 1);
     qspi_bus_initialize(1);
 
-#if defined(CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE)
-    board_cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
-    while(!usb_device_is_configured(0))
-    {
-    }
-#endif
-
-#if (CONFIG_BOARD_PRINTF_SOURCE == 1)
-    dstdout = serial_bus_get(1);
-#endif
-
     hw_stm32_rtc_setup();
 
-#if defined(CONFIG_STM32_MMCSD_FATFS_SUPPORT)
+#if defined(CONFIG_FATFS_ENABLE)
     hw_stm32_mmcsd_init(1, 1, 4);
     hw_stm32_mmcsd_info(1);
     hw_stm32_mmcsd_fs_init(1);
 #endif
 
-#if defined(CONFIG_STM32_MTD_LFS_SUPPORT)
-    int ret = lfs_sflash_init(1);
-    if (ret != 0) {
-        printf("lfs sflash init failed: %d\r\n", ret);
-    } else {
-        printf("lfs sflash success\r\n");
-        lfs_sflasg_rwtest();
-    }
+#if defined(CONFIG_LFS_ENABLE)
+    w25qxx_init(1, true);
+#else
+    w25qxx_init(1, false);
 #endif
 
-#if defined(CONFIG_BOARD_CMBACKTRACE)
-    cm_backtrace_init(BOARD_FIRMWARE_NAME, BOARD_HARDWARE_VERSION, BOARD_SOFTWARE_VERSION);
+#if defined(CONFIG_MODULE_CMBACKTRACE)
+    cm_backtrace_init("fankeh7_test", "v1.0.0", "v1.0.1");
+#endif
+
+#if defined(CONFIG_CRUSB_DEVICE_ENABLE) && defined(CONFIG_CRUSB_DEVICE_CDC_ACM_ENABLE)
+    board_cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
+    while(!usb_device_is_configured(0))
+    {
+#if defined(CONFIG_FREERTOS_ENABLE)
+        vTaskDelay(100);
+#endif
+    }
+    board_delay(400);
 #endif
 }
 
@@ -162,18 +153,11 @@ void board_bsp_deinit()
     HAL_DMA_DeInit(com1_dev.com.hdmarx);
     HAL_NVIC_DisableIRQ(USART1_IRQn);
 
-#if defined(CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE)
+#if defined(CONFIG_CRUSB_DEVICE_ENABLE) && defined(CONFIG_CRUSB_DEVICE_CDC_ACM_ENABLE)
     usbd_deinitialize(0);
 #endif
 
     HAL_DeInit();
-}
-
-void board_get_uid(uint32_t *p)
-{
-    p[0] = *(volatile uint32_t*)(0x1FF1E800);
-    p[1] = *(volatile uint32_t*)(0x1FF1E804);
-    p[2] = *(volatile uint32_t*)(0x1FF1E808);
 }
 
 void board_led_toggle(uint8_t idx)
@@ -187,36 +171,6 @@ void board_led_toggle(uint8_t idx)
     }
 }
 
-void board_debug()
-{
-    board_led_toggle(0);
-}
-
-/****************************************************************************
- * Board Tickms interface
- ****************************************************************************/
-uint32_t board_get_time()
-{
-    return HAL_GetTick();
-}
-
-void board_delay(uint32_t ms)
-{
-    HAL_Delay(ms);
-}
-
-uint32_t board_elapsed_time(const uint32_t timestamp)
-{
-    uint32_t now = HAL_GetTick();
-    if (timestamp > now) {
-        return 0;
-    }
-    return now - timestamp;
-}
-
-/****************************************************************************
- * Board RTC interface
- ****************************************************************************/
 rclk_time_t board_rtc_get_timestamp(struct rclk_timeval *now)
 {
     return hw_stm32_rtc_get_timeval(now);
@@ -240,7 +194,9 @@ int board_stream_in(int port, void *p, int size)
 {
     switch (port) {
     case 0: return SERIAL_RDBUF(&com1_dev.dev, p, size);
+#if defined(CONFIG_CRUSB_DEVICE_ENABLE) && defined(CONFIG_CRUSB_DEVICE_CDC_ACM_ENABLE)
     case 1: return board_cdc_acm_read(0, p, size);
+#endif
     }
     return 0;
 }
@@ -255,9 +211,13 @@ int board_stream_out(int port, const void *p, int size, int way)
                 return SERIAL_DMASEND(&com1_dev.dev, p, size);
             }
         }
+        break;
     case 1: {
+#if defined(CONFIG_CRUSB_DEVICE_ENABLE) && defined(CONFIG_CRUSB_DEVICE_CDC_ACM_ENABLE)
             return board_cdc_acm_send(0, p, size, 1);
+#endif
         }
+        break;
     }
     return 0;
 }
@@ -268,8 +228,11 @@ void board_stream_printf(int port, const char *format, ...)
     int iport = port;
     va_list args;
 
-#if defined(CONFIG_BOARD_STDPRINTF)
-    char tmp_buffer[512];
+#if defined(CONFIG_MODULE_KPRINTF)
+    va_start(args, format);
+    vfctprintf_(board_stream_outc, &iport, format, args);
+#else
+    static char tmp_buffer[512];
     va_start(args, format);
     idx = vsnprintf(tmp_buffer, 512, format, args);
     if (idx > 512) {
@@ -278,18 +241,27 @@ void board_stream_printf(int port, const char *format, ...)
     board_stream_out(port, tmp_buffer, idx, 0);
 #endif
 
-#if defined(CONFIG_BOARD_EMBEDPRINTF)
-    va_start(args, format);
-    vfctprintf_(board_stream_outc, &iport, format, args);
-#endif
-
     va_end(args);
 }
 
 /****************************************************************************
  * Board printf setting
  ****************************************************************************/
-#if defined(CONFIG_BOARD_STDPRINTF)
+#if defined(CONFIG_MODULE_KPRINTF)
+void _putchar(char ch)
+{
+#if (CONFIG_BOARD_PRINTF_SOURCE == 1)
+
+    SERIAL_SEND(&com1_dev.dev, (const uint8_t *)&ch, 1);
+#elif (CONFIG_BOARD_PRINTF_SOURCE == 2)
+
+#if defined(CONFIG_CRUSB_DEVICE_ENABLE) && defined(CONFIG_CRUSB_DEVICE_CDC_ACM_ENABLE)
+    board_cdc_acm_send(0, &ch, 1, 0);
+#endif
+#endif
+}
+
+#else
 #include <string.h>
 #include <stdio.h>
 
@@ -298,9 +270,11 @@ void board_stream_printf(int port, const char *format, ...)
 int fputc(int c, FILE *f)
 {
 #if (CONFIG_BOARD_PRINTF_SOURCE == 1)
-    SERIAL_SEND(dstdout, ptr, len);
-#elif (CONFIG_BOARD_PRINTF_SOURCE == 2) && defined(CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE)
-    board_cdc_acm_send(0, ptr, len, 1);
+    SERIAL_SEND(&com1_dev.dev, ptr, len);
+#elif (CONFIG_BOARD_PRINTF_SOURCE == 2)
+#if defined(CONFIG_CRUSB_DEVICE_ENABLE) && defined(CONFIG_CRUSB_DEVICE_CDC_ACM_ENABLE)
+    board_cdc_acm_send(0, &ch, 1, 0);
+#endif
 #endif
 }
 #elif defined(__GNUC__)
@@ -312,12 +286,10 @@ int _write(int file, const char *ptr, int len)
     const int stderr_fileno = 2;
     if (file == stdout_fileno) {
 #if (CONFIG_BOARD_PRINTF_SOURCE == 1)
-        SERIAL_SEND(dstdout, ptr, len);
-#elif (CONFIG_BOARD_PRINTF_SOURCE == 2) && defined(CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE)
-#if defined(CONFIG_BOARD_CRUSB_CDC_ACM_PRINTF_BLOCK)
-        board_cdc_acm_send(0, ptr, len, 0);
-#else
-        board_cdc_acm_send(0, ptr, len, 1);
+        SERIAL_SEND(&com1_dev.dev, ptr, len);
+#elif (CONFIG_BOARD_PRINTF_SOURCE == 2)
+#if defined(CONFIG_CRUSB_DEVICE_ENABLE) && defined(CONFIG_CRUSB_DEVICE_CDC_ACM_ENABLE)
+        board_cdc_acm_send(0, &ch, 1, 0);
 #endif
 #endif
     }
@@ -325,51 +297,30 @@ int _write(int file, const char *ptr, int len)
     return len;
 }
 #endif
-#endif
 
-#if defined(CONFIG_BOARD_EMBEDPRINTF)
-void _putchar(char ch)
-{
-#if (CONFIG_BOARD_PRINTF_SOURCE == 1)
-    SERIAL_SEND(dstdout, &ch, 1);
-#elif (CONFIG_BOARD_PRINTF_SOURCE == 2) && defined(CONFIG_BOARD_CRUSB_CDC_ACM_ENABLE)
-#if defined(CONFIG_BOARD_CRUSB_CDC_ACM_PRINTF_BLOCK)
-    board_cdc_acm_send(0, &ch, 1, 0);
-#else
-    board_cdc_acm_send(0, &ch, 1, 1);
-#endif
-#endif
-}
-#endif
+#endif // end with CONFIG_MODULE_KPRINTF
 
 void board_printf(const char *format, ...)
 {
     va_list args;
     va_start(args, format);
 
-#if defined(CONFIG_BOARD_STDPRINTF)
-    vprintf(format, args);
-#endif
-
-#if defined(CONFIG_BOARD_EMBEDPRINTF)
+#if defined(CONFIG_MODULE_KPRINTF)
     vprintf_(format, args);
+#else
+    vprintf(format, args);
 #endif
 
     va_end(args);
 }
 
-/****************************************************************************
- * FreeRTOS setting
- ****************************************************************************/
-#if defined(CONFIG_FR_IDLE_TIMER_TASKCREATE_HANDLE)
-#include "FreeRTOS.h"
-#include "task.h"
+#ifdef CONFIG_FREERTOS_ENABLE
+
+#if (configSUPPORT_STATIC_ALLOCATION == 1)
 StackType_t xTaskIdle_stack[configMINIMAL_STACK_SIZE];
 StaticTask_t xTaskIdle;
-
 StackType_t xTasktimer_stack[configTIMER_TASK_STACK_DEPTH];
 StaticTask_t xTasktimer;
-
 void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, 
     StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize )
 {
@@ -377,7 +328,6 @@ void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer,
     *ppxIdleTaskStackBuffer = xTaskIdle_stack;
     *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
 }
-
 void vApplicationGetTimerTaskMemory( StaticTask_t **ppxTimerTaskTCBBuffer, 
     StackType_t **ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize )
 {
@@ -387,11 +337,93 @@ void vApplicationGetTimerTaskMemory( StaticTask_t **ppxTimerTaskTCBBuffer,
 }
 #endif
 
-#if defined(CONFIG_FR_MALLOC_FAILED_HANDLE)
-#include "FreeRTOS.h"
-#include "task.h"
-void vApplicationMallocFailedHook( void )
+void board_bsp_kernel_init(void *p)
 {
-    printf("[ERROR] memory allocate failed, free: %d bytes\r\n", xPortGetFreeHeapSize());
+    board_bsp_init();
+    extern void main_root(void *p);
+    xTaskCreate(main_root, "b2_init", 256, NULL, 3, NULL);
+    vTaskDelete(NULL);
+}
+
+int main(int argc, char *argv[])
+{
+    taskENTER_CRITICAL(); 
+    xTaskCreate(board_bsp_kernel_init, "b1_init", 256, NULL, 3, NULL);
+    taskEXIT_CRITICAL();
+
+    vTaskStartScheduler();
+    for (;;);
 }
 #endif
+
+/****************************************************************************
+ * TEST
+ ****************************************************************************/
+#ifdef CONFIG_FREERTOS_ENABLE
+#include "freertos_test.h"
+#ifdef CONFIG_MODULE_KPOSIX
+#include "kernel_libc_tests.h"
+#endif
+#endif
+
+#if defined(CONFIG_LFS_ENABLE)
+#include "lfs_test.h"
+#endif
+
+#if defined(CONFIG_FATFS_ENABLE)
+#include "fatfs_test.h"
+#endif
+
+#if defined(CONFIG_MODULE_CMBACKTRACE)
+#include "fault_test.h"
+#endif
+
+#ifndef BOARD_TEST_ITEM
+#define BOARD_TEST_ITEM board_test_os_start
+#endif
+
+#if defined(CONFIG_FREERTOS_ENABLE)
+void board_heartbeat_os(void *p)
+{
+    while (1) {
+        board_led_toggle(0);
+        vTaskDelay(500);
+    }
+}
+
+void board_test_os(void *p)
+{
+    while (1) {
+        board_printf("test rtos\r\n");
+        vTaskDelay(100);
+    }
+}
+
+int board_test_os_start(int argc, char **argv)
+{
+    xTaskCreate(board_test_os, "test", 128, NULL, 3, NULL);
+    return 0;
+}
+#endif
+
+void board_test()
+{
+#ifndef CONFIG_FREERTOS_ENABLE
+    uint32_t m1 = board_get_time();
+
+    while (1) {
+        if (board_elapsed_time(m1) >= 100) {
+            m1 = board_get_time();
+
+            board_led_toggle(0);
+            board_printf("test\r\n");
+        }
+    }
+#else
+    int ret = BOARD_TEST_ITEM(0, NULL);
+
+    xTaskCreate(board_heartbeat_os, "heartbeat", 128, NULL, 3, NULL);
+
+    vTaskDelete(NULL);
+#endif
+}

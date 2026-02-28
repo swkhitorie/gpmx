@@ -36,7 +36,7 @@ int spi_bus_initialize(int bus)
         return -1;
     }
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
 
     dev->exclsem = xSemaphoreCreateBinary();
 
@@ -62,7 +62,7 @@ int spi_devlock(struct spi_dev_s *dev, bool lock)
 {
     int ret = GOK;
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
 
     if (lock) {
         if (pdTRUE == xSemaphoreTake(dev->exclsem, 10)) {
@@ -92,7 +92,7 @@ int spi_devlock(struct spi_dev_s *dev, bool lock)
 
 int spi_dmarxwait(struct spi_dev_s *dev)
 {
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
 
     int ret = GOK;
     /* Take the semaphore (perhaps waiting).  If the result is zero, then the
@@ -123,7 +123,7 @@ int spi_dmarxwait(struct spi_dev_s *dev)
 
 int spi_dmatxwait(struct spi_dev_s *dev)
 {
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
 
     int ret = GOK;
     /* Take the semaphore (perhaps waiting).  If the result is zero, then the
@@ -153,7 +153,7 @@ int spi_dmatxwait(struct spi_dev_s *dev)
 
 void spi_dmarxwakeup(struct spi_dev_s *dev)
 {
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
 
     xSemaphoreGive(dev->rxsem);
 #else
@@ -164,7 +164,7 @@ void spi_dmarxwakeup(struct spi_dev_s *dev)
 
 void spi_dmatxwakeup(struct spi_dev_s *dev)
 {
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
 
     xSemaphoreGive(dev->txsem);
 #else

@@ -56,7 +56,7 @@ int i2c_bus_initialize(int bus)
         return -1;
     }
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
 
     dev->sem_excl = xSemaphoreCreateBinary();
 
@@ -76,7 +76,7 @@ int i2c_bus_initialize(int bus)
 
 int i2c_dev_lock(struct i2c_master_s *dev)
 {
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
 
     if (pdTRUE == xSemaphoreTake(dev->sem_excl, 10)) {
         return GOK;
@@ -96,7 +96,7 @@ int i2c_dev_lock(struct i2c_master_s *dev)
 
 int i2c_dev_unlock(struct i2c_master_s *dev)
 {
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
 
     xSemaphoreGive(dev->sem_excl);
     return GOK;
@@ -109,7 +109,7 @@ int i2c_dev_unlock(struct i2c_master_s *dev)
 
 int i2c_dev_transfer_wait(struct i2c_master_s *dev, uint32_t timeout)
 {
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
 
     int ret = GOK;
 
@@ -138,7 +138,7 @@ int i2c_dev_transfer_wait(struct i2c_master_s *dev, uint32_t timeout)
 
 int i2c_dev_transfer_completed(struct i2c_master_s *dev)
 {
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
 
     BaseType_t h_pri;
     xSemaphoreGiveFromISR(dev->sem_isr, &h_pri);

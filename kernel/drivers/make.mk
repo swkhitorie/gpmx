@@ -1,8 +1,10 @@
 PROJ_CINCDIRS   +=  kernel/drivers
 
 ifeq (${MK_USE_HARDFAULTINFO},y)
-PROJ_CINCDIRS   +=  kernel/drivers/hardfault_info
-CSOURCES   +=  kernel/drivers/hardfault_info/cm_backtrace.c
+PROJ_CDEFS += CONFIG_MODULE_CMBACKTRACE
+PROJ_CINCDIRS += kernel/drivers/hardfault_info
+CSOURCES += kernel/drivers/hardfault_info/cm_backtrace.c
+CSOURCES += kernel/drivers/hardfault_info/fault_test.c
 ifeq ($(PROJ_TC),gae)
 ASMSOURCES += kernel/drivers/hardfault_info/fault_handler/gcc/cmb_fault.s
 endif
@@ -12,16 +14,6 @@ endif
 ifeq ($(PROJ_TC),armclang)
 ASMSOURCES += kernel/drivers/hardfault_info/fault_handler/keil/cmb_fault.s
 endif
-endif
-
-ifeq (${MK_MEM_METHOD},fr4)
-PROJ_CINCDIRS += kernel/drivers/mem
-CSOURCES += kernel/drivers/mem/mem_fr4.c
-endif
-
-ifeq (${MK_MEM_METHOD},rtx)
-PROJ_CINCDIRS += kernel/drivers/mem
-CSOURCES += kernel/drivers/mem/mem_rtx.c
 endif
 
 ifeq (${MK_GPDRIVE_RINGBUFFER},y)

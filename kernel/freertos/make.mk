@@ -32,3 +32,12 @@ CSOURCES += kernel/freertos/queue.c
 CSOURCES += kernel/freertos/stream_buffer.c
 CSOURCES += kernel/freertos/tasks.c
 CSOURCES += kernel/freertos/timers.c
+
+PROJ_CINCDIRS += kernel/freertos/tests
+CSOURCES += kernel/freertos/tests/frtos_mutex_test.c
+CSOURCES += kernel/freertos/tests/frtos_priority_reverse_test.c
+CSOURCES += kernel/freertos/tests/frtos_queue_test.c
+CSOURCES += kernel/freertos/tests/frtos_sem_test.c
+CSOURCES += kernel/freertos/tests/frtos_tasks_test.c
+CSOURCES += kernel/freertos/tests/frtos_timer_test.c
+CSOURCES += kernel/freertos/tests/frtos_status_test.c

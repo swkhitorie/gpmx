@@ -596,7 +596,7 @@ struct can_dev_s
 
   struct can_rxfifo_s       cd_rxfifo;
 
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
   SemaphoreHandle_t  sem_excl;     /* Prevent devices from being occupied by multiple threads */
   SemaphoreHandle_t  sem_tx;
 #else

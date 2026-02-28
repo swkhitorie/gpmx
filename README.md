@@ -2,14 +2,13 @@ GPM is a microcontroller project template that integrates open-source components
 
 ## directory Structure
 
-| Directory | Description                                            |
-| --------- | ------------------------------------------------------ |
-| boards    | chip library and boards support pack                   |
-| kernel    | rtos kernel, drivers interface, and lowlevel component |
-| libs      | components souces files                                |
-| make      | build makefiles                                        |
-| tools     | build scripts                                          |
-| px4       | px4 sdk layer, and modules                             |
+| Directory | Description                                          |
+| --------- | ---------------------------------------------------- |
+| boards    | chip library and boards support pack                 |
+| kernel    | rtos kernel, drivers interface, and kernel component |
+| libs      | components souces files                              |
+| make      | build makefiles                                      |
+| tools     | build scripts                                        |
 
 ## component list
 

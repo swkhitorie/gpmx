@@ -159,7 +159,7 @@ struct i2c_msg_s
 
 struct i2c_master_s
 {
-#if defined(CONFIG_BOARD_FREERTOS_ENABLE)
+#if defined(CONFIG_FREERTOS_ENABLE)
   SemaphoreHandle_t  sem_excl;    /* Mutual exclusion semaphore */
   SemaphoreHandle_t  sem_isr;     /* Interrupt wait semaphore */
 #else
