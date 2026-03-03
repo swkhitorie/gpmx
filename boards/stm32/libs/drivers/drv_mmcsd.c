@@ -382,7 +382,7 @@ const diskio_drv_ops_t    mmcsd_driver =
     mmcsd_ioctl,
     #endif
 };
-#include <fatfs_test.h>
+
 void hw_stm32_mmcsd_fs_init(int controller)
 {
     fs_mmc = &mmcsd_list[controller-1];
@@ -392,8 +392,6 @@ void hw_stm32_mmcsd_fs_init(int controller)
         MMCSD_INFO("[fat] mmcsd mount failed %d\r\n", ret_ff);
         return;
     }
-
-    // ff_ls(mmcsd_mnt_path);
 }
 
 DSTATUS mmcsd_init(BYTE lun)

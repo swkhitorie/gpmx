@@ -95,6 +95,8 @@ else
     echo "Building..."
 fi
 
+build_time=$(date +"%Y%m%d_%H%M%S")
+
 make all -j${jobs_count} \
     APP_SUBPATH=${app_subpath} \
     OS=${makefile_os} \

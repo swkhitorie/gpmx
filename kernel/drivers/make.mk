@@ -47,5 +47,9 @@ ifeq (${MK_GPDRIVE_QUADSPI},y)
 PROJ_CDEFS +=  CONFIG_GPDRIVE_QUADSPI
 CSOURCES   +=  kernel/drivers/qspi.c
 endif
+ifeq (${MK_GPDRIVE_MMCSDSPI},y)
+PROJ_CDEFS +=  CONFIG_GPDRIVE_MMCSDSPI
+CSOURCES   +=  kernel/drivers/mmcsd_spi.c
+endif
 
 endif # end with MK_GPDRIVE_DNODE

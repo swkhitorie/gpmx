@@ -34,6 +34,7 @@ MK_GPDRIVE_SPI=y
 MK_GPDRIVE_CAN=y
 MK_GPDRIVE_QUADSPI=n
 MK_GPDRIVE_RTC=y
+MK_GPDRIVE_MMCSDSPI=n
 
 # include all cubelibrary files and low level driver files
 include ${SDK_ROOTDIR}/boards/stm32/libs/bsp_libs_stm32.mk

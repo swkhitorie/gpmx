@@ -148,7 +148,7 @@ int ff_create_and_write(void)
 
     fr = f_write(&file, test_data, strlen(test_data), &bw);
     if (fr != FR_OK || bw != strlen(test_data)) {
-        TEST_PRINTF("[ERROR] file write failed: %s, bw=%u (预期: %zu)\n", 
+        TEST_PRINTF("[ERROR] file write failed: %s, bw=%u (expect: %zu)\n", 
                 FR_Table[fr], bw, strlen(test_data));
         f_close(&file);
         return -2;

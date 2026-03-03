@@ -35,16 +35,6 @@ win:
 add toolchain to windows system variables
 ```
 
-compile:
-
-```bash
-linux:
-./tools/build.sh <app_path> -j2 -r
-
-win:
-./tools/build.bat <app_path> -j2 -r
-```
-
 ## integrate Peripheral Driver Support
 
 STM32 :

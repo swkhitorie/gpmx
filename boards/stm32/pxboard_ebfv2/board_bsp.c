@@ -30,6 +30,11 @@
 #include "board_usb_cdc.h"
 #endif
 
+#if defined(CONFIG_GPDRIVE_MMCSDSPI)
+#include <device/mmcsd_spi.h>
+mmcsd_obj_t _board_mmcsd_spi_obj;
+#endif
+
 /**************
  * uart1 port -- debug/log
  **************/
@@ -263,7 +268,7 @@ struct up_i2c_master_s i2c1_dev =
 struct up_spi_dev_s spi1_dev = 
 {
     .dev = {
-        .frequency = 10000000,
+        .frequency = 1000000,
         .mode = SPIDEV_MODE0,
         .nbits = 8,
         .ops       = &g_spi_ops,
@@ -293,7 +298,12 @@ struct up_spi_dev_s spi1_dev =
     .priority = 4,
     .dev_cs = {
         {0x22, GPIOG, 6,},  // DRV_FLASH_DEVTYPE_W25Q  0x22
+#if defined(CONFIG_GPDRIVE_MMCSDSPI)
+        {SPIDEV_MMCSD(0), GPIOF, 6},
+#else
         {0x11, GPIOF, 6,},  // DRV_MODULE_DEVTYPE_USR  0x11
+#endif
+
     }
 };
 
@@ -329,6 +339,9 @@ void board_bsp_init()
     // usb otg id io
     LOW_INITPIN(GPIOB, 1, IOMODE_OUTPP, IO_NOPULL, IO_SPEEDHIGH);
     LOW_IOSET(GPIOB, 1, 0);
+
+    LOW_INITPIN(GPIOF, 6, IOMODE_OUTPP, IO_NOPULL, IO_SPEEDHIGH);
+    LOW_IOSET(GPIOF, 6, 1);
 
     serial_register(&com1_dev.dev, 1);
     serial_register(&com3_dev.dev, 3);
@@ -370,6 +383,13 @@ void board_bsp_init()
 #endif
     }
     board_delay(400);
+#endif
+
+#if defined(CONFIG_GPDRIVE_MMCSDSPI)
+    int ret = mmcsd_spi_init(&_board_mmcsd_spi_obj, &spi1_dev.dev, 0);
+    if (ret == SM_STATE_READY) {
+        hw_mmcsd_spi_fs_init(0);
+    };
 #endif
 
 }
