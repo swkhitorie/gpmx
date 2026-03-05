@@ -784,6 +784,7 @@ static mmcsd_obj_t *      fs_mmcsdspi;
 const  diskio_drv_ops_t   mmcsd_spi_driver;
 static FATFS              mmcsd_spi_fatfs;
 static char               mmcsd_spi_mnt_path[20];
+static BYTE               mmcsd_spi_work[4096];
 
 static volatile DSTATUS   mmcsd_spi_stat;
 const diskio_drv_ops_t    mmcsd_spi_driver =
@@ -801,13 +802,41 @@ const diskio_drv_ops_t    mmcsd_spi_driver =
 
 void hw_mmcsd_spi_fs_init(int controller)
 {
+    MKFS_PARM opt;
+    opt.fmt = FM_FAT32;
+    opt.n_fat = 1;
+    opt.align = 0;
+    opt.au_size = 0;
+    opt.n_root = 0;
+
     fs_mmcsdspi = get_mmcsd_spi_obj(controller);
     fatfs_link_drv(&mmcsd_spi_driver, &mmcsd_spi_mnt_path[0]);
-    FRESULT ret_ff = f_mount(&mmcsd_spi_fatfs, &mmcsd_spi_mnt_path[0], 0);
+
+#if !defined(CONFIG_CRUSB_DEVICE_MSC_ENABLE)
+    FRESULT ret_ff = f_mount(&mmcsd_spi_fatfs, &mmcsd_spi_mnt_path[0], 1);
     if (ret_ff != FR_OK) {
-        MMCSPI_INFO("[fat] mmcsd mount failed %d\r\n", ret_ff);
-        return;
+        MMCSD_INFO("[fat] mmcsd mount failed %d\r\n", ret_ff);
+        if (ret_ff == FR_NO_FILESYSTEM) {
+            MMCSD_INFO("[fat] try to format...\r\n");
+            ret_ff = f_mkfs(&mmcsd_spi_mnt_path[0], &opt, mmcsd_spi_work, 4096);
+            if (ret_ff != FR_OK) {
+                MMCSD_INFO("[fat] try to format failed %d\r\n", ret_ff);
+                return;
+            }
+            MMCSD_INFO("[fat] format success\r\n");
+            ret_ff = f_mount(&mmcsd_spi_fatfs, &mmcsd_spi_mnt_path[0], 1);
+            if (ret_ff != FR_OK) {
+                MMCSD_INFO("[fat] mmcsd mount failed after format %d\r\n", ret_ff);
+                return;
+            }
+        } else {
+            return;
+        }
     }
+
+    f_mount(NULL, &mmcsd_spi_mnt_path[0], 1);
+    f_mount(&mmcsd_spi_fatfs, &mmcsd_spi_mnt_path[0], 0);
+#endif
 }
 
 DSTATUS mmcsdspi_init(BYTE lun)

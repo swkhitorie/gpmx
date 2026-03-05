@@ -1,5 +1,11 @@
 #include "drv_mmcsd.h"
 
+#include <board_config.h>
+#ifndef MMCSD_INFO
+#include <stdio.h>
+#define MMCSD_INFO(...) do { board_printf(__VA_ARGS__); } while(0)
+#endif
+
 #define   SD_TRANSFER_OK                ((uint8_t)0x00)
 #define   SD_TRANSFER_BUSY              ((uint8_t)0x01)
 
@@ -118,10 +124,18 @@ int _mmcsd_init(int controller)
     immc->handle.Init.ClockDiv            = 0;
     ret = HAL_SD_Init(&immc->handle);
 
+    if (MSD_OK != stm32_mmcsd_waitrdy(immc)) {
+        return -1;
+    }
+
     if (ret == HAL_OK) {
         HAL_SD_ConfigWideBusOperation(&immc->handle, SDIO_BUS_WIDE_4B);
     }
 #endif
+
+    if (MSD_OK != stm32_mmcsd_waitrdy(immc)) {
+        return -1;
+    }
 
     immc->initialret = ret;
 
@@ -135,12 +149,11 @@ int _mmcsd_init(int controller)
 
 int stm32_mmcsd_waitrdy(struct stm32_mmcsd_dev_s *dev)
 {
-	uint32_t loop = SD_TIMEOUT;
+	uint32_t loop = board_get_time();
 
 	/* Wait for the Erasing process is completed */
 	/* Verify that SD card is ready to use after the Erase */
-	while (loop > 0) {
-		loop--;
+	while (board_elapsed_time(loop) <= SD_TIMEOUT) {
 		if (HAL_SD_GetCardState(&dev->handle) == HAL_SD_CARD_TRANSFER) {
 			return MSD_OK;
         }
@@ -174,7 +187,7 @@ int stm32_mmcsd_reads(struct stm32_mmcsd_dev_s *dev, uint32_t *p, uint32_t addr,
     int ret;
     switch (way) {
     case 0:
-        ret = (HAL_SD_ReadBlocks(&dev->handle, (uint8_t *)p, addr, num, 100U*num) == HAL_OK) ? MSD_OK : MSD_ERROR;
+        ret = (HAL_SD_ReadBlocks(&dev->handle, (uint8_t *)p, addr, num, 1000U*num) == HAL_OK) ? MSD_OK : MSD_ERROR;
         break;
     case 1:
         ret = (HAL_SD_ReadBlocks_DMA(&dev->handle, (uint8_t *)p, addr, num) == HAL_OK) ? MSD_OK : MSD_ERROR;
@@ -188,7 +201,7 @@ int stm32_mmcsd_writes(struct stm32_mmcsd_dev_s *dev, uint32_t *p, uint32_t addr
     int ret;
     switch (way) {
     case 0:
-        ret = (HAL_SD_WriteBlocks(&dev->handle, (uint8_t *)p, addr, num, 100U*num) == HAL_OK) ? MSD_OK : MSD_ERROR;
+        ret = (HAL_SD_WriteBlocks(&dev->handle, (uint8_t *)p, addr, num, 1000U*num) == HAL_OK) ? MSD_OK : MSD_ERROR;
         break;
     case 1:
         ret = (HAL_SD_WriteBlocks_DMA(&dev->handle, (uint8_t *)p, addr, num) == HAL_OK) ? MSD_OK : MSD_ERROR;
@@ -277,19 +290,21 @@ void hw_stm32_mmcsd_info(int controller)
 /****************************************************************************
  * STM32 HAL Library Callback 
  ****************************************************************************/
+static volatile uint32_t write_status = 0, read_status = 0;
+
 __weak void BSP_SD_AbortCallback(void)
 {
 
 }
 
-__weak void BSP_SD_WriteCpltCallback(void)
+void BSP_SD_WriteCpltCallback(void)
 {
-
+    write_status = 1;
 }
 
-__weak void BSP_SD_ReadCpltCallback(void)
+void BSP_SD_ReadCpltCallback(void)
 {
-
+    read_status = 1;
 }
 
 __weak void BSP_SD_ErrorCallback(void)
@@ -367,6 +382,7 @@ struct stm32_mmcsd_dev_s *fs_mmc;
 const  diskio_drv_ops_t   mmcsd_driver;
 static FATFS              mmcsd_fatfs;
 static char               mmcsd_mnt_path[20];
+static BYTE               mmcsd_work[4096];
 
 static volatile DSTATUS   mmcsd_stat;
 static volatile UINT      write_stat = 0, read_stat = 0;
@@ -385,13 +401,41 @@ const diskio_drv_ops_t    mmcsd_driver =
 
 void hw_stm32_mmcsd_fs_init(int controller)
 {
+    MKFS_PARM opt;
+    opt.fmt = FM_FAT32;
+    opt.n_fat = 1;
+    opt.align = 0;
+    opt.au_size = 0;
+    opt.n_root = 0;
+
     fs_mmc = &mmcsd_list[controller-1];
     fatfs_link_drv(&mmcsd_driver, &mmcsd_mnt_path[0]);
-    FRESULT ret_ff = f_mount(&mmcsd_fatfs, &mmcsd_mnt_path[0], 0);
+
+#if !defined(CONFIG_CRUSB_DEVICE_MSC_ENABLE)
+    FRESULT ret_ff = f_mount(&mmcsd_fatfs, &mmcsd_mnt_path[0], 1);
     if (ret_ff != FR_OK) {
         MMCSD_INFO("[fat] mmcsd mount failed %d\r\n", ret_ff);
-        return;
+        if (ret_ff == FR_NO_FILESYSTEM) {
+            MMCSD_INFO("[fat] try to format...\r\n");
+            ret_ff = f_mkfs(&mmcsd_mnt_path[0], &opt, mmcsd_work, 4096);
+            if (ret_ff != FR_OK) {
+                MMCSD_INFO("[fat] try to format failed %d\r\n", ret_ff);
+                return;
+            }
+            MMCSD_INFO("[fat] format success\r\n");
+            ret_ff = f_mount(&mmcsd_fatfs, &mmcsd_mnt_path[0], 1);
+            if (ret_ff != FR_OK) {
+                MMCSD_INFO("[fat] mmcsd mount failed after format %d\r\n", ret_ff);
+                return;
+            }
+        } else {
+            return;
+        }
     }
+
+    f_mount(NULL, &mmcsd_mnt_path[0], 1);
+    f_mount(&mmcsd_fatfs, &mmcsd_mnt_path[0], 0);
+#endif
 }
 
 DSTATUS mmcsd_init(BYTE lun)
@@ -418,29 +462,60 @@ DSTATUS mmcsd_status(BYTE lun)
 
 DRESULT mmcsd_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
 {
-	DRESULT res = RES_ERROR;
-	int read_status;
+    int ret = 0;
+    uint32_t time = 0; 
+    bool use_dma = true;
 
-    read_status = stm32_mmcsd_reads(fs_mmc, (uint32_t *)buff, sector, count, 0);   // blocking mode
-    if (read_status == MSD_OK) {
-        read_status = stm32_mmcsd_waitrdy(fs_mmc);
+	read_status = 0;
+    ret = stm32_mmcsd_reads(fs_mmc, (uint32_t *)buff, sector, count, ((use_dma) ? 1 : 0));
+    if (ret != MSD_OK) {
+        return RES_ERROR;
     }
 
-    return (read_status == MSD_OK) ? RES_OK : RES_ERROR;
+    if (use_dma) {
+        time = board_get_time();
+        while ((read_status == 0) && (board_elapsed_time(time) < SD_TIMEOUT)) {}
+        if (read_status == 0) {
+            return RES_ERROR;
+        }
+    }
+
+    ret = stm32_mmcsd_waitrdy(fs_mmc);
+    if (ret != MSD_OK) {
+        return RES_ERROR;
+    }
+
+    return RES_OK;
 }
 
 #if _USE_WRITE == 1
 DRESULT mmcsd_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
 {
-	DRESULT res = RES_ERROR;
-	int write_status;
+    int ret = 0;
+    uint32_t time = 0;
+    bool use_dma = true;
 
-    write_status = stm32_mmcsd_writes(fs_mmc, (uint32_t *)buff, sector, count, 0);   // blocking mode
-    if (write_status == MSD_OK) {
-        write_status = stm32_mmcsd_waitrdy(fs_mmc);
+	write_status = 0;
+    ret = stm32_mmcsd_writes(fs_mmc, (uint32_t *)buff, sector, count, ((use_dma) ? 1 : 0));
+    if (ret != MSD_OK) {
+
+        return RES_ERROR;
     }
 
-    return (write_status == MSD_OK) ? RES_OK : RES_ERROR;
+    if (use_dma) {
+        time = board_get_time();
+        while ((write_status == 0) && (board_elapsed_time(time) < SD_TIMEOUT)) {}
+        if (write_status == 0) {
+            return RES_ERROR;
+        }
+    }
+
+    ret = stm32_mmcsd_waitrdy(fs_mmc);
+    if (ret != MSD_OK) {
+        return RES_ERROR;
+    }
+
+    return RES_OK;
 }
 #endif
 
@@ -456,7 +531,11 @@ DRESULT mmcsd_ioctl(BYTE lun, BYTE cmd, void *buff)
 	switch (cmd) {
 	/* Make sure that no pending write process */
 	case CTRL_SYNC :
-		res = RES_OK;
+        if (stm32_mmcsd_waitrdy(fs_mmc) == MSD_OK) {
+            return RES_OK;
+        } else {
+            return RES_ERROR;
+        }
 		break;
 
 	/* Get number of sectors on the disk (DWORD) */

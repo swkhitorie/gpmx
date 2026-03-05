@@ -19,7 +19,7 @@ int romfs_test()
         dfs_romfs_stat(&file, &stat);
 
         board_printf("find /test_file1.txt, size: %db\r\n", stat.st_size);
-        for (offset = 0; offset < astat.st_size;) {
+        for (offset = 0; offset < stat.st_size;) {
             int sz = dfs_romfs_read(&file, databuf, 1, &offset);
             if (sz == 1) {
                 TEST_PRINTF("%c", databuf[0]);
@@ -37,7 +37,7 @@ int romfs_test()
         dfs_romfs_stat(&file, &stat);
 
         board_printf("find /test_file2.txt, size: %db\r\n", stat.st_size);
-        for (offset = 0; offset < astat.st_size;) {
+        for (offset = 0; offset < stat.st_size;) {
             int sz = dfs_romfs_read(&file, databuf, 1, &offset);
             if (sz == 1) {
                 TEST_PRINTF("%c", databuf[0]);

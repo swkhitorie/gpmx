@@ -5,6 +5,7 @@
 #include <drv_rtc.h>
 #include <drv_can.h>
 #include <drv_eth.h>
+#include <drv_mmcsd.h>
 #include <device/dnode.h>
 #include <device/serial.h>
 #include <device/i2c_master.h>
@@ -92,10 +93,10 @@ struct up_uart_dev_s com1_dev = {
 /**************
  * uart3 port -- esp8266
  **************/
-uint8_t com3_dma_rxbuff[4096];
-uint8_t com3_dma_txbuff[512];
-uint8_t com3_txbuff[512];
-uint8_t com3_rxbuff[2048];
+uint8_t com3_dma_rxbuff[1024];
+uint8_t com3_dma_txbuff[256];
+uint8_t com3_txbuff[256];
+uint8_t com3_rxbuff[1024];
 struct up_uart_dev_s com3_dev = {
     .dev = {
         .baudrate = 460800,
@@ -103,19 +104,19 @@ struct up_uart_dev_s com3_dev = {
         .stopbitlen = 1,
         .parity = 'n',
         .recv = {
-            .capacity = 2048,
+            .capacity = 1024,
             .buffer = com3_rxbuff,
         },
         .xmit = {
-            .capacity = 512,
+            .capacity = 256,
             .buffer = com3_txbuff,
         },
         .dmarx = {
-            .capacity = 4096,
+            .capacity = 1024,
             .buffer = com3_dma_rxbuff,
         },
         .dmatx = {
-            .capacity = 512,
+            .capacity = 256,
             .buffer = com3_dma_txbuff,
         },
         .ops       = &g_uart_ops,
@@ -141,104 +142,6 @@ struct up_uart_dev_s com3_dev = {
         .enable = true,
     },
     .priority = 1,
-};
-
-/**************
- * uart5 port -- for gnss rtcm3 data, Disable for sdmmc
- **************/
-uint8_t com5_dma_rxbuff[2048];
-uint8_t com5_dma_txbuff[128];
-uint8_t com5_txbuff[128];
-uint8_t com5_rxbuff[1024];
-struct up_uart_dev_s com5_dev = {
-    .dev = {
-        .baudrate = 460800,
-        .wordlen = 8,
-        .stopbitlen = 1,
-        .parity = 'n',
-        .recv = {
-            .capacity = 1024,
-            .buffer = com5_rxbuff,
-        },
-        .xmit = {
-            .capacity = 128,
-            .buffer = com5_txbuff,
-        },
-        .dmarx = {
-            .capacity = 2048,
-            .buffer = com5_dma_rxbuff,
-        },
-        .dmatx = {
-            .capacity = 128,
-            .buffer = com5_dma_txbuff,
-        },
-        .ops       = &g_uart_ops,
-        .priv      = &com5_dev,
-    },
-    .id = 5,
-    .txpin = { .port = GPIOC, .pin = 12, .alternate = GPIO_AF8_UART5,},
-    .rxpin = { .port = GPIOD, .pin = 2,  .alternate = GPIO_AF8_UART5,},
-    .txdma_cfg = {
-        .enable = false,
-    },
-    .rxdma_cfg = {
-        .instance = DMA1_Stream0,
-        .dma_rcc = RCC_AHB1ENR_DMA1EN,
-        .dma_irq = DMA1_Stream0_IRQn,
-        .channel = DMA_CHANNEL_4,
-        .priority = 1,
-        .enable = true,
-    },
-    .priority = 1,
-};
-
-/**************
- * uart6 port -- for gnss rtcm3 data, Disable for camera and speaker interface
- **************/
-uint8_t com6_dma_rxbuff[3000];
-uint8_t com6_dma_txbuff[512];
-uint8_t com6_txbuff[512];
-uint8_t com6_rxbuff[1500];
-struct up_uart_dev_s com6_dev = {
-    .dev = {
-        .baudrate = 460800,
-        .wordlen = 8,
-        .stopbitlen = 1,
-        .parity = 'n',
-        .recv = {
-            .capacity = 2048,
-            .buffer = com6_rxbuff,
-        },
-        .xmit = {
-            .capacity = 512,
-            .buffer = com6_txbuff,
-        },
-        .dmarx = {
-            .capacity = 4096,
-            .buffer = com6_dma_rxbuff,
-        },
-        .dmatx = {
-            .capacity = 512,
-            .buffer = com6_dma_txbuff,
-        },
-        .ops       = &g_uart_ops,
-        .priv      = &com6_dev,
-    },
-    .id = 6,
-    .txpin = { .port = GPIOC, .pin = 6, .alternate = GPIO_AF8_USART6,},
-    .rxpin = { .port = GPIOC, .pin = 7, .alternate = GPIO_AF8_USART6,},
-    .txdma_cfg = {
-        .enable = false,
-    },
-    .rxdma_cfg = {
-        .instance = DMA2_Stream1,
-        .dma_rcc = RCC_AHB1ENR_DMA2EN,
-        .dma_irq = DMA2_Stream1_IRQn,
-        .channel = DMA_CHANNEL_5,
-        .priority = 3,
-        .enable = true,
-    },
-    .priority = 2,
 };
 
 /**************
@@ -345,8 +248,6 @@ void board_bsp_init()
 
     serial_register(&com1_dev.dev, 1);
     serial_register(&com3_dev.dev, 3);
-    serial_register(&com5_dev.dev, 5);
-    serial_register(&com6_dev.dev, 6);
 
     i2c_register(&i2c1_dev.dev, 1);
     spi_register(&spi1_dev.dev, 1);
@@ -354,8 +255,6 @@ void board_bsp_init()
 
     serial_bus_initialize(1);
     serial_bus_initialize(3);
-    serial_bus_initialize(5);
-    serial_bus_initialize(6);
 
     i2c_bus_initialize(1);
     spi_bus_initialize(1);
@@ -374,6 +273,19 @@ void board_bsp_init()
     xSemaphoreGive(board_printf_mutex);
 #endif
 
+#if defined(CONFIG_FATFS_ENABLE) && !defined(CONFIG_GPDRIVE_MMCSDSPI)
+    hw_stm32_mmcsd_init(1, 1, 4);
+    hw_stm32_mmcsd_info(1);
+    hw_stm32_mmcsd_fs_init(1);
+#endif
+
+#if defined(CONFIG_GPDRIVE_MMCSDSPI)
+    int ret = mmcsd_spi_init(&_board_mmcsd_spi_obj, &spi1_dev.dev, 0);
+    if (ret == SM_STATE_READY) {
+        hw_mmcsd_spi_fs_init(0);
+    };
+#endif
+
 #if defined(CONFIG_CRUSB_DEVICE_ENABLE) && defined(CONFIG_CRUSB_DEVICE_CDC_ACM_ENABLE)
     board_cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
     while(!usb_device_is_configured(0))
@@ -383,13 +295,6 @@ void board_bsp_init()
 #endif
     }
     board_delay(400);
-#endif
-
-#if defined(CONFIG_GPDRIVE_MMCSDSPI)
-    int ret = mmcsd_spi_init(&_board_mmcsd_spi_obj, &spi1_dev.dev, 0);
-    if (ret == SM_STATE_READY) {
-        hw_mmcsd_spi_fs_init(0);
-    };
 #endif
 
 }
@@ -427,8 +332,6 @@ int board_stream_in(int port, void *p, int size)
     switch (port) {
     case 0: return SERIAL_RDBUF(&com1_dev.dev, p, size);
     case 2: return SERIAL_RDBUF(&com3_dev.dev, p, size);
-    case 4: return SERIAL_RDBUF(&com5_dev.dev, p, size);
-    case 5: return SERIAL_RDBUF(&com6_dev.dev, p, size);
     }
     return 0;
 }
@@ -449,22 +352,6 @@ int board_stream_out(int port, const void *p, int size, int way)
                 return SERIAL_SEND(&com3_dev.dev, p, size);
             } else {
                 return SERIAL_DMASEND(&com3_dev.dev, p, size);
-            }
-        }
-        break;
-    case 4: {
-            if (way == 0) {
-                return SERIAL_SEND(&com5_dev.dev, p, size);
-            } else {
-                return SERIAL_DMASEND(&com5_dev.dev, p, size);
-            }
-        }
-        break;
-    case 5: {
-            if (way == 0) {
-                return SERIAL_SEND(&com6_dev.dev, p, size);
-            } else {
-                return SERIAL_DMASEND(&com6_dev.dev, p, size);
             }
         }
         break;

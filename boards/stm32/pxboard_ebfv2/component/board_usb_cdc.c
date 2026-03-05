@@ -3,6 +3,12 @@
 #include <device/dnode.h>
 #include <device/gringbuffer.h>
 
+#if defined(CONFIG_CRUSB_DEVICE_MSC_ENABLE)
+#include "usbd_msc.h"
+#include <ff.h>
+#include <ff_drv.h>
+#endif
+
 #if defined(CONFIG_FREERTOS_ENABLE)
 #include <FreeRTOS.h>
 #include <semphr.h>
@@ -11,7 +17,12 @@
 /*!< endpoint address */
 #define CDC_IN_EP  0x81
 #define CDC_OUT_EP 0x02
-#define CDC_INT_EP 0x83
+#define CDC_INT_EP 0x82
+
+#if defined(CONFIG_CRUSB_DEVICE_MSC_ENABLE)
+#define MSC_IN_EP  0x83
+#define MSC_OUT_EP 0x03
+#endif
 
 #define USBD_VID           0xFFFF
 #define USBD_PID           0xFFFF
@@ -19,12 +30,24 @@
 #define USBD_LANGID_STRING 1033
 
 /*!< config descriptor size */
+#if defined(CONFIG_CRUSB_DEVICE_MSC_ENABLE)
+#define USB_CONFIG_SIZE (9 + CDC_ACM_DESCRIPTOR_LEN + MSC_DESCRIPTOR_LEN)
+#else
 #define USB_CONFIG_SIZE (9 + CDC_ACM_DESCRIPTOR_LEN)
+#endif
 
 #ifdef CONFIG_USB_HS
 #define CDC_MAX_MPS 512
 #else
 #define CDC_MAX_MPS 64
+#endif
+
+#if defined(CONFIG_CRUSB_DEVICE_MSC_ENABLE)
+#ifdef CONFIG_USB_HS
+#define MSC_MAX_MPS 512
+#else
+#define MSC_MAX_MPS 64
+#endif
 #endif
 
 #ifdef CONFIG_USBDEV_ADVANCE_DESC
@@ -33,8 +56,15 @@ static const uint8_t device_descriptor[] = {
 };
 
 static const uint8_t config_descriptor[] = {
+#if defined(CONFIG_CRUSB_DEVICE_MSC_ENABLE)
+    USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, 0x03, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
+#else
     USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, 0x02, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
-    CDC_ACM_DESCRIPTOR_INIT(0x00, CDC_INT_EP, CDC_OUT_EP, CDC_IN_EP, CDC_MAX_MPS, 0x02)
+#endif
+    CDC_ACM_DESCRIPTOR_INIT(0x00, CDC_INT_EP, CDC_OUT_EP, CDC_IN_EP, CDC_MAX_MPS, 0x02),
+#if defined(CONFIG_CRUSB_DEVICE_MSC_ENABLE)
+    MSC_DESCRIPTOR_INIT(0x02, MSC_OUT_EP, MSC_IN_EP, MSC_MAX_MPS, 0x00)
+#endif
 };
 
 static const uint8_t device_quality_descriptor[] = {
@@ -93,8 +123,15 @@ const struct usb_descriptor cdc_descriptor = {
 /*!< global descriptor */
 static const uint8_t cdc_descriptor[] = {
     USB_DEVICE_DESCRIPTOR_INIT(USB_2_0, 0xEF, 0x02, 0x01, USBD_VID, USBD_PID, 0x0100, 0x01),
+#if defined(CONFIG_CRUSB_DEVICE_MSC_ENABLE)
+    USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, 0x03, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
+#else
     USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, 0x02, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
+#endif
     CDC_ACM_DESCRIPTOR_INIT(0x00, CDC_INT_EP, CDC_OUT_EP, CDC_IN_EP, CDC_MAX_MPS, 0x02),
+#if defined(CONFIG_CRUSB_DEVICE_MSC_ENABLE)
+    MSC_DESCRIPTOR_INIT(0x02, MSC_OUT_EP, MSC_IN_EP, MSC_MAX_MPS, 0x00),
+#endif
     ///////////////////////////////////////
     /// string0 descriptor
     ///////////////////////////////////////
@@ -161,25 +198,29 @@ static const uint8_t cdc_descriptor[] = {
 };
 #endif
 
-static volatile bool ep_tx_busy_flag = false;
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t cdc_rbuf[CDC_MAX_MPS];
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t cdc_wbuf[1024];
+#ifndef BOARD_USB_CDC1_TX_BUFFER_LEN
+#define BOARD_USB_CDC1_TX_BUFFER_LEN 1024
+#endif
 #ifndef BOARD_USB_CDC1_RX_BUFFER_LEN
 #define BOARD_USB_CDC1_RX_BUFFER_LEN 1024
 #endif
+static volatile bool ep_tx_busy_flag = false;
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t cdc_rbuf[CDC_MAX_MPS];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t cdc_wbuf[BOARD_USB_CDC1_TX_BUFFER_LEN];
 static uint8_t rb_rx_buffer[BOARD_USB_CDC1_RX_BUFFER_LEN];
 static struct gringbuffer usb_rb_rx = {.capacity = BOARD_USB_CDC1_RX_BUFFER_LEN, .buffer = rb_rx_buffer};
 
 static void usbd_event_handler(uint8_t busid, uint8_t event)
 {
-    int fsize = 0;
-
     switch (event) {
         case USBD_EVENT_RESET:
             break;
         case USBD_EVENT_CONNECTED:
             break;
         case USBD_EVENT_DISCONNECTED:
+#if defined(CONFIG_CRUSB_DEVICE_MSC_ENABLE)
+            disk_ioctl(0, CTRL_SYNC, NULL);
+#endif
             break;
         case USBD_EVENT_RESUME:
             break;
@@ -232,6 +273,9 @@ struct usbd_endpoint cdc_in_ep = {
 
 static struct usbd_interface intf0;
 static struct usbd_interface intf1;
+#if defined(CONFIG_CRUSB_DEVICE_MSC_ENABLE)
+static struct usbd_interface intf2;
+#endif
 
 void board_cdc_acm_init(uint8_t busid, uintptr_t reg_base)
 {
@@ -248,6 +292,9 @@ void board_cdc_acm_init(uint8_t busid, uintptr_t reg_base)
     usbd_add_endpoint(busid, &cdc_out_ep);
     usbd_add_endpoint(busid, &cdc_in_ep);
     usbd_initialize(busid, reg_base, usbd_event_handler);
+#if defined(CONFIG_CRUSB_DEVICE_MSC_ENABLE)
+    usbd_add_interface(busid, usbd_msc_init_intf(busid, &intf2, MSC_OUT_EP, MSC_IN_EP));
+#endif
 
     ep_tx_busy_flag = false;
 }
@@ -273,6 +320,10 @@ int board_cdc_acm_send(uint8_t busid, const uint8_t *p, uint16_t len, uint8_t wa
         return 0;
     }
 
+    if (len > BOARD_USB_CDC1_TX_BUFFER_LEN) {
+        len = BOARD_USB_CDC1_TX_BUFFER_LEN;
+    }
+
     ep_tx_busy_flag = true;
     memcpy(cdc_wbuf, p, len);
     usbd_ep_start_write(0, CDC_IN_EP, cdc_wbuf, len);
@@ -281,4 +332,35 @@ int board_cdc_acm_send(uint8_t busid, const uint8_t *p, uint16_t len, uint8_t wa
     return len;
 }
 
+#if defined(CONFIG_CRUSB_DEVICE_MSC_ENABLE)
+uint32_t blk_sz = 0;
+uint32_t blk_num = 0;
+void usbd_msc_get_cap(uint8_t busid, uint8_t lun, uint32_t *block_num, uint32_t *block_size)
+{
+    disk_ioctl(0, GET_SECTOR_COUNT, block_num);
+    disk_ioctl(0, GET_SECTOR_SIZE, block_size);
+    blk_sz = *block_size;
+    blk_num = *block_num;
+}
 
+int usbd_msc_sector_read(uint8_t busid, uint8_t lun, uint32_t sector, uint8_t *buffer, uint32_t length)
+{
+    if ((blk_num - 1)<= sector) {
+        return -1;
+    }
+
+    disk_read(0, buffer, sector, length / blk_sz);
+
+    return 0;
+}
+
+int usbd_msc_sector_write(uint8_t busid, uint8_t lun, uint32_t sector, uint8_t *buffer, uint32_t length)
+{
+    if ((blk_num - 1)<= sector) {
+        return -1;
+    }
+
+    disk_write(0, buffer, sector, length / blk_sz);
+    return 0;
+}
+#endif

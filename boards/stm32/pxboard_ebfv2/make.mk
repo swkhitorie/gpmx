@@ -25,6 +25,7 @@ BSP_LIBCONFIG_STM32_HAL_SPI=y
 BSP_LIBCONFIG_STM32_HAL_CAN=y
 BSP_LIBCONFIG_STM32_HAL_ETH_LEGACY=y
 BSP_LIBCONFIG_STM32_HAL_SDRAM=y
+BSP_LIBCONFIG_STM32_HAL_MMCSD=y
 
 MK_GPDRIVE_RINGBUFFER=y
 MK_GPDRIVE_DNODE=y
@@ -62,25 +63,29 @@ CSOURCES += ${BOARD_BSP_PATH}/board_init.c
 CSOURCES += ${BOARD_BSP_PATH}/board_bsp.c
 CSOURCES += ${BOARD_BSP_PATH}/board_msp.c
 
-ifeq (${MK_USE_CRUSB},y)
-MK_USE_CRUSB:=n
-# WARNING: not supported CRUSB in board pxboard_ebfv2
-endif
-
 ifeq (${MK_USE_KERNEL_HRT},y)
 PROJ_CINCDIRS += ${BOARD_BSP_PATH}/hrtimer
 CSOURCES += ${BOARD_BSP_PATH}/hrtimer/hrt.c
 endif
 
+ifeq (${MK_USE_FS_FATFS},y)
+ifeq (${MK_GPDRIVE_MMCSDSPI},n)
+PROJ_CDEFS += CONFIG_STM32_MMCSD_FATFS_ENABLE
+endif
+endif
+
 ifeq (${MK_USE_CRUSB},y)
-ifeq (${MK_USE_CRUSB_CLASS},cdc_acm)
 ifeq (${MK_USE_CRUSB_IP},dwc2_st)
+ifneq ($(filter msc, $(MK_USE_CRUSB_CLASS)),)
 CSOURCES += ${BOARD_BSP_PATH}/component/board_usb_cdc.c
 CSOURCES += ${BOARD_BSP_PATH}/component/board_usb_msp.c
+MK_USE_CRUSB_CLASS+=cdc_acm
+else
+MK_USE_CRUSB:=n
+endif # end with MK_USE_CRUSB_CLASS
 else
 $(error Invalid USB IP setting in board pxboard_ebfv2)
 endif # end with MK_USE_CRUSB_IP
-endif # end with MK_USE_CRUSB_CLASS
 endif # end with MK_USE_CRUSB
 
 ASMSOURCES := ${BOARD_BSP_PATH}/stm32f407_ebf_startup_gcc.s

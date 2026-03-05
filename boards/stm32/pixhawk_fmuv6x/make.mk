@@ -59,14 +59,14 @@ CSOURCES += ${BOARD_BSP_PATH}/board_init.c
 CSOURCES += ${BOARD_BSP_PATH}/board_bsp.c
 
 ifeq (${MK_USE_CRUSB},y)
-ifeq (${MK_USE_CRUSB_CLASS},cdc_acm)
 ifeq (${MK_USE_CRUSB_IP},dwc2_st)
+ifneq ($(filter cdc_acm, $(MK_USE_CRUSB_CLASS)),)
 CSOURCES += ${BOARD_BSP_PATH}/component/board_usb_cdc.c
 CSOURCES += ${BOARD_BSP_PATH}/component/board_usb_msp.c
-else
-$(error Invalid USB IP setting in board pixhawk_fmuv2)
-endif # end with MK_USE_CRUSB_IP
 endif # end with MK_USE_CRUSB_CLASS
+else
+$(error Invalid USB IP setting in board pixhawk_fmuv6x)
+endif # end with MK_USE_CRUSB_IP
 endif # end with MK_USE_CRUSB
 
 MOD_ARCH = m7

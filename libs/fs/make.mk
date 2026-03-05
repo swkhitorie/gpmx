@@ -8,9 +8,12 @@ CSOURCES += libs/fs/fat/ff_drv.c
 CSOURCES += libs/fs/fat/ffsystem.c
 CSOURCES += libs/fs/fat/ffunicode.c
 
+ifeq (${MK_TEST_ENABLE},y)
 PROJ_CINCDIRS += libs/fs/fat/test
 CSOURCES += libs/fs/fat/test/fatfs_test.c
 endif
+
+endif # end with MK_USE_FS_FATFS
 
 ifeq (${MK_USE_FS_LITTLEFS},y)
 PROJ_CDEFS += CONFIG_LFS_ENABLE
@@ -19,17 +22,23 @@ CSOURCES += libs/fs/littlefs/lfs_util.c
 CSOURCES += libs/fs/littlefs/lfs.c
 CSOURCES += libs/fs/littlefs/lfs_drv.c
 
+ifeq (${MK_TEST_ENABLE},y)
 PROJ_CINCDIRS += libs/fs/littlefs/test
 CSOURCES += libs/fs/littlefs/test/lfs_test.c
 endif
+
+endif # end with MK_USE_FS_LITTLEFS
 
 ifeq (${MK_USE_FS_ROMFS},y)
 PROJ_CDEFS += CONFIG_ROMFS_ENABLE
 PROJ_CINCDIRS += libs/fs/romfs/
 CSOURCES += libs/fs/romfs/gromfs.c
 
+ifeq (${MK_TEST_ENABLE},y)
 PROJ_CINCDIRS += libs/fs/romfs/test
 CSOURCES += libs/fs/romfs/test/romfs_test_data.c
 CSOURCES += libs/fs/romfs/test/romfs_test.c
 endif
+
+endif # end with MK_USE_FS_ROMFS
 

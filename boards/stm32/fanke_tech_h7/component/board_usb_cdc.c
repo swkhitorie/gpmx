@@ -161,18 +161,16 @@ static const uint8_t cdc_descriptor[] = {
 };
 #endif
 
-static volatile bool ep_tx_busy_flag = false;
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t cdc_rbuf[CDC_MAX_MPS];
-USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t cdc_wbuf[1024];
 #ifndef BOARD_USB_CDC1_TX_BUFFER_LEN
 #define BOARD_USB_CDC1_TX_BUFFER_LEN 1024
 #endif
 #ifndef BOARD_USB_CDC1_RX_BUFFER_LEN
 #define BOARD_USB_CDC1_RX_BUFFER_LEN 1024
 #endif
-static uint8_t rb_tx_buffer[BOARD_USB_CDC1_TX_BUFFER_LEN];
+static volatile bool ep_tx_busy_flag = false;
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t cdc_rbuf[CDC_MAX_MPS];
+USB_NOCACHE_RAM_SECTION USB_MEM_ALIGNX uint8_t cdc_wbuf[BOARD_USB_CDC1_TX_BUFFER_LEN];
 static uint8_t rb_rx_buffer[BOARD_USB_CDC1_RX_BUFFER_LEN];
-static struct gringbuffer usb_rb_tx = {.capacity = BOARD_USB_CDC1_TX_BUFFER_LEN, .buffer = rb_tx_buffer};
 static struct gringbuffer usb_rb_rx = {.capacity = BOARD_USB_CDC1_RX_BUFFER_LEN, .buffer = rb_rx_buffer};
 
 static void usbd_event_handler(uint8_t busid, uint8_t event)
@@ -276,6 +274,10 @@ int board_cdc_acm_send(uint8_t busid, const uint8_t *p, uint16_t len, uint8_t wa
 
     if (!usb_device_is_configured(busid)) {
         return 0;
+    }
+
+    if (len > BOARD_USB_CDC1_TX_BUFFER_LEN) {
+        len = BOARD_USB_CDC1_TX_BUFFER_LEN;
     }
 
     ep_tx_busy_flag = true;

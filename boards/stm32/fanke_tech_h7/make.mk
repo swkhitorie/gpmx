@@ -72,14 +72,14 @@ PROJ_CDEFS += CONFIG_STM32_MMCSD_FATFS_ENABLE
 endif
 
 ifeq (${MK_USE_CRUSB},y)
-ifeq (${MK_USE_CRUSB_CLASS},cdc_acm)
 ifeq (${MK_USE_CRUSB_IP},dwc2_st)
+ifneq ($(filter cdc_acm, $(MK_USE_CRUSB_CLASS)),)
 CSOURCES += ${BOARD_BSP_PATH}/component/board_usb_cdc.c
 CSOURCES += ${BOARD_BSP_PATH}/component/board_usb_msp.c
+endif # end with MK_USE_CRUSB_CLASS
 else
 $(error Invalid USB IP setting in board fanke_tech_h7)
 endif # end with MK_USE_CRUSB_IP
-endif # end with MK_USE_CRUSB_CLASS
 endif # end with MK_USE_CRUSB
 
 ifeq (${PROJ_TC},gae)

@@ -240,13 +240,17 @@ int fatfs_test(int argc, char **argv)
 {
     int ret = 0;
 
-	ff_ls("0:/");
+#if !defined(CONFIG_CRUSB_DEVICE_MSC_ENABLE)
+    ff_ls("0:/");
 
 	ff_create_and_write();
 
 	test_read_and_verify();
 
 	test_file_info();
+
+    ff_ls("0:/");
+#endif
 
 	return ret;
 }

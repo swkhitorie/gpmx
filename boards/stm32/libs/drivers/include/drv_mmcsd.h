@@ -5,11 +5,6 @@
 #include "drv_gpio.h"
 #include <stdint.h>
 
-#ifndef MMCSD_INFO
-#include <stdio.h>
-#define MMCSD_INFO(...) do { printf(__VA_ARGS__); } while(0)
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
