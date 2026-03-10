@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <device/serial.h>
+#include <device/rtc.h>
 
 #ifndef APP_LOAD_ADDRESS
 #define APP_LOAD_ADDRESS      (0x08000000)
@@ -31,52 +32,57 @@
 #define BOARD_SOFTWARE_VERSION   "v1.0.1"
 #endif
 
-/** 
- * CONFIG_BOARD_COM_STDINOUT
- * CONFIG_BOARD_FREERTOS_ENABLE
- * 
- */
-
 #define BOARD_DEBUG(...) printf(__VA_ARGS__)
+
+#define STM32_SYSCLK_FREQUENCY  (48000000)
+#define STM32_CPUCLK_FREQUENCY  (STM32_SYSCLK_FREQUENCY/1)
+#define STM32_HCLK_FREQUENCY    (STM32_CPUCLK_FREQUENCY/1)
+#define STM32_PCLK1_FREQUENCY   (STM32_HCLK_FREQUENCY/1)
+#define STM32_PCLK2_FREQUENCY   (STM32_HCLK_FREQUENCY/1)
+
+#define STM32_APB1_TIM2_CLKIN   (1*STM32_PCLK1_FREQUENCY)
+#define STM32_APB1_TIM3_CLKIN   (1*STM32_PCLK1_FREQUENCY)
+#define STM32_APB1_TIM4_CLKIN   (1*STM32_PCLK1_FREQUENCY)
+#define STM32_APB1_TIM5_CLKIN   (1*STM32_PCLK1_FREQUENCY)
+#define STM32_APB1_TIM6_CLKIN   (1*STM32_PCLK1_FREQUENCY)
+#define STM32_APB1_TIM7_CLKIN   (1*STM32_PCLK1_FREQUENCY)
+
+#define STM32_APB2_TIM1_CLKIN   (1*STM32_PCLK2_FREQUENCY)
+#define STM32_APB2_TIM8_CLKIN   (1*STM32_PCLK2_FREQUENCY)
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void board_irq_reset();
-
-void board_reboot();
-
-void board_init();
-void board_deinit();
-
-void board_bsp_init();
-void board_bsp_deinit();
-
 void board_rng_init();
 void board_rng_deinit();
-
 void board_crc_init();
 void board_crc_deinit();
-
 void board_subghz_init();
 void board_subghz_deinit();
 
-/*-------------- board bsp interface --------------*/
-void board_led_toggle(uint8_t idx);  //0:red, 1:green, 2:blue
+void board_init();
+void board_deinit();
+void board_bsp_init();
+void board_bsp_deinit();
 
+void board_reboot();
 void board_get_uid(uint32_t *p);
-
 uint32_t board_get_time();
 void     board_delay(uint32_t ms);
 uint32_t board_elapsed_time(const uint32_t timestamp);
+/*-------------- board bsp interface --------------*/
+
+void board_test();
+void board_led_toggle(uint8_t idx);  //0:red, 1:green, 2:blue
 
 int  board_stream_in(int port, void *p, int size);
 int  board_stream_out(int port, const void *p, int size, int way);
 void board_stream_printf(int port, const char *format, ...);
 void board_printf(const char *format, ...);
 
-void board_debug();
+bool board_rtc_set_timestamp(rclk_time_t now);
+rclk_time_t board_rtc_get_timestamp(struct rclk_timeval *now);
 
 uint32_t board_rng_get();
 bool     board_subghz_tx_ready();

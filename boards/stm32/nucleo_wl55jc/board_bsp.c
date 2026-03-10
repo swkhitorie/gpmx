@@ -1,16 +1,16 @@
 #include <board_config.h>
 #include <drv_uart.h>
+#include <drv_rtc.h>
 #include <device/dnode.h>
 #include <device/serial.h>
-
 #include <stdarg.h>
 
 #if defined(CONFIG_BOARD_CMBACKTRACE)
 #include "cm_backtrace.h"
 #endif
 
-#if defined(CONFIG_BOARD_EMBEDPRINTF)
-#include <lib_eprintf.h>
+#if defined(CONFIG_MODULE_KPRINTF)
+#include <kprintf.h>
 #endif
 
 #if defined(SERIAL1_CONFIG)
@@ -36,8 +36,8 @@ uint8_t serial2_tx_bufer[SERIAL2_TXBUFFER_SIZE];
 uint8_t serial2_rx_bufer[SERIAL2_RXBUFFER_SIZE];
 #else
 #define SERIAL2_TXBUFFER_DMA_SIZE  (128)
-#define SERIAL2_RXBUFFER_DMA_SIZE  (128)
-#define SERIAL2_TXBUFFER_SIZE      (64)
+#define SERIAL2_RXBUFFER_DMA_SIZE  (64)
+#define SERIAL2_TXBUFFER_SIZE      (128)
 #define SERIAL2_RXBUFFER_SIZE      (64)
 uint8_t serial2_txdma_bufer[SERIAL2_TXBUFFER_DMA_SIZE];
 uint8_t serial2_rxdma_bufer[SERIAL2_RXBUFFER_DMA_SIZE];
@@ -147,14 +147,11 @@ struct up_uart_dev_s com1_dev = {
     .priority = 1,
 };
 
-#if defined(CONFIG_BOARD_PRINTF_SOURCE)
-uart_dev_t *dstdout;
-#endif
 
 void board_bsp_init()
 {
     // wait all peripheral power on
-    HAL_Delay(200);
+    HAL_Delay(100);
 
     /* LED Array */
     LOW_INITPIN(GPIOB, 15, IOMODE_OUTPP, IO_NOPULL, IO_SPEEDHIGH);
@@ -167,13 +164,11 @@ void board_bsp_init()
     serial_bus_initialize(1);
     serial_bus_initialize(2);
 
-#if defined(CONFIG_BOARD_PRINTF_SOURCE)
-    dstdout = serial_bus_get(CONFIG_BOARD_PRINTF_SOURCE);
-#endif
-
 #if defined(CONFIG_BOARD_CMBACKTRACE)
     cm_backtrace_init(BOARD_FIRMWARE_NAME, BOARD_HARDWARE_VERSION, BOARD_SOFTWARE_VERSION);
 #endif
+
+    hw_stm32_rtc_setup();
 
     SERIAL_RXCLEAR(&com1_dev.dev);
     SERIAL_RXCLEAR(&com2_dev.dev);
@@ -214,15 +209,6 @@ void board_bsp_deinit()
     __set_PRIMASK(0); 
 }
 
-void board_debug()
-{
-    static int timer_led = 0;
-    if (++timer_led > 100) {
-        timer_led = 1;
-        board_led_toggle(1);
-    }
-}
-
 void board_led_toggle(uint8_t i)
 {
     int val;
@@ -242,33 +228,14 @@ void board_led_toggle(uint8_t i)
     }
 }
 
-void board_get_uid(uint32_t *p)
+rclk_time_t board_rtc_get_timestamp(struct rclk_timeval *now)
 {
-    p[0] = *(volatile uint32_t*)(0x1FFF7590);
-    p[1] = *(volatile uint32_t*)(0x1FFF7594);
-    p[2] = *(volatile uint32_t*)(0x1FFF7598);
+    return hw_stm32_rtc_get_timeval(now);
 }
 
-/****************************************************************************
- * Board Tickms interface
- ****************************************************************************/
-uint32_t board_get_time()
+bool board_rtc_set_timestamp(rclk_time_t now)
 {
-    return HAL_GetTick();
-}
-
-void board_delay(uint32_t ms)
-{
-    HAL_Delay(ms);
-}
-
-uint32_t board_elapsed_time(const uint32_t timestamp)
-{
-    uint32_t now = HAL_GetTick();
-    if (timestamp > now) {
-        return 0;
-    }
-    return now - timestamp;
+    return hw_stm32_rtc_set_time_stamp(now);
 }
 
 /****************************************************************************
@@ -316,19 +283,17 @@ void board_stream_printf(int port, const char *format, ...)
     int iport = port;
     va_list args;
 
-#if defined(CONFIG_BOARD_STDPRINTF)
-    char tmp_buffer[512];
-    va_start(args, format);
-    idx = vsnprintf(tmp_buffer, 512, format, args);
-    if (idx > 512) {
-        idx = 512;
-    }
-    board_stream_out(port, tmp_buffer, idx, 0);
-#endif
-
-#if defined(CONFIG_BOARD_EMBEDPRINTF)
+#if defined(CONFIG_MODULE_KPRINTF)
     va_start(args, format);
     vfctprintf_(board_stream_outc, &iport, format, args);
+#else
+    char tmp_buffer[800];
+    va_start(args, format);
+    idx = vsnprintf(tmp_buffer, 800, format, args);
+    if (idx > 800) {
+        idx = 800;
+    }
+    board_stream_out(port, tmp_buffer, idx, 0);
 #endif
 
     va_end(args);
@@ -337,7 +302,13 @@ void board_stream_printf(int port, const char *format, ...)
 /****************************************************************************
  * Board printf setting
  ****************************************************************************/
-#if defined(CONFIG_BOARD_STDPRINTF)
+#if defined(CONFIG_MODULE_KPRINTF)
+void _putchar(char ch)
+{
+    SERIAL_SEND(&com2_dev.dev, &ch, 1);
+}
+
+#else
 #include <string.h>
 #include <stdio.h>
 
@@ -345,9 +316,7 @@ void board_stream_printf(int port, const char *format, ...)
 
 int fputc(int c, FILE *f)
 {
-#if defined(CONFIG_BOARD_PRINTF_SOURCE)
-    SERIAL_SEND(dstdout, ptr, len);
-#endif
+    SERIAL_SEND(&com2_dev.dev, ptr, len);
 }
 #elif defined(__GNUC__)
 
@@ -357,9 +326,7 @@ int _write(int file, const char *ptr, int len)
     const int stdout_fileno = 1;
     const int stderr_fileno = 2;
     if (file == stdout_fileno) {
-#if defined(CONFIG_BOARD_PRINTF_SOURCE)
-        SERIAL_SEND(dstdout, ptr, len);
-#endif
+        SERIAL_SEND(&com2_dev.dev, ptr, len);
     }
 
     return len;
@@ -367,27 +334,30 @@ int _write(int file, const char *ptr, int len)
 #endif
 #endif
 
-#if defined(CONFIG_BOARD_EMBEDPRINTF)
-void _putchar(char ch)
-{
-#if defined(CONFIG_BOARD_PRINTF_SOURCE)
-    SERIAL_SEND(dstdout, &ch, 1);
-#endif
-}
-#endif
-
 void board_printf(const char *format, ...)
 {
     va_list args;
     va_start(args, format);
 
-#if defined(CONFIG_BOARD_STDPRINTF)
+#if defined(CONFIG_MODULE_KPRINTF)
+    vprintf_(format, args);
+#else
     vprintf(format, args);
 #endif
 
-#if defined(CONFIG_BOARD_EMBEDPRINTF)
-    vprintf_(format, args);
-#endif
-
     va_end(args);
+}
+
+void board_test()
+{
+    uint32_t m1 = board_get_time();
+
+    while (1) {
+        if (board_elapsed_time(m1) >= 100) {
+            m1 = board_get_time();
+
+            board_led_toggle(0);
+            board_printf("hello nucleo_wl55jc\r\n");
+        }
+    }
 }

@@ -1,6 +1,6 @@
 
 # 1. manufacturer board
-STM32_BOARDS   := pxboard_ebfv2 fanke_tech_h7 pixhawk_fmuv2 pixhawk_fmuv6x
+STM32_BOARDS   := pxboard_ebfv2 fanke_tech_h7 pixhawk_fmuv2 pixhawk_fmuv6x e77_900mbl nucleo_wl55jc
 N32_BOARDS     := n32g430_evk
 
 SUPPORTED_BOARDS := $(STM32_BOARDS) $(N32_BOARDS)

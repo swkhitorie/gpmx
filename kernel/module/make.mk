@@ -2,7 +2,7 @@
 # general
 PROJ_CINCDIRS += kernel/module/libc/include
 PROJ_CINCDIRS += kernel/module/libc/tests
-CSOURCES += kernel/module/libc/utils/utils.c
+CSOURCES += kernel/module/libc/utils/compile_utils.c
 
 ifeq (${MK_USE_MODULE_KPRINTF},y)
 PROJ_CDEFS += CONFIG_MODULE_KPRINTF
@@ -100,7 +100,6 @@ CPPSOURCES += kernel/module/hrtimer/test/hrt_test.cpp
 endif
 
 MK_USE_KERNEL_POSIX_QUEUE:=y
-MK_USE_KERNEL_POSIX_TIME:=y
 endif
 
 #####################################################################
@@ -219,6 +218,7 @@ CSOURCES += kernel/module/libc/time/clock_settime.c
 CSOURCES += kernel/module/libc/time/lib_nanosleep.c
 CSOURCES += kernel/module/libc/unistd/lib_sleep.c
 CSOURCES += kernel/module/libc/unistd/lib_usleep.c
+CSOURCES += kernel/module/libc/utils/utils.c
 
 ifeq (${MK_TEST_ENABLE},y)
 CSOURCES += kernel/module/libc/tests/klibc_clock_test.c

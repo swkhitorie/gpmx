@@ -10,7 +10,7 @@
 #include <stdbool.h>
 #include <inttypes.h>
 #include <sdqueue.h>
-#include <time.h>
+// #include <time.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,6 +60,7 @@ typedef struct latency_info {
  */
 __attribute__ ((visibility ("default"))) extern hrt_abstime hrt_absolute_time(void);
 
+#if 0
 /**
  * Convert a timespec to absolute time.
  */
@@ -80,6 +81,7 @@ static inline void abstime_to_ts(struct timespec *ts, hrt_abstime abstime)
 	abstime -= (hrt_abstime)(ts->tv_sec) * 1000000;
 	ts->tv_nsec = (typeof(ts->tv_nsec))(abstime * 1000);
 }
+#endif
 
 /**
  * Compute the delta between a timestamp taken in the past
