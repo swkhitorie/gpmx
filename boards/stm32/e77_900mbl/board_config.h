@@ -87,6 +87,9 @@ rclk_time_t board_rtc_get_timestamp(struct rclk_timeval *now);
 uint32_t board_rng_get();
 bool     board_subghz_tx_ready();
 uint32_t board_crc_key_get(uint32_t *uid, uint32_t key);
+// return -1:no id io, 0:receiver, 1:sender
+int      board_get_id_io();
+void     board_antenna_switch(uint8_t idx);
 
 #ifdef __cplusplus
 }

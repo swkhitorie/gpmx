@@ -361,3 +361,13 @@ void board_test()
         }
     }
 }
+
+int board_get_id_io()
+{
+    return -1;
+}
+
+void board_antenna_switch(uint8_t idx)
+{
+    (void)idx;
+}
