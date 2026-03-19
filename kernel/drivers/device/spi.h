@@ -295,6 +295,10 @@ struct spi_dev_s
 
     /* exclsem handle by SPI_LOCK() */
     SemaphoreHandle_t  exclsem;  /* Held while chip is selected for mutual exclusion */
+#elif defined(CONFIG_RTTNANO_ENABLE)
+    rt_sem_t           rxsem;
+    rt_sem_t           txsem;
+    rt_sem_t           exclsem;
 #else
     volatile uint32_t flag_tx;
     volatile uint32_t flag_rx;

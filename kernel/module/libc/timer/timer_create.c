@@ -1,13 +1,15 @@
 #include <stddef.h>
-#include "pthread.h"
-#include "errno.h"
-#include "time.h"
-#include "utils.h"
+#include <time.h>
+#include <pthread.h>
+#include <errno.h>
 
+#include "utils.h"
 #include "./prv_timer.h"
 
 int timer_create(clockid_t clockid, struct sigevent *evp, timer_t *timerid)
 {
+#if defined(CONFIG_FREERTOS_ENABLE)
+
     int ret = 0;
     timer_internal_t *p = NULL;
 
@@ -37,4 +39,8 @@ int timer_create(clockid_t clockid, struct sigevent *evp, timer_t *timerid)
                                                 &p->buff );
     }
     return ret;
+#else
+
+    return -1;
+#endif
 }

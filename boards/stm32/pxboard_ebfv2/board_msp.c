@@ -119,6 +119,7 @@ void DMA2_Stream6_IRQHandler(void)
 }
 #endif
 
+#if defined(CONFIG_NET_LWIP_ENABLE)
 void HAL_ETH_MspInit(ETH_HandleTypeDef* ethHandle)
 {
     /** 
@@ -150,10 +151,6 @@ void HAL_ETH_MspInit(ETH_HandleTypeDef* ethHandle)
     /** ETH_TXD0, ETH_TXD1 */
     LOW_PERIPH_INITPIN(GPIOG, 13, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, GPIO_AF11_ETH);
     LOW_PERIPH_INITPIN(GPIOG, 14, IOMODE_AFPP, IO_NOPULL, IO_SPEEDMAX, GPIO_AF11_ETH);
-
-    /** PHY Reset Pin Config */
-    LOW_INITPIN(GPIOI, 1, IOMODE_OUTPP, IO_PULLUP, IO_SPEEDHIGH);
-
 }
 
 void phy_reset()
@@ -164,4 +161,6 @@ void phy_reset()
     LOW_IOSET(GPIOI, 1, 1);
     HAL_Delay(5);
 }
+#endif
+
 

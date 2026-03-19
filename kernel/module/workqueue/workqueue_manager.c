@@ -12,6 +12,8 @@
 
 #include "kmodule_defines.h"
 
+#include "device/dnode.h"
+
 const struct wq_config_t wq_config_rate_ctrl = {"wq:rate_ctrl", 1664, 0};
 
 const struct wq_config_t wq_config_spi0 = {"wq:SPI0", 2336, -1};
@@ -149,8 +151,8 @@ static void* workqueue_manager_run(void *p)
 {
     pthread_setname_np(pthread_self(), "wq:manager");
 
-	_wq_manager_wqs_list = pvPortMalloc(sizeof(struct blocking_list));
-	_wq_manager_create_queue = pvPortMalloc(sizeof(wq_config_queue_t));
+	_wq_manager_wqs_list = gpdrv_malloc(sizeof(struct blocking_list));
+	_wq_manager_create_queue = gpdrv_malloc(sizeof(wq_config_queue_t));
 
     blocking_list_init(_wq_manager_wqs_list, workqueue_cmp_method);
     wq_config_queue_t_init(_wq_manager_create_queue);
@@ -286,7 +288,7 @@ int workqueue_manager_stop()
             }
 
             blocking_list_deinit(_wq_manager_wqs_list);
-            vPortFree(_wq_manager_wqs_list);
+            gpdrv_free(_wq_manager_wqs_list);
         }
 
         atomic_bool_store(&_wq_manager_should_exit, true);
@@ -298,7 +300,7 @@ int workqueue_manager_stop()
             usleep(10000);
 
             wq_config_queue_t_destroy(_wq_manager_create_queue);
-            vPortFree(_wq_manager_create_queue);
+            gpdrv_free(_wq_manager_create_queue);
         }
 
     } else {

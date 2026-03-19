@@ -13,6 +13,10 @@ extern "C" {
 
 int klibc_clock_test(int argc, char **argv);
 int klibc_mq_test(int argc, char **argv);
+int klibc_pthread_barrier_test(int argc, char **argv);
+int klibc_pthread_cond_test(int argc, char **argv);
+int klibc_pthread_spinlock_test(int argc, char **argv);
+int klibc_pthread_rwlock_test(int argc, char **argv);
 int klibc_pthread_mutex_test(int argc, char **argv);
 int klibc_pthread_test(int argc, char **argv);
 int klibc_sem_test(int argc, char **argv);

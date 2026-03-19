@@ -11,7 +11,7 @@
 #include "kmodule_defines.h"
 #include "perf_counter.h"
 
-#include "FreeRTOS.h"
+#include "device/dnode.h"
 
 /**
  * Header common to all counters.
@@ -84,7 +84,7 @@ perf_alloc(enum perf_counter_type type, const char *name)
 	switch (type) {
 	case PC_COUNT:
         {
-			struct perf_ctr_count *obj = pvPortMalloc(sizeof(struct perf_ctr_count));
+			struct perf_ctr_count *obj = gpdrv_malloc(sizeof(struct perf_ctr_count));
 			if (obj) {
 				ctr = &obj->head;
 			}
@@ -93,7 +93,7 @@ perf_alloc(enum perf_counter_type type, const char *name)
 
 	case PC_ELAPSED:
         {
-			struct perf_ctr_elapsed *obj = pvPortMalloc(sizeof(struct perf_ctr_elapsed));
+			struct perf_ctr_elapsed *obj = gpdrv_malloc(sizeof(struct perf_ctr_elapsed));
 			if (obj) {
 				ctr = &obj->head;
 			}
@@ -102,7 +102,7 @@ perf_alloc(enum perf_counter_type type, const char *name)
 
 	case PC_INTERVAL:
         {
-			struct perf_ctr_interval *obj = pvPortMalloc(sizeof(struct perf_ctr_interval));
+			struct perf_ctr_interval *obj = gpdrv_malloc(sizeof(struct perf_ctr_interval));
 			if (obj) {
 				ctr = &obj->head;
 			}
@@ -171,17 +171,17 @@ perf_free(perf_counter_t handle)
 	switch (handle->type) {
 	case PC_COUNT:
         handle_count = container_of(handle, struct perf_ctr_count, head);
-		vPortFree(handle_count);
+		gpdrv_free(handle_count);
 		break;
 
 	case PC_ELAPSED:
         handle_elapsed = container_of(handle, struct perf_ctr_elapsed, head);
-		vPortFree(handle_elapsed);
+		gpdrv_free(handle_elapsed);
 		break;
 
 	case PC_INTERVAL:
         handle_interval = container_of(handle, struct perf_ctr_interval, head);
-		vPortFree(handle_interval);
+		gpdrv_free(handle_interval);
 		break;
 
 	default:

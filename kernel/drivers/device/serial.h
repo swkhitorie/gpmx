@@ -80,6 +80,10 @@ struct uart_dev_s {
      */
     SemaphoreHandle_t  xmitsem;
     SemaphoreHandle_t  recvsem;
+#elif defined(CONFIG_RTTNANO_ENABLE)
+    rt_sem_t           exclsem;
+    rt_sem_t           xmitsem;
+    rt_sem_t           recvsem;
 #else
     volatile uint32_t flag_excl;
 

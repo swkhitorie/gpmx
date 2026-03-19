@@ -134,6 +134,7 @@ CSOURCES += kernel/module/libc/mqueue/mq_getattr.c
 CSOURCES += kernel/module/libc/mqueue/mq_open.c
 CSOURCES += kernel/module/libc/mqueue/mq_receive.c
 CSOURCES += kernel/module/libc/mqueue/mq_send.c
+CSOURCES += kernel/module/libc/mqueue/mq_setattr.c
 CSOURCES += kernel/module/libc/mqueue/mq_timedreceive.c
 CSOURCES += kernel/module/libc/mqueue/mq_timedsend.c
 CSOURCES += kernel/module/libc/mqueue/mq_unlink.c
@@ -151,14 +152,21 @@ endif
 
 ifeq (${MK_USE_KERNEL_POSIX_PTHREAD},y)
 PROJ_CDEFS += CONFIG_MODULE_KPOSIX_PTHREAD
+CSOURCES += kernel/module/libc/pthread/prv_pthread.c
 CSOURCES += kernel/module/libc/pthread/pthread.c
 CSOURCES += kernel/module/libc/pthread/pthread_attr.c
 CSOURCES += kernel/module/libc/pthread/pthread_barrier.c
 CSOURCES += kernel/module/libc/pthread/pthread_cond.c
 CSOURCES += kernel/module/libc/pthread/pthread_mutex.c
+CSOURCES += kernel/module/libc/pthread/pthread_rwlock.c
+CSOURCES += kernel/module/libc/pthread/pthread_spin.c
 CSOURCES += kernel/module/libc/pthread/sched.c
 
 ifeq (${MK_TEST_ENABLE},y)
+CSOURCES += kernel/module/libc/tests/klibc_pthread_barrier_test.c
+CSOURCES += kernel/module/libc/tests/klibc_pthread_cond_test.c
+CSOURCES += kernel/module/libc/tests/klibc_pthread_rwlock_test.c
+CSOURCES += kernel/module/libc/tests/klibc_pthread_spinlock_test.c
 CSOURCES += kernel/module/libc/tests/klibc_pthread_mutex_test.c
 CSOURCES += kernel/module/libc/tests/klibc_pthread_test.c
 endif
@@ -171,12 +179,18 @@ endif
 
 ifeq (${MK_USE_KERNEL_POSIX_SEMAPHORE},y)
 PROJ_CDEFS += CONFIG_MODULE_KPOSIX_SEMAPHORE
+CSOURCES += kernel/module/libc/semaphore/prv_sem.c
+CSOURCES += kernel/module/libc/semaphore/sem_close.c
 CSOURCES += kernel/module/libc/semaphore/sem_destroy.c
+CSOURCES += kernel/module/libc/semaphore/sem_getprotocol.c
 CSOURCES += kernel/module/libc/semaphore/sem_getvalue.c
 CSOURCES += kernel/module/libc/semaphore/sem_init.c
+CSOURCES += kernel/module/libc/semaphore/sem_open.c
 CSOURCES += kernel/module/libc/semaphore/sem_post.c
+CSOURCES += kernel/module/libc/semaphore/sem_setprotocol.c
 CSOURCES += kernel/module/libc/semaphore/sem_timedwait.c
 CSOURCES += kernel/module/libc/semaphore/sem_trywait.c
+CSOURCES += kernel/module/libc/semaphore/sem_unlink.c
 CSOURCES += kernel/module/libc/semaphore/sem_wait.c
 
 ifeq (${MK_TEST_ENABLE},y)
@@ -217,7 +231,6 @@ CSOURCES += kernel/module/libc/time/clock_nanosleep.c
 CSOURCES += kernel/module/libc/time/clock_settime.c
 CSOURCES += kernel/module/libc/time/lib_nanosleep.c
 CSOURCES += kernel/module/libc/unistd/lib_sleep.c
-CSOURCES += kernel/module/libc/unistd/lib_usleep.c
 CSOURCES += kernel/module/libc/utils/utils.c
 
 ifeq (${MK_TEST_ENABLE},y)

@@ -1,8 +1,10 @@
-#include "errno.h"
-#include "pthread.h"
-#include "time.h"
+#include <time.h>
+#include <errno.h>
+#include <pthread.h>
 
 #include "./prv_timer.h"
+
+#if defined(CONFIG_FREERTOS_ENABLE)
 
 void prv_timer_callback(TimerHandle_t handle)
 {
@@ -27,3 +29,5 @@ void prv_timer_callback(TimerHandle_t handle)
         }
     }
 }
+
+#endif

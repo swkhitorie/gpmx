@@ -1,9 +1,9 @@
 #ifndef PRV_TIMER_H_
 #define PRV_TIMER_H_
 
-#include "signal.h"
+#include <signal.h>
 
-/* FreeRTOS interface include */
+#if defined(CONFIG_FREERTOS_ENABLE)
 #include <FreeRTOS.h>
 #include <task.h>
 #include <timers.h>
@@ -14,6 +14,16 @@ typedef struct timer_internal {
     TickType_t period;
 } timer_internal_t;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void prv_timer_callback(TimerHandle_t handle);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
 
 #endif

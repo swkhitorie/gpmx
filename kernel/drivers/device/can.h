@@ -599,6 +599,9 @@ struct can_dev_s
 #if defined(CONFIG_FREERTOS_ENABLE)
   SemaphoreHandle_t  sem_excl;     /* Prevent devices from being occupied by multiple threads */
   SemaphoreHandle_t  sem_tx;
+#elif defined(CONFIG_RTTNANO_ENABLE)
+  rt_sem_t           sem_excl;
+  rt_sem_t           sem_tx;
 #else
   volatile uint32_t flag_excl;
   volatile uint32_t flag_tx;

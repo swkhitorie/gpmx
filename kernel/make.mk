@@ -8,7 +8,7 @@ PROJ_CDEFS += CONFIG_FREERTOS_ENABLE
 include ${SDK_ROOTDIR}/kernel/freertos/make.mk
 endif
 
-ifeq (${MK_RTOS},rt_nano)
-PROJ_CDEFS += CONFIG_RTTHREADNANO_ENABLE
-include ${SDK_ROOTDIR}/kernel/rt_nano/make.mk
+ifeq (${MK_RTOS},rttnano)
+PROJ_CDEFS += CONFIG_RTTNANO_ENABLE
+include ${SDK_ROOTDIR}/kernel/rttnano/make.mk
 endif

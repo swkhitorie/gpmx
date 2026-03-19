@@ -3,27 +3,22 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "mqueue.h"
-#include "errno.h"
-#include "fcntl.h"
+#include <mqueue.h>
 
-/**
- * FreeRTOS Include
- */
+#if defined(CONFIG_FREERTOS_ENABLE)
 #include <FreeRTOS.h>
 #include <task.h>
 #include <timers.h>
 #include <semphr.h>
+
 #include "./dlist.h"
 
-typedef struct __queuedata
-{
+typedef struct __queuedata {
     char *p;
     size_t size;
 } queue_element_t;
 
-typedef struct QueueListElement
-{
+typedef struct QueueListElement {
     Link_t link;
     QueueHandle_t queue;
     size_t open_descriptors;
@@ -32,22 +27,27 @@ typedef struct QueueListElement
     BaseType_t pending_unlink;
 } queuelist_element_t;
 
-StaticSemaphore_t *get_queue_listmutex();
-Link_t *get_queue_listhead();
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-int cal_ticktimeout(long flag, const struct timespec *ptimeout, TickType_t *ptimeout_ticks);
+void queuelist_lock();
+void queuelist_unlock();
+void init_queuelist();
 
-BaseType_t create_new_messagequeue(queuelist_element_t **p,
+int find_queue_inlist(queuelist_element_t **p, const char *name, mqd_t descriptor);
+int create_new_messagequeue(queuelist_element_t **p,
     const struct mq_attr *pattr, const char *name, size_t len);
-
 void delete_messagequeue(const queuelist_element_t *p);
 
-BaseType_t find_queue_inlist(queuelist_element_t **p, const char *name, mqd_t descriptor);
+int cal_ticktimeout(long flag, const struct timespec *ptimeout, TickType_t *ptimeout_ticks);
+int validate_queuename(const char *name, size_t *len);
 
-void init_queuelist(void);
+#ifdef __cplusplus
+}
+#endif
 
-BaseType_t validate_queuename(const char *name, size_t *len);
-
+#endif
 
 
 #endif

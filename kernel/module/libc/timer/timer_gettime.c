@@ -1,13 +1,15 @@
 #include <stddef.h>
-#include "pthread.h"
-#include "errno.h"
-#include "time.h"
-#include "utils.h"
+#include <pthread.h>
+#include <errno.h>
+#include <time.h>
 
+#include "utils.h"
 #include "./prv_timer.h"
 
 int timer_gettime(timer_t timerid, struct itimerspec *value)
 {
+#if defined(CONFIG_FREERTOS_ENABLE)
+
     TimerHandle_t handle = timerid;
     timer_internal_t *p = (timer_internal_t *)pvTimerGetTimerID(handle);
     TickType_t next_expiration = xTimerGetExpiryTime(handle) - xTaskGetTickCount(),
@@ -29,4 +31,8 @@ int timer_gettime(timer_t timerid, struct itimerspec *value)
         value->it_interval.tv_nsec = 0;
     }
     return 0;
+#else
+
+    return -1;
+#endif
 }

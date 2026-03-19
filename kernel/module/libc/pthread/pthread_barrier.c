@@ -1,71 +1,126 @@
-#include <stddef.h>
-#include <string.h>
-#include "pthread.h"
-#include "errno.h"
-#include "atomic.h"
+#include <pthread.h>
+#include <errno.h>
 
-
-#if ( configUSE_16_BIT_TICKS == 1 )
-    #define posixPTHREAD_BARRIER_MAX_COUNT    ( 8 )
-#else
-    #define posixPTHREAD_BARRIER_MAX_COUNT    ( 24 )
-#endif
-
-int pthread_barrier_init(pthread_barrier_t *barrier, 
-   const pthread_barrierattr_t *attr, unsigned count)
+int pthread_barrierattr_destroy(pthread_barrierattr_t *attr)
 {
-    int ret = 0;
-    pthread_barrier_t *p = (pthread_barrier_t *)barrier;
-    (void)attr;
-
-    if (count == 0) {
-        ret = EINVAL;
+    if (!attr) {
+        return EINVAL;
     }
 
-    if (ret == 0) {
-        if (count > posixPTHREAD_BARRIER_MAX_COUNT){
-            /* No memory exists in the event group for more than
-             * posixPTHREAD_BARRIER_MAX_COUNT threads. */
-            ret = ENOMEM;
-        }
+    return 0;
+}
+
+int pthread_barrierattr_init(pthread_barrierattr_t *attr)
+{
+    if (!attr) {
+        return EINVAL;
     }
 
-    if (ret == 0) {
-        p->cnt = 0;
-        p->threshold = count;
-        (void)xEventGroupCreateStatic(&p->eventgrp);
-        (void)xSemaphoreCreateCountingStatic((UBaseType_t)count,
-                (UBaseType_t)count, &p->sem_cnt);
+    *attr = PTHREAD_PROCESS_PRIVATE;
+    return 0;
+}
+
+int pthread_barrierattr_getpshared(const pthread_barrierattr_t *attr,
+                                   int                         *pshared)
+{
+    if (!attr) {
+        return EINVAL;
     }
-    return ret;
+
+    *pshared = (int)*attr;
+    return 0;
+}
+
+int pthread_barrierattr_setpshared(pthread_barrierattr_t *attr, int pshared)
+{
+    if (!attr) {
+        return EINVAL;
+    }
+
+    if (pshared == PTHREAD_PROCESS_PRIVATE) {
+        *attr = PTHREAD_PROCESS_PRIVATE;
+        return 0;
+    }
+
+    return EINVAL;
 }
 
 int pthread_barrier_destroy(pthread_barrier_t *barrier)
 {
-    pthread_barrier_t *p = (pthread_barrier_t *)barrier;
-    (void)vEventGroupDelete((EventGroupHandle_t)&p->eventgrp);
-    (void)vSemaphoreDelete((SemaphoreHandle_t)&p->sem_cnt);
+    int ret;
+
+    if (!barrier) {
+        return EINVAL;
+    }
+
+    ret = pthread_mutex_lock(&(barrier->mutex));
+    if (ret != 0) {
+        return ret;
+    }
+
+    if (barrier->count != 0) {
+        pthread_mutex_unlock(&(barrier->mutex));
+        return EBUSY;
+    }
+
+    ret = pthread_mutex_unlock(&(barrier->mutex));
+    if (ret != 0) {
+        return ret;
+    }
+
+    ret = pthread_mutex_destroy(&(barrier->mutex));
+    if (ret != 0) {
+        return ret;
+    }
+
+    ret = pthread_cond_destroy(&(barrier->cond));
+    return ret;
+}
+
+int pthread_barrier_init(pthread_barrier_t *barrier, 
+   const pthread_barrierattr_t *attr, unsigned count)
+{
+    if (!barrier) {
+        return EINVAL;
+    }
+
+    if (attr && (*attr != PTHREAD_PROCESS_PRIVATE)) {
+        return EINVAL;
+    }
+
+    if (count == 0) {
+        return EINVAL;
+    }
+
+    barrier->count = count;
+    pthread_cond_init(&(barrier->cond), NULL);
+    pthread_mutex_init(&(barrier->mutex), NULL);
     return 0;
 }
 
 int pthread_barrier_wait(pthread_barrier_t *barrier)
 {
-    int ret = 0;
-    unsigned i = 0;
-    pthread_barrier_t *p = (pthread_barrier_t *)barrier;
-    unsigned thread_num = 0;
+    int ret;
+    if (!barrier) {
+        return EINVAL;
+    }
 
-    (void)xSemaphoreTake((SemaphoreHandle_t)&p->sem_cnt, portMAX_DELAY);
-    thread_num = Atomic_Increment_u32((uint32_t *) &p->cnt);
-    (void)xEventGroupSync((EventGroupHandle_t)&p->eventgrp,
-                1 << thread_num, (1 << p->threshold) - 1, portMAX_DELAY);
+    ret = pthread_mutex_lock(&(barrier->mutex));
+    if (ret != 0) {
+        return EINVAL;
+    }
 
-    if (thread_num == 0) {
-        ret = PTHREAD_BARRIER_SERIAL_THREAD;
-        p->cnt = 0;
-        for (i = 0; i < p->threshold; i++) {
-            xSemaphoreGive((SemaphoreHandle_t)&p->sem_cnt);
+    if (barrier->count == 0) {
+        ret = EINVAL;
+    } else {
+        barrier->count -= 1;
+        if (barrier->count == 0) {
+            pthread_cond_broadcast(&(barrier->cond));
+        } else {
+            pthread_cond_wait(&(barrier->cond), &(barrier->mutex));
         }
     }
+
+    pthread_mutex_unlock(&(barrier->mutex));
     return ret;
 }

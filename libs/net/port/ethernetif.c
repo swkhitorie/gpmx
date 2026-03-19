@@ -15,6 +15,9 @@
 
 #include <netif/ethernetif.h>
 #include <string.h>
+#include <board_config.h>
+
+#define NETIF_LOG(...)    board_printf(__VA_ARGS__)
 
 #if LWIP_IPV6
 #include "lwip/ethip6.h"
@@ -137,19 +140,30 @@ int eth_device_ready(struct eth_device* dev)
     }
 }
 
+#if NO_SYS
+struct netif gnetif;
+#endif
+
 /* Keep old drivers compatible in RT-Thread */
 int eth_device_init_with_flag(struct eth_device *dev, const char *name, uint16_t flags)
 {
-    struct netif* netif = &_g_netif;
+    struct netif* netif;
 
-// #if LWIP_NETIF_HOSTNAME
-//     char *hostname = RT_NULL;
-//     netif = (struct netif*) rt_calloc (1, sizeof(struct netif) + LWIP_HOSTNAME_LEN);
-// #else
-//     netif = (struct netif*) rt_calloc (1, sizeof(struct netif));
-// #endif
+#if NO_SYS
+    netif = &gnetif;
+#else
+#if LWIP_NETIF_HOSTNAME
+    char *hostname = ((void*)0);
+    netif = (struct netif*) mem_calloc (1, sizeof(struct netif) + LWIP_HOSTNAME_LEN);
+#else
+    netif = (struct netif*) mem_calloc (1, sizeof(struct netif));
+#endif
+#endif
 
-    netif = &_g_netif;
+    if (netif == NULL) {
+        NETIF_LOG("malloc netif failed\n");
+        return -1;
+    }
 
     /* set netif */
     dev->netif = netif;
@@ -160,7 +174,7 @@ int eth_device_init_with_flag(struct eth_device *dev, const char *name, uint16_t
     dev->rx_notice = 0x00;
 
     /* set name */
-    strncpy(netif->name, name, NETIF_NAMESIZE);
+    strncpy(netif->name, name, 2);
 
     /* set hw address to 6 */
     netif->hwaddr_len   = 6;
@@ -173,12 +187,12 @@ int eth_device_init_with_flag(struct eth_device *dev, const char *name, uint16_t
     /* get hardware MAC address */
     dev->ops.control(NIOCTL_GADDR, netif->hwaddr);
 
-// #if LWIP_NETIF_HOSTNAME
-//     /* Initialize interface hostname */
-//     hostname = (char *)netif + sizeof(struct netif);
-//     sprintf(hostname, "rtthread_%02x%02x", name[0], name[1]);
-//     netif->hostname = hostname;
-// #endif
+#if LWIP_NETIF_HOSTNAME
+    /* Initialize interface hostname */
+    hostname = (char *)netif + sizeof(struct netif);
+    sprintf(hostname, "gpmx_%02x%02x", name[0], name[1]);
+    netif->hostname = hostname;
+#endif
 
     /* if tcp thread has been started up, we add this netif to the system */
     if (1 /* rt_thread_find("tcpip") != RT_NULL */)
@@ -231,8 +245,8 @@ void eth_device_deinit(struct eth_device *dev)
 #endif
     netif_set_down(netif);
     netif_remove(netif);
+    mem_free(netif);
 }
-
 
 /* this function does not need,
  * use eth_system_device_init_private()
@@ -249,6 +263,18 @@ int eth_system_device_init_private(void)
 
     return (int)result;
 }
+
+int eth_device_linkchange(struct eth_device* dev, int up)
+{
+    if (up == 0) {
+        NETIF_LOG("[netif] connected\r\n");
+    } else {
+        NETIF_LOG("[netif] disconnected\r\n");
+    }
+
+    return 0;
+}
+
 #include <lwip/timeouts.h>
 static void arp_timer(void *arg)
 {
@@ -256,8 +282,3 @@ static void arp_timer(void *arg)
     sys_timeout(ARP_TMR_INTERVAL, arp_timer, NULL);
 }
 
-#include <board_config.h>
-uint32_t sys_now(void)
-{
-    return HAL_GetTick();
-}

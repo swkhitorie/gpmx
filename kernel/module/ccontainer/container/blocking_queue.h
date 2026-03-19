@@ -44,24 +44,16 @@
 /*
     use sample:
 
-// 1. 生成队列类型和函数
-DEFINE_BLOCKING_QUEUE(WorkItem*, 16, work_item_queue_t)
+    DEFINE_BLOCKING_QUEUE(WorkItem*, 16, work_item_queue_t)
 
-// 2. 声明并初始化队列
-work_item_queue_t my_queue;
-work_item_queue_init(&my_queue);
+    work_item_queue_t my_queue;
+    work_item_queue_init(&my_queue);
 
-// 3. 在生产者任务中推送元素
-WorkItem *item = create_work_item();
-work_item_queue_push(&my_queue, item);
+    WorkItem *item = create_work_item();
+    work_item_queue_push(&my_queue, item);
 
-// 4. 在消费者任务中弹出元素
-WorkItem *processed = work_item_queue_pop(&my_queue);
-// 使用 processed...
-
-// 5. 不再使用时销毁（释放信号量资源）
-work_item_queue_destroy(&my_queue);
-
+    WorkItem *processed = work_item_queue_pop(&my_queue);
+    work_item_queue_destroy(&my_queue);
 */
 
 #ifdef __cplusplus

@@ -37,6 +37,7 @@ int serial_bus_initialize(int bus)
     }
 
 #if defined(CONFIG_FREERTOS_ENABLE)
+
     dev->exclsem = xSemaphoreCreateBinary();
 
     /* This semaphore is used for signaling and, hence, should not have
@@ -46,6 +47,15 @@ int serial_bus_initialize(int bus)
 
     xSemaphoreGive(dev->exclsem);
     xSemaphoreGive(dev->xmitsem);
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    char *excl_name = "ttyS0_excl";
+    char *xmit_name = "ttyS0_xmit";
+    excl_name[4] = '0' + (bus - 0);
+    xmit_name[4] = '0' + (bus - 0);
+
+    dev->exclsem = rt_sem_create(excl_name, 1, RT_IPC_FLAG_PRIO);
+    dev->xmitsem = rt_sem_create(xmit_name, 1, RT_IPC_FLAG_PRIO);
 #else
 
     dev->flag_excl = 0x01;
@@ -60,6 +70,13 @@ int serial_dev_lock(struct uart_dev_s *dev)
 #if defined(CONFIG_FREERTOS_ENABLE)
 
     if (pdTRUE == xSemaphoreTake(dev->exclsem, 0)) {
+        return GOK;
+    } else {
+        return -1;
+    }
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    if (RT_EOK == rt_sem_take(dev->exclsem, 0)) {
         return GOK;
     } else {
         return -1;
@@ -81,6 +98,10 @@ int serial_dev_unlock(struct uart_dev_s *dev)
 
     xSemaphoreGive(dev->exclsem);
     return GOK;
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    rt_sem_release(dev->exclsem);
+    return GOK;
 #else
 
     dev->flag_excl = 0x01;
@@ -93,9 +114,16 @@ int serial_tx_wait(struct uart_dev_s *dev)
 #if defined(CONFIG_FREERTOS_ENABLE)
 
     if (pdTRUE == xSemaphoreTake(dev->xmitsem, 5)) {
-        return -1;
-    } else {
         return GOK;
+    } else {
+        return -1;
+    }
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    if (RT_EOK == rt_sem_take(dev->xmitsem, 5)) {
+        return GOK;
+    } else {
+        return -1;
     }
 #else
 
@@ -114,6 +142,9 @@ void serial_tx_post(struct uart_dev_s *dev)
     BaseType_t h_pri = pdFALSE;
     xSemaphoreGiveFromISR(dev->xmitsem, &h_pri);
     portYIELD_FROM_ISR(h_pri);
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    rt_sem_release(dev->xmitsem);
 #else
 
     dev->flag_tx = 0x01;

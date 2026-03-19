@@ -19,6 +19,11 @@
 #include <task.h>
 #endif
 
+#if defined(CONFIG_RTTNANO_ENABLE)
+#include <rthw.h>
+#include <rtthread.h>
+#endif
+
 #if defined(CONFIG_MODULE_CMBACKTRACE)
 #include "cm_backtrace.h"
 #endif
@@ -232,6 +237,8 @@ struct up_can_dev_s can2_dev = {
 
 #if defined(CONFIG_FREERTOS_ENABLE)
 static SemaphoreHandle_t board_printf_mutex;
+#elif defined(CONFIG_RTTNANO_ENABLE)
+static rt_sem_t board_printf_mutex;
 #endif
 
 void board_bsp_init()
@@ -245,6 +252,9 @@ void board_bsp_init()
 
     LOW_INITPIN(GPIOF, 6, IOMODE_OUTPP, IO_NOPULL, IO_SPEEDHIGH);
     LOW_IOSET(GPIOF, 6, 1);
+
+    /** PHY Reset Pin Config */
+    LOW_INITPIN(GPIOI, 1, IOMODE_OUTPP, IO_PULLUP, IO_SPEEDHIGH);
 
     serial_register(&com1_dev.dev, 1);
     serial_register(&com3_dev.dev, 3);
@@ -262,8 +272,6 @@ void board_bsp_init()
 
     hw_stm32_rtc_setup();
 
-    // hw_stm32_eth_init();
-
 #if defined(CONFIG_MODULE_CMBACKTRACE)
     cm_backtrace_init("pxboard_ebfv2_firmware", "v1.0.0", "v1.0.1");
 #endif
@@ -271,6 +279,8 @@ void board_bsp_init()
 #if defined(CONFIG_FREERTOS_ENABLE)
     board_printf_mutex = xSemaphoreCreateMutex();
     xSemaphoreGive(board_printf_mutex);
+#elif defined(CONFIG_RTTNANO_ENABLE)
+    board_printf_mutex = rt_sem_create("blog", 1, RT_IPC_FLAG_PRIO);
 #endif
 
 #if defined(CONFIG_FATFS_ENABLE) && !defined(CONFIG_GPDRIVE_MMCSDSPI)
@@ -292,11 +302,16 @@ void board_bsp_init()
     {
 #if defined(CONFIG_FREERTOS_ENABLE)
         vTaskDelay(1);
+#elif defined(CONFIG_RTTNANO_ENABLE)
+        rt_thread_delay(1);
 #endif
     }
     board_delay(400);
 #endif
 
+#if defined(CONFIG_NET_LWIP_ENABLE)
+    hw_stm32_eth_init();
+#endif
 }
 
 void board_led_toggle(uint8_t idx)
@@ -432,6 +447,10 @@ void board_printf(const char *format, ...)
     if (xSemaphoreTake(board_printf_mutex, portMAX_DELAY) != pdTRUE) {
         return;
     }
+#elif defined(CONFIG_RTTNANO_ENABLE)
+    if (rt_sem_take(board_printf_mutex, UINT32_MAX) != RT_EOK) {
+        return;
+    }
 #endif
 
     va_start(args, format);
@@ -445,10 +464,12 @@ void board_printf(const char *format, ...)
 
 #if defined(CONFIG_FREERTOS_ENABLE)
     xSemaphoreGive(board_printf_mutex);
+#elif defined(CONFIG_RTTNANO_ENABLE)
+    rt_sem_release(board_printf_mutex);
 #endif
 }
 
-#ifdef CONFIG_FREERTOS_ENABLE
+#if defined(CONFIG_FREERTOS_ENABLE)
 
 #if (configSUPPORT_STATIC_ALLOCATION == 1)
 StackType_t xTaskIdle_stack[configMINIMAL_STACK_SIZE];

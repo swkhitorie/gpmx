@@ -37,10 +37,20 @@ int can_bus_initialize(int bus)
     }
 
 #if defined(CONFIG_FREERTOS_ENABLE)
+
     dev->sem_excl = xSemaphoreCreateBinary();
     dev->sem_tx = xSemaphoreCreateBinary();
     xSemaphoreGive(dev->sem_tx);
     xSemaphoreGive(dev->sem_excl);
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    char *excl_name = "can0_excl";
+    char *tx_name = "can0_tx";
+    excl_name[3] = '0' + (bus - 0);
+    tx_name[3] = '0' + (bus - 0);
+
+    dev->sem_excl = rt_sem_create(excl_name, 1, RT_IPC_FLAG_PRIO);
+    dev->sem_tx = rt_sem_create(tx_name, 1, RT_IPC_FLAG_PRIO);
 #else
 
     dev->flag_excl = 0x01;
@@ -55,6 +65,12 @@ int can_dev_lock(struct can_dev_s *dev)
 #if defined(CONFIG_FREERTOS_ENABLE)
 
     if (pdTRUE == xSemaphoreTake(dev->sem_excl, 0)) {
+        return GOK;
+    } else {
+        return -1;
+    }
+#elif defined(CONFIG_RTTNANO_ENABLE)
+    if (RT_EOK == rt_sem_take(dev->sem_excl, 0)) {
         return GOK;
     } else {
         return -1;
@@ -76,6 +92,9 @@ int can_dev_unlock(struct can_dev_s *dev)
 
     xSemaphoreGive(dev->sem_excl);
     return GOK;
+#elif defined(CONFIG_RTTNANO_ENABLE)
+    rt_sem_release(dev->sem_excl);
+    return GOK;
 #else
 
     dev->flag_excl = 0x01;
@@ -88,9 +107,16 @@ int can_tx_wait(struct can_dev_s *dev)
 #if defined(CONFIG_FREERTOS_ENABLE)
 
     if (pdTRUE == xSemaphoreTake(dev->sem_tx, 5)) {
-        return -1;
-    } else {
         return GOK;
+    } else {
+        return -1;
+    }
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    if (RT_EOK == rt_sem_take(dev->sem_tx, 5)) {
+        return GOK;
+    } else {
+        return -1;
     }
 #else
 
@@ -109,6 +135,8 @@ void can_tx_post(struct can_dev_s *dev)
     BaseType_t h_pri;
     xSemaphoreGiveFromISR(dev->sem_tx, &h_pri);
     portYIELD_FROM_ISR(h_pri);
+#elif defined(CONFIG_RTTNANO_ENABLE)
+    rt_sem_release(dev->sem_tx);
 #else
 
     dev->flag_tx = 0x01;

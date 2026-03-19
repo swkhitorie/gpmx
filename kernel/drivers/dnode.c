@@ -8,6 +8,25 @@
 static uint16_t     _dev_len= CONFIG_DRIVER_DEVICE_NODE_NUM;
 static struct dnode _dev_list[CONFIG_DRIVER_DEVICE_NODE_NUM];
 
+void *gmemcpy(void *dst, const void *src, size_t n)
+{
+    char *tmp = (char *)dst;
+    const char *s = (char *)src;
+    uint32_t len;
+
+    if (tmp <= s || tmp > (s + n)) {
+        while (n--) {
+            *tmp ++ = *s ++;
+        }
+    } else {
+        for (len = n; len > 0; len --) {
+            tmp[len - 1] = s[len - 1];
+        }
+    }
+
+    return dst;
+}
+
 bool dn_register(const char *name, void *dev)
 {
     int i = 0;

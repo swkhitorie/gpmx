@@ -4,7 +4,7 @@
 #include "kmodule_defines.h"
 #include <math.h>
 
-#include "FreeRTOS.h"
+#include "device/dnode.h"
 
 static void uorb_device_master_lock(struct __uorb_device_master *master)
 {
@@ -81,7 +81,7 @@ int uorb_device_master_add_new_nodes(struct __uorb_device_master *master, struct
 		}
 
 		if (last_node) {
-			last_node->next = pvPortMalloc(sizeof(struct __device_node_static_data));
+			last_node->next = gpdrv_malloc(sizeof(struct __device_node_static_data));
 			last_node->next->next = NULL;
 			last_node->next->last_pub_msg_count = 0;
 			last_node->next->node = NULL;
@@ -90,7 +90,7 @@ int uorb_device_master_add_new_nodes(struct __uorb_device_master *master, struct
 			last_node = last_node->next;
 
 		} else {
-			*first_node = last_node = pvPortMalloc(sizeof(struct __device_node_static_data));
+			*first_node = last_node = gpdrv_malloc(sizeof(struct __device_node_static_data));
 			last_node->next = NULL;
 			last_node->last_pub_msg_count = 0;
 			last_node->node = NULL;
@@ -181,13 +181,13 @@ int uorb_device_master_advertise(struct __uorb_device_master *master, struct orb
 		}
 
 		/* construct the new node, passing the ownership of path to it */
-        struct __uorb_device_node *node = pvPortMalloc(sizeof(struct __uorb_device_node));
+        struct __uorb_device_node *node = gpdrv_malloc(sizeof(struct __uorb_device_node));
         uorb_device_node_init(node, meta, group_tries, devpath, priority, 1);
 
 		/* if we didn't get a device, that's bad, free the path too */
 		if (node == NULL) {
 			free((void *)devpath);
-			// vPortFree();
+			// gpdrv_free();
             sem_post(&master->_lock);
 			KMDEBUG("advertise exit 2 %u\r\n", xPortGetFreeHeapSize());
 			return -ENOMEM;
@@ -201,7 +201,7 @@ int uorb_device_master_advertise(struct __uorb_device_master *master, struct orb
 		if (ret != 0) {
 			KMDEBUG("master unregister %d \r\n", *instance);
             uorb_device_node_deinit(node);
-            vPortFree(node);
+            gpdrv_free(node);
 
 			KMDEBUG("master unregister2 %d \r\n", *instance);
 			if (ret == -EEXIST) {
@@ -340,7 +340,7 @@ void uorb_device_master_print_statistics(struct __uorb_device_master *master)
 
         struct __device_node_static_data *prev = cur_node;
         cur_node = cur_node->next;
-        vPortFree(prev);
+        gpdrv_free(prev);
     }
 }
 
@@ -460,7 +460,7 @@ void uorb_device_master_showtop(struct __uorb_device_master *master, char **topi
 
 	while (cur_node) {
 		struct __device_node_static_data *next_node = cur_node->next;
-        vPortFree(cur_node);
+        gpdrv_free(cur_node);
 		cur_node = next_node;
 	}
 }

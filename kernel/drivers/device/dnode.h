@@ -19,7 +19,7 @@
 #ifndef dn_time
 #include <board_config.h>
 /** return cpu running time units in ms */
-#define dn_time()      HAL_GetTick()
+#define dn_time()      board_get_time()
 #endif
 
 #if defined(CONFIG_FREERTOS_ENABLE)
@@ -32,22 +32,36 @@
 #define gpdrv_enter_critical_section()      ulPortRaiseBASEPRI()
 #define gpdrv_leave_critical_section(x)     vPortSetBASEPRI(x)
 #define gpdrv_time()       (xTaskGetTickCount()*(1000/configTICK_RATE_HZ))
+#define gpdrv_malloc(p)                     pvPortMalloc(p)
+#define gpdrv_free(p)                       vPortFree(p)
+#elif defined(CONFIG_RTTNANO_ENABLE)
+#include <rthw.h>
+#include <rtthread.h>
+
+#define gpdrv_isisr()                       (rt_interrupt_get_nest() > 0)
+#define gpdrv_enter_critical_section()      rt_hw_interrupt_disable()
+#define gpdrv_leave_critical_section(x)     rt_hw_interrupt_enable(x)
+#define gpdrv_time()                        rt_tick_get_millisecond()
+#define gpdrv_malloc(p)                     rt_malloc(p)
+#define gpdrv_free(p)                       rt_free(p)
 #else
 #define gpdrv_isisr()
 #define gpdrv_enter_critical_section()      gpdrv_irq_disable()
 #define gpdrv_leave_critical_section(x)     gpdrv_irq_enable()
 #define gpdrv_time()                        dn_time()
+#define gpdrv_malloc(p)                     (NULL)
+#define gpdrv_free(p)
 #endif
 
 #include <stdio.h>
 #ifndef drvlog_d
-#define drvlog_d(...)
+#define drvlog_d(...)     board_printf(__VA_ARGS__)
 #endif
 #ifndef drvlog_w
 #define drvlog_w(...)
 #endif
 #ifndef drvlog_e
-#define drvlog_e(...)
+#define drvlog_e(...)     board_printf(__VA_ARGS__)
 #endif
 #ifndef DLOG_D
 #define DLOG_D(...)
@@ -55,9 +69,6 @@
 #ifndef DLOG_E
 #define DLOG_E(...)
 #endif
-
-#include <string.h>
-#define gmemcpy(dst,src,len)   memcpy(dst,src,len)
 
 #define GOK             (0)
 
@@ -120,6 +131,7 @@ extern "C"{
 
 bool     dn_register(const char *name, void *dev);
 void    *dn_bind(const char *name);
+void    *gmemcpy(void *dst, const void *src, size_t n);
 
 #if defined(__cplusplus)
 }

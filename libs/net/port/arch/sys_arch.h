@@ -1,14 +1,4 @@
 /*
- * Copyright (c) 2006-2022, RT-Thread Development Team
- *
- * SPDX-License-Identifier: Apache-2.0
- *
- * Change Logs:
- * Date           Author       Notes
- * 2022-02-20     Meco Man     add RT-Thread copyright
- */
-
-/*
  * Copyright (c) 2001, Swedish Institute of Computer Science.
  * All rights reserved.
  *
@@ -47,26 +37,39 @@
 
 #include "arch/cc.h"
 
-// #include "FreeRTOS.h"
-// #include "task.h"
-// #include "queue.h"
-// #include "semphr.h"
+#if defined(CONFIG_FREERTOS_ENABLE)
 
-// #define SYS_MBOX_NULL  (QueueHandle_t)0
-// #define SYS_SEM_NULL   (SemaphoreHandle_t)0
-// #define SYS_MRTEX_NULL (QueueHandle_t)0
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+#include "semphr.h"
 
-// #define SYS_MBOX_SIZE 10
-// #define SYS_LWIP_TIMER_NAME "timer"
-// #define SYS_LWIP_MBOX_NAME "mbox"
-// #define SYS_LWIP_SEM_NAME "sem"
-// #define SYS_LWIP_MUTEX_NAME "mu"
+#define SYS_MBOX_NULL  (QueueHandle_t)0
+#define SYS_SEM_NULL   (SemaphoreHandle_t)0
 
-// typedef uint32_t sys_prot_t;
+typedef SemaphoreHandle_t sys_sem_t;
+typedef SemaphoreHandle_t sys_mutex_t;
+typedef QueueHandle_t sys_mbox_t;
+typedef TaskHandle_t sys_thread_t;
+#elif defined(CONFIG_RTTNANO_ENABLE)
 
-// typedef SemaphoreHandle_t sys_sem_t;
-// typedef SemaphoreHandle_t sys_mutex_t;
-// typedef QueueHandle_t sys_mbox_t;
-// typedef TaskHandle_t sys_thread_t;
+#include <rtthread.h>
+
+#define SYS_MBOX_NULL  RT_NULL
+#define SYS_SEM_NULL   RT_NULL
+
+typedef rt_sem_t sys_sem_t;
+typedef rt_mutex_t sys_mutex_t;
+typedef rt_mailbox_t  sys_mbox_t;
+typedef rt_thread_t sys_thread_t;
+#endif
+
+typedef uint32_t sys_prot_t;
+
+#define SYS_MBOX_SIZE 10
+#define SYS_LWIP_TIMER_NAME "timer"
+#define SYS_LWIP_MBOX_NAME "mbox"
+#define SYS_LWIP_SEM_NAME "sem"
+#define SYS_LWIP_MUTEX_NAME "mu"
 
 #endif /* __ARCH_SYS_ARCH_H__ */

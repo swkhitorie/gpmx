@@ -55,7 +55,7 @@ extern uint32_t SystemCoreClock;
  * uint8_t ucHeap[configTOTAL_HEAP_SIZE]
  */
 #define configAPPLICATION_ALLOCATED_HEAP        0                     
-#define configTOTAL_HEAP_SIZE					((size_t)(64*1024))     /* total heap size, unit in byte */
+#define configTOTAL_HEAP_SIZE					((size_t)(48*1024))     /* total heap size, unit in byte */
 #define configCPU_CLOCK_HZ						(SystemCoreClock)             /* CPU Frequence */
 #define configTICK_RATE_HZ						(1000)                  /* RTOS Kernel timer Frequence */
 #define configMAX_PRIORITIES					(32)                    /* Task Max Priority */

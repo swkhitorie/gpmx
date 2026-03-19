@@ -1,7 +1,7 @@
 #ifndef POSIX_UNISTD_H_
 #define POSIX_UNISTD_H_
 
-#include "sys/types.h"
+#include <sys/types.h>
 
 #define F_OK        0  /* Test existence */
 #define X_OK        1  /* Test execute permission */
@@ -18,7 +18,7 @@ extern "C"
 #endif
 
 unsigned int sleep(unsigned int ms);
-int     usleep(useconds_t usec);
+int          usleep(useconds_t usec);
 
 #undef EXTERN
 #if defined(__cplusplus)

@@ -1,18 +1,24 @@
+#include <mqueue.h>
+#include <errno.h>
+
 #include "./prv_mqueue.h"
-#include "utils.h"
 
 int mq_close(mqd_t mqdes)
 {
+#if defined(CONFIG_RTTNANO_ENABLE)
+
+    return -1;
+#elif defined(CONFIG_FREERTOS_ENABLE)
+
     int ret = 0;
     queuelist_element_t *p = (queuelist_element_t *)mqdes;
-    BaseType_t removed = pdFALSE;
-    StaticSemaphore_t *queue_listmutex = get_queue_listmutex();
+    int removed = -1;
     init_queuelist();
 
-    (void)xSemaphoreTake((SemaphoreHandle_t)queue_listmutex, portMAX_DELAY);
+    queuelist_lock();
 
     /* Attempt to find the message queue based on the given descriptor. */
-    if (find_queue_inlist(NULL, NULL, mqdes) == pdTRUE) {
+    if (find_queue_inlist(NULL, NULL, mqdes) == 0) {
         if (p->open_descriptors > 0){
             p->open_descriptors--;
         }
@@ -20,7 +26,7 @@ int mq_close(mqd_t mqdes)
         if (p->open_descriptors == 0) {
             if (p->pending_unlink == pdTRUE) {
                 listREMOVE(&p->link);
-                removed = pdTRUE;
+                removed = 0;
             } else {
                 p->pending_unlink = pdTRUE;
             }
@@ -30,10 +36,14 @@ int mq_close(mqd_t mqdes)
         ret = -1;
     }
 
-    (void)xSemaphoreGive((SemaphoreHandle_t)queue_listmutex);
+    queuelist_unlock();
 
-    if (removed == pdTRUE) {
+    if (removed == 0) {
         delete_messagequeue(p);
     }
     return ret;
+#else
+
+    return -1;
+#endif
 }

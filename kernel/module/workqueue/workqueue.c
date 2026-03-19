@@ -1,7 +1,7 @@
 #include "workqueue.h"
 #include "workitem.h"
 #include <string.h>
-#include "FreeRTOS.h"
+#include "device/dnode.h"
 #include "kmodule_defines.h"
 
 bool workqueue_cmp_method(struct intrusive_node *a, struct intrusive_node *b)
@@ -19,12 +19,12 @@ bool workqueue_cmp_method(struct intrusive_node *a, struct intrusive_node *b)
  ****************************************************************************/
 static void work_lock(struct __workqueue *queue)
 {
-    queue->_flags = portSET_INTERRUPT_MASK_FROM_ISR();
+    queue->_flags = gpdrv_enter_critical_section();
 }
 
 static void work_unlock(struct __workqueue *queue)
 {
-    portCLEAR_INTERRUPT_MASK_FROM_ISR(queue->_flags);
+    gpdrv_leave_critical_section(queue->_flags);
 }
 
 bool should_exit(struct __workqueue *queue)

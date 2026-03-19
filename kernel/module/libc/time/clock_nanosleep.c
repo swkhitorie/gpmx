@@ -2,20 +2,22 @@
 #include "time.h"
 #include "utils.h"
 
-/* FreeRTOS interface include */
+#if defined(CONFIG_FREERTOS_ENABLE)
+#include <FreeRTOS.h>
 #include <task.h>
+#endif
 
 int clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp, struct timespec *rmtp)
 {
     int ret = 0;
     TickType_t sleep_time = 0;
-    struct timespec cur = { 0 };
+    struct timespec cur = {0};
 
     (void)clock_id;
     (void)rmtp;
     (void)flags;
 
-    if (utils_validtimespec( rqtp ) == false) {
+    if (utils_validtimespec(rqtp) == false) {
         ret = EINVAL;
     }
 
@@ -31,16 +33,20 @@ int clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp, 
             }
 
             if (ret == 0 && utils_timespec_todeltaticks(rqtp, &cur, &sleep_time) == 0) {
+#if defined(CONFIG_FREERTOS_ENABLE)
                 #if (INCLUDE_vTaskDelayUntil == 1)
                     TickType_t cur_ticks = xTaskGetTickCount();
                     vTaskDelayUntil(&cur_ticks, sleep_time);
                 #else
-                    vTaskDelay( sleep_time );
+                    vTaskDelay(sleep_time);
                 #endif
+#endif
             }
         } else {
             if (utils_timespec_toticks(rqtp, &sleep_time) == 0) {
+#if defined(CONFIG_FREERTOS_ENABLE)
                 vTaskDelay(sleep_time);
+#endif
             }
         }
     }

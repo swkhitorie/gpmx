@@ -3,7 +3,7 @@
 #include "uorb_gnode.h"
 #include "kmodule_defines.h"
 
-#include "FreeRTOS.h"
+#include "device/dnode.h"
 
 struct __update_interval_data {
     uint64_t last_update; /**< time at which the last update was provided, used when update_interval is nonzero */
@@ -99,7 +99,7 @@ void uorb_device_node_init(struct __uorb_device_node *unode, struct orb_metadata
 void uorb_device_node_deinit(struct __uorb_device_node *unode)
 {
 	uorbnode_deinit(&unode->nd);
-	vPortFree(unode->_data);
+	gpdrv_free(unode->_data);
 	free((void *)unode->nd._devname);
 }
 
@@ -124,7 +124,7 @@ int uorb_device_node_open(struct urbnode *node)
 	if (unode->nd._oflags == UORB_F_RDONLY) {
 
 		/* allocate subscriber data */
-		struct __subscriber_data *sd = pvPortMalloc(sizeof(struct __subscriber_data));
+		struct __subscriber_data *sd = gpdrv_malloc(sizeof(struct __subscriber_data));
 		sd->update_interval = NULL;
 		if (NULL == sd) {
 			return -ENOMEM;
@@ -158,9 +158,9 @@ int uorb_device_node_close(struct urbnode *node)
 			uorb_device_node_remove_internal_subscriber(unode);
 
 			if (sd->update_interval) {
-				vPortFree(sd->update_interval);
+				gpdrv_free(sd->update_interval);
 			}
-			vPortFree(sd);
+			gpdrv_free(sd);
 			sd = NULL;
 		}
 	}
@@ -227,7 +227,7 @@ ssize_t uorb_device_node_write(struct urbnode *node, const char *buffer, size_t 
 
 			/* re-check size */
 			if (NULL == unode->_data) {
-				unode->_data = pvPortMalloc(unode->_meta->o_size * unode->_queue_size);
+				unode->_data = gpdrv_malloc(unode->_meta->o_size * unode->_queue_size);
 			}
 
 			urbnode_unlock(&unode->nd);
@@ -289,7 +289,7 @@ int uorb_device_node_ioctl(struct urbnode *node, int cmd, unsigned long arg)
 
 			if (arg == 0) {
 				if (sd->update_interval) {
-					vPortFree(sd->update_interval);
+					gpdrv_free(sd->update_interval);
 					sd->update_interval = NULL;
 				}
 
@@ -298,7 +298,7 @@ int uorb_device_node_ioctl(struct urbnode *node, int cmd, unsigned long arg)
 					sd->update_interval->interval = arg;
 
 				} else {
-					sd->update_interval = pvPortMalloc(sizeof(struct __update_interval_data));
+					sd->update_interval = gpdrv_malloc(sizeof(struct __update_interval_data));
 
 					if (sd->update_interval) {
 						sd->update_interval->interval = arg;

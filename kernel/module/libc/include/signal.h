@@ -2,7 +2,7 @@
 #define POSIX_SIGNAL_H_
 
 #include <stdint.h>
-#include "pthread.h"
+#include <pthread.h>
 
 #define SIGEV_NONE      0  /* No asynchronous notification is delivered */
 #define SIGEV_SIGNAL    1  /* Notify via signal,with an application-defined value */

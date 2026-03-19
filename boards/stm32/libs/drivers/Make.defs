@@ -91,6 +91,10 @@ ifeq ($(BSP_LIBCONFIG_STM32_HAL_MMCSD),y)
 LIBDRV_CSRCS += drv_mmcsd.c
 endif
 
+ifeq ($(BSP_LIBCONFIG_STM32_HAL_ETH_LEGACY)$(BSP_LIBCONFIG_STM32_HAL_ETH),y)
+LIBDRV_CSRCS += drv_eth.c
+endif
+
 ifeq ($(BSP_LIBCONFIG_STM32_HAL_I2C),y)
 LIBDRV_CSRCS += drv_i2c.c
 endif

@@ -49,7 +49,7 @@ void* p8_entry(void *p)
         pthread_mutex_unlock(&lock1);
 
         TEST_PRINTF("[%s] lock after val : %d\r\n", &name[0], critical_val);
-        sleep(1000);
+        usleep(1000*1000);
     }
 
     return NULL;
@@ -74,7 +74,7 @@ void* p9_entry(void *p)
         pthread_mutex_unlock(&lock1);
 
         TEST_PRINTF("[%s] lock after val : %d\r\n", &name[0], critical_val);
-        sleep(1000);
+        usleep(1000*1000);
         // debug_led_toggle();
     }
 

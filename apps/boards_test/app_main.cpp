@@ -1,14 +1,18 @@
 #include <board_config.h>
 
-#ifndef CONFIG_FREERTOS_ENABLE
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#if !defined(CONFIG_FREERTOS_ENABLE) && !defined(CONFIG_RTTNANO_ENABLE)
 int main(int argc, char **argv)
 #else
-extern "C" {
 void main_root(void *p)
 #endif
 {
     board_test();
 }
-#ifdef CONFIG_FREERTOS_ENABLE
+
+#ifdef __cplusplus
 }
 #endif

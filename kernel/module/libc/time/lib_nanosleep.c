@@ -1,16 +1,20 @@
-#include "errno.h"
-#include "time.h"
-#include <utils.h>
+#include <time.h>
+#include <errno.h>
+#include "utils.h"
 
-/* FreeRTOS interface include */
+#if defined(CONFIG_FREERTOS_ENABLE)
 #include <FreeRTOS.h>
 #include <task.h>
+#endif
 
 int nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
 {
     int ret = 0;
+#if defined(CONFIG_FREERTOS_ENABLE)
     TickType_t sleep_time = 0;
-    (void) rmtp;
+#endif
+
+    (void)rmtp;
 
     if (utils_validtimespec(rqtp) == false) {
         errno = EINVAL;
@@ -18,9 +22,14 @@ int nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
     }
 
     if (ret == 0) {
+#if defined(CONFIG_FREERTOS_ENABLE)
         if (utils_timespec_toticks(rqtp, &sleep_time) == 0) {
             vTaskDelay( sleep_time );
         }
+#else
+        ret = -1;
+#endif
     }
+
     return ret;
 }

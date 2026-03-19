@@ -1,19 +1,27 @@
-#include "./prv_mqueue.h"
-#include "utils.h"
+#include <mqueue.h>
 #include <string.h>
+#include <errno.h>
+#include <fcntl.h>
+
+#include "./prv_mqueue.h"
 
 ssize_t mq_timedreceive(mqd_t mqdes, char *msg_ptr, size_t msg_len, unsigned *msg_prio, const struct timespec *abstime)
 {
+#if defined(CONFIG_RTTNANO_ENABLE)
+
+    return -1;
+#elif defined(CONFIG_FREERTOS_ENABLE)
+
     ssize_t ret = 0;
     int cal_timeout_return = 0;
     TickType_t timeout_ticks = 0;
     queuelist_element_t *p = (queuelist_element_t *)mqdes;
-    queue_element_t rcv = { 0 };
-    StaticSemaphore_t *queue_listmutex = get_queue_listmutex();
-    (void)msg_prio;
-    (void)xSemaphoreTake((SemaphoreHandle_t)queue_listmutex, portMAX_DELAY);
+    queue_element_t rcv = {0};
 
-    if (find_queue_inlist(NULL, NULL, mqdes) == pdFALSE) {
+    (void)msg_prio;
+    queuelist_lock();
+
+    if (find_queue_inlist(NULL, NULL, mqdes) != 0) {
         errno = EBADF;
         ret = -1;
     }
@@ -28,18 +36,18 @@ ssize_t mq_timedreceive(mqd_t mqdes, char *msg_ptr, size_t msg_len, unsigned *ms
 
     if (ret == 0) {
         cal_timeout_return = cal_ticktimeout(p->attr.mq_flags, abstime, &timeout_ticks);
-        if( cal_timeout_return != 0 ) {
+        if (cal_timeout_return != 0) {
             errno = cal_timeout_return;
             ret = -1;
         }
     }
 
-    (void)xSemaphoreGive((SemaphoreHandle_t)queue_listmutex);
+    queuelist_unlock();
 
     if (ret == 0) {
         if (xQueueReceive(p->queue, &rcv, timeout_ticks) == pdFALSE) {
             /* If queue receive fails, set the appropriate errno. */
-            if( p->attr.mq_flags & O_NONBLOCK ) {
+            if (p->attr.mq_flags & O_NONBLOCK) {
                 /* Set errno to EAGAIN for nonblocking mq. */
                 errno = EAGAIN;
             } else {
@@ -57,4 +65,8 @@ ssize_t mq_timedreceive(mqd_t mqdes, char *msg_ptr, size_t msg_len, unsigned *ms
     }
 
     return ret;
+#else
+
+    return -1;
+#endif
 }

@@ -65,6 +65,15 @@ int i2c_bus_initialize(int bus)
     */
     dev->sem_isr = xSemaphoreCreateBinary();
     xSemaphoreGive(dev->sem_excl);
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    char *excl_name = "i2c0_excl";
+    char *isr_name = "i2c0_isr";
+    excl_name[3] = '0' + (bus - 0);
+    isr_name[3] = '0' + (bus - 0);
+
+    dev->sem_excl = rt_sem_create(excl_name, 1, RT_IPC_FLAG_PRIO);
+    dev->sem_isr = rt_sem_create(isr_name, 0, RT_IPC_FLAG_PRIO);
 #else
 
     dev->flag_excl = 0x01;
@@ -79,6 +88,13 @@ int i2c_dev_lock(struct i2c_master_s *dev)
 #if defined(CONFIG_FREERTOS_ENABLE)
 
     if (pdTRUE == xSemaphoreTake(dev->sem_excl, 10)) {
+        return GOK;
+    } else {
+        return -1;
+    }
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    if (RT_EOK == rt_sem_take(dev->sem_excl, 10)) {
         return GOK;
     } else {
         return -1;
@@ -100,6 +116,10 @@ int i2c_dev_unlock(struct i2c_master_s *dev)
 
     xSemaphoreGive(dev->sem_excl);
     return GOK;
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    rt_sem_release(dev->sem_excl);
+    return GOK;
 #else
 
     dev->flag_excl = 0x01;
@@ -117,6 +137,16 @@ int i2c_dev_transfer_wait(struct i2c_master_s *dev, uint32_t timeout)
         /* Take the semaphore (perhaps waiting) */
         ret = xSemaphoreTake(dev->sem_isr, 20);
     } while (ret == pdFALSE);
+
+    return GOK;
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    int ret = GOK;
+
+    do {
+        /* Take the semaphore (perhaps waiting) */
+        ret = rt_sem_take(dev->sem_isr, 20);
+    } while (ret != RT_EOK);
 
     return GOK;
 #else
@@ -143,6 +173,10 @@ int i2c_dev_transfer_completed(struct i2c_master_s *dev)
     BaseType_t h_pri;
     xSemaphoreGiveFromISR(dev->sem_isr, &h_pri);
     portYIELD_FROM_ISR(h_pri);
+    return GOK;
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    rt_sem_release(dev->sem_isr);
     return GOK;
 #else
 

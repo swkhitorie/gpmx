@@ -1,17 +1,21 @@
-#include "pthread.h"
-#include "errno.h"
-#include "string.h"
+#include <pthread.h>
+#include <errno.h>
+#include <string.h>
 
-#include "FreeRTOS.h"
-#include "portmacro.h"
+#if defined(CONFIG_FREERTOS_ENABLE)
 
 #define DEFAULT_STACK_SIZE  (configMINIMAL_STACK_SIZE*sizeof(StackType_t))
 #define DEFAULT_PRIORITY    (tskIDLE_PRIORITY)
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+#define DEFAULT_STACK_SIZE  2048
+#define DEFAULT_PRIORITY    (RT_THREAD_PRIORITY_MAX/2 + RT_THREAD_PRIORITY_MAX/4)
+#endif
 
 int pthread_attr_init(pthread_attr_t *attr)
 {
     if (attr == NULL) return 0;
-    
+
     attr->stackaddr = 0;
     attr->stacksize = DEFAULT_STACK_SIZE;
     attr->inheritsched = PTHREAD_INHERIT_SCHED;
@@ -26,7 +30,7 @@ int pthread_attr_destroy(pthread_attr_t *attr)
     if (attr == NULL) return 0;
 
     memset(attr, 0, sizeof(pthread_attr_t));
-    
+
     return 0;
 }
 

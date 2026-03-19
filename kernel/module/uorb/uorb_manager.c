@@ -3,13 +3,13 @@
 #include "uorb_gnode.h"
 #include "kmodule_defines.h"
 
-#include "FreeRTOS.h"
+#include "device/dnode.h"
 
 static struct __uorb_manager *_umanager_instance = NULL;
 bool uorb_manager_initialize()
 {
 	if (_umanager_instance == NULL) {
-		_umanager_instance = pvPortMalloc(sizeof(struct __uorb_manager));
+		_umanager_instance = gpdrv_malloc(sizeof(struct __uorb_manager));
 	}
 
 	return _umanager_instance != NULL;
@@ -19,8 +19,8 @@ bool uorb_manager_terminate()
 {
 	if (_umanager_instance != NULL) {
 		uorb_device_master_deinit(_umanager_instance->_device_master);
-		vPortFree(_umanager_instance->_device_master);
-		vPortFree(_umanager_instance);
+		gpdrv_free(_umanager_instance->_device_master);
+		gpdrv_free(_umanager_instance);
 
 		_umanager_instance = NULL;
 		return true;
@@ -37,7 +37,7 @@ struct __uorb_manager *uorb_manager_instance()
 struct __uorb_device_master *uorb_manager_get_device_master(struct __uorb_manager *manager)
 {
     if (!manager->_device_master) {
-        manager->_device_master = pvPortMalloc(sizeof(struct __uorb_device_master));
+        manager->_device_master = gpdrv_malloc(sizeof(struct __uorb_device_master));
 		uorb_device_master_init(manager->_device_master);
 
         if (manager->_device_master == NULL) {

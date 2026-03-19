@@ -1,14 +1,4 @@
 /*
- * Copyright (c) 2006-2022, RT-Thread Development Team
- *
- * SPDX-License-Identifier: Apache-2.0
- *
- * Change Logs:
- * Date           Author       Notes
- * 2022-02-20     Meco Man     add RT-Thread copyright
- */
-
-/*
  * Copyright (c) 2001, Swedish Institute of Computer Science.
  * All rights reserved.
  *
@@ -47,36 +37,31 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <board_config.h>
 
-// typedef uint8_t   u8_t;
-// typedef int8_t    s8_t;
-// typedef uint16_t  u16_t;
-// typedef int16_t   s16_t;
-// typedef uint32_t  u32_t;
-// typedef int32_t   s32_t;
-// typedef uintptr_t mem_ptr_t;
+#ifndef BYTE_ORDER
+#ifdef ARCH_CPU_BIG_ENDIAN
+#define BYTE_ORDER BIG_ENDIAN
+#else
+#define BYTE_ORDER LITTLE_ENDIAN
+#endif /* ARCH_CPU_BIG_ENDIAN */
+#endif /* BYTE_ORDER */
 
-#ifndef U16_F
+#if LWIP_VERSION_MAJOR < 2
+#include <stdint.h>
+typedef uint8_t   u8_t;
+typedef int8_t    s8_t;
+typedef uint16_t  u16_t;
+typedef int16_t   s16_t;
+typedef uint32_t  u32_t;
+typedef int32_t   s32_t;
+typedef uintptr_t mem_ptr_t;
+
 #define U16_F "hu"
-#endif
-
-#ifndef S16_F
 #define S16_F "hd"
-#endif
-
-#ifndef X16_F
 #define X16_F "hx"
-#endif
-
-#ifndef U32_F
 #define U32_F "lu"
-#endif
-
-#ifndef S32_F
 #define S32_F "ld"
-#endif
-
-#ifndef X32_F
 #define X32_F "lx"
 #endif
 
@@ -109,6 +94,8 @@
 #define PACK_STRUCT_USE_INCLUDES
 #endif
 
-#define LWIP_PLATFORM_ASSERT(x) do { printf(x); } while(0)
+void sys_arch_assert(const char* file, int line);
+#define LWIP_PLATFORM_DIAG(x)   do {board_printf x;} while(0)
+#define LWIP_PLATFORM_ASSERT(x) do {board_printf(x); sys_arch_assert(__FILE__, __LINE__);}while(0)
 
 #endif /* __ARCH_CC_H__ */

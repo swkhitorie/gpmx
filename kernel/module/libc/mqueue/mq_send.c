@@ -1,4 +1,4 @@
-#include "./prv_mqueue.h"
+#include <mqueue.h>
 
 int mq_send(mqd_t mqdes, const char *msg_ptr, size_t msg_len, unsigned msg_prio)
 {

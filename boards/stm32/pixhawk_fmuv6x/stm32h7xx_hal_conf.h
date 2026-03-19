@@ -23,8 +23,8 @@ extern "C" {
 /* #define HAL_DAC_MODULE_ENABLED   */
 /* #define HAL_DCMI_MODULE_ENABLED   */
 /* #define HAL_DMA2D_MODULE_ENABLED   */
-/* #define HAL_ETH_MODULE_ENABLED   */
-/* #define HAL_ETH_LEGACY_MODULE_ENABLED   */
+// #define HAL_ETH_MODULE_ENABLED
+#define HAL_ETH_LEGACY_MODULE_ENABLED
 /* #define HAL_NAND_MODULE_ENABLED   */
 /* #define HAL_NOR_MODULE_ENABLED   */
 /* #define HAL_OTFDEC_MODULE_ENABLED   */
@@ -141,8 +141,8 @@ extern "C" {
 #define  VDD_VALUE                    (3300UL) /*!< Value of VDD in mv */
 #define  TICK_INT_PRIORITY            (0x0F) /*!< tick interrupt priority */
 #define  USE_RTOS                     0
-#define  USE_SD_TRANSCEIVER           1U               /*!< use uSD Transceiver */
-#define  USE_SPI_CRC	              1U               /*!< use CRC in SPI */
+#define  USE_SD_TRANSCEIVER           0U               /*!< use uSD Transceiver */
+#define  USE_SPI_CRC	                1U               /*!< use CRC in SPI */
 
 #define  USE_HAL_ADC_REGISTER_CALLBACKS     0U /* ADC register callback disabled     */
 #define  USE_HAL_CEC_REGISTER_CALLBACKS     0U /* CEC register callback disabled     */
@@ -196,6 +196,10 @@ extern "C" {
 /* ########################### Ethernet Configuration ######################### */
 #define ETH_TX_DESC_CNT         4U  /* number of Ethernet Tx DMA descriptors */
 #define ETH_RX_DESC_CNT         4U  /* number of Ethernet Rx DMA descriptors */
+#define ETH_RX_BUF_SIZE                ETH_MAX_PACKET_SIZE /* buffer size for receive               */
+#define ETH_TX_BUF_SIZE                ETH_MAX_PACKET_SIZE /* buffer size for transmit              */
+#define ETH_RXBUFNB                    4U       /* 4 Rx buffers of size ETH_RX_BUF_SIZE  */
+#define ETH_TXBUFNB                    4U       /* 4 Tx buffers of size ETH_TX_BUF_SIZE  */
 
 #define ETH_MAC_ADDR0    (0x02UL)
 #define ETH_MAC_ADDR1    (0x00UL)

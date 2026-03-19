@@ -1,486 +1,701 @@
-// #include <lwip/opt.h>
-// #include <lwip/arch.h>
-// #include <lwip/stats.h>
-// #include <lwip/debug.h>
-// #include <lwip/sys.h>
-// #include <lwip/init.h>
-// #include <lwip/netif.h>
-// #include <lwip/sio.h>
-
-// #include <string.h>
-// #include <lwip/dhcp.h>
-// #include <tcpip.h>
-// #include <ethernetif.h>
-
-// #if !NO_SYS
-// #include "sys_arch.h"
-// #endif
-
-
-// int errno;
-
-// struct sys_timeouts {
-//   struct sys_timeo *next;
-// };
-
-// struct timeoutlist
-// {
-// 	struct sys_timeouts timeouts;
-// 	xTaskHandle pid;
-// };
-
-// #define SYS_THREAD_MAX 4
-
-// static struct timeoutlist s_timeoutlist[SYS_THREAD_MAX];
-
-// static u16_t s_nextthread = 0;
-
-// u32_t sys_jiffies(void)
-// {
-//     return xTaskGetTickCount();
-// }
-
-// u32_t sys_now(void)
-// {
-//     return xTaskGetTickCount();
-// }
-
-// void sys_init(void)
-// {
-// 	int i;
-// 	// Initialize the the per-thread sys_timeouts structures
-// 	// make sure there are no valid pids in the list
-// 	for(i = 0; i < SYS_THREAD_MAX; i++)
-// 	{
-// 		s_timeoutlist[i].pid = 0;
-// 		s_timeoutlist[i].timeouts.next = NULL;
-// 	}
-// 	// keep track of how many threads have been created
-// 	s_nextthread = 0;
-// }
-
-// struct sys_timeouts *sys_arch_timeouts(void)
-// {
-// 	int i;
-// 	xTaskHandle pid;
-// 	struct timeoutlist *tl;
-// 	pid = xTaskGetCurrentTaskHandle( );
-// 	for(i = 0; i < s_nextthread; i++)
-// 	{
-// 		tl = &(s_timeoutlist[i]);
-// 		if(tl->pid == pid)
-// 		{
-// 			return &(tl->timeouts);
-// 		}
-// 	}
-// 	return NULL;
-// }
-
-// sys_prot_t sys_arch_protect(void)
-// {
-// 	vPortEnterCritical();
-// 	return 1;
-// }
-
-// void sys_arch_unprotect(sys_prot_t pval)
-// {
-// 	(void) pval;
-// 	vPortExitCritical();
-// }
-
-// #if !NO_SYS
-
-// err_t
-// sys_sem_new(sys_sem_t *sem, u8_t count)
-// {
-//   /* 创建 sem */
-//   if(count <= 1)
-//   {    
-//     *sem = xSemaphoreCreateBinary();
-//     if(count == 1)
-//     {
-//       sys_sem_signal(*sem);
-//     }
-//   }
-//   else
-//     *sem = xSemaphoreCreateCounting(count,count);
-  
-// #if SYS_STATS
-// 	++lwip_stats.sys.sem.used;
-//  	if (lwip_stats.sys.sem.max < lwip_stats.sys.sem.used) {
-// 		lwip_stats.sys.sem.max = lwip_stats.sys.sem.used;
-// 	}
-// #endif /* SYS_STATS */
-  
-//   if(*sem != SYS_SEM_NULL)
-//     return ERR_OK;
-//   else
-//   {
-// #if SYS_STATS
-//     ++lwip_stats.sys.sem.err;
-// #endif /* SYS_STATS */
-//     printf("[sys_arch]:new sem fail!\n");
-//     return ERR_MEM;
-//   }
-// }
-
-// void
-// sys_sem_free(sys_sem_t *sem)
-// {
-// #if SYS_STATS
-//    --lwip_stats.sys.sem.used;
-// #endif /* SYS_STATS */
-//   /* 删除 sem */
-//   vSemaphoreDelete(*sem);
-//   *sem = SYS_SEM_NULL;
-// }
-
-
-// int sys_sem_valid(sys_sem_t *sem)                                               
-// {
-//   return (*sem != SYS_SEM_NULL);                                    
-// }
-
-
-// void
-// sys_sem_set_invalid(sys_sem_t *sem)
-// {
-//   *sem = SYS_SEM_NULL;
-// }
-
-// /* 
-//  如果timeout参数不为零，则返回值为
-//  等待信号量所花费的毫秒数。如果
-//  信号量未在指定时间内发出信号，返回值为
-//  SYS_ARCH_TIMEOUT。如果线程不必等待信号量
-//  该函数返回零。 */
-// u32_t
-// sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
-// {
-//   u32_t wait_tick = 0;
-//   u32_t start_tick = 0 ;
-  
-//   //看看信号量是否有效
-//   if(*sem == SYS_SEM_NULL)
-//     return SYS_ARCH_TIMEOUT;
-  
-//   //首先获取开始等待信号量的时钟节拍
-//   start_tick = xTaskGetTickCount();
-  
-//   //timeout != 0，需要将ms换成系统的时钟节拍
-//   if(timeout != 0)
-//   {
-//     //将ms转换成时钟节拍
-//     wait_tick = timeout / portTICK_PERIOD_MS;
-//     if (wait_tick == 0)
-//       wait_tick = 1;
-//   }
-//   else
-//     wait_tick = portMAX_DELAY;  //一直阻塞
-  
-//   //等待成功，计算等待的时间，否则就表示等待超时
-//   if(xSemaphoreTake(*sem, wait_tick) == pdTRUE)
-//     return ((xTaskGetTickCount()-start_tick)*portTICK_RATE_MS);
-//   else
-//     return SYS_ARCH_TIMEOUT;
-// }
-
-// void
-// sys_sem_signal(sys_sem_t *sem)
-// {
-//   if(xSemaphoreGive( *sem ) != pdTRUE)
-//     printf("[sys_arch]:sem signal fail!\n");
-// }
-
-// err_t
-// sys_mutex_new(sys_mutex_t *mutex)
-// {
-//   /* 创建 sem */   
-//   *mutex = xSemaphoreCreateMutex();
-//   if(*mutex != SYS_MRTEX_NULL)
-//     return ERR_OK;
-//   else
-//   {
-//     printf("[sys_arch]:new mutex fail!\n");
-//     return ERR_MEM;
-//   }
-// }
-
-// void
-// sys_mutex_free(sys_mutex_t *mutex)
-// {
-//   vSemaphoreDelete(*mutex);
-// }
-
-// void
-// sys_mutex_set_invalid(sys_mutex_t *mutex)
-// {
-//   *mutex = SYS_MRTEX_NULL;
-// }
-
-// void
-// sys_mutex_lock(sys_mutex_t *mutex)
-// {
-//   xSemaphoreTake(*mutex,/* 互斥量句柄 */
-//                  portMAX_DELAY); /* 等待时间 */
-// }
-
-// void
-// sys_mutex_unlock(sys_mutex_t *mutex)
-// {
-//   xSemaphoreGive( *mutex );//给出互斥量
-// }
-
-
-// sys_thread_t
-// sys_thread_new(const char *name, lwip_thread_fn function, void *arg, int stacksize, int prio)
-// {
-//   sys_thread_t handle = NULL;
-//   BaseType_t xReturn = pdPASS;
-//   /* 创建MidPriority_Task任务 */
-//   xReturn = xTaskCreate((TaskFunction_t )function,  /* 任务入口函数 */
-//                         (const char*    )name,/* 任务名字 */
-//                         (uint16_t       )stacksize,  /* 任务栈大小 */
-//                         (void*          )arg,/* 任务入口函数参数 */
-//                         (UBaseType_t    )prio, /* 任务的优先级 */
-//                         (TaskHandle_t*  )&handle);/* 任务控制块指针 */ 
-//   if(xReturn != pdPASS)
-//   {
-//     printf("[sys_arch]:create task fail!err:%#lx\n",xReturn);
-//     return NULL;
-//   }
-//   return handle;
-// }
-
-// err_t
-// sys_mbox_new(sys_mbox_t *mbox, int size)
-// {
-//     /* 创建Test_Queue */
-//   *mbox = xQueueCreate((UBaseType_t ) size,/* 消息队列的长度 */
-//                        (UBaseType_t ) sizeof(void *));/* 消息的大小 */
-// #if SYS_STATS
-//       ++lwip_stats.sys.mbox.used;
-//       if (lwip_stats.sys.mbox.max < lwip_stats.sys.mbox.used) {
-//          lwip_stats.sys.mbox.max = lwip_stats.sys.mbox.used;
-// 	  }
-// #endif /* SYS_STATS */
-// 	if(NULL == *mbox)
-//     return ERR_MEM;
-  
-//   return ERR_OK;
-// }
-
-// void
-// sys_mbox_free(sys_mbox_t *mbox)
-// {
-//   if( uxQueueMessagesWaiting( *mbox ) )
-// 	{
-// 		/* Line for breakpoint.  Should never break here! */
-// 		portNOP();
-// #if SYS_STATS
-// 	    lwip_stats.sys.mbox.err++;
-// #endif /* SYS_STATS */
-
-// 		// TODO notify the user of failure.
-// 	}
-  
-//   vQueueDelete(*mbox);
-  
-// #if SYS_STATS
-//      --lwip_stats.sys.mbox.used;
-// #endif /* SYS_STATS */
-// }
-
-// int sys_mbox_valid(sys_mbox_t *mbox)          
-// {      
-//   if (*mbox == SYS_MBOX_NULL) 
-//     return 0;
-//   else
-//     return 1;
-// }   
-
-// void
-// sys_mbox_set_invalid(sys_mbox_t *mbox)
-// {
-//   *mbox = SYS_MBOX_NULL; 
-// }
-
-// void
-// sys_mbox_post(sys_mbox_t *q, void *msg)
-// {
-//   while(xQueueSend( *q, /* 消息队列的句柄 */
-//                     &msg,/* 发送的消息内容 */
-//                     portMAX_DELAY) != pdTRUE); /* 等待时间 */
-// }
-
-// err_t
-// sys_mbox_trypost(sys_mbox_t *q, void *msg)
-// {
-//   if(xQueueSend(*q,&msg,0) == pdPASS)  
-//     return ERR_OK;
-//   else
-//     return ERR_MEM;
-// }
-
-// err_t
-// sys_mbox_trypost_fromisr(sys_mbox_t *q, void *msg)
-// {
-//   return sys_mbox_trypost(q, msg);
-// }
-
-// u32_t
-// sys_arch_mbox_fetch(sys_mbox_t *q, void **msg, u32_t timeout)
-// {
-//   void *dummyptr;
-//   u32_t wait_tick = 0;
-//   u32_t start_tick = 0 ;
-  
-//   if ( msg == NULL )  //看看存储消息的地方是否有效
-// 		msg = &dummyptr;
-  
-//   //首先获取开始等待信号量的时钟节拍
-//   start_tick = sys_now();
-  
-//   //timeout != 0，需要将ms换成系统的时钟节拍
-//   if(timeout != 0)
-//   {
-//     //将ms转换成时钟节拍
-//     wait_tick = timeout / portTICK_PERIOD_MS;
-//     if (wait_tick == 0)
-//       wait_tick = 1;
-//   }
-//   //一直阻塞
-//   else
-//     wait_tick = portMAX_DELAY;
-  
-//   //等待成功，计算等待的时间，否则就表示等待超时
-//   if(xQueueReceive(*q,&(*msg), wait_tick) == pdTRUE)
-//     return ((sys_now() - start_tick)*portTICK_PERIOD_MS);
-//   else
-//   {
-//     *msg = NULL;
-//     return SYS_ARCH_TIMEOUT;
-//   }
-// }
-
-// u32_t
-// sys_arch_mbox_tryfetch(sys_mbox_t *q, void **msg)
-// {
-// 	void *dummyptr;
-// 	if ( msg == NULL )
-// 		msg = &dummyptr;
-  
-//   //等待成功，计算等待的时间
-//   if(xQueueReceive(*q,&(*msg), 0) == pdTRUE)
-//     return ERR_OK;
-//   else
-//     return SYS_MBOX_EMPTY;
-// }
-
-// #if LWIP_NETCONN_SEM_PER_THREAD
-// #error LWIP_NETCONN_SEM_PER_THREAD==1 not supported
-// #endif /* LWIP_NETCONN_SEM_PER_THREAD */
-
-// #endif /* !NO_SYS */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// /* Variables Initialization */
-// struct netif gnetif;
-// ip4_addr_t ipaddr;
-// ip4_addr_t netmask;
-// ip4_addr_t gw;
-// uint8_t IP_ADDRESS[4];
-// uint8_t NETMASK_ADDRESS[4];
-// uint8_t GATEWAY_ADDRESS[4];
-
-
-
-// void TCPIP_Init(void)
-// {
-//   tcpip_init(NULL, NULL);
-  
-//   /* IP addresses initialization */
-//   /* USER CODE BEGIN 0 */
-// #if LWIP_DHCP
-//   ip_addr_set_zero_ip4(&ipaddr);
-//   ip_addr_set_zero_ip4(&netmask);
-//   ip_addr_set_zero_ip4(&gw);
-// #else
-//   IP4_ADDR(&ipaddr,IP_ADDR0,IP_ADDR1,IP_ADDR2,IP_ADDR3);
-//   IP4_ADDR(&netmask,NETMASK_ADDR0,NETMASK_ADDR1,NETMASK_ADDR2,NETMASK_ADDR3);
-//   IP4_ADDR(&gw,GW_ADDR0,GW_ADDR1,GW_ADDR2,GW_ADDR3);
-// #endif /* USE_DHCP */
-//   /* USER CODE END 0 */
-//   /* Initilialize the LwIP stack without RTOS */
-//   /* add the network interface (IPv4/IPv6) without RTOS */
-//   netif_add(&gnetif, &ipaddr, &netmask, &gw, NULL, &ethernetif_init, &tcpip_input);
-
-//   /* Registers the default network interface */
-//   netif_set_default(&gnetif);
-
-//   if (netif_is_link_up(&gnetif))
-//   {
-//     /* When the netif is fully configured this function must be called */
-//     netif_set_up(&gnetif);
-//   }
-//   else
-//   {
-//     /* When the netif link is down this function must be called */
-//     netif_set_down(&gnetif);
-//   }
-  
-// #if LWIP_DHCP	   			//若使用了DHCP
-//   int err;
-//   /*  Creates a new DHCP client for this interface on the first call.
-//   Note: you must call dhcp_fine_tmr() and dhcp_coarse_tmr() at
-//   the predefined regular intervals after starting the client.
-//   You can peek in the netif->dhcp struct for the actual DHCP status.*/
-  
-//   printf("本例程将使用DHCP动态分配IP地址,如果不需要则在lwipopts.h中将LWIP_DHCP定义为0\n\n");
-  
-//   err = dhcp_start(&gnetif);      //开启dhcp
-//   if(err == ERR_OK)
-//     printf("lwip dhcp init success...\n\n");
-//   else
-//     printf("lwip dhcp init fail...\n\n");
-//   while(ip_addr_cmp(&(gnetif.ip_addr),&ipaddr))   //等待dhcp分配的ip有效
-//   {
-//     vTaskDelay(1);
-//   } 
-// #endif
-//   printf("本地IP地址是:%d.%d.%d.%d\n\n",  \
-//         ((gnetif.ip_addr.addr)&0x000000ff),       \
-//         (((gnetif.ip_addr.addr)&0x0000ff00)>>8),  \
-//         (((gnetif.ip_addr.addr)&0x00ff0000)>>16), \
-//         ((gnetif.ip_addr.addr)&0xff000000)>>24);
-// }
-
+#include <arch/sys_arch.h>
+#include <lwip/sys.h>
+#include <lwip/opt.h>
+#include <lwip/stats.h>
+#include <lwip/err.h>
+#include <lwip/debug.h>
+#include <lwip/netif.h>
+#include <lwip/netifapi.h>
+#include <lwip/tcpip.h>
+#include <lwip/sio.h>
+#include <lwip/init.h>
+#include <lwip/dhcp.h>
+#include <lwip/inet.h>
+#include <netif/ethernetif.h>
+#include <netif/etharp.h>
+
+#include <stdio.h>
+#include <string.h>
+
+#if defined(CONFIG_RTTNANO_ENABLE)
+#include <rtthread.h>
+#include <rthw.h>
+#elif defined(CONFIG_FREERTOS_ENABLE)
+#include <FreeRTOS.h>
+#include <task.h>
+#include <portmacro.h>
+#else
+#include <board_config.h>
+#endif
+
+void sys_init(void)
+{
+    // do nothing
+}
+
+/****************************************************************************
+ * Semaphore
+ ****************************************************************************/
+
+err_t sys_sem_new(sys_sem_t *sem, u8_t count)
+{
+#if defined(CONFIG_FREERTOS_ENABLE)
+
+    *sem = xSemaphoreCreateCounting(UINT16_MAX, count);
+    return (*sem != NULL) ? ERR_OK : ERR_MEM;
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    static unsigned short counter = 0;
+    char tname[RT_NAME_MAX];
+    sys_sem_t tmpsem;
+
+    RT_DEBUG_NOT_IN_INTERRUPT;
+
+    rt_snprintf(tname, RT_NAME_MAX, "%s%d", SYS_LWIP_SEM_NAME, counter);
+    counter++;
+
+    tmpsem = rt_sem_create(tname, count, RT_IPC_FLAG_FIFO);
+    if (tmpsem == RT_NULL) {
+        return ERR_MEM;
+    } else {
+        *sem = tmpsem;
+        return ERR_OK;
+    }
+#endif
+}
+
+void sys_sem_free(sys_sem_t *sem)
+{
+#if defined(CONFIG_FREERTOS_ENABLE)
+
+    if (sem && *sem) {
+        vSemaphoreDelete(*sem);
+        *sem = NULL;
+    }
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    RT_DEBUG_NOT_IN_INTERRUPT;
+    rt_sem_delete(*sem);
+#endif
+}
+
+void sys_sem_signal(sys_sem_t *sem)
+{
+#if defined(CONFIG_FREERTOS_ENABLE)
+
+    BaseType_t higher_woken = pdFALSE;
+    if (sem && *sem) {
+        xSemaphoreGive(*sem);
+    }
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    rt_sem_release(*sem);
+#endif
+}
+
+u32_t sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
+{
+#if defined(CONFIG_FREERTOS_ENABLE)
+
+    TickType_t start = xTaskGetTickCount();
+    TickType_t wait_ticks = (timeout == 0) ? portMAX_DELAY : pdMS_TO_TICKS(timeout);
+    BaseType_t ret;
+
+    if (!sem || !*sem) {
+        return SYS_ARCH_TIMEOUT;
+    }
+
+    ret = xSemaphoreTake(*sem, wait_ticks);
+
+    if (ret == pdTRUE) {
+        return (xTaskGetTickCount() - start) * portTICK_PERIOD_MS;
+    } else {
+        return SYS_ARCH_TIMEOUT;
+    }
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    rt_err_t ret;
+    s32_t t;
+    u32_t tick;
+
+    RT_DEBUG_NOT_IN_INTERRUPT;
+
+    /* get the begin tick */
+    tick = rt_tick_get();
+    if (timeout == 0) {
+        t = RT_WAITING_FOREVER;
+    } else {
+        /* convert msecond to os tick */
+        if (timeout < (1000 / RT_TICK_PER_SECOND)) {
+            t = 1;
+        } else {
+            t = timeout / (1000 / RT_TICK_PER_SECOND);
+        }
+    }
+
+    ret = rt_sem_take(*sem, t);
+
+    if (ret == -RT_ETIMEOUT) {
+        return SYS_ARCH_TIMEOUT;
+    } else {
+        if (ret == RT_EOK) {
+            ret = 1;
+        }
+    }
+
+    /* get elapse msecond */
+    tick = rt_tick_get() - tick;
+
+    /* convert tick to msecond */
+    tick = tick * (1000 / RT_TICK_PER_SECOND);
+    if (tick == 0) {
+        tick = 1;
+    }
+
+    return tick;
+#endif
+}
+
+#ifndef sys_sem_valid
+/** Check if a semaphore is valid/allocated:
+ *  return 1 for valid, 0 for invalid
+ */
+int sys_sem_valid(sys_sem_t *sem)
+{
+    int ret = 0;
+    if (*sem) ret = 1;
+    return ret;
+}
+#endif
+
+#ifndef sys_sem_set_invalid
+/** Set a semaphore invalid so that sys_sem_valid returns 0
+ */
+void sys_sem_set_invalid(sys_sem_t *sem)
+{
+    *sem = ((void *)0);
+}
+#endif
+
+/****************************************************************************
+ * Mutex
+ ****************************************************************************/
+
+err_t sys_mutex_new(sys_mutex_t *mutex)
+{
+#if defined(CONFIG_FREERTOS_ENABLE)
+
+    *mutex = xSemaphoreCreateRecursiveMutex();
+    return (*mutex != NULL) ? ERR_OK : ERR_MEM;
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    static unsigned short counter = 0;
+    char tname[RT_NAME_MAX];
+    sys_mutex_t tmpmutex;
+
+    RT_DEBUG_NOT_IN_INTERRUPT;
+
+    rt_snprintf(tname, RT_NAME_MAX, "%s%d", SYS_LWIP_MUTEX_NAME, counter);
+    counter++;
+
+    tmpmutex = rt_mutex_create(tname, RT_IPC_FLAG_PRIO);
+    if (tmpmutex == RT_NULL) {
+        return ERR_MEM;
+    } else {
+        *mutex = tmpmutex;
+        return ERR_OK;
+    }
+#endif
+}
+
+void sys_mutex_free(sys_mutex_t *mutex)
+{
+#if defined(CONFIG_FREERTOS_ENABLE)
+
+    if (mutex && *mutex) {
+        vSemaphoreDelete(*mutex);
+        *mutex = NULL;
+    }
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    RT_DEBUG_NOT_IN_INTERRUPT;
+    rt_mutex_delete(*mutex);
+#endif
+}
+
+void sys_mutex_lock(sys_mutex_t *mutex)
+{
+#if defined(CONFIG_FREERTOS_ENABLE)
+
+    if (mutex && *mutex) {
+        xSemaphoreTakeRecursive(*mutex, portMAX_DELAY);
+    }
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    RT_DEBUG_NOT_IN_INTERRUPT;
+    rt_mutex_take(*mutex, RT_WAITING_FOREVER);
+#endif
+}
+
+void sys_mutex_unlock(sys_mutex_t *mutex)
+{
+#if defined(CONFIG_FREERTOS_ENABLE)
+
+    if (mutex && *mutex) {
+        xSemaphoreGiveRecursive(*mutex);
+    }
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    rt_mutex_release(*mutex);
+#endif
+}
+
+#ifndef sys_mutex_valid
+/** Check if a mutex is valid/allocated:
+ *  return 1 for valid, 0 for invalid
+ */
+int sys_mutex_valid(sys_mutex_t *mutex)
+{
+    int ret = 0;
+
+    if (*mutex) ret = 1;
+
+    return ret;
+}
+#endif
+
+#ifndef sys_mutex_set_invalid
+/** Set a mutex invalid so that sys_mutex_valid returns 0
+ */
+void sys_mutex_set_invalid(sys_mutex_t *mutex)
+{
+    *mutex = ((void *)0);
+}
+#endif
+
+/****************************************************************************
+ * Mailbox
+ ****************************************************************************/
+
+err_t sys_mbox_new(sys_mbox_t *mbox, int size)
+{
+#if defined(CONFIG_FREERTOS_ENABLE)
+
+    *mbox = xQueueCreate(size, sizeof(void*));
+    return (*mbox != NULL) ? ERR_OK : ERR_MEM;
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    static unsigned short counter = 0;
+    char tname[RT_NAME_MAX];
+    sys_mbox_t tmpmbox;
+
+    RT_DEBUG_NOT_IN_INTERRUPT;
+
+    rt_snprintf(tname, RT_NAME_MAX, "%s%d", SYS_LWIP_MBOX_NAME, counter);
+    counter++;
+
+    tmpmbox = rt_mb_create(tname, size, RT_IPC_FLAG_FIFO);
+    if (tmpmbox != RT_NULL) {
+        *mbox = tmpmbox;
+        return ERR_OK;
+    }
+
+    return ERR_MEM;
+#endif
+}
+
+void sys_mbox_free(sys_mbox_t *mbox)
+{
+#if defined(CONFIG_FREERTOS_ENABLE)
+
+    if (mbox && *mbox) {
+        vQueueDelete(*mbox);
+        *mbox = NULL;
+    }
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    RT_DEBUG_NOT_IN_INTERRUPT;
+    rt_mb_delete(*mbox);
+#endif
+}
+
+void sys_mbox_post(sys_mbox_t *mbox, void *msg)
+{
+#if defined(CONFIG_FREERTOS_ENABLE)
+
+    if (mbox && *mbox) {
+        xQueueSendToBack(*mbox, &msg, portMAX_DELAY);
+    }
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    RT_DEBUG_NOT_IN_INTERRUPT;
+    rt_mb_send_wait(*mbox, (rt_ubase_t)msg, RT_WAITING_FOREVER);
+#endif
+}
+
+err_t sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
+{
+#if defined(CONFIG_FREERTOS_ENABLE)
+
+    BaseType_t ret;
+
+    if (!mbox || !*mbox) {
+        return ERR_MEM;
+    }
+
+    ret = xQueueSendToBack(*mbox, &msg, 0);
+    return (ret == pdTRUE) ? ERR_OK : ERR_MEM;
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    if (rt_mb_send(*mbox, (rt_ubase_t)msg) == RT_EOK) {
+        return ERR_OK;
+    }
+
+    return ERR_MEM;
+#endif
+}
+
+#if (LWIP_VERSION_MAJOR * 100 + LWIP_VERSION_MINOR) >= 201 /* >= v2.1.0 */
+err_t sys_mbox_trypost_fromisr(sys_mbox_t *q, void *msg)
+{
+#if defined(CONFIG_FREERTOS_ENABLE)
+
+    BaseType_t higher_woken = pdFALSE;
+    BaseType_t ret = xQueueSendToBackFromISR(*q, &msg, &higher_woken);
+    return (ret == pdTRUE) ? ERR_OK : ERR_MEM;
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    return sys_mbox_trypost(q, msg);
+#endif
+}
+#endif
+
+u32_t sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
+{
+#if defined(CONFIG_FREERTOS_ENABLE)
+
+    TickType_t start = xTaskGetTickCount();
+    TickType_t wait_ticks = (timeout == 0) ? portMAX_DELAY : pdMS_TO_TICKS(timeout);
+    BaseType_t ret;
+
+    if (!mbox || !*mbox || !msg) {
+        return SYS_ARCH_TIMEOUT;
+    }
+
+    ret = xQueueReceive(*mbox, msg, wait_ticks);
+
+    if (ret == pdTRUE) {
+        return (xTaskGetTickCount() - start) * portTICK_PERIOD_MS;
+    } else {
+        return SYS_ARCH_TIMEOUT;
+    }
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    rt_err_t ret;
+    s32_t t;
+    u32_t tick;
+
+    RT_DEBUG_NOT_IN_INTERRUPT;
+
+    tick = rt_tick_get();
+
+    if(timeout == 0) {
+        t = RT_WAITING_FOREVER;
+    } else {
+        /* convirt msecond to os tick */
+        if (timeout < (1000 / RT_TICK_PER_SECOND)) {
+            t = 1;
+        } else {
+            t = timeout / (1000 / RT_TICK_PER_SECOND);
+        }
+    }
+
+    /*When the waiting msg is generated by the application through signaling mechanisms,
+    only by using interruptible mode can the program be made runnable again*/
+    ret = rt_mb_recv_interruptible(*mbox, (rt_ubase_t *)msg, t);
+    if(ret != RT_EOK) {
+        return SYS_ARCH_TIMEOUT;
+    }
+
+    tick = rt_tick_get() - tick;
+
+    tick = tick * (1000 / RT_TICK_PER_SECOND);
+    if (tick == 0) {
+        tick = 1;
+    }
+
+    return tick;
+#endif
+}
+
+u32_t sys_arch_mbox_tryfetch(sys_mbox_t *mbox, void **msg)
+{
+#if defined(CONFIG_FREERTOS_ENABLE)
+
+    BaseType_t ret;
+
+    if (!mbox || !*mbox || !msg) {
+        return SYS_ARCH_TIMEOUT;
+    }
+
+    ret = xQueueReceive(*mbox, msg, 0);
+    return (ret == pdTRUE) ? 0 : SYS_MBOX_EMPTY;
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    int ret;
+
+    ret = rt_mb_recv(*mbox, (rt_ubase_t *)msg, 0);
+    if(ret == -RT_ETIMEOUT) {
+        return SYS_ARCH_TIMEOUT;
+    } else {
+        if (ret == RT_EOK) {
+            ret = 0;
+        }
+    }
+
+    return ret;
+#endif
+}
+
+#ifndef sys_mbox_valid
+/** Check if an mbox is valid/allocated:
+ *  return 1 for valid, 0 for invalid
+ */
+int sys_mbox_valid(sys_mbox_t *mbox)
+{
+    int ret = 0;
+    if (*mbox) ret = 1;
+    return ret;
+}
+#endif
+
+#ifndef sys_mbox_set_invalid
+/** Set an mbox invalid so that sys_mbox_valid returns 0
+ */
+void sys_mbox_set_invalid(sys_mbox_t *mbox)
+{
+    *mbox = ((void *)0);
+}
+#endif
+
+/****************************************************************************
+ * System
+ ****************************************************************************/
+
+sys_thread_t sys_thread_new(const char    *name,
+                            lwip_thread_fn thread,
+                            void          *arg,
+                            int            stacksize,
+                            int            prio)
+{
+#if defined(CONFIG_FREERTOS_ENABLE)
+
+    TaskHandle_t created_task = NULL;
+    stacksize /= sizeof(StackType_t);
+
+    if (xTaskCreate(thread, name, stacksize, arg, prio, &created_task) != pdPASS) {
+        created_task = NULL;
+    }
+
+    return created_task;
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    rt_thread_t t;
+
+    RT_DEBUG_NOT_IN_INTERRUPT;
+
+    t = rt_thread_create(name, thread, arg, stacksize, prio, 20);
+    RT_ASSERT(t != RT_NULL);
+
+    rt_thread_startup(t);
+    return t;
+#endif
+}
+
+sys_prot_t sys_arch_protect(void)
+{
+#if defined(CONFIG_FREERTOS_ENABLE)
+
+    return (sys_prot_t)ulPortRaiseBASEPRI();
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    return (sys_prot_t)rt_hw_interrupt_disable();
+#endif
+}
+
+void sys_arch_unprotect(sys_prot_t pval)
+{
+#if defined(CONFIG_FREERTOS_ENABLE)
+
+    vPortSetBASEPRI(pval);
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    rt_hw_interrupt_enable((rt_base_t)pval);
+#endif
+}
+
+void sys_arch_assert(const char *file, int line)
+{
+#if defined(CONFIG_FREERTOS_ENABLE)
+
+    board_printf("\nAssertion: %d in %s, thread \n",
+                line, file);
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    board_printf("\nAssertion: %d in %s, thread %s\n",
+                line, file, rt_thread_self()->parent.name);
+
+    RT_ASSERT(0);
+#endif
+}
+
+u32_t sys_jiffies(void)
+{
+#if defined(CONFIG_FREERTOS_ENABLE)
+
+    return xTaskGetTickCount();
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    return rt_tick_get();
+#endif
+}
+
+u32_t sys_now(void)
+{
+#if defined(CONFIG_FREERTOS_ENABLE)
+
+    return (xTaskGetTickCount() * portTICK_RATE_MS);
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    return rt_tick_get_millisecond();
+#else
+
+    return board_get_time();
+#endif
+}
+
+void mem_init(void)
+{
+
+}
+
+void *mem_calloc(mem_size_t count, mem_size_t size)
+{
+    void *ptr;
+    mem_size_t total = count * size;
+
+#if defined(CONFIG_FREERTOS_ENABLE)
+
+    ptr = pvPortMalloc(total);
+    if (ptr != NULL) {
+        memset(ptr, 0, total);
+    }
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    ptr = rt_calloc(count, size);
+#endif
+    return ptr;
+}
+
+void *mem_trim(void *mem, mem_size_t size)
+{
+    // return rt_realloc(mem, size);
+    /* not support trim yet */
+    return mem;
+}
+
+void *mem_malloc(mem_size_t size)
+{
+#if defined(CONFIG_FREERTOS_ENABLE)
+
+    return pvPortMalloc(size);
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    return rt_malloc(size);
+#endif
+}
+
+void  mem_free(void *mem)
+{
+#if defined(CONFIG_FREERTOS_ENABLE)
+
+    vPortFree(mem);
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    rt_free(mem);
+#endif
+}
+
+#if LWIP_VERSION_MAJOR >= 2 /* >= v2.x */
+#if MEM_OVERFLOW_CHECK || MEMP_OVERFLOW_CHECK
+
+/**
+ * Check if a mep element was victim of an overflow or underflow
+ * (e.g. the restricted area after/before it has been altered)
+ *
+ * @param p the mem element to check
+ * @param size allocated size of the element
+ * @param descr1 description of the element source shown on error
+ * @param descr2 description of the element source shown on error
+ */
+void mem_overflow_check_raw(void *p, size_t size, const char *descr1, const char *descr2)
+{
+#if MEM_SANITY_REGION_AFTER_ALIGNED || MEM_SANITY_REGION_BEFORE_ALIGNED
+    u16_t k;
+    u8_t *m;
+
+#if MEM_SANITY_REGION_AFTER_ALIGNED > 0
+    m = (u8_t *)p + size;
+    for (k = 0; k < MEM_SANITY_REGION_AFTER_ALIGNED; k++) {
+        if (m[k] != 0xcd) {
+            char errstr[128];
+            snprintf(errstr, sizeof(errstr), "detected mem overflow in %s%s", descr1, descr2);
+            LWIP_ASSERT(errstr, 0);
+        }
+    }
+#endif /* MEM_SANITY_REGION_AFTER_ALIGNED > 0 */
+
+#if MEM_SANITY_REGION_BEFORE_ALIGNED > 0
+    m = (u8_t *)p - MEM_SANITY_REGION_BEFORE_ALIGNED;
+    for (k = 0; k < MEM_SANITY_REGION_BEFORE_ALIGNED; k++) {
+        if (m[k] != 0xcd) {
+            char errstr[128];
+            snprintf(errstr, sizeof(errstr), "detected mem underflow in %s%s", descr1, descr2);
+            LWIP_ASSERT(errstr, 0);
+        }
+    }
+#endif
+#else
+
+    LWIP_UNUSED_ARG(p);
+    LWIP_UNUSED_ARG(descr1);
+    LWIP_UNUSED_ARG(descr2);
+#endif
+}
+
+/**
+ * Initialize the restricted area of a mem element.
+ */
+void mem_overflow_init_raw(void *p, size_t size)
+{
+#if MEM_SANITY_REGION_BEFORE_ALIGNED > 0 || MEM_SANITY_REGION_AFTER_ALIGNED > 0
+    u8_t *m;
+
+#if MEM_SANITY_REGION_BEFORE_ALIGNED > 0
+    m = (u8_t *)p - MEM_SANITY_REGION_BEFORE_ALIGNED;
+    memset(m, 0xcd, MEM_SANITY_REGION_BEFORE_ALIGNED);
+#endif
+
+#if MEM_SANITY_REGION_AFTER_ALIGNED > 0
+    m = (u8_t *)p + size;
+    memset(m, 0xcd, MEM_SANITY_REGION_AFTER_ALIGNED);
+#endif
+
+#else
+
+    LWIP_UNUSED_ARG(p);
+    LWIP_UNUSED_ARG(size);
+#endif
+}
+#endif /* MEM_OVERFLOW_CHECK || MEMP_OVERFLOW_CHECK */
+#endif /*LWIP_VERSION_MAJOR >= 2 */

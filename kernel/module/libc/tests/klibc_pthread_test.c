@@ -43,7 +43,7 @@ void* p1_entry(void *p)
     for (; i < 3; i++) {
         TEST_PRINTF("[%s] %.6f p1 tag, val: %.5f, %d\r\n", name, board_get_time()/1e3f,
                                     *value, i);
-        sleep(1000); // sleep 1s
+        usleep(1000000); // sleep 1s
     }
     TEST_PRINTF("[%s] %.6f p1 end\r\n", name, board_get_time()/1e3f);
     return NULL;
@@ -64,7 +64,7 @@ void* p2_entry(void *p)
     for (; i < 15; i++) {
         TEST_PRINTF("[%s] %.6f p2 tag, val: %.5f, %d\r\n", name, board_get_time()/1e3f,
                                     *value, i);
-        sleep(2000); // sleep 2s
+        usleep(2000000); // sleep 2s
     }
     TEST_PRINTF("[%s] %.6f p2 end\r\n", name, board_get_time()/1e3f);
     return NULL;

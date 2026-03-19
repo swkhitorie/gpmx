@@ -51,7 +51,7 @@ void* p6_entry(void *p)
         sem_post(&a_sem);
         sem_getvalue(&a_sem, &val);
         TEST_PRINTF("[%s] post sem : %d\r\n", &name[0], val);
-        sleep(500);
+        usleep(500*1000);
     }
 
     return NULL;
@@ -78,7 +78,7 @@ void* p7_entry(void *p)
         sem_post(&a_sem);
         sem_getvalue(&a_sem, &val);
         TEST_PRINTF("[%s] post sem : %d\r\n", &name[0], val);
-        sleep(1000);
+        usleep(1000*1000);
         // debug_led_toggle();
     }
 

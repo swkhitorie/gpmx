@@ -3,8 +3,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <FreeRTOS.h>
-#include <task.h>
+#include "device/dnode.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,76 +32,76 @@ static inline void atomic_bool_init(atomic_bool_t *a, bool val) { a->val = val; 
 /*
  * If your compiler does not support __atomic builtins,
  * define ATOMIC_USE_CRITICAL and the implementation will fall back to
- * taskENTER_CRITICAL() / taskEXIT_CRITICAL().
+ * ENTER_CRITICAL() / EXIT_CRITICAL().
  * Note: The critical section fallback is NOT safe to use from ISRs.
  */
 #ifdef ATOMIC_USE_CRITICAL
 
-/* Fallback using FreeRTOS critical sections (task context only) */
+/* Fallback using RTOS critical sections (task context only) */
 #define ATOMIC_LOAD(ptr) ({ \
     typeof((ptr)->val + 0) __ret; \
-    taskENTER_CRITICAL(); \
+    int f = gpdrv_enter_critical_section(); \
     __ret = (ptr)->val; \
-    taskEXIT_CRITICAL(); \
+    gpdrv_leave_critical_section(f); \
     __ret; })
 
 #define ATOMIC_STORE(ptr, val) do { \
-    taskENTER_CRITICAL(); \
+    int f = gpdrv_enter_critical_section(); \
     (ptr)->val = (val); \
-    taskEXIT_CRITICAL(); \
+    gpdrv_leave_critical_section(f); \
 } while (0)
 
 #define ATOMIC_FETCH_ADD(ptr, num) ({ \
     typeof((ptr)->val + 0) __ret; \
-    taskENTER_CRITICAL(); \
+    int f = gpdrv_enter_critical_section(); \
     __ret = (ptr)->val; \
     (ptr)->val += (num); \
-    taskEXIT_CRITICAL(); \
+    gpdrv_leave_critical_section(f); \
     __ret; })
 
 #define ATOMIC_FETCH_SUB(ptr, num) ({ \
     typeof((ptr)->val + 0) __ret; \
-    taskENTER_CRITICAL(); \
+    int f = gpdrv_enter_critical_section(); \
     __ret = (ptr)->val; \
     (ptr)->val -= (num); \
-    taskEXIT_CRITICAL(); \
+    gpdrv_leave_critical_section(f); \
     __ret; })
 
 #define ATOMIC_FETCH_AND(ptr, num) ({ \
     typeof((ptr)->val + 0) __ret; \
-    taskENTER_CRITICAL(); \
+    int f = gpdrv_enter_critical_section(); \
     __ret = (ptr)->val; \
     (ptr)->val &= (num); \
-    taskEXIT_CRITICAL(); \
+    gpdrv_leave_critical_section(f); \
     __ret; })
 
 #define ATOMIC_FETCH_OR(ptr, num) ({ \
     typeof((ptr)->val + 0) __ret; \
-    taskENTER_CRITICAL(); \
+    int f = gpdrv_enter_critical_section(); \
     __ret = (ptr)->val; \
     (ptr)->val |= (num); \
-    taskEXIT_CRITICAL(); \
+    gpdrv_leave_critical_section(f); \
     __ret; })
 
 #define ATOMIC_FETCH_XOR(ptr, num) ({ \
     typeof((ptr)->val + 0) __ret; \
-    taskENTER_CRITICAL(); \
+    int f = gpdrv_enter_critical_section(); \
     __ret = (ptr)->val; \
     (ptr)->val ^= (num); \
-    taskEXIT_CRITICAL(); \
+    gpdrv_leave_critical_section(f); \
     __ret; })
 
 #define ATOMIC_FETCH_NAND(ptr, num) ({ \
     typeof((ptr)->val + 0) __ret; \
-    taskENTER_CRITICAL(); \
+    int f = gpdrv_enter_critical_section(); \
     __ret = (ptr)->val; \
     (ptr)->val = ~((ptr)->val & (num)); \
-    taskEXIT_CRITICAL(); \
+    gpdrv_leave_critical_section(f); \
     __ret; })
 
 #define ATOMIC_CMPEXCH(ptr, expected, desired) ({ \
     bool __ret; \
-    taskENTER_CRITICAL(); \
+    int f = gpdrv_enter_critical_section(); \
     if ((ptr)->val == *(expected)) { \
         (ptr)->val = (desired); \
         __ret = true; \
@@ -110,7 +109,7 @@ static inline void atomic_bool_init(atomic_bool_t *a, bool val) { a->val = val; 
         *(expected) = (ptr)->val; \
         __ret = false; \
     } \
-    taskEXIT_CRITICAL(); \
+    gpdrv_leave_critical_section(f); \
     __ret; })
 
 #else /* !ATOMIC_USE_CRITICAL */

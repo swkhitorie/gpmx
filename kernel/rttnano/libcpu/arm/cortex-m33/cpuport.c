@@ -196,11 +196,7 @@ rt_uint8_t *rt_hw_stack_init(void       *tentry,
      *                    0: Non-secure.
      *                    1: Secure.
      */
-#ifdef ARCH_ARM_CORTEX_SECURE
     stack_frame->lr = 0xfffffffdL;
-#else
-    stack_frame->lr = 0xffffffbcL;
-#endif
     stack_frame->psplim = 0x00;
     /*
      * CONTROL register bit assignments

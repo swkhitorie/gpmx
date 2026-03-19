@@ -3,6 +3,7 @@
 #include <drv_i2c.h>
 #include <drv_spi.h>
 #include <drv_mmcsd.h>
+#include <drv_eth.h>
 #include <device/dnode.h>
 #include <device/serial.h>
 #include <device/i2c_master.h>
@@ -13,6 +14,11 @@
 #if defined(CONFIG_FREERTOS_ENABLE)
 #include <FreeRTOS.h>
 #include <task.h>
+#endif
+
+#if defined(CONFIG_RTTNANO_ENABLE)
+#include <rthw.h>
+#include <rtthread.h>
 #endif
 
 #if defined(CONFIG_MODULE_CMBACKTRACE)
@@ -27,7 +33,11 @@
 #include "board_usb_cdc.h"
 #endif
 
-static SemaphoreHandle_t board_printf_sem;
+#if defined(CONFIG_FREERTOS_ENABLE)
+static SemaphoreHandle_t board_printf_mutex;
+#elif defined(CONFIG_RTTNANO_ENABLE)
+static rt_sem_t board_printf_mutex;
+#endif
 
 void board_bsp_init()
 {
@@ -49,12 +59,13 @@ void board_bsp_init()
 	LOW_INITPINF(GPIO_VDD_3V3_SPEKTRUM_POWER_EN_PORT, GPIO_VDD_3V3_SPEKTRUM_POWER_EN_PIN, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_VERY_HIGH);
 	LOW_INITPINF(GPIO_VDD_3V3_SD_CARD_EN_PORT, GPIO_VDD_3V3_SD_CARD_EN_PIN, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_VERY_HIGH);
     LOW_INITPINF(GPIO_OTGFS_VBUS_PORT, GPIO_OTGFS_VBUS_PIN, GPIO_MODE_INPUT, GPIO_PULLDOWN, GPIO_SPEED_FREQ_VERY_HIGH);
+    LOW_INITPINF(GPIO_ETH_POWER_EN_PORT, GPIO_ETH_POWER_EN_PIN, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_VERY_HIGH);
 
+    VDD_3V3_SD_CARD_EN(true);
 	VDD_5V_PERIPH_EN(true);
 	VDD_5V_HIPOWER_EN(true);
     VDD_3V3_SENSORS_EN(true);
     VDD_3V3_SPEKTRUM_POWER_EN(true);
-    VDD_3V3_SD_CARD_EN(true);
     VDD_3V3_ETH_POWER_EN(true);
 
     /* delay after sensor power enable */
@@ -63,6 +74,13 @@ void board_bsp_init()
 	BOARD_BLUE_LED(false);
 	BOARD_RED_LED(false);
     BOARD_GREEN_LED(false);
+
+#if defined(CONFIG_FREERTOS_ENABLE)
+    board_printf_mutex = xSemaphoreCreateMutex();
+    xSemaphoreGive(board_printf_mutex);
+#elif defined(CONFIG_RTTNANO_ENABLE)
+    board_printf_mutex = rt_sem_create("blog", 1, RT_IPC_FLAG_PRIO);
+#endif
 
 #if defined(CONFIG_CRUSB_DEVICE_ENABLE) && defined(CONFIG_CRUSB_DEVICE_CDC_ACM_ENABLE)
     board_cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
@@ -75,9 +93,14 @@ void board_bsp_init()
     board_delay(400);
 #endif
 
-#if defined(CONFIG_FREERTOS_ENABLE)
-    board_printf_sem = xSemaphoreCreateBinary();
-    xSemaphoreGive(board_printf_sem);
+#if defined(CONFIG_FATFS_ENABLE)
+    hw_stm32_mmcsd_init(2, 1, 4);
+    hw_stm32_mmcsd_info(2);
+    hw_stm32_mmcsd_fs_init(2);
+#endif
+
+#if defined(CONFIG_NET_LWIP_ENABLE)
+    hw_stm32_eth_init();
 #endif
 }
 
@@ -239,7 +262,11 @@ void board_printf(const char *format, ...)
     va_list args;
 
 #if defined(CONFIG_FREERTOS_ENABLE)
-    if (xSemaphoreTake(board_printf_sem, 200) != pdTRUE) {
+    if (xSemaphoreTake(board_printf_mutex, portMAX_DELAY) != pdTRUE) {
+        return;
+    }
+#elif defined(CONFIG_RTTNANO_ENABLE)
+    if (rt_sem_take(board_printf_mutex, UINT32_MAX) != RT_EOK) {
         return;
     }
 #endif
@@ -255,7 +282,9 @@ void board_printf(const char *format, ...)
     va_end(args);
 
 #if defined(CONFIG_FREERTOS_ENABLE)
-    xSemaphoreGive(board_printf_sem);
+    xSemaphoreGive(board_printf_mutex);
+#elif defined(CONFIG_RTTNANO_ENABLE)
+    rt_sem_release(board_printf_mutex);
 #endif
 }
 
@@ -309,18 +338,6 @@ int main(int argc, char *argv[])
 #ifdef CONFIG_MODULE_KPOSIX
 #include "kernel_libc_tests.h"
 #endif
-#endif
-
-#if defined(CONFIG_LFS_ENABLE)
-#include "lfs_test.h"
-#endif
-
-#if defined(CONFIG_FATFS_ENABLE)
-#include "fatfs_test.h"
-#endif
-
-#if defined(CONFIG_MODULE_CMBACKTRACE)
-#include "fault_test.h"
 #endif
 
 #ifndef BOARD_TEST_ITEM

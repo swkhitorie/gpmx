@@ -1,13 +1,15 @@
 #include <stddef.h>
-#include "pthread.h"
-#include "errno.h"
-#include "time.h"
-#include "utils.h"
+#include <pthread.h>
+#include <errno.h>
+#include <time.h>
 
+#include "utils.h"
 #include "./prv_timer.h"
 
 int timer_settime(timer_t timerid, int flags, const struct itimerspec *value, struct itimerspec *ovalue)
 {
+#if defined(CONFIG_FREERTOS_ENABLE)
+
     int ret = 0;
     TimerHandle_t handle = timerid;
     timer_internal_t *p = (timer_internal_t *)pvTimerGetTimerID(handle);
@@ -64,4 +66,8 @@ int timer_settime(timer_t timerid, int flags, const struct itimerspec *value, st
         }
     }
     return ret;
+#else
+
+    return -1;
+#endif
 }

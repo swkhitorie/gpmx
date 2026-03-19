@@ -62,7 +62,7 @@ void* p4_entry(void *p)
 
         mq_send(msg_1, (const char*)&tmp, sizeof(euler_t), 0);
         TEST_PRINTF("[%s] send data: %.3f, %.3f, %.3f\r\n", &name[0], tmp.pitch, tmp.roll, tmp.yaw);
-        sleep(500);
+        usleep(500*1000);
     }
 
     return NULL;
@@ -98,7 +98,7 @@ void* p5_entry(void *p)
             TEST_PRINTF("[%s] rcv data: %.3f, %.3f, %.3f, %d, %d\r\n", &name[0], tmp_rcv.pitch, tmp_rcv.roll, tmp_rcv.yaw, res, attr.mq_msgsize);
         }
 
-        sleep(50);
+        usleep(50*1000);
     }
 
     return NULL;

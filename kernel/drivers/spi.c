@@ -47,6 +47,18 @@ int spi_bus_initialize(int bus)
     dev->txsem = xSemaphoreCreateBinary();
 
     xSemaphoreGive(dev->exclsem);
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    char *excl_name = "spi0_excl";
+    char *tx_name = "spi0_tx";
+    char *rx_name = "spi0_rx";
+    excl_name[3] = '0' + (bus - 0);
+    tx_name[3] = '0' + (bus - 0);
+    rx_name[3] = '0' + (bus - 0);
+
+    dev->exclsem = rt_sem_create(excl_name, 1, RT_IPC_FLAG_PRIO);
+    dev->rxsem = rt_sem_create(rx_name, 0, RT_IPC_FLAG_PRIO);
+    dev->txsem = rt_sem_create(tx_name, 0, RT_IPC_FLAG_PRIO);
 #else
 
     dev->flag_tx = 0;
@@ -72,6 +84,18 @@ int spi_devlock(struct spi_dev_s *dev, bool lock)
         }
 	} else {
         xSemaphoreGive(dev->exclsem);
+        return GOK;
+    }
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    if (lock) {
+        if (RT_EOK == rt_sem_take(dev->exclsem, 10)) {
+            return GOK;
+        } else {
+            return -1;
+        }
+	} else {
+        rt_sem_release(dev->exclsem);
         return GOK;
     }
 #else
@@ -104,6 +128,14 @@ int spi_dmarxwait(struct spi_dev_s *dev)
     }while (dev->rxresult == 0 && ret == pdFALSE);
 
     return GOK;
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    int ret = GOK;
+    do {
+        ret = rt_sem_take(dev->rxsem, 20);
+    }while (dev->rxresult == 0 && ret != RT_EOK);
+
+    return GOK;
 #else
 
     uint32_t timeout_ms = 20;
@@ -134,6 +166,14 @@ int spi_dmatxwait(struct spi_dev_s *dev)
         ret = xSemaphoreTake(dev->txsem, 20);
     }while (dev->txresult == 0 && ret == pdFALSE);
     return GOK;
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    int ret = GOK;
+    do {
+        ret = rt_sem_take(dev->txsem, 20);
+    }while (dev->txresult == 0 && ret != RT_EOK);
+
+    return GOK;
 #else
 
     uint32_t timeout_ms = 20;
@@ -156,6 +196,9 @@ void spi_dmarxwakeup(struct spi_dev_s *dev)
 #if defined(CONFIG_FREERTOS_ENABLE)
 
     xSemaphoreGive(dev->rxsem);
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    rt_sem_release(dev->rxsem);
 #else
 
     dev->flag_rx = 0x01;
@@ -167,6 +210,9 @@ void spi_dmatxwakeup(struct spi_dev_s *dev)
 #if defined(CONFIG_FREERTOS_ENABLE)
 
     xSemaphoreGive(dev->txsem);
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+    rt_sem_release(dev->txsem);
 #else
 
     dev->flag_tx = 0x01;

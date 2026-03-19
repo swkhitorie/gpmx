@@ -1,23 +1,29 @@
 #include <stddef.h>
-#include "pthread.h"
-#include "errno.h"
-#include "time.h"
-#include "utils.h"
+#include <time.h>
+#include <pthread.h>
+#include <errno.h>
 
+#include "utils.h"
 #include "./prv_timer.h"
 
 int timer_delete(timer_t timerid)
 {
+#if defined(CONFIG_FREERTOS_ENABLE)
+
     TimerHandle_t handle = timerid;
     timer_internal_t *p = (timer_internal_t *)pvTimerGetTimerID(handle);
 
     configASSERT(p != NULL);
     (void)xTimerStop(handle, portMAX_DELAY);
 
-    while (xTimerIsTimerActive(handle) == pdTRUE ) {
+    while (xTimerIsTimerActive(handle) == pdTRUE) {
         vTaskDelay(1);
     }
 
     vPortFree(p);
     return 0;
+#else
+
+    return -1;
+#endif
 }

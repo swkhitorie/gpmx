@@ -4,7 +4,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "time.h"
+#include <time.h>
 
 #undef EXTERN
 #if defined(__cplusplus)
@@ -23,6 +23,7 @@ int  utils_timespec_add                 (const struct timespec *x, const struct 
 int  utils_timespec_addnanoseconds      (const struct timespec *x, int64_t nanosec, struct timespec *y);
 int  utils_timespec_subtract            (const struct timespec *x, const struct timespec *y, struct timespec *z);
 void utils_nanoseconds_totimespec       (int64_t source, struct timespec *dst);
+
 #if defined(CONFIG_FREERTOS_ENABLE)
 int  utils_timespec_toticks             (const struct timespec *x, TickType_t *res);
 int  utils_timespec_todeltaticks        (const struct timespec *ab, const struct timespec *cur, TickType_t *res);

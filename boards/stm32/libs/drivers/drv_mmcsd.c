@@ -112,6 +112,9 @@ int _mmcsd_init(int controller)
     immc->handle.Init.BusWide             = SDMMC_BUS_WIDE_4B;
     immc->handle.Init.ClockDiv            = 6;
     ret = HAL_SD_Init(&immc->handle);
+    if (ret != HAL_OK) {
+        return -1;
+    }
 #endif
 
 #if defined(DRV_STM32_F1) || defined(DRV_STM32_F4)
@@ -134,7 +137,7 @@ int _mmcsd_init(int controller)
 #endif
 
     if (MSD_OK != stm32_mmcsd_waitrdy(immc)) {
-        return -1;
+        return -2;
     }
 
     immc->initialret = ret;

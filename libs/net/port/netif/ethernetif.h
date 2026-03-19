@@ -3,19 +3,18 @@
 
 #include "lwip/netif.h"
 
+
 #ifndef LWIP_ETHERNET_DEFAULT_IP
-#define LWIP_ETHERNET_DEFAULT_IP          "192.168.75.34"
+#define LWIP_ETHERNET_DEFAULT_IP          "192.168.1.34"
 #endif
 
 #ifndef LWIP_ETHERNET_DEFAULT_GATEWAY
-#define LWIP_ETHERNET_DEFAULT_GATEWAY     "192.168.75.1"
+#define LWIP_ETHERNET_DEFAULT_GATEWAY     "192.168.1.1"
 #endif
 
 #ifndef LWIP_ETHERNET_DEFAULT_MASK
 #define LWIP_ETHERNET_DEFAULT_MASK        "255.255.255.0"
 #endif
-
-#define NETIF_LOG(...)    printf(__VA_ARGS__)
 
 #define NIOCTL_GADDR        0x01
 #define ETHERNET_MTU        1500

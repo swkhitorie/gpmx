@@ -1,26 +1,31 @@
 #ifndef POSIX_TIME_H_
 #define POSIX_TIME_H_
 
-#include "sys/types.h"
 #include <stdbool.h>
+#include <sys/types.h>
 #include <errno.h>
 
-#if defined(CONFIG_FREERTOS_ENABLE)
-#include <FreeRTOS.h>
-#endif
-
 typedef uint32_t  time_t;         /* Holds time in seconds */
-typedef uint8_t   clockid_t;      /* Identifies one time base source */
-typedef  void* timer_t;        /* Represents one POSIX timer */
+typedef uint32_t  clockid_t;      /* Identifies one time base source */
+typedef void*     timer_t;        /* Represents one POSIX timer */
 
-#define MICROSECONDS_PER_SECOND    (1000000LL)
-#define NANOSECONDS_PER_SECOND     (1000000000LL)
-#define NANOSECONDS_PER_TICK       (NANOSECONDS_PER_SECOND/configTICK_RATE_HZ)
+#if defined(CONFIG_FREERTOS_ENABLE)
+#include "FreeRTOS.h"
+#define CLOCKS_PER_SEC     ((clock_t)configTICK_RATE_HZ)
+#elif defined(CONFIG_RTTNANO_ENABLE)
+#include "rtdef.h"
+#define CLOCKS_PER_SEC     ((clock_t)RT_TICK_PER_SECOND)
+#else
+#define CLOCKS_PER_SEC     1000
+#endif
 
 #define CLOCK_REALTIME     0
 #define CLOCK_MONOTONIC    1
-#define CLOCKS_PER_SEC     ((clock_t)configTICK_RATE_HZ)
 #define TIMER_ABSTIME      0x01
+
+#define MICROSECONDS_PER_SECOND    (1000000LL)
+#define NANOSECONDS_PER_SECOND     (1000000000LL)
+#define NANOSECONDS_PER_TICK       (NANOSECONDS_PER_SECOND/CLOCKS_PER_SEC)
 
 struct tm {
     int tm_sec;     /* Seconds (0-61, allows for leap seconds) */

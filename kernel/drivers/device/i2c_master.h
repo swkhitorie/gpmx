@@ -162,6 +162,9 @@ struct i2c_master_s
 #if defined(CONFIG_FREERTOS_ENABLE)
   SemaphoreHandle_t  sem_excl;    /* Mutual exclusion semaphore */
   SemaphoreHandle_t  sem_isr;     /* Interrupt wait semaphore */
+#elif defined(CONFIG_RTTNANO_ENABLE)
+  rt_sem_t           sem_excl;
+  rt_sem_t           sem_isr;
 #else
   volatile uint32_t flag_excl;
   volatile uint32_t flag_isr;

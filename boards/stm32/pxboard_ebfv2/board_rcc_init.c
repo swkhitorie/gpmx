@@ -185,7 +185,7 @@ void SystemInit_bsp(void)
 {
   extern void board_init();
   board_init();
-#ifndef CONFIG_FREERTOS_ENABLE
+#if !defined(CONFIG_FREERTOS_ENABLE) && !defined(CONFIG_RTTNANO_ENABLE)
   extern void board_bsp_init();
   board_bsp_init();
 #endif

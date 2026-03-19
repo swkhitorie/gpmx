@@ -1,17 +1,22 @@
+#include <mqueue.h>
+#include <fcntl.h>
+#include <errno.h>
+
 #include "./prv_mqueue.h"
-#include "utils.h"
 
 #define posixconfigMQ_MAX_MESSAGES       10 /**< Maximum number of messages in an mq at one time. */
 #define posixconfigMQ_MAX_SIZE           128 /**< Maximum size (in bytes) of each message. */
 
 mqd_t mq_open(const char *name, int oflag, mode_t mode, struct mq_attr *attr)
 {
+#if defined(CONFIG_RTTNANO_ENABLE)
+
+    return -1;
+#elif defined(CONFIG_FREERTOS_ENABLE)
+
     mqd_t msg_queue = NULL;
     size_t name_len = 0;
-    StaticSemaphore_t *queue_listmutex = get_queue_listmutex();
-    /* Default mq_attr. */
-    struct mq_attr queue_creation_attr =
-    {
+    struct mq_attr queue_creation_attr = {
         .mq_flags   = 0,
         .mq_maxmsg  = posixconfigMQ_MAX_MESSAGES,
         .mq_msgsize = posixconfigMQ_MAX_SIZE,
@@ -20,7 +25,7 @@ mqd_t mq_open(const char *name, int oflag, mode_t mode, struct mq_attr *attr)
 
     (void)mode;
     init_queuelist();
-    if (validate_queuename(name, &name_len) == pdFALSE) {
+    if (validate_queuename(name, &name_len) != 0) {
         errno = EINVAL;
         msg_queue = (mqd_t)-1;
     }
@@ -34,8 +39,9 @@ mqd_t mq_open(const char *name, int oflag, mode_t mode, struct mq_attr *attr)
     }
 
     if (msg_queue == NULL) {
-        (void)xSemaphoreTake((SemaphoreHandle_t)queue_listmutex, portMAX_DELAY);
-        if (find_queue_inlist((queuelist_element_t **)&msg_queue, name, (mqd_t)NULL) == pdTRUE) {
+        queuelist_lock();
+
+        if (find_queue_inlist((queuelist_element_t **)&msg_queue, name, (mqd_t)NULL) == 0) {
             if ((oflag & O_EXCL) && (oflag & O_CREAT)) {
                 errno = EEXIST;
                 msg_queue = (mqd_t)-1;
@@ -58,7 +64,7 @@ mqd_t mq_open(const char *name, int oflag, mode_t mode, struct mq_attr *attr)
                 }
                 queue_creation_attr.mq_flags = (long)oflag;
                 if (create_new_messagequeue((queuelist_element_t **)&msg_queue,
-                    &queue_creation_attr, name, name_len) == pdFALSE ) {
+                    &queue_creation_attr, name, name_len) != 0) {
                     errno = ENOSPC;
                     msg_queue = (mqd_t)-1;
                 }
@@ -67,7 +73,11 @@ mqd_t mq_open(const char *name, int oflag, mode_t mode, struct mq_attr *attr)
                 msg_queue = (mqd_t)-1;
             }
         }
-        (void)xSemaphoreGive((SemaphoreHandle_t)queue_listmutex);
+        queuelist_unlock();
     }
     return msg_queue;
+#else
+
+    return -1;
+#endif
 }

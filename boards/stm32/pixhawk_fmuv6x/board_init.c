@@ -53,10 +53,14 @@ void board_config_mmu()
 	MPU_InitStruct.BaseAddress      = 0x24000000;
 	MPU_InitStruct.Size             = MPU_REGION_SIZE_512KB;
 	MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
+
 	// when isBufferable is MPU_ACCESS_BUFFERABLE, sd+fatfs can not read/write
 	// when isBufferable is MPU_ACCESS_NOT_BUFFERABLE, sd+fatfs is available
 	MPU_InitStruct.IsBufferable     = MPU_ACCESS_NOT_BUFFERABLE;
-	MPU_InitStruct.IsCacheable      = MPU_ACCESS_CACHEABLE;///MPU_ACCESS_CACHEABLE;
+
+    // when add lwip+drv_eth driver, MPU_ACCESS_CACHEABLE can cause Hardfault because of MEM UNALIGN Access, But Why??
+    // code: drv_eth.c -> SMEMCPY(args, stm32_eth_device.dev_addr, 6);
+	MPU_InitStruct.IsCacheable      = MPU_ACCESS_CACHEABLE;///MPU_ACCESS_CACHEABLE;MPU_ACCESS_NOT_CACHEABLE;
 	MPU_InitStruct.IsShareable      = MPU_ACCESS_NOT_SHAREABLE;
 	MPU_InitStruct.Number           = MPU_REGION_NUMBER0;
 	MPU_InitStruct.TypeExtField     = MPU_TEX_LEVEL1;
@@ -76,7 +80,7 @@ void board_config_mmu()
 	MPU_InitStruct.SubRegionDisable = 0x00;
 	MPU_InitStruct.DisableExec      = MPU_INSTRUCTION_ACCESS_ENABLE;
 	HAL_MPU_ConfigRegion(&MPU_InitStruct);
-	
+
 	MPU_InitStruct.Enable           = MPU_REGION_ENABLE;
 	MPU_InitStruct.BaseAddress      = 0x38000000;
 	MPU_InitStruct.Size             = MPU_REGION_SIZE_64KB;

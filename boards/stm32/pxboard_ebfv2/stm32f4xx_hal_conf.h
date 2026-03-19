@@ -89,11 +89,18 @@ extern "C" {
 /* DP83848_PHY_ADDRESS Address*/
 #define DP83848_PHY_ADDRESS
 #define LAN8720_PHY_ADDRESS             (1U)
+// #define CONFIG_ETH_PHY_ADDR_USER        LAN8720_PHY_ADDRESS
 
 /* PHY Reset delay these values are based on a 1 ms Systick interrupt*/
 #define PHY_RESET_DELAY                 0x000000FFU
 /* PHY Configuration delay */
-#define PHY_CONFIG_DELAY                0x00000FFFU
+/* 
+    int HAL_Eth_Init(), 
+    after if(HAL_ETH_WritePHYRegister(heth, PHY_BCR, ((uint16_t)((heth->Init).DuplexMode >> 3U) |
+                                    (uint16_t)((heth->Init).Speed >> 1U))) != HAL_OK)
+    0xfff -> 4000ms too long, change to 1s 
+*/
+#define PHY_CONFIG_DELAY                0x000003E8U
 
 #define PHY_READ_TO                     0x0000FFFFU
 #define PHY_WRITE_TO                    0x0000FFFFU
