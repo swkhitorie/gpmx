@@ -12,8 +12,8 @@ __attribute__((weak)) int *get_errno_ptr(void)
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/stat.h>
-#include <signal.h>
-// #include "time.h"
+// #include <signal.h>
+// #include <time.h>
 
 int _getpid(void)
 {
