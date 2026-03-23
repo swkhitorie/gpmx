@@ -1,10 +1,4 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <sys/stat.h>
 #include <errno.h>
-#include <signal.h>
-// #include "time.h"
-
 static int _tmp_errno = 0;
 __attribute__((weak)) int *get_errno_ptr(void)
 {
@@ -15,6 +9,11 @@ __attribute__((weak)) int *get_errno_ptr(void)
  * Avoid Error in GCC
  ****************************************************************************/
 #if defined(__GNUC__) && !defined(__clang__)
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/stat.h>
+#include <signal.h>
+// #include "time.h"
 
 int _getpid(void)
 {
