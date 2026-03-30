@@ -175,8 +175,6 @@ static struct gringbuffer usb_rb_rx = {.capacity = BOARD_USB_CDC1_RX_BUFFER_LEN,
 
 static void usbd_event_handler(uint8_t busid, uint8_t event)
 {
-    int fsize = 0;
-
     switch (event) {
         case USBD_EVENT_RESET:
             break;

@@ -1,14 +1,12 @@
 #include <board_config.h>
 
-#ifndef CONFIG_FREERTOS_ENABLE
-int main(int argc, char **argv)
-#else
-extern "C" {
 void main_root(void *p)
-#endif
 {
-    board_test();
-}
-#ifdef CONFIG_FREERTOS_ENABLE
-}
+    hrt_init();
+    workqueue_manager_start();
+
+#if defined(BOARD_PXBOARD_EBFV2)
+
 #endif
+
+}

@@ -262,16 +262,20 @@ void _spi_dma_setup(struct spi_dev_s *dev, uint8_t flag)
     struct dma_config *dmacfg = ((void *)0);
     DMA_HandleTypeDef *dmaobj = ((void *)0);
 
+    if (DEVICE_SPI_DMA_RX == flag) {
+        dmacfg = &priv->rxdma_cfg;
+    } else if (DEVICE_SPI_DMA_TX == flag) {
+        dmacfg = &priv->txdma_cfg;
+    }
+
     if (!dmacfg->enable) {
         return;
     }
 
     if (DEVICE_SPI_DMA_RX == flag) {
-        dmacfg = &priv->rxdma_cfg;
         dmaobj = &priv->rxdma;
         __HAL_LINKDMA(&priv->hspi, hdmarx, priv->rxdma);
     } else if (DEVICE_SPI_DMA_TX == flag) {
-        dmacfg = &priv->txdma_cfg;
         dmaobj = &priv->txdma;
         __HAL_LINKDMA(&priv->hspi, hdmatx, priv->txdma);
     }

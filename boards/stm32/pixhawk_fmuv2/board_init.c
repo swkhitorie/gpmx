@@ -62,7 +62,8 @@ void board_config_power_rcc()
 
     /** Initializes the RCC Oscillators */
     RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-    RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS;
+    /** some pixhawk v2.4.8 only work in RCC_HSE_BYPASS ?? */
+    RCC_OscInitStruct.HSEState = RCC_HSE_ON;
     RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
     RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
     RCC_OscInitStruct.PLL.PLLM = STM32_PLLCFG_PLL1M;

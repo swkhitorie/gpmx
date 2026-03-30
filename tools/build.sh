@@ -55,7 +55,7 @@ done
 # echo "other: $@"
 
 if [ "$format_uorb" ]; then
-    sh ${script_dir}/uorb_gen/uorb_msg_generate.sh ${script_dir}/../msg/ ${script_dir}/../build $format_uorb
+    bash ${script_dir}/uorb_gen/uorb_msg_generate.sh ${script_dir}/../msg/ ${script_dir}/../build $format_uorb
     exit_code=$?
     if [ ${exit_code} != 0 ]
     then

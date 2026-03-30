@@ -10,10 +10,11 @@
  * [0:3] pin num 0~15
  * [31:4] pin port
  */
-
+#define __STM32_PORT(port)  port##_BASE
 #define PIN_PORT(pin)        ((uint8_t)(((pin)>>4)&0xFu))
 #define PIN_NO(pin)          ((uint8_t)((pin)&0xFu))
 #define GET_PIN(PORTx,PIN)   (uint32_t)((16*(((uint32_t)(PORTx)-(uint32_t)GPIOA_BASE)/(0x0400UL)))+PIN)
+#define GET_PINHAL(PORTx,PIN) (uint32_t)((16*(((uint32_t)__STM32_PORT(PORTx)-(uint32_t)GPIOA_BASE)/(0x0400UL)))+PIN)
 
 #define PIN_STPORT(pin)      ((GPIO_TypeDef *)(GPIOA_BASE+(0x400u*PIN_PORT(pin))))
 #define PIN_STPIN(pin)       ((uint16_t)(1u<<PIN_NO(pin)))

@@ -293,7 +293,7 @@ unittest_multi_reserved_exit:
 
 int uorb_unit_test_unadvertise()
 {
-	KMINFO("============== uORB Node: Testing unadvertise");
+	KMINFO("============== uORB Node: Testing unadvertise\r\n");
 
 	//we still have the advertisements from the previous test_multi calls.
 	for (int i = 0; i < 4; ++i) {

@@ -2,6 +2,7 @@
 #include "fatfs_test.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 
 // ff.c line 2928 create_name() func:
 // memset(dp->fn, ' ', 11) change to memset(dp->fn, ' ', 12) ??
@@ -252,5 +253,246 @@ int fatfs_test(int argc, char **argv)
     ff_ls("0:/");
 #endif
 
+	return ret;
+}
+
+#define TEST_FILE_COUNT  5
+#define TEST_FILE_SIZE   (2 * 1024 * 1024)
+#define BUFFER_SIZE      4096
+
+#define CHECK_FRESULT(res, msg) do { \
+    if ((res) != FR_OK) { \
+        TEST_PRINTF("[ERROR] %s: %d (%s)\n", msg, res, FR_Table[res]); \
+        return res; \
+    } \
+} while(0)
+
+void print_progress(uint32_t *last_print, uint32_t now)
+{
+    if (now - *last_print >= 500) {
+        TEST_PRINTF(".");
+        *last_print = now;
+    }
+}
+
+void print_size(uint64_t bytes)
+{
+    if (bytes >= 1024ULL * 1024 * 1024 * 1024) {
+        TEST_PRINTF("%.2f TB", (double)bytes / (1024ULL * 1024 * 1024 * 1024));
+    } else if (bytes >= 1024 * 1024 * 1024) {
+        TEST_PRINTF("%.2f GB", (double)bytes / (1024 * 1024 * 1024));
+    } else if (bytes >= 1024 * 1024) {
+        TEST_PRINTF("%.2f MB", (double)bytes / (1024 * 1024));
+    } else if (bytes >= 1024) {
+        TEST_PRINTF("%.2f KB", (double)bytes / 1024);
+    } else {
+        TEST_PRINTF("%llu B", bytes);
+    }
+}
+
+void print_capacity(const char *path)
+{
+    FATFS *pfs;
+    DWORD free_clust;
+    FRESULT res = f_getfree(path, &free_clust, &pfs);
+    if (res != FR_OK) {
+        TEST_PRINTF("Cannot get free space: %d\n", res);
+        return;
+    }
+    uint64_t total_sectors = (pfs->n_fatent - 2) * pfs->csize;
+    uint64_t free_sectors = free_clust * pfs->csize;
+    uint64_t total_bytes = total_sectors * pfs->ssize;
+    uint64_t free_bytes = free_sectors * pfs->ssize;
+
+    TEST_PRINTF("Total space: ");
+    print_size(total_bytes);
+    TEST_PRINTF(", Free space: ");
+    print_size(free_bytes);
+    TEST_PRINTF("\n");
+}
+
+BYTE write_buf[BUFFER_SIZE];
+BYTE read_buf[BUFFER_SIZE];
+int fatfs_total_test(int argc, char **argv)
+{
+    int ret = 0;
+    FRESULT res;
+    FIL fil;
+    DIR dir;
+    FILINFO fno;
+    char path[64];
+    UINT bw, br;
+    uint32_t start_tick, end_tick;
+    uint32_t total_write_time = 0, total_read_time = 0;
+    uint32_t total_written, total_read;
+    int i;
+
+#if !defined(CONFIG_CRUSB_DEVICE_MSC_ENABLE)
+    ff_ls("0:/");
+
+    print_capacity("0:");
+
+    TCHAR cwd[64];
+    ret = f_getcwd(cwd, sizeof(cwd));
+    if (ret == FR_OK) {
+        TEST_PRINTF("Current directory: %s\n", cwd);
+    } else {
+        TEST_PRINTF("f_getcwd error: %d\n", ret);
+    }
+
+    ret = f_mkdir("0:/test_case");
+    if (ret != FR_OK && ret != FR_EXIST) {
+        CHECK_FRESULT(ret, "f_mkdir");
+    } else if (ret == FR_EXIST) {
+        TEST_PRINTF("Directory already exists, will overwrite.\n");
+    }
+
+    ret = f_chdir("0:/test_case");
+    CHECK_FRESULT(ret, "f_chdir");
+    ret = f_getcwd(cwd, sizeof(cwd));
+    if (ret == FR_OK) {
+        TEST_PRINTF("Changed to: %s\n", cwd);
+    }
+
+    for (int j = 0; j < BUFFER_SIZE; j++) {
+        write_buf[j] = (j & 0xFF);
+    }
+
+    for (i = 0; i < TEST_FILE_COUNT; i++) {
+        TEST_PRINTF("\n--- Testing file %d/%d ---\n", i+1, TEST_FILE_COUNT);
+        sprintf(path, "speed_test_%d.txt", i+1);
+
+        res = f_open(&fil, path, FA_CREATE_ALWAYS | FA_WRITE);
+        CHECK_FRESULT(res, "f_open (write)");
+        TEST_PRINTF("Writing %u bytes to %s ...\n", TEST_FILE_SIZE, path);
+        start_tick = board_get_time();
+        total_written = 0;
+        uint32_t last_print = start_tick;
+
+        while (total_written < TEST_FILE_SIZE) {
+            UINT to_write = (TEST_FILE_SIZE - total_written) > BUFFER_SIZE ? BUFFER_SIZE : (TEST_FILE_SIZE - total_written);
+            res = f_write(&fil, write_buf, to_write, &bw);
+            if (res != FR_OK || bw != to_write) {
+                TEST_PRINTF("Write error: res=%d, bw=%u, expected=%u\n", res, bw, to_write);
+                f_close(&fil);
+                return res ? res : FR_DISK_ERR;
+            }
+            total_written += bw;
+
+            uint32_t now = board_get_time();
+            print_progress(&last_print, now);
+        }
+        TEST_PRINTF("\n");
+        end_tick = board_get_time();
+        uint32_t write_time = end_tick - start_tick;
+        total_write_time += write_time;
+        double write_speed = (double)TEST_FILE_SIZE / write_time * 1000.0 / 1024.0;
+        board_get_time("Write done in %lu ms, speed = %.2f KB/s\n", write_time, write_speed);
+
+        res = f_close(&fil);
+        CHECK_FRESULT(res, "f_close (write)");
+
+        res = f_open(&fil, path, FA_READ);
+        CHECK_FRESULT(res, "f_open (read)");
+        printf("Reading and verifying %s ...\n", path);
+        start_tick = board_get_time();
+        total_read = 0;
+        last_print = start_tick;
+        int error = 0;
+
+        while (total_read < TEST_FILE_SIZE) {
+            UINT to_read = (TEST_FILE_SIZE - total_read) > BUFFER_SIZE ? BUFFER_SIZE : (TEST_FILE_SIZE - total_read);
+            res = f_read(&fil, read_buf, to_read, &br);
+            if (res != FR_OK || br != to_read) {
+                TEST_PRINTF("Read error: res=%d, br=%u, expected=%u\n", res, br, to_read);
+                f_close(&fil);
+                return res ? res : FR_DISK_ERR;
+            }
+            for (UINT j = 0; j < br; j++) {
+                if (read_buf[j] != write_buf[j % BUFFER_SIZE]) {
+                    TEST_PRINTF("Data mismatch at offset %u (read=0x%02X, expected=0x%02X)\n",
+                                total_read + j, read_buf[j], write_buf[j % BUFFER_SIZE]);
+                    error = 1;
+                    break;
+                }
+            }
+            if (error) break;
+            total_read += br;
+
+            uint32_t now = board_get_time();
+            print_progress(&last_print, now);
+        }
+        TEST_PRINTF("\n");
+        end_tick = board_get_time();
+        uint32_t read_time = end_tick - start_tick;
+        total_read_time += read_time;
+        double read_speed = (double)TEST_FILE_SIZE / read_time * 1000.0 / 1024.0;
+        TEST_PRINTF("Read done in %lu ms, speed = %.2f KB/s\n", read_time, read_speed);
+
+        if (error) {
+            TEST_PRINTF("Verification failed!\n");
+            f_close(&fil);
+            return FR_INT_ERR;
+        } else {
+            TEST_PRINTF("Verification PASSED.\n");
+        }
+
+        res = f_close(&fil);
+        CHECK_FRESULT(res, "f_close (read)");
+
+        res = f_stat(path, &fno);
+        if (res == FR_OK) {
+            TEST_PRINTF("File size: %lu bytes, attributes: 0x%02X\n", (DWORD)fno.fsize, fno.fattrib);
+        }
+    }
+
+    TEST_PRINTF("\n=== Average Write Speed: %.2f KB/s ===\n",
+           (double)TEST_FILE_SIZE * TEST_FILE_COUNT / total_write_time * 1000.0 / 1024.0);
+    TEST_PRINTF("=== Average Read Speed:  %.2f KB/s ===\n",
+           (double)TEST_FILE_SIZE * TEST_FILE_COUNT / total_read_time * 1000.0 / 1024.0);
+
+    TEST_PRINTF("\nDeleting test files...\n");
+    res = f_opendir(&dir, ".");
+    CHECK_FRESULT(res, "f_opendir");
+    int deleted_count = 0;
+    while (1) {
+        res = f_readdir(&dir, &fno);
+        if (res != FR_OK || fno.fname[0] == 0) {
+            break;
+        }
+
+        if (fno.fname[0] == '.' || (fno.fattrib & AM_DIR)) {
+            continue;
+        }
+
+        if (strncmp(fno.fname, "speed_test_", 11) == 0) {
+            res = f_unlink(fno.fname);
+            if (res == FR_OK) {
+                TEST_PRINTF("Deleted: %s\n", fno.fname);
+                deleted_count++;
+            } else {
+                TEST_PRINTF("Failed to delete %s: %d\n", fno.fname, res);
+            }
+        }
+    }
+
+    f_closedir(&dir);
+    TEST_PRINTF("Deleted %d files.\n", deleted_count);
+
+    res = f_chdir("/");
+    CHECK_FRESULT(res, "f_chdir root");
+    res = f_rmdir("test_case");
+    if (res == FR_OK) {
+        TEST_PRINTF("Directory 'test_case' removed.\n");
+    } else { 
+        TEST_PRINTF("Failed to remove directory: %d\n", res);
+    }
+
+    TEST_PRINTF("--- After test ---\n");
+    print_capacity("0:");
+
+    TEST_PRINTF("\nTest suite completed.\n");
+
+#endif
 	return ret;
 }

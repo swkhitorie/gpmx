@@ -14,6 +14,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <drv_rtc.h>
+#include <drv_gpio.h>
 
 // #define HSE_VALUE             (25000000U)
 // #define LSE_VALUE             (32768UL)
@@ -90,6 +91,9 @@ void board_printf(const char *format, ...);
 
 bool board_rtc_set_timestamp(rclk_time_t now);
 rclk_time_t board_rtc_get_timestamp(struct rclk_timeval *now);
+
+int boardpin_setevent(uint32_t pinid, bool risingedge, bool fallingedge,
+    bool event, io_irq_entry func, void *arg, uint32_t priority);
 
 #ifdef __cplusplus
 }

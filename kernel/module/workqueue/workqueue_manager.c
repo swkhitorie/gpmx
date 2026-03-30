@@ -61,6 +61,90 @@ static struct blocking_list *_wq_manager_wqs_list;
 
 static atomic_bool_t _wq_manager_should_exit = { .val = true, };
 
+const struct wq_config_t *device_bus_to_wq(const char *bus)
+{
+	if (bus == NULL) {
+		return &wq_config_hp_default;
+
+	} else if (strstr(bus, "i2cdev0")) {
+		return &wq_config_i2c0;
+
+	} else if (strstr(bus, "i2cdev1")) {
+		return &wq_config_i2c1;
+
+	} else if (strstr(bus, "i2cdev2")) {
+		return &wq_config_i2c2;
+
+	} else if (strstr(bus, "i2cdev3")) {
+		return &wq_config_i2c3;
+
+	} else if (strstr(bus, "i2cdev4")) {
+		return &wq_config_i2c4;
+
+	} else if (strstr(bus, "spidev0")) {
+		return &wq_config_spi0;
+
+	} else if (strstr(bus, "spidev1")) {
+		return &wq_config_spi1;
+
+	} else if (strstr(bus, "spidev2")) {
+		return &wq_config_spi2;
+
+	} else if (strstr(bus, "spidev3")) {
+		return &wq_config_spi3;
+
+	} else if (strstr(bus, "spidev4")) {
+		return &wq_config_spi4;
+
+	} else if (strstr(bus, "spidev5")) {
+		return &wq_config_spi5;
+
+	} else if (strstr(bus, "spidev6")) {
+		return &wq_config_spi6;
+
+	}
+
+	// otherwise use high priority
+	return &wq_config_hp_default;
+};
+
+const struct wq_config_t *serial_port_to_wq(const char *serial)
+{
+	if (serial == NULL) {
+		return &wq_config_hp_default;
+
+	} else if (strstr(serial, "ttyS0")) {
+		return &wq_config_uart0;
+
+	} else if (strstr(serial, "ttyS1")) {
+		return &wq_config_uart1;
+
+	} else if (strstr(serial, "ttyS2")) {
+		return &wq_config_uart2;
+
+	} else if (strstr(serial, "ttyS3")) {
+		return &wq_config_uart3;
+
+	} else if (strstr(serial, "ttyS4")) {
+		return &wq_config_uart4;
+
+	} else if (strstr(serial, "ttyS5")) {
+		return &wq_config_uart5;
+
+	} else if (strstr(serial, "ttyS6")) {
+		return &wq_config_uart6;
+
+	} else if (strstr(serial, "ttyS7")) {
+		return &wq_config_uart7;
+
+	} else if (strstr(serial, "ttyS8")) {
+		return &wq_config_uart8;
+
+	}
+
+	return &wq_config_uart_unknown;
+}
+
 static struct __workqueue *find_workqueue_by_name(const char *name)
 {
     struct intrusive_node *iterator = NULL;

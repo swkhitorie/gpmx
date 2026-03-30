@@ -142,7 +142,7 @@ int uorb_device_master_advertise(struct __uorb_device_master *master, struct orb
 		return ret;
 	}
 
-	KMDEBUG("ad enter\r\n");
+	// KMDEBUG("ad enter\r\n");
 	ret = -1;
 
 	/* try for topic groups */
@@ -156,7 +156,7 @@ int uorb_device_master_advertise(struct __uorb_device_master *master, struct orb
 		group_tries = *instance;
 
 		if (group_tries >= max_group_tries) {
-			KMDEBUG("advertise exit 4\r\n");
+			// KMDEBUG("advertise exit 4\r\n");
 			return -ENOMEM;
 		}
 	}
@@ -176,7 +176,7 @@ int uorb_device_master_advertise(struct __uorb_device_master *master, struct orb
 
 		if (devpath == NULL) {
             sem_post(&master->_lock);
-			KMDEBUG("advertise exit 3 %s\r\n", nodepath);
+			// KMDEBUG("advertise exit 3 %s\r\n", nodepath);
 			return -ENOMEM;
 		}
 
@@ -189,21 +189,21 @@ int uorb_device_master_advertise(struct __uorb_device_master *master, struct orb
 			free((void *)devpath);
 			// gpdrv_free();
             sem_post(&master->_lock);
-			KMDEBUG("advertise exit 2 %u\r\n", xPortGetFreeHeapSize());
+			// KMDEBUG("advertise exit 2 %u\r\n", xPortGetFreeHeapSize());
 			return -ENOMEM;
 		}
 
 		/* initialise the node - this may fail if e.g. a node with this name already exists */
-		KMDEBUG("master register %d \r\n", *instance);
+		// KMDEBUG("master register %d \r\n", *instance);
 		ret = uorbnode_register(&node->nd); //register driver
 
 		/* if init failed, discard the node and its name */
 		if (ret != 0) {
-			KMDEBUG("master unregister %d \r\n", *instance);
+			// KMDEBUG("master unregister %d \r\n", *instance);
             uorb_device_node_deinit(node);
             gpdrv_free(node);
 
-			KMDEBUG("master unregister2 %d \r\n", *instance);
+			// KMDEBUG("master unregister2 %d \r\n", *instance);
 			if (ret == -EEXIST) {
 				/* if the node exists already, get the existing one and check if it's advertised. */
 				struct __uorb_device_node *existing_node = uorb_device_master_get_node_locked(master, meta, group_tries);
@@ -239,7 +239,7 @@ int uorb_device_master_advertise(struct __uorb_device_master *master, struct orb
 				}
 			}
 
-			KMDEBUG("master unregister3 %d \r\n", *instance);
+			// KMDEBUG("master unregister3 %d \r\n", *instance);
 		} else {
 			if (is_advertiser) {
                 uorb_device_node_mark_as_advertised(node);
@@ -255,13 +255,13 @@ int uorb_device_master_advertise(struct __uorb_device_master *master, struct orb
 	} while (ret != 0 && (group_tries < max_group_tries));
 
 	if (ret != 0 && group_tries >= max_group_tries) {
-		KMDEBUG("advertise exit 1\r\n");
+		// KMDEBUG("advertise exit 1\r\n");
 		ret = -ENOMEM;
 	}
 
     sem_post(&master->_lock);
 
-	KMDEBUG("ad end %d\r\n", ret);
+	// KMDEBUG("ad end %d\r\n", ret);
 	return ret;
 }
 

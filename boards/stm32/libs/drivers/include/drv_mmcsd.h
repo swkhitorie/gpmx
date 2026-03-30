@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-int  hw_stm32_mmcsd_init(int controller, uint32_t speed, uint8_t priority);
+int  hw_stm32_mmcsd_init(int controller, uint32_t speed, uint8_t priority, bool txdma, bool rxdma);
 
 void hw_stm32_mmcsd_info(int controller);
 

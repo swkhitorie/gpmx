@@ -78,17 +78,17 @@ static int manager_node_open(struct __uorb_manager *manager, struct orb_metadata
 		/* open the path as either the advertiser or the subscriber */
 		fd = unode_open(path, advertiser ? UORB_F_WRONLY : UORB_F_RDONLY);
 
-		KMDEBUG("fopen:%s %d \r\n", path, fd);
+		// KMDEBUG("fopen:%s %d \r\n", path, fd);
 	} else {
 		*instance = 0;
 	}
 
-	KMDEBUG("handle instance%d \r\n", *instance);
+	// KMDEBUG("handle instance%d \r\n", *instance);
 	/* we may need to advertise the node... */
 	if (fd < 0) {
 
 		ret = -1;
-		KMDEBUG("op1\r\n");
+		// KMDEBUG("op1\r\n");
 		if (uorb_manager_get_device_master(manager)) {
 			ret = uorb_device_master_advertise(manager->_device_master, meta, advertiser, instance, priority);
 		}
@@ -98,7 +98,7 @@ static int manager_node_open(struct __uorb_manager *manager, struct orb_metadata
 			ret = 0;
 		}
 
-		KMDEBUG("op2 %d %d\r\n", ret, errno);
+		// KMDEBUG("op2 %d %d\r\n", ret, errno);
 		if (ret == 0) {
 			/* update the path, as it might have been updated during the node advertise call */
 			ret = uorb_node_mkpath(path, meta, instance);
@@ -107,7 +107,7 @@ static int manager_node_open(struct __uorb_manager *manager, struct orb_metadata
 			if (ret == 0) {
 				fd = unode_open(path, (advertiser) ? UORB_F_WRONLY : UORB_F_RDONLY);
 
-				KMDEBUG("open:%d\r\n",fd);
+				// KMDEBUG("open:%d\r\n",fd);
 			} else {
 				errno = -ret;
 				return -1;
@@ -132,11 +132,11 @@ orb_advert_t orb_manager_advertise(struct __uorb_manager *manager, struct orb_me
 orb_advert_t orb_manager_advertise_multi(struct __uorb_manager *manager, struct orb_metadata *meta, const void *data, int *instance, 
                     enum ORB_PRIO priority, unsigned int queue_size)
 {
-	KMDEBUG("ad1 \r\n");
+	// KMDEBUG("ad1 \r\n");
 	/* open the node as an advertiser */
 	int fd = manager_node_open(manager, meta, true, instance, priority);
 
-	KMDEBUG("ad2 %d %u \r\n", fd, xPortGetFreeHeapSize());
+	// KMDEBUG("ad2 %d %u \r\n", fd, xPortGetFreeHeapSize());
 	if (fd == -1) {
 		KMERROR("%s advertise failed (%i)\r\n", meta->o_name, errno);
 		return NULL;
@@ -147,7 +147,7 @@ orb_advert_t orb_manager_advertise_multi(struct __uorb_manager *manager, struct 
 	 */
 	int result = unode_ioctl(fd, ORBIOCSETQUEUESIZE, (unsigned long)queue_size);
 
-	KMDEBUG("ad3 %u  set queue: %d \r\n", xPortGetFreeHeapSize(), result);
+	// KMDEBUG("ad3 %u  set queue: %d \r\n", xPortGetFreeHeapSize(), result);
 	if (result < 0 && queue_size > 1) {
 		KMWARN("orb_advertise_multi: failed to set queue size\r\n");
 	}
@@ -162,7 +162,8 @@ orb_advert_t orb_manager_advertise_multi(struct __uorb_manager *manager, struct 
 		KMWARN("px4_ioctl ORBIOCGADVERTISER failed. fd = %d\r\n", fd);
 		return NULL;
 	}
-	KMDEBUG("ad4 %x %u \r\n", advertiser, xPortGetFreeHeapSize());
+
+	// KMDEBUG("ad4 %x %u \r\n", advertiser, xPortGetFreeHeapSize());
 
 	/* the advertiser may perform an initial publish to initialise the object */
 	if (data != NULL) {
@@ -173,7 +174,7 @@ orb_advert_t orb_manager_advertise_multi(struct __uorb_manager *manager, struct 
 		}
 	}
 
-	KMDEBUG("ad5 %u\r\n", xPortGetFreeHeapSize());
+	// KMDEBUG("ad5 %u\r\n", xPortGetFreeHeapSize());
 	return advertiser;
 }
 

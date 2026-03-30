@@ -177,6 +177,38 @@ struct up_spi_dev_s spi2_dev =
 };
 
 /**************
+ * spi4 external
+ **************/
+struct up_spi_dev_s spi4_dev = 
+{
+    .dev = {
+        .frequency = 1000000,
+        .mode = SPIDEV_MODE0,
+        .nbits = 8,
+        .ops       = &g_spi_ops,
+        .priv      = &spi4_dev,
+    },
+    .id = 4,
+    .ncspin =  { .port = GPIOA, .pin = 0,  .alternate = 0,},
+    .sckpin =  { .port = GPIOE, .pin = 2, . alternate = GPIO_AF5_SPI4,},
+    .misopin = { .port = GPIOE, .pin = 5,  .alternate = GPIO_AF5_SPI4,},
+    .mosipin = { .port = GPIOE, .pin = 6, . alternate = GPIO_AF5_SPI4,},
+    .txdma_cfg = {
+        .enable = false,
+    },
+    .rxdma_cfg = {
+        .enable = false,
+    },
+    .priority = 6,
+    .dev_cs = {
+        {0x22, GPIOC, 13,}, // DRV_GYR_DEVTYPE_L3GD20  0x22
+        {0x11, GPIOC, 15,}, // DRV_IMU_DEVTYPE_LSM303D  0x11
+        {0x21, GPIOC, 2,},  // DRV_IMU_DEVTYPE_MPU6000  0x21
+        {0x3D, GPIOD, 7,},  // DRV_BARO_DEVTYPE_MS5611  0x3D
+    }
+};
+
+/**************
  * i2c2 internal --- RGB-TCA62724
  **************/
 struct up_i2c_master_s i2c2_dev = 
@@ -197,7 +229,9 @@ struct up_i2c_master_s i2c2_dev =
     .priority_error = 5,
 };
 
+#if defined(CONFIG_FREERTOS_ENABLE)
 static SemaphoreHandle_t board_printf_sem;
+#endif
 
 void board_bsp_init()
 {
@@ -216,11 +250,16 @@ void board_bsp_init()
         IOMODE_INPUT, IO_PULLUP, IO_SPEEDMAX);
 
     BOARD_LED(false);
+    VDD_5V_PERIPH_EN(false);
+    VDD_3V3_SENSOR_EN(false);
+
+    HAL_Delay(100);
+
     VDD_5V_PERIPH_EN(true);
     VDD_3V3_SENSOR_EN(true);
 
     /* delay after sensor power enable */
-    HAL_Delay(300); 
+    HAL_Delay(400); 
 
     // init spi soft cs pin
     LOW_INITPIN(GPIOC, 2,  IOMODE_OUTPP, IO_PULLUP, IO_SPEEDMAX);
@@ -237,23 +276,24 @@ void board_bsp_init()
     serial_register(&com2_dev.dev, 2);
     spi_register(&spi1_dev.dev, 1);
     spi_register(&spi2_dev.dev, 2);
+    spi_register(&spi4_dev.dev, 4);
     i2c_register(&i2c2_dev.dev, 2);
 
     serial_bus_initialize(2);
     spi_bus_initialize(1);
     spi_bus_initialize(2);
+    spi_bus_initialize(4);
     i2c_bus_initialize(2);
 
     hw_stm32_rtc_setup();
 
-#if defined(CONFIG_FATFS_ENABLE)
-    hw_stm32_mmcsd_init(1, 1, 4);
-    hw_stm32_mmcsd_info(1);
-    hw_stm32_mmcsd_fs_init(1);
-#endif
-
 #if defined(CONFIG_MODULE_CMBACKTRACE)
     cm_backtrace_init("fmuv2_test", "v1.0.0", "v1.0.1");
+#endif
+
+#if defined(CONFIG_FREERTOS_ENABLE)
+    board_printf_sem = xSemaphoreCreateBinary();
+    xSemaphoreGive(board_printf_sem);
 #endif
 
 #if defined(CONFIG_CRUSB_DEVICE_ENABLE) && defined(CONFIG_CRUSB_DEVICE_CDC_ACM_ENABLE)
@@ -267,8 +307,11 @@ void board_bsp_init()
     board_delay(400);
 #endif
 
-    board_printf_sem = xSemaphoreCreateBinary();
-    xSemaphoreGive(board_printf_sem);
+#if defined(CONFIG_FATFS_ENABLE)
+    hw_stm32_mmcsd_init(1, 0, 4, true, false);
+    hw_stm32_mmcsd_info(1);
+    hw_stm32_mmcsd_fs_init(1);
+#endif
 }
 
 void board_bsp_deinit()
@@ -508,13 +551,8 @@ void board_bsp_kernel_init(void *p)
 {
     board_bsp_init();
 
-    fm25_flash_init(2);
-    l3gd20_drv_init(1);
-    lsm303d_drv_init(1);
-    rgb_tca62724_init(2);
-
     extern void main_root(void *p);
-    xTaskCreate(main_root, "b2_init", 256, NULL, 3, NULL);
+    xTaskCreate(main_root, "b2_init", 2048, NULL, 3, NULL);
     xTaskCreate(upgrade_task, "upg_detect", 256, NULL, 8, NULL);
     vTaskDelete(NULL);
 }
@@ -522,7 +560,7 @@ void board_bsp_kernel_init(void *p)
 int main(int argc, char *argv[])
 {
     taskENTER_CRITICAL(); 
-    xTaskCreate(board_bsp_kernel_init, "b1_init", 256, NULL, 3, NULL);
+    xTaskCreate(board_bsp_kernel_init, "b1_init", 512, NULL, 3, NULL);
     taskEXIT_CRITICAL();
 
     vTaskStartScheduler();
@@ -562,22 +600,25 @@ void board_heartbeat_os(void *p)
     uint32_t ticks = 0;
     uint8_t rgb_toggle = 0;
 
+    fm25_flash_init(2);
+    rgb_tca62724_init(2);
+    fm25_flash_test(0, NULL);
+    mpu6000_drv_init(1);
+
     while (1) {
         board_led_toggle(0);
-
-        l3gd20_test();
-        lsm303d_test_accel();
-        if ((ticks % 10) == 0) {
+        board_printf("hello test\r\n");
+        if ((ticks % 2) == 0) {
             rgb_toggle = !rgb_toggle;
             if (rgb_toggle == 0) {
-                rgb_tca62724_set(RGB_COLOR_PURPLE, 50);
+                rgb_tca62724_set(RGB_COLOR_GREEN, 50);
             } else {
                 rgb_tca62724_set(RGB_COLOR_NONE, 0);
             }
         }
 
         ticks++;
-        vTaskDelay(10);
+        vTaskDelay(100);
     }
 }
 
@@ -611,9 +652,9 @@ void board_test()
         }
     }
 #else
-    int ret = BOARD_TEST_ITEM(0, NULL);
+    xTaskCreate(board_heartbeat_os, "heartbeat", 1024, NULL, 3, NULL);
 
-    xTaskCreate(board_heartbeat_os, "heartbeat", 256, NULL, 3, NULL);
+    int ret = BOARD_TEST_ITEM(0, NULL);
 
     vTaskDelete(NULL);
 #endif

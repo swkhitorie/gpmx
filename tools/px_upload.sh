@@ -18,6 +18,10 @@ if [ $FMUTYPE = "fmuv2" ]; then
 PROTOTYPE=$SCRIPTDIR/../boards/stm32/pixhawk_fmuv2/firmware.prototype
 fi
 
+if [ $FMUTYPE = "fmuv3" ]; then
+PROTOTYPE=$SCRIPTDIR/../boards/stm32/pixhawk_fmuv2/firmwarev3.prototype
+fi
+
 if [ $FMUTYPE = "fmuv6x" ]; then
 PROTOTYPE=$SCRIPTDIR/../boards/stm32/pixhawk_fmuv6x/firmware.prototype
 fi

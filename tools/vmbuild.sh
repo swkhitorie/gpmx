@@ -2,11 +2,67 @@
 
 script_dir="$(cd "$(dirname "$0")" && pwd)"
 source ${script_dir}/toolchain.sh
-app_subpath=$1
-make_thread=$2
-make_rebuild=$3
 param_num=$#
-isvm=$(systemd-detect-virt)
+
+if [ ${makefile_os} != "Linux" ]
+then
+    armcc_path=$1
+    armclang_path=$2
+    armgcc_path=$3
+    shift 3
+fi
+
+OPTS=$(getopt -o j:ra:f: --long jobs:,rebuild,app_path:,format_uorb: -- "$@") || exit 1
+eval set -- "$OPTS"
+
+jobs_count=1
+rebuild_flag=0
+app_subpath=""
+format_uorb=""
+while true; do
+    case "$1" in
+        -j | --jobs)
+            jobs_count="$2"
+            shift 2
+            ;;
+        -r | --rebuild)
+            rebuild_flag=1
+            shift 1
+            ;;
+        -a | --app_path)
+            app_subpath="$2"
+            shift 2
+            ;;
+        -f | --format_uorb)
+            format_uorb="$2"
+            shift 2
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            echo "internal error" >&2
+            exit 1
+            ;;
+    esac
+done
+
+# echo "job count (j): $jobs_count"
+# echo "rebuild_flag (r): $rebuild_flag"
+# echo "output_file (u): $app_subpath"
+# echo "format_uorb (f): $format_uorb"
+# echo "other: $@"
+
+if [ "$format_uorb" ]; then
+    bash ${script_dir}/uorb_gen/uorb_msg_generate.sh ${script_dir}/../msg/ ${script_dir}/../build $format_uorb
+    exit_code=$?
+    if [ ${exit_code} != 0 ]
+    then
+        echo "uorb_msg_generate.sh exec failed"
+        exit 1
+    fi
+fi
 
 echo "Path[gcc-arm ]:" ${armgcc_path}
 echo "Path[armcc   ]:" ${armcc_path}
@@ -32,26 +88,24 @@ if [ ! -f ${find_app_config} ];then
     exit 1
 fi
 
-if [ ${make_rebuild} ]
-then
-    if [ ${make_rebuild} == "-r" ]
-    then
-        ${script_dir}/clean.sh $1
-        echo "Rebuilding..."
-    else
-        echo "Building..."
-    fi
+if [ $rebuild_flag -eq 1 ];then
+    ${script_dir}/clean.sh $app_subpath "$@"
+    echo "Rebuilding..."
 else
     echo "Building..."
 fi
 
-make all ${make_thread} \
+build_time=$(date +"%Y%m%d_%H%M%S")
+
+make all -j${jobs_count} \
     APP_SUBPATH=${app_subpath} \
     OS=${makefile_os} \
     MAKE_TARGET_CLEANS=n \
     TC_PATH_INST_GCC=${armgcc_path} \
     TC_PATH_INST_ARMCC=${armcc_path} \
-    TC_PATH_INST_ARMCLANG=${armclang_path}
+    TC_PATH_INST_ARMCLANG=${armclang_path} \
+    MK_USE_KERNEL_UORB=${format_uorb} \
+    "$@"
 
 build_status=$?
 if [ $build_status -ne 0 ]; then
@@ -61,14 +115,16 @@ fi
 
 proj_name=$(grep '^PROJ_NAME\s*:=' "$find_app_config" | awk -F':=' '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 proj_tc=$(grep '^PROJ_TC\s*:=' "$find_app_config" | awk -F':=' '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-proj_bin=${current_dir}/bin/${proj_name}_${proj_tc}_.bin
-proj_hex=${current_dir}/bin/${proj_name}_${proj_tc}_.hex
+proj_bin=${current_dir}/bin/${proj_name}_${proj_tc}_0.bin
+proj_hex=${current_dir}/bin/${proj_name}_${proj_tc}_0.hex
+proj_elf=${current_dir}/bin/${proj_name}_${proj_tc}_0.elf
 
-if [ ! -f ${proj_bin} ] || [ ! -f ${proj_hex} ];then
+if [ ! -f ${proj_bin} ] || [ ! -f ${proj_hex} ] || [ ! -f ${proj_elf} ];then
     echo "proj file not exist"
     exit 1
 fi
 
+isvm=$(systemd-detect-virt)
 if [ ${isvm} == "vmware" ]
 then
     shared_path=/mnt/hgfs/
@@ -93,5 +149,6 @@ fi
 echo "copy to shared path ${target_shared_path}"
 cp ${proj_bin} ${target_shared_path}
 cp ${proj_hex} ${target_shared_path}
+cp ${proj_elf} ${target_shared_path}
 
 exit 0

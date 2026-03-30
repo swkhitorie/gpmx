@@ -36,7 +36,8 @@ int register_driver(const char *name, void *data)
     for (int i = 0; i < NODEMAP_LENGTH; i++) {
         if (node_map[i] == NULL) {
             node_map[i] = (struct urbnode *)data;
-            KMDEBUG("Registered DEV %d %x %x %s\r\n", i, node_map[i], unode, name);
+            // KMDEBUG("Registered DEV %d %x %x %s\r\n", i, node_map[i], unode, name);
+            // KMDEBUG("Registered DEV %d %s\r\n", i, name);
             ret = 0;
             break;
         }
@@ -45,7 +46,7 @@ int register_driver(const char *name, void *data)
     pthread_mutex_unlock(&node_mutex);
 
     if (ret != 0) {
-        // KMERROR("No free nodemap entries - increase nodemap size");
+        KMERROR("No free nodemap entries - increase nodemap size");
     }
 
     return ret;
@@ -63,7 +64,7 @@ int unregister_driver(const char *name)
     for (int i = 0; i < NODEMAP_LENGTH; i++) {
         if (node_map[i] && (strcmp(node_map[i]->_devname, name) == 0)) {
             node_map[i] = NULL;
-            KMDEBUG("Unregistered DEV %s\r\n", name);
+            // KMDEBUG("Unregistered DEV %s\r\n", name);
             ret = 0;
             break;
         }

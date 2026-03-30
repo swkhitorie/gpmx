@@ -11,12 +11,12 @@ _estack = ORIGIN(RAM) + LENGTH(RAM); /* end of "RAM" Ram type memory */
 _Min_Heap_Size = 0x1000; /* required amount of heap */
 _Min_Stack_Size = 0x1000; /* required amount of stack */
 
-/* Memories definition */
+/* Memories definition v3:2032K, v2:1024K*/
 MEMORY
 {
   CCMRAM    (xrw)    : ORIGIN = 0x10000000,   LENGTH = 64K
-  RAM    (xrw)    : ORIGIN = 0x20000000,   LENGTH = 192K
-  FLASH    (rx)    : ORIGIN = 0x8004000,   LENGTH = 1024K
+  RAM       (xrw)    : ORIGIN = 0x20000000,   LENGTH = 192K
+  FLASH     (rx)     : ORIGIN = 0x08004000,   LENGTH = 2032K
 }
 EXTERN(_bootdelay_signature)
 

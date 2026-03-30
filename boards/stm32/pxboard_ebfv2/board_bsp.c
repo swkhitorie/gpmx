@@ -50,7 +50,7 @@ uint8_t com1_txbuff[512];
 uint8_t com1_rxbuff[512];
 struct up_uart_dev_s com1_dev = {
     .dev = {
-        .baudrate = 460800,
+        .baudrate = 921600,
         .wordlen = 8,
         .stopbitlen = 1,
         .parity = 'n',
@@ -150,7 +150,7 @@ struct up_uart_dev_s com3_dev = {
 };
 
 /**************
- * Internal Sensor I2C --- MPU6050
+ * i2c1 Internal --- MPU6050
  **************/
 struct up_i2c_master_s i2c1_dev = 
 {
@@ -171,7 +171,7 @@ struct up_i2c_master_s i2c1_dev =
 };
 
 /**************
- * SPI device--- W25Q128JV
+ * spi2 Internal --- W25Q128JV
  **************/
 struct up_spi_dev_s spi1_dev = 
 {
@@ -216,7 +216,7 @@ struct up_spi_dev_s spi1_dev =
 };
 
 /**************
- * EXternal CAN Port
+ * can2 External
  **************/
 struct up_can_dev_s can2_dev = {
     .dev = {
@@ -283,19 +283,6 @@ void board_bsp_init()
     board_printf_mutex = rt_sem_create("blog", 1, RT_IPC_FLAG_PRIO);
 #endif
 
-#if defined(CONFIG_FATFS_ENABLE) && !defined(CONFIG_GPDRIVE_MMCSDSPI)
-    hw_stm32_mmcsd_init(1, 1, 4);
-    hw_stm32_mmcsd_info(1);
-    hw_stm32_mmcsd_fs_init(1);
-#endif
-
-#if defined(CONFIG_GPDRIVE_MMCSDSPI)
-    int ret = mmcsd_spi_init(&_board_mmcsd_spi_obj, &spi1_dev.dev, 0);
-    if (ret == SM_STATE_READY) {
-        hw_mmcsd_spi_fs_init(0);
-    };
-#endif
-
 #if defined(CONFIG_CRUSB_DEVICE_ENABLE) && defined(CONFIG_CRUSB_DEVICE_CDC_ACM_ENABLE)
     board_cdc_acm_init(0, USB_OTG_FS_PERIPH_BASE);
     while(!usb_device_is_configured(0))
@@ -307,6 +294,19 @@ void board_bsp_init()
 #endif
     }
     board_delay(400);
+#endif
+
+#if defined(CONFIG_FATFS_ENABLE) && !defined(CONFIG_GPDRIVE_MMCSDSPI)
+    hw_stm32_mmcsd_init(1, 0, 4, true, true);
+    hw_stm32_mmcsd_info(1);
+    hw_stm32_mmcsd_fs_init(1);
+#endif
+
+#if defined(CONFIG_GPDRIVE_MMCSDSPI)
+    int ret = mmcsd_spi_init(&_board_mmcsd_spi_obj, &spi1_dev.dev, 0);
+    if (ret == SM_STATE_READY) {
+        hw_mmcsd_spi_fs_init(0);
+    };
 #endif
 
 #if defined(CONFIG_NET_LWIP_ENABLE)
@@ -333,6 +333,18 @@ rclk_time_t board_rtc_get_timestamp(struct rclk_timeval *now)
     return hw_stm32_rtc_get_timeval(now);
 }
 
+int boardpin_setevent(uint32_t pinid, bool risingedge, bool fallingedge,
+    bool event, io_irq_entry func, void *arg, uint32_t priority)
+{
+    uint32_t pinset = 0;
+    switch (pinid) {
+    case 0x21:
+        pinset = GET_PINHAL(GPIOF, 10);
+        break;
+    }
+
+    return stm32_pin_setevent(pinset, risingedge, fallingedge, event, func, arg, priority);
+}
 /****************************************************************************
  * Board Stream serial/usb interface
  ****************************************************************************/

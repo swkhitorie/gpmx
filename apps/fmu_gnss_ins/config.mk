@@ -40,6 +40,4 @@ MK_USE_CRUSB_IP=dwc2_st
 
 include ${SDK_ROOTDIR}/apps/board_selection.mk
 
-PROJ_CDEFS += ${TEST_ITEM}
 CPPSOURCES += ${APP_PROJ_DIR}/app_main.cpp
-

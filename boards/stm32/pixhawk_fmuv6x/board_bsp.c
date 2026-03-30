@@ -94,7 +94,7 @@ void board_bsp_init()
 #endif
 
 #if defined(CONFIG_FATFS_ENABLE)
-    hw_stm32_mmcsd_init(2, 1, 4);
+    hw_stm32_mmcsd_init(2, 1, 4, true, true);
     hw_stm32_mmcsd_info(2);
     hw_stm32_mmcsd_fs_init(2);
 #endif

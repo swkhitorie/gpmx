@@ -37,6 +37,7 @@ int wqueue_sched_main()
     wqueue_run_cnt_2 = 0;
 
     // Put work in the work queue
+    schedule_workitem_clear(&wqueue_sched_test_item);
     schedule_workitem_oninterval(&wqueue_sched_test_item, 4000, 0);
 
     // Wait for work to finsh

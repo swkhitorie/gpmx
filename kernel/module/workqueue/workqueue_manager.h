@@ -52,6 +52,9 @@ extern const struct wq_config_t wq_config_lp_default;
 extern const struct wq_config_t wq_config_test1;
 extern const struct wq_config_t wq_config_test2;
 
+const struct wq_config_t *device_bus_to_wq(const char *bus);
+const struct wq_config_t *serial_port_to_wq(const char *serial);
+
 int workqueue_manager_start();
 int workqueue_manager_stop();
 int workqueue_manager_status();

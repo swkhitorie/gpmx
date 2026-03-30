@@ -1,5 +1,7 @@
 #include "drv_mmcsd.h"
 
+#include <device/dnode.h>
+
 #include <board_config.h>
 #ifndef MMCSD_INFO
 #include <stdio.h>
@@ -33,6 +35,9 @@ struct stm32_mmcsd_dev_s
     bool isinitalized;
     int  initialret;
 
+    bool txdmaenable;
+    bool rxdmaenable;
+
     SD_HandleTypeDef       handle;
 	HAL_SD_CardCIDTypedef  cid;
 	HAL_SD_CardCSDTypedef  csd;
@@ -42,7 +47,7 @@ struct stm32_mmcsd_dev_s
 
 static void _mmcsd_clk_init(int controller);
 static void _mmcsd_irq_cfg(int controller, uint8_t priority);
-static int  _mmcsd_init(int controller);
+static int  _mmcsd_init(int controller, uint32_t speed);
 
 static int  stm32_mmcsd_waitrdy(struct stm32_mmcsd_dev_s *dev);
 static void stm32_mmcsd_get_cardinfo(struct stm32_mmcsd_dev_s *dev);
@@ -92,7 +97,7 @@ void _mmcsd_irq_cfg(int controller, uint8_t priority)
 #endif
 }
 
-int _mmcsd_init(int controller)
+int _mmcsd_init(int controller, uint32_t speed)
 {
     int ret = 0;
 
@@ -104,13 +109,14 @@ int _mmcsd_init(int controller)
     sd_clk.PeriphClockSelection     = RCC_PERIPHCLK_SDMMC;
     sd_clk.SdmmcClockSelection      = RCC_SDMMCCLKSOURCE_PLL;
     HAL_RCCEx_PeriphCLKConfig(&sd_clk);
+    // uint32_t mmcsd_periph_freq = HAL_RCCEx_GetPeriphCLKFreq(RCC_SDMMCCLKSOURCE_PLL);
 
     immc->handle.Instance                 = (controller==1) ? SDMMC1 : SDMMC2;
     immc->handle.Init.ClockPowerSave      = SDMMC_CLOCK_POWER_SAVE_DISABLE;
     immc->handle.Init.ClockEdge           = SDMMC_CLOCK_EDGE_RISING;
     immc->handle.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
     immc->handle.Init.BusWide             = SDMMC_BUS_WIDE_4B;
-    immc->handle.Init.ClockDiv            = 6;
+    immc->handle.Init.ClockDiv            = speed;
     ret = HAL_SD_Init(&immc->handle);
     if (ret != HAL_OK) {
         return -1;
@@ -118,13 +124,15 @@ int _mmcsd_init(int controller)
 #endif
 
 #if defined(DRV_STM32_F1) || defined(DRV_STM32_F4)
+    // uint32_t mmcsd_periph_freq = HAL_RCC_GetPCLK2Freq();
+
     immc->handle.Instance = SDIO;
     immc->handle.Init.ClockEdge           = SDIO_CLOCK_EDGE_RISING;
     immc->handle.Init.ClockBypass         = SDIO_CLOCK_BYPASS_DISABLE;
     immc->handle.Init.ClockPowerSave      = SDIO_CLOCK_POWER_SAVE_DISABLE;
     immc->handle.Init.BusWide             = SDIO_BUS_WIDE_1B;
     immc->handle.Init.HardwareFlowControl = SDIO_HARDWARE_FLOW_CONTROL_DISABLE;
-    immc->handle.Init.ClockDiv            = 0;
+    immc->handle.Init.ClockDiv            = speed;
     ret = HAL_SD_Init(&immc->handle);
 
     if (MSD_OK != stm32_mmcsd_waitrdy(immc)) {
@@ -188,6 +196,11 @@ int stm32_mmcsd_erase(struct stm32_mmcsd_dev_s *dev, uint32_t start, uint32_t en
 int stm32_mmcsd_reads(struct stm32_mmcsd_dev_s *dev, uint32_t *p, uint32_t addr, uint32_t num, int way)
 {
     int ret;
+
+#if defined(CONFIG_FREERTOS_ENABLE) || defined(CONFIG_RTTNANO_ENABLE)
+    int flag = gpdrv_enter_critical_section();
+#endif
+
     switch (way) {
     case 0:
         ret = (HAL_SD_ReadBlocks(&dev->handle, (uint8_t *)p, addr, num, 1000U*num) == HAL_OK) ? MSD_OK : MSD_ERROR;
@@ -196,12 +209,22 @@ int stm32_mmcsd_reads(struct stm32_mmcsd_dev_s *dev, uint32_t *p, uint32_t addr,
         ret = (HAL_SD_ReadBlocks_DMA(&dev->handle, (uint8_t *)p, addr, num) == HAL_OK) ? MSD_OK : MSD_ERROR;
         break;
     }
+
+#if defined(CONFIG_FREERTOS_ENABLE) || defined(CONFIG_RTTNANO_ENABLE)
+    gpdrv_leave_critical_section(flag);
+#endif
+
     return ret;
 }
 
 int stm32_mmcsd_writes(struct stm32_mmcsd_dev_s *dev, uint32_t *p, uint32_t addr, uint32_t num, int way)
 {
     int ret;
+
+#if defined(CONFIG_FREERTOS_ENABLE) || defined(CONFIG_RTTNANO_ENABLE)
+    int flag = gpdrv_enter_critical_section();
+#endif
+
     switch (way) {
     case 0:
         ret = (HAL_SD_WriteBlocks(&dev->handle, (uint8_t *)p, addr, num, 1000U*num) == HAL_OK) ? MSD_OK : MSD_ERROR;
@@ -210,6 +233,11 @@ int stm32_mmcsd_writes(struct stm32_mmcsd_dev_s *dev, uint32_t *p, uint32_t addr
         ret = (HAL_SD_WriteBlocks_DMA(&dev->handle, (uint8_t *)p, addr, num) == HAL_OK) ? MSD_OK : MSD_ERROR;
         break;
     }
+
+#if defined(CONFIG_FREERTOS_ENABLE) || defined(CONFIG_RTTNANO_ENABLE)
+    gpdrv_leave_critical_section(flag);
+#endif
+
     return ret;
 }
 
@@ -217,15 +245,18 @@ int stm32_mmcsd_writes(struct stm32_mmcsd_dev_s *dev, uint32_t *p, uint32_t addr
  * Public Function Interface 
  ****************************************************************************/
 
-int hw_stm32_mmcsd_init(int controller, uint32_t speed, uint8_t priority)
+int hw_stm32_mmcsd_init(int controller, uint32_t speed, uint8_t priority, bool txdma, bool rxdma)
 {
     int ret = 0;
+    struct stm32_mmcsd_dev_s *immc = &mmcsd_list[controller-1];
+    immc->txdmaenable = txdma;
+    immc->rxdmaenable = rxdma;
 
     _mmcsd_clk_init(controller);
 
     _mmcsd_irq_cfg(controller, priority);
 
-    ret = _mmcsd_init(controller);
+    ret = _mmcsd_init(controller, speed);
 
     return ret;
 }
@@ -235,6 +266,7 @@ void hw_stm32_mmcsd_info(int controller)
     struct stm32_mmcsd_dev_s *mmc = &mmcsd_list[controller-1];
     float total_capacity = 0;
     int tmp;
+    int cardversion = 0;
 
     MMCSD_INFO("\r\n");
 
@@ -251,21 +283,15 @@ void hw_stm32_mmcsd_info(int controller)
         return;
     }
 
-    total_capacity = (float)(mmc->info.LogBlockNbr) / 1024.0f / 1024.0f / 1024.0f;
-    MMCSD_INFO("[mmcsd] block sz: %db, capacity: %.2fGB\r\n",
-        mmc->info.BlockSize, total_capacity * mmc->info.BlockSize);
+    if (mmc->info.CardVersion == CARD_V1_X) {
+        cardversion = 1;
+    } else if (mmc->info.CardVersion == CARD_V2_X) {
+        cardversion = 2;
+    }
 
-    // switch (mmc->info.CardSpeed) {
-    // case CARD_NORMAL_SPEED:
-    //     MMCSD_INFO("[mmcsd] Normal Speed Card <12.5Mo/s , Spec Version 1.01 \r\n");
-    //     break;
-    // case CARD_HIGH_SPEED:
-    //     MMCSD_INFO("[mmcsd] High Speed Card <25Mo/s , Spec version 2.00 \r\n");
-    //     break;
-    // case CARD_ULTRA_HIGH_SPEED:
-    //     MMCSD_INFO("[mmcsd] UHS-I SD Card <50Mo/s for SDR50, DDR5 Cards and <104Mo/s for SDR104, Spec version 3.01 \r\n");
-    //     break;	
-    // }
+    total_capacity = (float)(mmc->info.LogBlockNbr) / 1024.0f / 1024.0f / 1024.0f;
+    MMCSD_INFO("[mmcsd] card version:v%d.x block sz: %db, capacity: %.2fGB\r\n",
+        cardversion, mmc->info.BlockSize, total_capacity * mmc->info.BlockSize);
 
     switch (mmc->info.CardType) {
     case CARD_SDSC:
@@ -279,14 +305,22 @@ void hw_stm32_mmcsd_info(int controller)
         break;
     }
 
-    switch (mmc->info.CardVersion) {
-    case CARD_V1_X:
-        MMCSD_INFO("[mmcsd] v1.x \r\n");
+#if defined(DRV_STM32_H7)
+    MMCSD_INFO("[mmcsd] periphclk: %lu\r\n", HAL_RCCEx_GetPeriphCLKFreq(RCC_SDMMCCLKSOURCE_PLL));
+    switch (mmc->info.CardSpeed) {
+    case CARD_NORMAL_SPEED:
+        MMCSD_INFO("[mmcsd] Normal Speed Card <12.5Mo/s , Spec Version 1.01 \r\n");
         break;
-    case CARD_V2_X:
-        MMCSD_INFO("[mmcsd] v2.x \r\n");
+    case CARD_HIGH_SPEED:
+        MMCSD_INFO("[mmcsd] High Speed Card <25Mo/s , Spec version 2.00 \r\n");
         break;
+    case CARD_ULTRA_HIGH_SPEED:
+        MMCSD_INFO("[mmcsd] UHS-I SD Card <50Mo/s for SDR50, DDR5 Cards and <104Mo/s for SDR104, Spec version 3.01 \r\n");
+        break;	
     }
+#else
+    MMCSD_INFO("[mmcsd] periphclk: %lu\r\n", HAL_RCC_GetPCLK2Freq());
+#endif
 }
 
 
@@ -467,7 +501,7 @@ DRESULT mmcsd_read(BYTE lun, BYTE *buff, DWORD sector, UINT count)
 {
     int ret = 0;
     uint32_t time = 0; 
-    bool use_dma = true;
+    bool use_dma = fs_mmc->rxdmaenable;
 
 	read_status = 0;
     ret = stm32_mmcsd_reads(fs_mmc, (uint32_t *)buff, sector, count, ((use_dma) ? 1 : 0));
@@ -496,12 +530,11 @@ DRESULT mmcsd_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
 {
     int ret = 0;
     uint32_t time = 0;
-    bool use_dma = true;
+    bool use_dma = fs_mmc->txdmaenable;
 
 	write_status = 0;
     ret = stm32_mmcsd_writes(fs_mmc, (uint32_t *)buff, sector, count, ((use_dma) ? 1 : 0));
-    if (ret != MSD_OK) {
-
+    if (ret != MSD_OK) { 
         return RES_ERROR;
     }
 

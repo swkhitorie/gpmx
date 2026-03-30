@@ -108,7 +108,7 @@ int uorb_device_node_open(struct urbnode *node)
     struct __uorb_device_node *unode = NULL;
     unode = container_of(node, struct __uorb_device_node, nd);
 
-	KMDEBUG("node_open %d \r\n", unode->nd._oflags);
+	// KMDEBUG("node_open %d \r\n", unode->nd._oflags);
 	/* is this a publisher? */
 	if (unode->nd._oflags == UORB_F_WRONLY) {
 
@@ -404,7 +404,7 @@ int uorb_device_node_unadvertise(orb_advert_t handle)
 	 */
 	devnode->_advertised = false;
 
-	KMDEBUG("unadvertise: %s\r\n", devnode->nd._devname);
+	// KMDEBUG("unadvertise: %s\r\n", devnode->nd._devname);
 	return 0;
 }
 
