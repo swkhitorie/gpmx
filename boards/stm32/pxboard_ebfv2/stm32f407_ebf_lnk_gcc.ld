@@ -73,6 +73,11 @@ SECTIONS
     *(.glue_7t)        /* glue thumb to arm code */
     *(.eh_frame)
 
+    . = ALIGN(4);
+    __fsymtab_start = .;
+    KEEP(*(FSymTab)) 
+    __fsymtab_end = .;
+
     KEEP (*(.init))
     KEEP (*(.fini))
 

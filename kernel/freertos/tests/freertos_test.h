@@ -18,6 +18,7 @@ int freertos_sem_test(int argc, char **argv);
 int freertos_task_test(int argc, char **argv);
 int freertos_timer_test(int argc, char **argv);
 int freertos_status_test(int argc, char **argv);
+int freertos_eventgroup_test(int argc, char **argv);
 
 #ifdef __cplusplus
 }

@@ -50,7 +50,7 @@ uint8_t com1_txbuff[512];
 uint8_t com1_rxbuff[512];
 struct up_uart_dev_s com1_dev = {
     .dev = {
-        .baudrate = 921600,
+        .baudrate = 460800,
         .wordlen = 8,
         .stopbitlen = 1,
         .parity = 'n',
@@ -339,7 +339,7 @@ int boardpin_setevent(uint32_t pinid, bool risingedge, bool fallingedge,
     uint32_t pinset = 0;
     switch (pinid) {
     case 0x21:
-        pinset = GET_PINHAL(GPIOF, 10);
+        pinset = GET_PIN(GPIOF, 10);
         break;
     }
 
@@ -414,6 +414,10 @@ void board_stream_printf(int port, const char *format, ...)
 #if defined(CONFIG_MODULE_KPRINTF)
 void _putchar(char ch)
 {
+    if (ch == '\n') {
+        _putchar('\r');
+    }
+
 #if (CONFIG_BOARD_PRINTF_SOURCE == 1)
 
     SERIAL_SEND(&com1_dev.dev, &ch, 1);
@@ -428,7 +432,12 @@ void _putchar(char ch)
 
 int fputc(int c, FILE *f)
 {
+    if (ch == '\n') {
+        fputc('\r', f);
+    }
+
 #if (CONFIG_BOARD_PRINTF_SOURCE == 1)
+
     SERIAL_SEND(&com1_dev.dev, ptr, len);
 #endif
 }

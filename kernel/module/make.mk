@@ -10,6 +10,13 @@ PROJ_CINCDIRS += kernel/module/kprintf
 CSOURCES += kernel/module/kprintf/kprintf.c
 endif
 
+ifeq (${MK_USE_MODULE_GPMSHELL},y)
+PROJ_CDEFS += CONFIG_MODULE_GPMSHELL
+PROJ_CINCDIRS += kernel/module/gmsh
+CSOURCES += kernel/module/gmsh/msh.c
+CSOURCES += kernel/module/gmsh/shell.c
+endif
+
 ifeq (${MK_USE_KERNEL_CPP},y)
 PROJ_CDEFS += CONFIG_MODULE_KCPP
 PROJ_CINCDIRS += kernel/module/libc/cxx
