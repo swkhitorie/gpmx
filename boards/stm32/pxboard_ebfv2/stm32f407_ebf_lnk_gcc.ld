@@ -192,13 +192,13 @@ SECTIONS
     __bss_end__ = _ebss;
   } >RAM
 
-  SRAM_region (NOLOAD):
+  fmcsram_region (NOLOAD):
   {
-    _sSRAM_region = .;         /* define a global symbol at section start */
-    *(.SRAM_region)
-
+    _sfmcsram = .;         /* define a global symbol at section start */
+    *(.fmcsram)
+    *(.fmcsram*)
     . = ALIGN(8);
-    _eSRAM_region = .;         /* define a global symbol at section end */
+    _efmcsram = .;         /* define a global symbol at section end */
   } >SRAM
 
   /* User_heap_stack section, used to check that there is enough "RAM" Ram  type memory left */

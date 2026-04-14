@@ -54,15 +54,15 @@ extern uint32_t SystemCoreClock;
  * 1: defined by user 
  * uint8_t ucHeap[configTOTAL_HEAP_SIZE]
  */
-#define configAPPLICATION_ALLOCATED_HEAP        0                     
-#define configTOTAL_HEAP_SIZE					((size_t)(48*1024))     /* total heap size, unit in byte */
+#define configAPPLICATION_ALLOCATED_HEAP        1                     
+#define configTOTAL_HEAP_SIZE					((size_t)(63*1024))     /* total heap size, unit in byte */
 #define configCPU_CLOCK_HZ						(SystemCoreClock)             /* CPU Frequence */
 #define configTICK_RATE_HZ						(1000)                  /* RTOS Kernel timer Frequence */
 #define configMAX_PRIORITIES					(32)                    /* Task Max Priority */
 #define configMINIMAL_STACK_SIZE				((unsigned short)130)   /* Idle Task Stack Size, unit in word */
 #define configMAX_TASK_NAME_LEN					(16)                    /* Task NameString Max Len */
 
-#define configGENERATE_RUN_TIME_STATS	        0                       /* 1: Enable Task cpu utilization analyze */
+#define configGENERATE_RUN_TIME_STATS	        1                       /* 1: Enable Task cpu utilization analyze */
 #define configSUPPORT_DYNAMIC_ALLOCATION        1                       /* 1: support dynamic allocation */
 #define configSUPPORT_STATIC_ALLOCATION         1                       /* 1: support static allocation */
 
@@ -93,7 +93,7 @@ extern uint32_t SystemCoreClock;
 #define configMAX_CO_ROUTINE_PRIORITIES         2                               /* Croutine Valid Priority num */
 #define configIDLE_SHOULD_YIELD					1     /* if 1, Idle Task will give cpu up to other task having same priority */
 #define configQUEUE_REGISTRY_SIZE				16    /* if not 0, value can indicate queue and sempahore recorded num */
-#define configCHECK_FOR_STACK_OVERFLOW			0     /* if bigger than 0, user add a stack overflow detection hook function, 1 and 2 means two detection method */
+#define configCHECK_FOR_STACK_OVERFLOW			2     /* if bigger than 0, user add a stack overflow detection hook function, 1 and 2 means two detection method */
 
 /****************************************************************************
  * FreeRTOS Function Link, Recommand 1, Linker will add or delete automatically

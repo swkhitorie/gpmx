@@ -68,6 +68,7 @@ extern "C"
 #endif
 
 clock_t clock(void);
+double	difftime(time_t time2, time_t time1);
 
 int clock_settime(clockid_t clockid,  const struct timespec *tp);
 int clock_gettime(clockid_t clockid,  struct timespec *tp);

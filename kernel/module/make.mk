@@ -4,6 +4,12 @@ PROJ_CINCDIRS += kernel/module/libc/include
 PROJ_CINCDIRS += kernel/module/libc/tests
 CSOURCES += kernel/module/libc/utils/compile_utils.c
 
+ifeq (${MK_USE_MODULE_RTXMEM},y)
+PROJ_CDEFS += CONFIG_MODULE_MEMRTX
+PROJ_CINCDIRS += kernel/module/mem
+CSOURCES += kernel/module/mem/rtx_mem.c
+endif
+
 ifeq (${MK_USE_MODULE_KPRINTF},y)
 PROJ_CDEFS += CONFIG_MODULE_KPRINTF
 PROJ_CINCDIRS += kernel/module/kprintf

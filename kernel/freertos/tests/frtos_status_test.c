@@ -68,11 +68,13 @@ int list_rtos(void)
 
     for (i = 0; i < sz; i++) {
         TaskStatus_t *status = &p_tasks[i];
-        total_cnter += status->ulRunTimeCounter;
+        if (strncmp(status->pcTaskName,"IDLE",4)) {
+            total_cnter += status->ulRunTimeCounter;
+        }
     }
 
     TEST_PRINTF("[main]CPU usage: %3.2f - Clock freq %u\r\n",
-        (float) total_cnter / total_run, configCPU_CLOCK_HZ);
+        (float) total_cnter / total_run * 100.0f, configCPU_CLOCK_HZ);
 
     TEST_PRINTF("[main]MEM usage: heap total size %8d, req %8d, free %8d\r\n",
         configTOTAL_HEAP_SIZE, configTOTAL_HEAP_SIZE - free_heap_sz, free_heap_sz);

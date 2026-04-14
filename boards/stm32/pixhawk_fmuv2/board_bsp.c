@@ -571,25 +571,6 @@ int main(int argc, char *argv[])
 /****************************************************************************
  * TEST
  ****************************************************************************/
-#ifdef CONFIG_FREERTOS_ENABLE
-#include "freertos_test.h"
-#ifdef CONFIG_MODULE_KPOSIX
-#include "kernel_libc_tests.h"
-#endif
-#endif
-
-#if defined(CONFIG_LFS_ENABLE)
-#include "lfs_test.h"
-#endif
-
-#if defined(CONFIG_FATFS_ENABLE)
-#include "fatfs_test.h"
-#endif
-
-#if defined(CONFIG_MODULE_CMBACKTRACE)
-#include "fault_test.h"
-#endif
-
 #ifndef BOARD_TEST_ITEM
 #define BOARD_TEST_ITEM board_test_os_start
 #endif

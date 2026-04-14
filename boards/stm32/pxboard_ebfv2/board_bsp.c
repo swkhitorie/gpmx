@@ -17,6 +17,7 @@
 #if defined(CONFIG_FREERTOS_ENABLE)
 #include <FreeRTOS.h>
 #include <task.h>
+__attribute__((section(".ccmram"))) uint8_t ucHeap[configTOTAL_HEAP_SIZE];
 #endif
 
 #if defined(CONFIG_RTTNANO_ENABLE)
@@ -50,7 +51,7 @@ uint8_t com1_txbuff[512];
 uint8_t com1_rxbuff[512];
 struct up_uart_dev_s com1_dev = {
     .dev = {
-        .baudrate = 460800,
+        .baudrate = 921600,
         .wordlen = 8,
         .stopbitlen = 1,
         .parity = 'n',
@@ -98,10 +99,10 @@ struct up_uart_dev_s com1_dev = {
 /**************
  * uart3 port -- esp8266
  **************/
-uint8_t com3_dma_rxbuff[1024];
+uint8_t com3_dma_rxbuff[1024*16];
 uint8_t com3_dma_txbuff[256];
 uint8_t com3_txbuff[256];
-uint8_t com3_rxbuff[1024];
+uint8_t com3_rxbuff[1024*8];
 struct up_uart_dev_s com3_dev = {
     .dev = {
         .baudrate = 460800,
@@ -109,7 +110,7 @@ struct up_uart_dev_s com3_dev = {
         .stopbitlen = 1,
         .parity = 'n',
         .recv = {
-            .capacity = 1024,
+            .capacity = 1024*8,
             .buffer = com3_rxbuff,
         },
         .xmit = {
@@ -117,7 +118,7 @@ struct up_uart_dev_s com3_dev = {
             .buffer = com3_txbuff,
         },
         .dmarx = {
-            .capacity = 1024,
+            .capacity = 1024*16,
             .buffer = com3_dma_rxbuff,
         },
         .dmatx = {
@@ -516,6 +517,9 @@ void vApplicationGetTimerTaskMemory( StaticTask_t **ppxTimerTaskTCBBuffer,
 void board_bsp_kernel_init(void *p)
 {
     board_bsp_init();
+#if defined(CONFIG_MODULE_HRT)
+    hrt_init();
+#endif
     extern void main_root(void *p);
     xTaskCreate(main_root, "b2_init", 2048, NULL, 3, NULL);
     vTaskDelete(NULL);
@@ -535,14 +539,6 @@ int main(int argc, char *argv[])
 /****************************************************************************
  * TEST
  ****************************************************************************/
-#ifdef CONFIG_FREERTOS_ENABLE
-#include "freertos_test.h"
-#include "kernel_libc_tests.h"
-#ifdef CONFIG_MODULE_HRT
-#include "hrt_test.h"
-#endif
-#endif
-
 #ifndef BOARD_TEST_ITEM
 #define BOARD_TEST_ITEM board_test_os_start
 #endif
@@ -601,4 +597,9 @@ void board_test()
 
     vTaskDelete(NULL);
 #endif
+}
+
+void vApplicationStackOverflowHook( TaskHandle_t xTask, char *pcTaskName )
+{
+    board_printf("task stack overflow:%s \r\n", pcTaskName);
 }

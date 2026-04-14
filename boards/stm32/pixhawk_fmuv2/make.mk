@@ -65,6 +65,11 @@ ifeq (${MK_USE_FS_FATFS},y)
 PROJ_CDEFS += CONFIG_STM32_MMCSD_FATFS_ENABLE
 endif
 
+ifeq (${MK_USE_KERNEL_HRT},y)
+PROJ_CINCDIRS += ${BOARD_BSP_PATH}/hrtimer
+CSOURCES += ${BOARD_BSP_PATH}/hrtimer/hrt.c
+endif
+
 ifeq (${MK_USE_CRUSB},y)
 ifeq (${MK_USE_CRUSB_IP},dwc2_st)
 ifneq ($(filter cdc_acm, $(MK_USE_CRUSB_CLASS)),)
