@@ -1,4 +1,5 @@
 #include <board_config.h>
+#include <drv_perf.h>
 #include <drv_uart.h>
 #include <drv_i2c.h>
 #include <drv_spi.h>
@@ -17,7 +18,10 @@
 #if defined(CONFIG_FREERTOS_ENABLE)
 #include <FreeRTOS.h>
 #include <task.h>
+#if configAPPLICATION_ALLOCATED_HEAP
+// CCM RAM Can not run code
 __attribute__((section(".ccmram"))) uint8_t ucHeap[configTOTAL_HEAP_SIZE];
+#endif
 #endif
 
 #if defined(CONFIG_RTTNANO_ENABLE)
@@ -27,6 +31,7 @@ __attribute__((section(".ccmram"))) uint8_t ucHeap[configTOTAL_HEAP_SIZE];
 
 #if defined(CONFIG_MODULE_CMBACKTRACE)
 #include "cm_backtrace.h"
+#include "hardfault_log.h"
 #endif
 
 #if defined(CONFIG_MODULE_KPRINTF)
@@ -42,33 +47,53 @@ __attribute__((section(".ccmram"))) uint8_t ucHeap[configTOTAL_HEAP_SIZE];
 mmcsd_obj_t _board_mmcsd_spi_obj;
 #endif
 
+#if defined(CONFIG_MODULE_HRT)
+#include <drv_hrt.h>
+#endif
+
+#if defined(CONFIG_MODULE_WORKQUEUE)
+#include <workqueue_manager.h>
+#endif
+
+#if defined(CONFIG_MODULE_GPMSHELL)
+#include "gmsh.h"
+#include "shell.h"
+#endif
+
 /**************
  * uart1 port -- debug/log
  **************/
-uint8_t com1_dma_rxbuff[256];
-uint8_t com1_dma_txbuff[256];
-uint8_t com1_txbuff[512];
-uint8_t com1_rxbuff[512];
+#if !defined(SERIAL1_CONFIG)
+#define SERIAL1_DMA_RXBUFFER_LEN    (128)
+#define SERIAL1_DMA_TXBUFFER_LEN    (64)
+#define SERIAL1_TXBUFFER_LEN        (64)
+#define SERIAL1_RXBUFFER_LEN        (64)
+#define SERIAL1_BAUDRATE            (460800)
+#endif
+uint8_t com1_dma_rxbuff[SERIAL1_DMA_RXBUFFER_LEN];
+uint8_t com1_dma_txbuff[SERIAL1_DMA_TXBUFFER_LEN];
+uint8_t com1_txbuff[SERIAL1_TXBUFFER_LEN];
+uint8_t com1_rxbuff[SERIAL1_RXBUFFER_LEN];
 struct up_uart_dev_s com1_dev = {
     .dev = {
-        .baudrate = 921600,
+        .baudrate = SERIAL1_BAUDRATE,
         .wordlen = 8,
         .stopbitlen = 1,
         .parity = 'n',
         .recv = {
-            .capacity = 512,
+            .capacity = SERIAL1_RXBUFFER_LEN,
             .buffer = com1_rxbuff,
         },
         .xmit = {
-            .capacity = 512,
+            .capacity = SERIAL1_TXBUFFER_LEN,
             .buffer = com1_txbuff,
         },
         .dmarx = {
-            .capacity = 256,
+            .capacity = SERIAL1_DMA_RXBUFFER_LEN,
             .buffer = com1_dma_rxbuff,
         },
         .dmatx = {
-            .capacity = 256,
+            .capacity = SERIAL1_DMA_TXBUFFER_LEN,
             .buffer = com1_dma_txbuff,
         },
         .ops       = &g_uart_ops,
@@ -99,10 +124,17 @@ struct up_uart_dev_s com1_dev = {
 /**************
  * uart3 port -- esp8266
  **************/
-uint8_t com3_dma_rxbuff[1024*16];
-uint8_t com3_dma_txbuff[256];
-uint8_t com3_txbuff[256];
-uint8_t com3_rxbuff[1024*8];
+#if !defined(SERIAL3_CONFIG)
+#define SERIAL3_DMA_RXBUFFER_LEN    (128)
+#define SERIAL3_DMA_TXBUFFER_LEN    (64)
+#define SERIAL3_TXBUFFER_LEN        (64)
+#define SERIAL3_RXBUFFER_LEN        (64)
+#define SERIAL3_BAUDRATE            (460800)
+#endif
+uint8_t com3_dma_rxbuff[SERIAL3_DMA_RXBUFFER_LEN];
+uint8_t com3_dma_txbuff[SERIAL3_DMA_TXBUFFER_LEN];
+uint8_t com3_txbuff[SERIAL3_TXBUFFER_LEN];
+uint8_t com3_rxbuff[SERIAL3_RXBUFFER_LEN];
 struct up_uart_dev_s com3_dev = {
     .dev = {
         .baudrate = 460800,
@@ -110,19 +142,19 @@ struct up_uart_dev_s com3_dev = {
         .stopbitlen = 1,
         .parity = 'n',
         .recv = {
-            .capacity = 1024*8,
+            .capacity = SERIAL3_RXBUFFER_LEN,
             .buffer = com3_rxbuff,
         },
         .xmit = {
-            .capacity = 256,
+            .capacity = SERIAL3_TXBUFFER_LEN,
             .buffer = com3_txbuff,
         },
         .dmarx = {
-            .capacity = 1024*16,
+            .capacity = SERIAL3_DMA_RXBUFFER_LEN,
             .buffer = com3_dma_rxbuff,
         },
         .dmatx = {
-            .capacity = 256,
+            .capacity = SERIAL3_DMA_TXBUFFER_LEN,
             .buffer = com3_dma_txbuff,
         },
         .ops       = &g_uart_ops,
@@ -312,6 +344,15 @@ void board_bsp_init()
 
 #if defined(CONFIG_NET_LWIP_ENABLE)
     hw_stm32_eth_init();
+#endif
+
+#if defined(CONFIG_MODULE_CMBACKTRACE)
+    char *hardfault_log = hardfault_log_check();
+    if (hardfault_log!=NULL) {
+        board_printf("hardfault_log: %s", hardfault_log);
+        hardfault_log_clear();
+        board_delay(5000);
+    }
 #endif
 }
 
@@ -520,6 +561,12 @@ void board_bsp_kernel_init(void *p)
 #if defined(CONFIG_MODULE_HRT)
     hrt_init();
 #endif
+#if defined(CONFIG_MODULE_WORKQUEUE)
+    workqueue_manager_start();
+#endif
+#if defined(CONFIG_MODULE_GPMSHELL)
+    gmsh_system_init();
+#endif
     extern void main_root(void *p);
     xTaskCreate(main_root, "b2_init", 2048, NULL, 3, NULL);
     vTaskDelete(NULL);
@@ -528,7 +575,7 @@ void board_bsp_kernel_init(void *p)
 int main(int argc, char *argv[])
 {
     taskENTER_CRITICAL(); 
-    xTaskCreate(board_bsp_kernel_init, "b1_init", 512, NULL, 3, NULL);
+    xTaskCreate(board_bsp_kernel_init, "b1_init", 2048, NULL, 3, NULL);
     taskEXIT_CRITICAL();
 
     vTaskStartScheduler();

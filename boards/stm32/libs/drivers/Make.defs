@@ -74,6 +74,7 @@ ifeq ($(BSP_LIBCONFIG_STM32_DRV_LEGACY),n)
 LIBDRV_CINCDIRS += include
 
 LIBDRV_CSRCS += drv_gpio.c
+LIBDRV_CSRCS += drv_perf.c
 
 ifeq ($(BSP_LIBCONFIG_STM32_HAL_USART),y)
 LIBDRV_CSRCS += drv_uart.c

@@ -570,6 +570,7 @@ void cm_backtrace_fault(uint32_t fault_handler_lr, uint32_t fault_handler_sp) {
     uint32_t stack_start_addr = main_stack_start_addr;
     size_t stack_size = main_stack_size;
 #endif
+    hardfault_log_start();
 
     CMB_ASSERT(init_ok);
     /* only call once */
@@ -657,4 +658,5 @@ void cm_backtrace_fault(uint32_t fault_handler_lr, uint32_t fault_handler_sp) {
 #endif
 
     print_call_stack(stack_pointer);
+    hardfault_log_end();
 }

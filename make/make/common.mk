@@ -23,9 +23,9 @@ MAKEFILES_PROJDIR := ${MAKEFILES_ROOTDIR}/${PROJ_NAME}
 
 # folder for target files
 ifneq (${USR_ROOTDIR},)
-TARGET_ROOTDIR := ${USR_ROOTDIR}/build/output/${MOD_CORE}/${PROJ_NAME}
+TARGET_ROOTDIR := ${USR_ROOTDIR}/build/${PROJ_NAME}
 else
-TARGET_ROOTDIR := ${SDK_ROOTDIR}/build/output/${MOD_CORE}/${PROJ_NAME}
+TARGET_ROOTDIR := ${SDK_ROOTDIR}/build/${PROJ_NAME}
 endif
 
 # folder for binary outputs

@@ -8,6 +8,11 @@
 #include "uorb_gnode.h"
 
 struct __subscription_callback;
+typedef void (*sub_callback)(struct __subscription_callback *);
+struct __subscription_callback {
+    struct intrusive_node list_node;
+    sub_callback call;
+};
 
 struct __uorb_device_node {
     struct intrusive_node sorted_list_node;

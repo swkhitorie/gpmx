@@ -1,4 +1,5 @@
 #include <board_config.h>
+#include <drv_perf.h>
 
 static SRAM_HandleTypeDef  sram_handle;
 static FMC_NORSRAM_TimingTypeDef sram_timing;
@@ -131,6 +132,10 @@ static void board_config_power_rcc()
     }
 
     __HAL_RCC_SYSCFG_CLK_ENABLE();
+    __HAL_RCC_BKPSRAM_CLK_ENABLE();
+
+    HAL_PWR_EnableBkUpAccess();
+    HAL_PWREx_EnableBkUpReg();
 }
 
 static void board_irq_reset()
@@ -162,6 +167,8 @@ void board_init()
     board_config_power_rcc();
 
     board_sram_init();
+
+    hw_perf_init(SystemCoreClock);
 }
 
 void board_deinit()

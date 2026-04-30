@@ -49,6 +49,7 @@ MEMORY
   RAM    (xrw)    : ORIGIN = 0x20000000,   LENGTH = 128K
   FLASH    (rx)    : ORIGIN = 0x8000000,   LENGTH = 1024K
   SRAM   (xrw)     : ORIGIN = 0x6c000000,  LENGTH = 1024K
+  BBSRAM  (xrw)    : ORIGIN = 0x40024000,  LENGTH = 4k
 }
 
 /* Sections */
@@ -191,6 +192,15 @@ SECTIONS
     _ebss = .;         /* define a global symbol at bss end */
     __bss_end__ = _ebss;
   } >RAM
+
+  backupram (NOLOAD):
+  {
+    _sbackupram = .;
+    *(.backupram)
+    *(.backupram*)
+    . = ALIGN(8);
+    _ebackupram = .;
+  } >BBSRAM
 
   fmcsram_region (NOLOAD):
   {

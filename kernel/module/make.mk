@@ -34,15 +34,10 @@ CPPSOURCES += kernel/module/libc/cxx/libxx_new.cpp
 CPPSOURCES += kernel/module/libc/cxx/libxx_newa.cpp
 endif
 
-ifeq (${MK_USE_KERNEL_UORB},px4)
+ifeq (${MK_USE_KERNEL_UORB},y)
 PROJ_CDEFS += CONFIG_MODULE_UORB
 PROJ_CINCDIRS += kernel/module/uorb
-CSOURCES += kernel/module/uorb/publication.c
-CSOURCES += kernel/module/uorb/publication_multi.c
-CSOURCES += kernel/module/uorb/subscription.c
-CSOURCES += kernel/module/uorb/subscription_interval.c
-CSOURCES += kernel/module/uorb/subscription_callback.c
-CSOURCES += kernel/module/uorb/subscription_blocking.c
+CPPSOURCES += kernel/module/uorb/Subscription.cpp
 CSOURCES += kernel/module/uorb/uorb_device_master.c
 CSOURCES += kernel/module/uorb/uorb_device_node.c
 CSOURCES += kernel/module/uorb/uorb_gnode.c
@@ -53,9 +48,6 @@ ifeq (${MK_TEST_ENABLE},y)
 PROJ_CINCDIRS += kernel/module/uorb/test
 CSOURCES += kernel/module/uorb/test/uorb_test.c
 endif
-
-PROJ_CINCDIRS += build/
-CPPSOURCES += $(subst ${SDK_ROOTDIR}/,,$(wildcard ${SDK_ROOTDIR}/build/msg/topics_sources/*cpp))
 
 MK_USE_KERNEL_WORKQUEUE=y
 MK_USE_KERNEL_POSIX_PTHREAD:=y

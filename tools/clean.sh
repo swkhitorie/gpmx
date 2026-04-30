@@ -3,7 +3,7 @@
 script_dir="$(cd "$(dirname "$0")" && pwd)"
 source ${script_dir}/toolchain.sh
 app_subpath=$1
-
+build_board=$2
 cd ${script_dir}/../
 
 current_dir=$(pwd)
@@ -13,14 +13,15 @@ if [ ! -d ${find_sub_path} ];then
     exit 1
 fi
 
-shift 1
+shift 2
 
 make clean distclean \
     APP_SUBPATH=${app_subpath} \
     OS=${makefile_os} \
     TC_PATH_INST_GCC=${armgcc_path} \
     TC_PATH_INST_ARMCC=${armcc_path} \
-    TC_PATH_INST_ARMCLANG=${armclang_path}\
+    TC_PATH_INST_ARMCLANG=${armclang_path} \
+    BUILD_USR_BOARD=${build_board} \
     MAKE_TARGET_CLEANS=y \
     "$@"
 

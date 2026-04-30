@@ -12,13 +12,18 @@ then
     shift 3
 fi
 
-OPTS=$(getopt -o j:ra:f: --long jobs:,rebuild,app_path:,format_uorb: -- "$@") || exit 1
+OPTS=$(getopt -o j:ra:umb:v --long jobs:,rebuild,app_path:,uorb,mavlink,board:,virtualmachine -- "$@") || exit 1
 eval set -- "$OPTS"
 
 jobs_count=1
 rebuild_flag=0
 app_subpath=""
-format_uorb=""
+uorb_generate=0
+uorb_enable=n
+mavlink_generate=0
+mavlink_including=""
+build_board=""
+virtual_environment=0
 while true; do
     case "$1" in
         -j | --jobs)
@@ -33,9 +38,21 @@ while true; do
             app_subpath="$2"
             shift 2
             ;;
-        -f | --format_uorb)
-            format_uorb="$2"
+        -u | --uorb)
+            uorb_generate=1
+            shift 1
+            ;;
+        -m | --mavlink)
+            mavlink_generate=1
+            shift 1
+            ;;
+        -b | --board)
+            build_board="$2"
             shift 2
+            ;;
+        -v | --virtualmachine)
+            virtual_environment=1
+            shift 1
             ;;
         --)
             shift
@@ -48,18 +65,38 @@ while true; do
     esac
 done
 
-# echo "job count (j): $jobs_count"
-# echo "rebuild_flag (r): $rebuild_flag"
-# echo "output_file (u): $app_subpath"
-# echo "format_uorb (f): $format_uorb"
-# echo "other: $@"
+if [ $rebuild_flag -eq 1 ];then
+    bash ${script_dir}/clean.sh $app_subpath $build_board "$@"
+    echo "Rebuilding..."
+else
+    echo "Building..."
+fi
 
-if [ "$format_uorb" ]; then
-    bash ${script_dir}/uorb_gen/uorb_msg_generate.sh ${script_dir}/../msg/ ${script_dir}/../build $format_uorb
+uorb_generate_path=${script_dir}/../build/${app_subpath}
+if [ $uorb_generate -eq 1 ]; then
+    if [ ! -d ${uorb_generate_path} ];then
+        mkdir -p ${uorb_generate_path}
+    fi
+    bash ${script_dir}/msg/uorb_msg_generate.sh ${script_dir}/../apps/${app_subpath}/msg/ ${uorb_generate_path}
+    uorb_including="${uorb_generate_path}/;"
+    uorb_enable=y
     exit_code=$?
-    if [ ${exit_code} != 0 ]
-    then
+    if [ ${exit_code} != 0 ]; then
         echo "uorb_msg_generate.sh exec failed"
+        exit 1
+    fi
+fi
+
+mavlink_generate_path=${script_dir}/../build/${app_subpath}/mavlink
+if [ $mavlink_generate -eq 1 ]; then
+    bash ${script_dir}/mavlink/generate.sh ${mavlink_generate_path} common
+    bash ${script_dir}/mavlink/generate.sh ${mavlink_generate_path} development
+    mavlink_including+="${mavlink_generate_path};"
+    mavlink_including+="${mavlink_generate_path}/common;"
+    mavlink_including+="${mavlink_generate_path}/development;"
+    exit_code=$?
+    if [ ${exit_code} != 0 ]; then
+        echo "mavlink/generate.sh exec failed"
         exit 1
     fi
 fi
@@ -88,25 +125,67 @@ if [ ! -f ${find_app_config} ];then
     exit 1
 fi
 
-if [ $rebuild_flag -eq 1 ];then
-    ${script_dir}/clean.sh $app_subpath "$@"
-    echo "Rebuilding..."
-else
-    echo "Building..."
-fi
-
 build_time=$(date +"%Y%m%d_%H%M%S")
 
-make all -j${jobs_count} \
+bear make all -j${jobs_count} \
     APP_SUBPATH=${app_subpath} \
     OS=${makefile_os} \
     MAKE_TARGET_CLEANS=n \
     TC_PATH_INST_GCC=${armgcc_path} \
     TC_PATH_INST_ARMCC=${armcc_path} \
     TC_PATH_INST_ARMCLANG=${armclang_path} \
-    MK_USE_KERNEL_UORB=${format_uorb} \
+    BUILD_USR_BOARD=${build_board} \
+    MK_USE_KERNEL_UORB=${uorb_enable} \
+    MAVLINK_INCLUDING=${mavlink_including} \
+    UORB_INCLUDING=${uorb_including} \
     "$@"
 
-# build.sh -j2 -r -a boards_test -f posix ...
+build_status=$?
+if [ $build_status -ne 0 ]; then
+    echo "Build failed with exit code: $build_status"
+    exit $build_status
+fi
+
+if [ $virtual_environment -ne 1 ]; then
+    exit 0
+fi
+
+proj_name=$(grep '^PROJ_NAME\s*:=' "$find_app_config" | awk -F':=' '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+proj_tc=$(grep '^PROJ_TC\s*:=' "$find_app_config" | awk -F':=' '{print $2}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+proj_bin=${current_dir}/bin/${proj_name}_${proj_tc}_0.bin
+proj_hex=${current_dir}/bin/${proj_name}_${proj_tc}_0.hex
+proj_elf=${current_dir}/bin/${proj_name}_${proj_tc}_0.elf
+
+if [ ! -f ${proj_bin} ] || [ ! -f ${proj_hex} ] || [ ! -f ${proj_elf} ];then
+    echo "proj file not exist"
+    exit 1
+fi
+
+isvm=$(systemd-detect-virt)
+if [ ${isvm} == "vmware" ]
+then
+    shared_path=/mnt/hgfs/
+elif [ ${isvm} == "virualbox" ]
+then
+    shared_path=/mnt/media/
+else
+    echo "unsupported vm platform ${isvm}"
+    exit 1
+fi
+
+sub_shared_path=("$shared_path"/*/)
+
+# default 
+target_shared_path=${sub_shared_path[0]}
+
+if [ ! -d ${shared_path} ] || [ ! -d ${target_shared_path} ];then
+    echo "vm shared path not existed"
+    exit 1
+fi
+
+echo "copy to shared path ${target_shared_path}"
+cp ${proj_bin} ${target_shared_path}
+cp ${proj_hex} ${target_shared_path}
+cp ${proj_elf} ${target_shared_path}
 
 exit 0

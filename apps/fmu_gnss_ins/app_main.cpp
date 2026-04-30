@@ -1,12 +1,11 @@
 #include <board_config.h>
+#include <drv_hrt.h>
+#include <workqueue_manager.h>
+#include "device/dnode.h"
 
-void main_root(void *p)
+extern "C" void main_root(void *p)
 {
-    hrt_init();
-    workqueue_manager_start();
-
 #if defined(BOARD_PXBOARD_EBFV2)
-
 #endif
-
+    vTaskDelete(NULL);
 }

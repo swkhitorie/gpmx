@@ -1,82 +1,11 @@
 {
     "configurations": [
         {
-            "name": "Win32",
-            "includePath": [
-                "${workspaceFolder}/**",
-                "${workspaceFolder}/boards/stm32/libs/cmsis",
-                "${workspaceFolder}/boards/stm32/libs/drivers/include",
-                "${workspaceFolder}/boards/stm32/libs/stm32f1xx_hal/device",
-                "${workspaceFolder}/boards/stm32/libs/stm32f1xx_hal/hal_driver",
-                "${workspaceFolder}/boards/stm32/libs/stm32f1xx_hal/hal_driver/Legacy",
-                "${workspaceFolder}/boards/stm32/libs/stm32f4xx_hal/device",
-                "${workspaceFolder}/boards/stm32/libs/stm32f4xx_hal/hal_driver",
-                "${workspaceFolder}/boards/stm32/libs/stm32f4xx_hal/hal_driver/Legacy",
-                "${workspaceFolder}/boards/stm32/libs/stm32h7xx_hal/device",
-                "${workspaceFolder}/boards/stm32/libs/stm32h7xx_hal/hal_driver",
-                "${workspaceFolder}/boards/stm32/libs/stm32h7xx_hal/hal_driver/Legacy",
-
-                "${workspaceFolder}/boards/stm32/libs/drivers/legacy/include",
-                "${workspaceFolder}/boards/stm32/libs/drivers/legacy/flash",
-                "${workspaceFolder}/boards/stm32/libs/drivers/include",
-                "${workspaceFolder}/boards/stm32/libs/drivers/flash",
-
-                "${workspaceFolder}/kernel/drivers/device",
-                "${workspaceFolder}/kernel/drivers/hardfault_info",
-                "${workspaceFolder}/kernel/drivers/hardfault_info/Languages/en-US",
-                "${workspaceFolder}/kernel/freertos/include",
-                "${workspaceFolder}/kernel/freertos/arch/cortex_m0/gcc",
-                "${workspaceFolder}/kernel/freertos/arch/cortex_m0/rvds",
-                "${workspaceFolder}/kernel/freertos/arch/cortex_m3/gcc",
-                "${workspaceFolder}/kernel/freertos/arch/cortex_m3/rvds",
-                "${workspaceFolder}/kernel/freertos/arch/cortex_m4/gcc",
-                "${workspaceFolder}/kernel/freertos/arch/cortex_m4/rvds",
-                "${workspaceFolder}/kernel/freertos/arch/cortex_m7/gcc",
-                "${workspaceFolder}/kernel/freertos/arch/cortex_m7/rvds",
-                "${workspaceFolder}/kernel/freertos/tests",
-                "${workspaceFolder}/kernel/rttnano/include",
-                "${workspaceFolder}/kernel/rttnano/libcpu/arm/arm926",
-                "${workspaceFolder}/kernel/rttnano/libcpu/arm/armv6",
-                "${workspaceFolder}/kernel/rttnano/libcpu/arm/common",
-                "${workspaceFolder}/kernel/rttnano/libcpu/arm/cortex-a",
-                "${workspaceFolder}/kernel/rttnano/libcpu/arm/cortex-m0",
-                "${workspaceFolder}/kernel/rttnano/libcpu/arm/cortex-m3",
-                "${workspaceFolder}/kernel/rttnano/libcpu/arm/cortex-m4",
-                "${workspaceFolder}/kernel/rttnano/libcpu/arm/cortex-m7",
-                "${workspaceFolder}/kernel/rttnano/libcpu/arm/cortex-m23",
-                "${workspaceFolder}/kernel/rttnano/libcpu/arm/cortex-m33",
-                "${workspaceFolder}/kernel/rttnano/libcpu/arm/cortex-r4",
-                "${workspaceFolder}/kernel/module/ccontainer",
-                "${workspaceFolder}/kernel/module/common",
-                "${workspaceFolder}/kernel/module/hrtimer",
-                "${workspaceFolder}/kernel/module/kprintf",
-                "${workspaceFolder}/kernel/module/libc/include",
-                "${workspaceFolder}/kernel/module/libc/tests",
-                "${workspaceFolder}/kernel/module/libc/cxx",
-                "${workspaceFolder}/kernel/module/perf",
-                "${workspaceFolder}/kernel/module/uorb",
-                "${workspaceFolder}/kernel/module/workqueue",
-
-                "${workspaceFolder}/libs/fs/fat",
-                "${workspaceFolder}/libs/fs/fat/test",
-                "${workspaceFolder}/libs/fs/littlefs",
-                "${workspaceFolder}/libs/fs/littlefs/test",
-                "${workspaceFolder}/libs/fs/romfs",
-                "${workspaceFolder}/libs/fs/romfs/test",
-
-                "${workspaceFolder}/libs/usb/CherryUSB/common",
-                "${workspaceFolder}/libs/usb/CherryUSB/core"
-            ],
-            "intelliSenseMode": "gcc-x64",
+            "name": "Linux",
+            "intelliSenseMode": "gcc-arm",
             "cStandard": "c17",
             "cppStandard": "gnu++14",
-            "browse": {
-                "limitSymbolsToIncludedHeaders": true,
-                "databaseFilename": "",
-                "path": [
-                    "${workspaceFolder}"
-                ]
-            }
+            "compileCommands": "${workspaceFolder}/compile_commands.json"
         }
     ],
     "version": 4

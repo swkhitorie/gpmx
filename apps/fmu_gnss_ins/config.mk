@@ -18,7 +18,9 @@ MK_RTOS_PLATFORM=gcc
 MK_RTOS_MEM_METHOD=4
 MK_USE_HARDFAULTINFO=y
 
+MK_USE_MODULE_RTXMEM=n
 MK_USE_MODULE_KPRINTF=y
+MK_USE_MODULE_GPMSHELL=y
 MK_USE_KERNEL_CPP=y
 MK_USE_KERNEL_POSIX_QUEUE=y
 MK_USE_KERNEL_POSIX_MQUEUE=n
@@ -40,4 +42,16 @@ MK_USE_CRUSB_IP=dwc2_st
 
 include ${SDK_ROOTDIR}/apps/board_selection.mk
 
+PROJ_CDEFS += configAPPLICATION_ALLOCATED_HEAP=1
+
+# mavlink including 
+PROJ_CINCDIRS += $(subst ${SDK_ROOTDIR},,$(subst ;, ,$(MAVLINK_INCLUDING)))     
+PROJ_CINCDIRS += ${APP_PROJ_DIR}/mavlink
+
+# uorb include and source
+UORB_CINCDIRSS = $(subst ;,,$(UORB_INCLUDING))
+PROJ_CINCDIRS += $(subst ${SDK_ROOTDIR},,$(subst ;, ,$(UORB_INCLUDING)))
+CPPSOURCES += $(subst ${SDK_ROOTDIR},,$(wildcard ${UORB_CINCDIRSS}/msg/topics_sources/*cpp))
+
 CPPSOURCES += ${APP_PROJ_DIR}/app_main.cpp
+CPPSOURCES += ${APP_PROJ_DIR}/gsh_main.cpp

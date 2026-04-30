@@ -1,9 +1,7 @@
 #include "uorb_device_node.h"
-#include "subscription_callback.h"
 #include "uorb_gnode.h"
-#include "kmodule_defines.h"
-
 #include "device/dnode.h"
+#include "kmodule_defines.h"
 
 struct __update_interval_data {
     uint64_t last_update; /**< time at which the last update was provided, used when update_interval is nonzero */

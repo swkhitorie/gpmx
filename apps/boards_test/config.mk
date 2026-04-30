@@ -47,5 +47,10 @@ endif
 
 include ${SDK_ROOTDIR}/apps/board_selection.mk
 
+# uorb include and source
+UORB_CINCDIRSS = $(subst ;,,$(UORB_INCLUDING))
+PROJ_CINCDIRS += $(subst ${SDK_ROOTDIR},,$(subst ;, ,$(UORB_INCLUDING)))
+CPPSOURCES += $(subst ${SDK_ROOTDIR},,$(wildcard ${UORB_CINCDIRSS}/msg/topics_sources/*cpp))
+
 PROJ_CDEFS += ${TEST_ITEM}
 CPPSOURCES += ${APP_PROJ_DIR}/app_main.cpp

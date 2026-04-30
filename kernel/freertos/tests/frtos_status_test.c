@@ -4,6 +4,8 @@
 #include "task.h"
 #include "queue.h"
 
+#include <string.h>
+
 int list_queue(void)
 {
     int size;

@@ -2,6 +2,7 @@
 #define BLOCKING_QUEUE_H_
 
 #include <semaphore.h>
+#include <stdint.h>
 
 #define DEFINE_BLOCKING_QUEUE(T, N, QUEUE_TYPE)                             \
     typedef struct {                                                        \
@@ -19,6 +20,8 @@
         sem_setprotocol(&q->sem_tail, SEM_PRIO_NONE);                   \
         q->head = 0;                                                    \
         q->tail = 0;                                                    \
+        uint8_t *p=(uint8_t *)&q->data[0],i=0;                          \
+        while(i<sizeof(T)*N) {p[i]=0; i++;}                             \
     }                                                                   \
                                                                         \
     static inline void QUEUE_TYPE##_destroy(QUEUE_TYPE *q) {            \

@@ -69,6 +69,10 @@ PROJ_CINCDIRS += ${BOARD_BSP_PATH}/hrtimer
 CSOURCES += ${BOARD_BSP_PATH}/hrtimer/hrt.c
 endif
 
+ifeq (${MK_USE_HARDFAULTINFO},y)
+CSOURCES += ${BOARD_BSP_PATH}/component/hardfault_log.c
+endif
+
 ifeq (${MK_USE_FS_FATFS},y)
 ifeq (${MK_GPDRIVE_MMCSDSPI},n)
 PROJ_CDEFS += CONFIG_STM32_MMCSD_FATFS_ENABLE

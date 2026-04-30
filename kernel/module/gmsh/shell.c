@@ -420,6 +420,18 @@ int gmsh_system_init(void)
         gsh_kprintf("gmsh task creat failed\n");
         return -2;
     }
+#elif defined(CONFIG_RTTNANO_ENABLE)
+    shell = (struct gmsh_shell *)rt_calloc(1, sizeof(struct gmsh_shell));
+    if (shell == RT_NULL) {
+        gsh_kprintf("no memory for shell\n");
+        return -1;
+    }
+    rt_thread_t tid = rt_thread_create("gmsh",
+                            gmsh_thread_entry, RT_NULL,
+                            GSH_THREAD_STACK_SIZE, GSH_THREAD_PRIORITY, 10);
+    if (tid != NULL) {
+        rt_thread_startup(tid);
+    }
 #endif
 
     gmsh_set_prompt_mode(1);

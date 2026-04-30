@@ -69,6 +69,7 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get -y --quiet --no-install-recommends i
 	shellcheck \
 	unzip \
 	zip \
+	bear \
 	;
 
 # Python3 dependencies
