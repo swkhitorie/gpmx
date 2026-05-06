@@ -127,7 +127,14 @@ fi
 
 build_time=$(date +"%Y%m%d_%H%M%S")
 
-bear make all -j${jobs_count} \
+BEAR_COMMAND=bear
+if command -v bear >/dev/null 2>&1; then
+    echo "bear found, using intercepted build"
+else
+    BEAR_COMMAND=""
+fi
+
+${BEAR_COMMAND} make all -j${jobs_count} \
     APP_SUBPATH=${app_subpath} \
     OS=${makefile_os} \
     MAKE_TARGET_CLEANS=n \
