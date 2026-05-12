@@ -161,7 +161,7 @@ void workqueue_run(struct __workqueue *queue)
             work_unlock(queue); // unlock work queue to run (item may requeue itself)
 
             workitem_run_preamble(work);
-            work->entry(NULL);
+            work->entry(work->arg);
 
             // Note: after Run() we cannot access work anymore, as it might have been deleted
             work_lock(queue); // re-lock

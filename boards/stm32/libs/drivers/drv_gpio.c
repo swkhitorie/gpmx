@@ -127,6 +127,8 @@ int stm32_pin_setevent(uint32_t pinset, bool risingedge, bool fallingedge,
     uint32_t mode;
     uint32_t pull;
 
+    if (!event) return 0;
+
     if (fallingedge && !risingedge) {
 
         mode = IOMODE_IT_FALLING;

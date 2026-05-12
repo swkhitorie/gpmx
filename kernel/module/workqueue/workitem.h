@@ -8,13 +8,14 @@
 #include "workqueue.h"
 #include "drv_hrt.h"
 
-typedef void *(*workitem_entry)(void *);
+typedef void (*workitem_entry)(void *);
 
 struct __workitem {
     struct intrusive_node sorted_list_node;
     struct intrusive_node queue_node;
 
     workitem_entry entry;
+    void *arg;
 
     hrt_abstime	_time_first_run;
     const char 	*_name;
@@ -27,7 +28,7 @@ struct __workitem {
 extern "C" {
 #endif
 
-void workitem_config_entry(struct __workitem *item, workitem_entry work_main);
+void workitem_config_entry(struct __workitem *item, workitem_entry work_main, void *arg);
 bool workitem_init(struct __workitem *item, const char *name, const struct wq_config_t *config);
 void workitem_init_method2(struct __workitem *item, const char *name, const struct __workitem *work_item);
 bool workitem_change_queue(struct __workitem *item, const struct wq_config_t *config);

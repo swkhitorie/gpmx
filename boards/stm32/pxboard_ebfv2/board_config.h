@@ -78,6 +78,7 @@ void board_reboot();
 void board_get_uid(uint32_t *p);
 uint32_t board_get_time();
 void board_delay(uint32_t ms);
+void dwt_udelay(uint32_t us);
 uint32_t board_elapsed_time(const uint32_t timestamp);
 /*-------------- board bsp interface --------------*/
 
@@ -92,7 +93,7 @@ void board_printf(const char *format, ...);
 bool board_rtc_set_timestamp(rclk_time_t now);
 rclk_time_t board_rtc_get_timestamp(struct rclk_timeval *now);
 
-int boardpin_setevent(uint32_t pinid, bool risingedge, bool fallingedge,
+int board_gpiosetevent(uint32_t pinid, bool risingedge, bool fallingedge,
     bool event, io_irq_entry func, void *arg, uint32_t priority);
 
 #ifdef __cplusplus

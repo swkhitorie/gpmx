@@ -33,7 +33,8 @@
 #include "board_config.h"
 #include "hardfault_log.h"
 
-#define cmb_println(...)               hardfault_log_write(__VA_ARGS__); hardfault_log_write("\r\n")
+// #define cmb_println(...)               hardfault_log_write(__VA_ARGS__); hardfault_log_write("\r\n")
+#define cmb_println(...)               BOARD_CRUSH_PRINTF(__VA_ARGS__); BOARD_CRUSH_PRINTF("\r\n")
 
 /**
 #define CMB_CPU_ARM_CORTEX_M0             0

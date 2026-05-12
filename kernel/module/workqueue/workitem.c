@@ -14,9 +14,10 @@ bool workitem_cmp_method(struct intrusive_node *a, struct intrusive_node *b)
     return (strcmp(workitem_name(work_a), workitem_name(work_b)) <= 0);
 }
 
-void workitem_config_entry(struct __workitem *item, workitem_entry work_main)
+void workitem_config_entry(struct __workitem *item, workitem_entry work_main, void *arg)
 {
     item->entry = work_main;
+    item->arg = arg;
 }
 
 bool workitem_init(struct __workitem *item, const char *name, const struct wq_config_t *config)

@@ -347,12 +347,12 @@ void board_bsp_init()
 #endif
 
 #if defined(CONFIG_MODULE_CMBACKTRACE)
-    char *hardfault_log = hardfault_log_check();
-    if (hardfault_log!=NULL) {
-        board_printf("hardfault_log: %s", hardfault_log);
-        hardfault_log_clear();
-        board_delay(5000);
-    }
+    // char *hardfault_log = hardfault_log_check();
+    // if (hardfault_log!=NULL) {
+    //     board_printf("hardfault_log: %s", hardfault_log);
+    //     hardfault_log_clear();
+    //     board_delay(5000);
+    // }
 #endif
 }
 
@@ -375,7 +375,7 @@ rclk_time_t board_rtc_get_timestamp(struct rclk_timeval *now)
     return hw_stm32_rtc_get_timeval(now);
 }
 
-int boardpin_setevent(uint32_t pinid, bool risingedge, bool fallingedge,
+int board_gpiosetevent(uint32_t pinid, bool risingedge, bool fallingedge,
     bool event, io_irq_entry func, void *arg, uint32_t priority)
 {
     uint32_t pinset = 0;

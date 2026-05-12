@@ -24,6 +24,7 @@ void hardfault_log_start()
 
 void hardfault_log_end()
 {
+    dwt_udelay(1000000);
     for (int i = 0; i < 1000*500; i++);
     board_reboot();
 }

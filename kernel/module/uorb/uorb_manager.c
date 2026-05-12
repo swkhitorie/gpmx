@@ -10,6 +10,9 @@ bool uorb_manager_initialize()
 {
 	if (_umanager_instance == NULL) {
 		_umanager_instance = gpdrv_malloc(sizeof(struct __uorb_manager));
+		if (_umanager_instance != NULL) {
+			_umanager_instance->_device_master = NULL;
+		}
 	}
 
 	return _umanager_instance != NULL;

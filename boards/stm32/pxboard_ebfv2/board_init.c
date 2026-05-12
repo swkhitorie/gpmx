@@ -26,6 +26,14 @@ void board_delay(uint32_t ms)
     HAL_Delay(ms);
 }
 
+void dwt_udelay(uint32_t us)
+{
+    uint32_t freq = hw_perf_getfreq();
+    uint32_t cycles = (uint64_t)us * freq / 1000000u;
+    uint32_t start = hw_perf_gettime();
+    while ((hw_perf_gettime() - start) < cycles) {}
+}
+
 uint32_t board_elapsed_time(const uint32_t timestamp)
 {
     uint32_t now = HAL_GetTick();

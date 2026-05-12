@@ -34,6 +34,7 @@
 #define gpdrv_time()       (xTaskGetTickCount()*(1000/configTICK_RATE_HZ))
 #define gpdrv_malloc(p)                     pvPortMalloc(p)
 #define gpdrv_free(p)                       vPortFree(p)
+#define gpdrv_interrupt_context()           (xPortIsInsideInterrupt() == pdTRUE)
 #elif defined(CONFIG_RTTNANO_ENABLE)
 #include <rthw.h>
 #include <rtthread.h>
@@ -44,6 +45,7 @@
 #define gpdrv_time()                        rt_tick_get_millisecond()
 #define gpdrv_malloc(p)                     rt_malloc(p)
 #define gpdrv_free(p)                       rt_free(p)
+#define gpdrv_interrupt_context()           (rt_interrupt_get_nest() > 0)
 #else
 #define gpdrv_isisr()
 #define gpdrv_enter_critical_section()      gpdrv_irq_disable()
@@ -51,6 +53,7 @@
 #define gpdrv_time()                        dn_time()
 #define gpdrv_malloc(p)                     (NULL)
 #define gpdrv_free(p)
+#define gpdrv_interrupt_context()           (false)
 #endif
 
 #include <stdio.h>

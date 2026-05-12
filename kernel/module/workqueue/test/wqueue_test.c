@@ -15,11 +15,11 @@ static void *wqueue_run(void *p);
 
 void wqueue_test_init()
 {
-    workitem_config_entry(&wqueue_test_witem, wqueue_run);
+    workitem_config_entry(&wqueue_test_witem, wqueue_run, NULL);
     workitem_init(&wqueue_test_witem, wqueue_witem_name, &wqueue_witem_config);
 }
 
-void *wqueue_run(void *p)
+void wqueue_run(void *p)
 {
     if (wqueue_run_cnt > 200000) {
         wqueue_app_state = true;

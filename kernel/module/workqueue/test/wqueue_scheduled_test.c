@@ -19,7 +19,7 @@ void wqueue_sched_test_init()
     workitem_init(&wqueue_sched_test_item.item, wqueue_sched_witem_name, &wqueue_sched_witem_config);
 }
 
-void *wqueue_sched_run(void *p)
+void wqueue_sched_run(void *p)
 {
     if (wqueue_run_cnt_2 > 1000) {
         wqueue_app_state_2 = true;

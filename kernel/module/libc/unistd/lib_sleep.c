@@ -1,4 +1,5 @@
 #include "unistd.h"
+#include <board_config.h>
 
 #if defined(CONFIG_FREERTOS_ENABLE)
 #include <FreeRTOS.h>
@@ -55,6 +56,7 @@ int usleep(useconds_t usec)
 {
 #if defined(CONFIG_FREERTOS_ENABLE)
     vTaskDelay(pdMS_TO_TICKS(usec / 1000 + (usec % 1000 != 0)));
+    dwt_udelay(usec % 1000u);
 #elif defined(CONFIG_RTTNANO_ENABLE)
     if (rt_thread_self() != RT_NULL) {
         msleep(usec / 1000u);

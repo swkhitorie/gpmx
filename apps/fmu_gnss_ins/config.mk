@@ -8,7 +8,7 @@ CONFIG_LINK_PRINTF_FLOAT:=n
 CONFIG_LINK_SCANF_FLOAT:=n
 CONFIG_COMPILE_OPTIMIZE:=-O1 #-flto
 CONFIG_C_STANDARD:=gnu11
-CONFIG_CXX_STANDARD:=gnu++11
+CONFIG_CXX_STANDARD:=gnu++14
 CONFIG_LIB_USE_NANO:=y
 TARGET_POSTBUILD := ${TARGET_DEST_FILENAME_BIN}
 
@@ -42,7 +42,7 @@ MK_USE_CRUSB_IP=dwc2_st
 
 include ${SDK_ROOTDIR}/apps/board_selection.mk
 
-PROJ_CDEFS += configAPPLICATION_ALLOCATED_HEAP=1
+PROJ_CDEFS += configAPPLICATION_ALLOCATED_HEAP=0
 
 # mavlink including 
 PROJ_CINCDIRS += $(subst ${SDK_ROOTDIR},,$(subst ;, ,$(MAVLINK_INCLUDING)))     
@@ -53,5 +53,23 @@ UORB_CINCDIRSS = $(subst ;,,$(UORB_INCLUDING))
 PROJ_CINCDIRS += $(subst ${SDK_ROOTDIR},,$(subst ;, ,$(UORB_INCLUDING)))
 CPPSOURCES += $(subst ${SDK_ROOTDIR},,$(wildcard ${UORB_CINCDIRSS}/msg/topics_sources/*cpp))
 
+PROJ_CINCDIRS += ${APP_PROJ_DIR}
 CPPSOURCES += ${APP_PROJ_DIR}/app_main.cpp
 CPPSOURCES += ${APP_PROJ_DIR}/gsh_main.cpp
+
+PROJ_CINCDIRS += apps
+PROJ_CINCDIRS += apps/libs
+PROJ_CINCDIRS += apps/libs/matrix
+
+CPPSOURCES += ${APP_PROJ_DIR}/drivers/imu/mpu6050/MPU6050.cpp
+
+# PROJ_CINCDIRS += boards/stm32/pxboard_ebfv2/driver
+# CPPSOURCES += boards/stm32/pxboard_ebfv2/driver/mpu6050.cpp
+
+CPPSOURCES += apps/libs/conversion/rotation.cpp
+CPPSOURCES += apps/libs/drivers/accelerometer/xAccelerometer.cpp
+CPPSOURCES += apps/libs/drivers/gyroscope/xGyroscope.cpp
+
+CPPSOURCES += apps/libs/drivers/device/i2cbus.cpp
+CPPSOURCES += apps/libs/drivers/device/spibus.cpp
+

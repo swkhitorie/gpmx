@@ -54,6 +54,17 @@ public:
 		return (orb_publish(get_topic(), _handle, &data) == PX4_OK);
 	}
 
+	int get_instance()
+	{
+		// advertise if not already advertised
+		if (advertise()) {
+			return uorb_device_node_get_instance(static_cast<struct __uorb_device_node *>(_handle));
+			// return Manager::orb_get_instance(_handle);
+		}
+
+		return -1;
+	}
+
 protected:
 	const ORB_PRIO _priority;
 };

@@ -1,6 +1,7 @@
 #ifndef UORB_DEVICE_NODE_H_
 #define UORB_DEVICE_NODE_H_
 
+#include <uorb/topics/uorb_topics.h>
 #include "uorb_common.h"
 #include "uorb_device_master.h"
 #include "container/atomic.h"
