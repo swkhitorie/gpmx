@@ -48,28 +48,31 @@ PROJ_CDEFS += configAPPLICATION_ALLOCATED_HEAP=0
 PROJ_CINCDIRS += $(subst ${SDK_ROOTDIR},,$(subst ;, ,$(MAVLINK_INCLUDING)))     
 PROJ_CINCDIRS += ${APP_PROJ_DIR}/mavlink
 
-# uorb include and source
-UORB_CINCDIRSS = $(subst ;,,$(UORB_INCLUDING))
-PROJ_CINCDIRS += $(subst ${SDK_ROOTDIR},,$(subst ;, ,$(UORB_INCLUDING)))
-CPPSOURCES += $(subst ${SDK_ROOTDIR},,$(wildcard ${UORB_CINCDIRSS}/msg/topics_sources/*cpp))
-
 PROJ_CINCDIRS += ${APP_PROJ_DIR}
 CPPSOURCES += ${APP_PROJ_DIR}/app_main.cpp
 CPPSOURCES += ${APP_PROJ_DIR}/gsh_main.cpp
 
-PROJ_CINCDIRS += apps
-PROJ_CINCDIRS += apps/libs
-PROJ_CINCDIRS += apps/libs/matrix
+include ${SDK_ROOTDIR}/apps/libs/config.mk
+CPPSOURCES += apps/libs/drivers/imu/mpu6050/MPU6050.cpp
 
-CPPSOURCES += ${APP_PROJ_DIR}/drivers/imu/mpu6050/MPU6050.cpp
-
-# PROJ_CINCDIRS += boards/stm32/pxboard_ebfv2/driver
-# CPPSOURCES += boards/stm32/pxboard_ebfv2/driver/mpu6050.cpp
-
-CPPSOURCES += apps/libs/conversion/rotation.cpp
-CPPSOURCES += apps/libs/drivers/accelerometer/xAccelerometer.cpp
-CPPSOURCES += apps/libs/drivers/gyroscope/xGyroscope.cpp
-
-CPPSOURCES += apps/libs/drivers/device/i2cbus.cpp
-CPPSOURCES += apps/libs/drivers/device/spibus.cpp
-
+# PROJ_CINCDIRS += ${APP_PROJ_DIR}/mavlink
+# ALL_EXT_GROUPS := mavlink
+# mavlink_OPT := -Wno-address-of-packed-member -Wno-cast-align
+# # mavlink_SRC += mavlink_command_sender.cpp
+# # mavlink_SRC += mavlink_events.cpp
+# # mavlink_SRC += mavlink_ftp.cpp
+# # mavlink_SRC += mavlink_log_handler.cpp
+# # mavlink_SRC += mavlink_main.cpp
+# mavlink_SRC += mavlink_messages.cpp
+# # mavlink_SRC += mavlink_mission.cpp
+# # mavlink_SRC += mavlink_parameters.cpp
+# mavlink_SRC += mavlink_rate_limiter.cpp
+# mavlink_SRC += mavlink_receiver.cpp
+# # mavlink_SRC += mavlink_shell.cpp
+# mavlink_SRC += mavlink_simple_analyzer.cpp
+# mavlink_SRC += mavlink_stream.cpp
+# mavlink_SRC += mavlink_timesync.cpp
+# mavlink_SRC += mavlink_ulog.cpp
+# mavlink_SRC += MavlinkStatustestHandler.cpp
+# mavlink_SRC += mavlink.cpp
+# CPPSOURCES += $(foreach src,${mavlink_SRC},${APP_PROJ_DIR}/mavlink/$(src))

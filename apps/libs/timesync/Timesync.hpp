@@ -44,7 +44,7 @@
 #include <float.h>
 #include <uorb/topics/timesync_status.h>
 #include "PublicationMulti.hpp"
-#include "drv_hrt.h"
+#include "gpm/drv_hrt.h"
 
 using namespace time_literals;
 

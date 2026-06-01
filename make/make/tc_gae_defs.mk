@@ -142,6 +142,7 @@ TC_LIBOPTS:=\
   --data-sections            \
   -lc                        \
   -lm                        \
+  ${EXT_LIBOPTS}             \
   ${TC_LIB_SELECT}
 
 ifeq (${CONFIG_LINK_PRINTF_FLOAT},y)

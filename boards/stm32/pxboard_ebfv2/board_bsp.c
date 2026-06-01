@@ -7,11 +7,11 @@
 #include <drv_can.h>
 #include <drv_eth.h>
 #include <drv_mmcsd.h>
-#include <device/dnode.h>
-#include <device/serial.h>
-#include <device/i2c_master.h>
-#include <device/spi.h>
-#include <device/can.h>
+#include <gpm/sched.h>
+#include <gpm/serial/serial.h>
+#include <gpm/i2c/i2c_master.h>
+#include <gpm/spi/spi.h>
+#include <gpm/can/can.h>
 
 #include <stdarg.h>
 
@@ -43,12 +43,12 @@ __attribute__((section(".ccmram"))) uint8_t ucHeap[configTOTAL_HEAP_SIZE];
 #endif
 
 #if defined(CONFIG_GPDRIVE_MMCSDSPI)
-#include <device/mmcsd_spi.h>
+#include <gpm/spi/mmcsd_spi.h>
 mmcsd_obj_t _board_mmcsd_spi_obj;
 #endif
 
 #if defined(CONFIG_MODULE_HRT)
-#include <drv_hrt.h>
+#include <gpm/drv_hrt.h>
 #endif
 
 #if defined(CONFIG_MODULE_WORKQUEUE)
@@ -365,12 +365,12 @@ void board_led_toggle(uint8_t idx)
     LOW_IOSET(GPIOC, 3, !val);
 }
 
-bool board_rtc_set_timestamp(rclk_time_t now)
+bool board_rtc_set_timestamp(rtc_time_t now)
 {
     return hw_stm32_rtc_set_time_stamp(now);
 }
 
-rclk_time_t board_rtc_get_timestamp(struct rclk_timeval *now)
+rtc_time_t board_rtc_get_timestamp(struct rtc_timeval *now)
 {
     return hw_stm32_rtc_get_timeval(now);
 }
@@ -380,7 +380,7 @@ int board_gpiosetevent(uint32_t pinid, bool risingedge, bool fallingedge,
 {
     uint32_t pinset = 0;
     switch (pinid) {
-    case 0x21:
+    case 0x36:
         pinset = GET_PIN(GPIOF, 10);
         break;
     }
@@ -502,10 +502,8 @@ int _write(int file, const char *ptr, int len)
 
 #endif // end with CONFIG_MODULE_KPRINTF
 
-void board_printf(const char *format, ...)
+void board_vprintf(const char *format, va_list args)
 {
-    va_list args;
-
 #if defined(CONFIG_FREERTOS_ENABLE)
     if (xSemaphoreTake(board_printf_mutex, portMAX_DELAY) != pdTRUE) {
         return;
@@ -516,20 +514,25 @@ void board_printf(const char *format, ...)
     }
 #endif
 
-    va_start(args, format);
-
 #if defined(CONFIG_MODULE_KPRINTF)
     vprintf_(format, args);
 #else
     (void)vprintf(format, args);
 #endif
-    va_end(args);
 
 #if defined(CONFIG_FREERTOS_ENABLE)
     xSemaphoreGive(board_printf_mutex);
 #elif defined(CONFIG_RTTNANO_ENABLE)
     rt_sem_release(board_printf_mutex);
 #endif
+}
+
+void board_printf(const char *format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    board_vprintf(format, args);
+    va_end(args);
 }
 
 #if defined(CONFIG_FREERTOS_ENABLE)
@@ -640,6 +643,7 @@ void board_test()
 #else
     xTaskCreate(board_heartbeat_os, "heartbeat", 128, NULL, 3, NULL);
 
+    extern int BOARD_TEST_ITEM(int argc, char** argv);
     int ret = BOARD_TEST_ITEM(0, NULL);
 
     vTaskDelete(NULL);

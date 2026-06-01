@@ -1,8 +1,9 @@
 #include "drv_eth.h"
-#include <device/dnode.h>
 #include <netif/ethernetif.h>
 #include <lwipopts.h>
 #include <string.h>
+
+#include "gpm/sched.h"
 
 #define LOG_TAG             "drv.emac"
 

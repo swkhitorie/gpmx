@@ -1,6 +1,6 @@
-[submodule "libs/usb/CherryUSB"]
-	path = libs/usb/CherryUSB
-	url = https://github.com/cherry-embedded/CherryUSB.git
-[submodule "libs/mavlink"]
-	path = libs/mavlink
+[submodule "apps/libs/mavlink"]
+	path = apps/libs/mavlink
 	url = https://github.com/mavlink/mavlink.git
+[submodule "gpm/usb/CherryUSB"]
+	path = gpm/usb/CherryUSB
+	url = https://github.com/cherry-embedded/CherryUSB.git

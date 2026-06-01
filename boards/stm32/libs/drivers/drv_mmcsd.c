@@ -1,6 +1,6 @@
 #include "drv_mmcsd.h"
 
-#include <device/dnode.h>
+#include "gpm/sched.h"
 
 #include <board_config.h>
 #ifndef MMCSD_INFO
@@ -198,7 +198,7 @@ int stm32_mmcsd_reads(struct stm32_mmcsd_dev_s *dev, uint32_t *p, uint32_t addr,
     int ret;
 
 #if defined(CONFIG_FREERTOS_ENABLE) || defined(CONFIG_RTTNANO_ENABLE)
-    int flag = gpdrv_enter_critical_section();
+    int flag = enter_critical_section();
 #endif
 
     switch (way) {
@@ -211,7 +211,7 @@ int stm32_mmcsd_reads(struct stm32_mmcsd_dev_s *dev, uint32_t *p, uint32_t addr,
     }
 
 #if defined(CONFIG_FREERTOS_ENABLE) || defined(CONFIG_RTTNANO_ENABLE)
-    gpdrv_leave_critical_section(flag);
+    leave_critical_section(flag);
 #endif
 
     return ret;
@@ -222,7 +222,7 @@ int stm32_mmcsd_writes(struct stm32_mmcsd_dev_s *dev, uint32_t *p, uint32_t addr
     int ret;
 
 #if defined(CONFIG_FREERTOS_ENABLE) || defined(CONFIG_RTTNANO_ENABLE)
-    int flag = gpdrv_enter_critical_section();
+    int flag = enter_critical_section();
 #endif
 
     switch (way) {
@@ -235,7 +235,7 @@ int stm32_mmcsd_writes(struct stm32_mmcsd_dev_s *dev, uint32_t *p, uint32_t addr
     }
 
 #if defined(CONFIG_FREERTOS_ENABLE) || defined(CONFIG_RTTNANO_ENABLE)
-    gpdrv_leave_critical_section(flag);
+    leave_critical_section(flag);
 #endif
 
     return ret;

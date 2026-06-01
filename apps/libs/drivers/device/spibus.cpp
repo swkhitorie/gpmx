@@ -1,17 +1,17 @@
-
 #include "spibus.hpp"
+#include <cstring>
 
 namespace device
 {
 
 SPI::SPI(const char *name, int bus, uint32_t device, enum spi_mode_e mode, uint32_t frequency) :
-	_devname(name),
 	_device(device),
     _bus(bus),
 	_mode(mode),
 	_frequency(frequency)
 {
     _locking_mode = LOCK_NONE;
+	strncpy(_devname, name, 16);
 }
 
 SPI::~SPI()
@@ -51,14 +51,14 @@ int SPI::transfer(uint8_t *send, uint8_t *recv, unsigned len)
 		return -1;
 	}
 
-	LockMode mode = gpdrv_interrupt_context() ? LOCK_NONE : _locking_mode;
+	LockMode mode = up_interrupt_context() ? LOCK_NONE : _locking_mode;
 
 	switch (mode) {
 	default:
 	case LOCK_PREEMPTION: {
-			int state = gpdrv_enter_critical_section();
+			int state = enter_critical_section();
 			result = _transfer(send, recv, len);
-			gpdrv_leave_critical_section(state);
+			leave_critical_section(state);
 		}
 		break;
 
@@ -100,15 +100,15 @@ int SPI::transferhword(uint16_t *send, uint16_t *recv, unsigned len)
 		return -1;
 	}
 
-	LockMode mode = gpdrv_interrupt_context() ? LOCK_NONE : _locking_mode;
+	LockMode mode = up_interrupt_context() ? LOCK_NONE : _locking_mode;
 
 	/* lock the bus as required */
 	switch (mode) {
 	default:
 	case LOCK_PREEMPTION: {
-			int state = gpdrv_enter_critical_section();
+			int state = enter_critical_section();
 			result = _transferhword(send, recv, len);
-			gpdrv_leave_critical_section(state);
+			leave_critical_section(state);
 		}
 		break;
 

@@ -67,7 +67,7 @@ topic_fields = ["%s %s" % (convert_type(field.type, True), field.name) for field
 #include <uorb/topics/@(name_snake_case).h>
 #include <uorb/topics/uorb_topics.h>
 #include "kmodule_defines.h"
-#include "drv_hrt.h"
+#include "gpm/drv_hrt.h"
 
 @# join all msg files in one line e.g: "float[3] position;float[3] velocity;bool armed"
 @# This is used for the logger

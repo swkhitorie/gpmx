@@ -43,7 +43,7 @@
 #include <cstdio>
 #include <cstring>
 
-#include <px4_platform_common/log.h>
+#include <platform/log.h>
 
 namespace control
 {

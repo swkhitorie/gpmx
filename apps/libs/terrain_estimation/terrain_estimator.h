@@ -37,12 +37,12 @@
 
 #pragma once
 
-#include <lib/mathlib/mathlib.h>
+#include <libs/mathlib/mathlib.h>
 #include <matrix/math.hpp>
-#include <uORB/topics/sensor_combined.h>
-#include <uORB/topics/sensor_gps.h>
-#include <uORB/topics/vehicle_attitude.h>
-#include <uORB/topics/distance_sensor.h>
+#include <uorb/topics/sensor_combined.h>
+#include <uorb/topics/sensor_gps.h>
+#include <uorb/topics/vehicle_attitude.h>
+#include <uorb/topics/distance_sensor.h>
 
 
 /*

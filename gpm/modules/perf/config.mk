@@ -1,0 +1,8 @@
+ifeq (${MK_USE_KERNEL_PERF},y)
+PROJ_CDEFS += CONFIG_MODULE_PERF
+PROJ_CINCDIRS += ${GPMPATH}/modules/perf
+CSOURCES += ${GPMPATH}/modules/perf/perf_counter.c
+
+MK_USE_KERNEL_POSIX_QUEUE:=y
+MK_USE_KERNEL_POSIX_PTHREAD:=y
+endif

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <device/i2c_master.h>
+#include <gpm/i2c/i2c_master.h>
 
 #define NUMBER_I2C_BUSES  (5)
 
@@ -42,9 +42,10 @@ protected:
 	/** Perform an I2C transaction to the device. */
 	int		transfer(const uint8_t *send, const unsigned send_len, uint8_t *recv, const unsigned recv_len);
 
-protected:
+	void    set_address(uint16_t address) { _address = address; }
+public:
 	static unsigned	int	_bus_clocks[NUMBER_I2C_BUSES];
-    const char	*_devname{nullptr};
+    char	_devname[16];
     int             _bus;
     uint16_t        _address;
 	const uint32_t		_frequency;

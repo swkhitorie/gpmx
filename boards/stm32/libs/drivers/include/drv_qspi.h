@@ -3,7 +3,7 @@
 
 #include "drv_cmn.h"
 #include "drv_gpio.h"
-#include <device/qspi.h>
+#include "gpm/spi/qspi.h"
 
 struct up_qspi_dev_s
 {

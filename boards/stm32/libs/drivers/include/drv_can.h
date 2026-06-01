@@ -3,7 +3,7 @@
 
 #include "drv_cmn.h"
 #include "drv_gpio.h"
-#include <device/can.h>
+#include "gpm/can/can.h"
 
 struct up_can_dev_s
 {

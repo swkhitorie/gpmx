@@ -5,7 +5,7 @@
 #include "drv_cmn.h"
 #include "drv_gpio.h"
 #include "drv_dma.h"
-#include <device/serial.h>
+#include "gpm/serial/serial.h"
 
 #if defined(DRV_STM32_WL) || defined(DRV_STM32_H7)
 

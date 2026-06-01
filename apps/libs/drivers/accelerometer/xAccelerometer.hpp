@@ -1,6 +1,6 @@
 #pragma once
 
-#include "drv_hrt.h"
+#include "gpm/drv_hrt.h"
 #include <libs/conversion/rotation.h>
 #include <libs/geo/geo.h>
 #include <uorb/topics/sensor_accel.h>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "drv_hrt.h"
+#include "gpm/drv_hrt.h"
 #include <libs/conversion/rotation.h>
 #include <uorb/topics/sensor_gyro.h>
 #include <uorb/topics/sensor_gyro_fifo.h>

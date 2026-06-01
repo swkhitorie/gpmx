@@ -8,7 +8,7 @@ if [ $(uname) == "Linux" ]; then
     PYTHON_EXE=python3
 fi
 
-MAVLINK_PATH=${SCRIPT_DIR}/../../libs/mavlink
+MAVLINK_PATH=${SCRIPT_DIR}/../../apps/libs/mavlink
 GENERATE_PATH=$1
 GENERATE_DIALOG=$2
 if [ ! -d ${GENERATE_PATH} ]; then

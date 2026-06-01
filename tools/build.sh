@@ -12,7 +12,7 @@ then
     shift 3
 fi
 
-OPTS=$(getopt -o j:ra:umb:v --long jobs:,rebuild,app_path:,uorb,mavlink,board:,virtualmachine -- "$@") || exit 1
+OPTS=$(getopt -o j:ra:umb:ve: --long jobs:,rebuild,app_path:,uorb,mavlink,board:,virtualmachine,entry: -- "$@") || exit 1
 eval set -- "$OPTS"
 
 jobs_count=1
@@ -24,6 +24,7 @@ mavlink_generate=0
 mavlink_including=""
 build_board=""
 virtual_environment=0
+test_entry=""
 while true; do
     case "$1" in
         -j | --jobs)
@@ -54,6 +55,10 @@ while true; do
             virtual_environment=1
             shift 1
             ;;
+        -e | --entry)
+            test_entry="$2"
+            shift 2
+            ;;
         --)
             shift
             break
@@ -64,6 +69,10 @@ while true; do
             ;;
     esac
 done
+
+if [ ${jobs_count} -eq 0 ];then
+    jobs_count=""
+fi
 
 if [ $rebuild_flag -eq 1 ];then
     bash ${script_dir}/clean.sh $app_subpath $build_board "$@"
@@ -145,6 +154,7 @@ ${BEAR_COMMAND} make all -j${jobs_count} \
     MK_USE_KERNEL_UORB=${uorb_enable} \
     MAVLINK_INCLUDING=${mavlink_including} \
     UORB_INCLUDING=${uorb_including} \
+    TEST_ENTRY=${test_entry} \
     "$@"
 
 build_status=$?

@@ -125,11 +125,11 @@ void hw_stm32_rtc_deinit()
     HAL_RTC_DeInit(&RTC_Handler);
 }
 
-rclk_time_t hw_stm32_rtc_get_timeval(struct rclk_timeval *tv)
+rtc_time_t hw_stm32_rtc_get_timeval(struct rtc_timeval *tv)
 {
     RTC_TimeTypeDef RTC_TimeStruct = {0};
     RTC_DateTypeDef RTC_DateStruct = {0};
-    struct rclk_tm tm_new = {0};
+    struct rtc_tm tm_new = {0};
 
     HAL_RTC_GetTime(&RTC_Handler, &RTC_TimeStruct, RTC_FORMAT_BIN);
     HAL_RTC_GetDate(&RTC_Handler, &RTC_DateStruct, RTC_FORMAT_BIN);
@@ -141,7 +141,7 @@ rclk_time_t hw_stm32_rtc_get_timeval(struct rclk_timeval *tv)
     tm_new._mon  = RTC_DateStruct.Month - 1;
     tm_new._year = RTC_DateStruct.Year + 100;
 
-    if (!rclk_tm_to_timstamp(&tm_new, &tv->_sec)) {
+    if (!rtc_tm_to_timstamp(&tm_new, &tv->_sec)) {
         return 0xff;
     }
 
@@ -152,7 +152,7 @@ rclk_time_t hw_stm32_rtc_get_timeval(struct rclk_timeval *tv)
     return tv->_sec;
 }
 
-void hw_stm32_rtc_get_tm(struct rclk_tm *now)
+void hw_stm32_rtc_get_tm(struct rtc_tm *now)
 {
     RTC_TimeTypeDef RTC_TimeStruct = {0};
     RTC_DateTypeDef RTC_DateStruct = {0};
@@ -168,13 +168,13 @@ void hw_stm32_rtc_get_tm(struct rclk_tm *now)
     now->_year = RTC_DateStruct.Year + 100;
 }
 
-bool hw_stm32_rtc_set_time_stamp(rclk_time_t time_stamp)
+bool hw_stm32_rtc_set_time_stamp(rtc_time_t time_stamp)
 {
     RTC_TimeTypeDef RTC_TimeStruct = {0};
     RTC_DateTypeDef RTC_DateStruct = {0};
 
-    struct rclk_tm tma = {0};
-    if (!rclk_timstamp_to_tm(time_stamp, &tma)) {
+    struct rtc_tm tma = {0};
+    if (!rtc_timstamp_to_tm(time_stamp, &tma)) {
         false;
     }
 

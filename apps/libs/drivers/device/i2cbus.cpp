@@ -1,17 +1,18 @@
 #include "i2cbus.hpp"
-#include "board_config.h"
+#include <cstring>
+
 namespace device
 {
 
 unsigned int I2C::_bus_clocks[NUMBER_I2C_BUSES] = {400000};
 
 I2C::I2C(const char *name, const int bus, const uint16_t address, const uint32_t frequency) :
-	_devname(name),
 	_bus(bus),
     _address(address),
     _frequency(frequency)
 {
 	_bus_clocks[_bus - 1] = _frequency;
+	strncpy(_devname, name, 16);
 }
 
 I2C::~I2C()

@@ -87,6 +87,14 @@ endif
 #C_ADEP := $(call TC_CC_VIA,${TARGET_ROOTDIR}/copts.via)
 #ASM_ADEP := $(call TC_ASM_VIA,${TARGET_ROOTDIR}/asmopts.via)
 #LINK_ADEP := $(call TC_LINK_VIA, ${TARGET_ROOTDIR}/lopts.via)
+EXT_ADEP ?=
+define add_ext_opt
+$(foreach src,$($(1)_SRC), \
+    $(eval $(OBJS_FOLDER)/$(basename $(src)).o: EXT_ADEP += $($(1)_OPT)) \
+)
+endef
+$(foreach group,$(ALL_EXT_GROUPS),$(call add_ext_opt,$(group)))
+
 C_ADEP := ${COPTS} ${CDEFS} ${CINCDIRS}
 CPP_ADEP := ${CPPOPTS} ${CDEFS} ${CINCDIRS}
 ASM_ADEP := ${ASMOPTS} ${ASMDEFS} ${ASMINCDIRS}
@@ -154,19 +162,19 @@ ${OBJS_FOLDER}/%.o: %.c ${COPTS_FILE}
 	$(eval SRCFILE:=$(call MK_LOOKUPSRC,$^,${BUILD_CSOURCES} ${BUILD_CARMSOURCES}))
 	$(eval SRCMODE:=$(if $(findstring $<,${BUILD_CARMSOURCES}),${TC_TARGETARM},${TC_TARGETTHUMB}))
 	$(call MK_ECHO,Compiling ${SRCFILE} )
-	@${TC_CC} ${C_ADEP} ${SRCMODE} -o $@ ${SRCFILE}
+	@${TC_CC} ${C_ADEP} ${EXT_ADEP} ${SRCMODE} -o $@ ${SRCFILE}
 
 ${OBJS_FOLDER}/%.o: %.cpp ${CPPOPTS_FILE}
 	$(eval SRCFILE:=$(call MK_LOOKUPSRC,$^,${BUILD_CPPSOURCES}))
 	$(eval SRCMODE:=$(if $(findstring $<,${BUILD_CARMSOURCES}),${TC_TARGETARM},${TC_TARGETTHUMB}))
 	$(call MK_ECHO,Compiling ${SRCFILE})
-	@${TC_CPP} ${CPP_ADEP} ${SRCMODE} -o $@ ${SRCFILE}
+	@${TC_CPP} ${CPP_ADEP} ${EXT_ADEP} ${SRCMODE} -o $@ ${SRCFILE}
 
 # asm file suffix for arm is (.s), not (.asm)
 ${OBJS_FOLDER}/%.o: %.s ${ASMOPTS_FILE}
 	$(eval SRCFILE:=$(call MK_LOOKUPSRC,$^,${BUILD_ASMSOURCES}))
 	$(call MK_ECHO,Assembling ${SRCFILE})
-	@${TC_ASM} ${ASM_ADEP} -o $@ ${SRCFILE}
+	@${TC_ASM} ${ASM_ADEP} ${EXT_ADEP} -o $@ ${SRCFILE}
 
 # ${OBJS_FOLDER}/%.o: %.asm ${ASMOPTS_FILE}
 # 	$(eval SRCFILE:=$(call MK_LOOKUPSRC,$^,${BUILD_ASMSOURCES}))

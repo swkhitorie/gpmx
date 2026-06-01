@@ -3,7 +3,7 @@
 #include <stdarg.h>
 #include <board_config.h>
 #include "gmsh.h"
-#include "device/dnode.h"
+#include "gpm/sched.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,12 +25,10 @@ char gmsh_console_getchar()
 
 void gsh_kprintf(const char *format, ...) 
 {
-    char gsh_buf[512] = {0};
     va_list args;
     va_start(args, format);
-    vsnprintf(gsh_buf, sizeof(gsh_buf), format, args);
+    board_vprintf(format, args);
     va_end(args);
-    board_printf("%s", gsh_buf);
 }
 
 int reboot_detect(int argc, char **argv)

@@ -15,6 +15,7 @@
 #include <stdbool.h>
 #include <drv_rtc.h>
 #include <drv_gpio.h>
+#include <stdarg.h>
 
 // #define HSE_VALUE             (25000000U)
 // #define LSE_VALUE             (32768UL)
@@ -89,9 +90,10 @@ int  board_stream_in(int port, void *p, int size);
 int  board_stream_out(int port, const void *p, int size, int way);
 void board_stream_printf(int port, const char *format, ...);
 void board_printf(const char *format, ...);
+void board_vprintf(const char *format, va_list args);
 
-bool board_rtc_set_timestamp(rclk_time_t now);
-rclk_time_t board_rtc_get_timestamp(struct rclk_timeval *now);
+bool board_rtc_set_timestamp(rtc_time_t now);
+rtc_time_t board_rtc_get_timestamp(struct rtc_timeval *now);
 
 int board_gpiosetevent(uint32_t pinid, bool risingedge, bool fallingedge,
     bool event, io_irq_entry func, void *arg, uint32_t priority);

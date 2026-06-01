@@ -1,6 +1,6 @@
 #pragma once
 
-#include "drv_hrt.h"
+#include "gpm/drv_hrt.h"
 #include <libs/conversion/rotation.h>
 #include <uorb/topics/sensor_mag.h>
 #include <PublicationMulti.hpp>

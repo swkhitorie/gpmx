@@ -48,7 +48,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "drv_hrt.h"
+#include "gpm/drv_hrt.h"
 
 #include <libs/mathlib/mathlib.h>
 #include <libs/matrix/matrix/math.hpp>

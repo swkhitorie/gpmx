@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "drv_cmn.h"
-#include <device/rtc.h>
+#include "gpm/rtc.h"
 
 #ifdef cplusplus
 extern "C" {
@@ -12,9 +12,9 @@ extern "C" {
 
 bool   hw_stm32_rtc_setup(void);
 void   hw_stm32_rtc_deinit(void);
-rclk_time_t hw_stm32_rtc_get_timeval(struct rclk_timeval *tv);
-void        hw_stm32_rtc_get_tm(struct rclk_tm *now);
-bool        hw_stm32_rtc_set_time_stamp(rclk_time_t time_stamp); 
+rtc_time_t hw_stm32_rtc_get_timeval(struct rtc_timeval *tv);
+void        hw_stm32_rtc_get_tm(struct rtc_tm *now);
+bool        hw_stm32_rtc_set_time_stamp(rtc_time_t time_stamp); 
 
 #ifdef cplusplus
 }

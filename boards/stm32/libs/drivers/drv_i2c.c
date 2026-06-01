@@ -465,7 +465,7 @@ int _i2c_transfer(struct i2c_master_s *dev, struct i2c_msg_s *msgs, int count)
 
 out:
     if (priv->hi2c.ErrorCode == HAL_I2C_ERROR_AF) {
-        drvlog_e("[i2c] NACK Error now stoped \r\n");
+        // drvlog_e("[i2c] NACK Error now stoped \r\n");
 
         /* Send stop signal to prevent bus lock-up */
 #if defined(DRV_STM32_H7)
@@ -473,7 +473,7 @@ out:
 #endif
     }
     if (priv->hi2c.ErrorCode == HAL_I2C_ERROR_BERR) {
-        drvlog_e("[i2c] BUS Error now stoped \r\n");
+        // drvlog_e("[i2c] BUS Error now stoped \r\n");
 
 #if defined(DRV_STM32_H7)
         priv->hi2c.Instance->CR1 |= I2C_IT_STOPI;

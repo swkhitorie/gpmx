@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "drv_cmn.h"
 #include "drv_gpio.h"
-#include <device/i2c_master.h>
+#include "gpm/i2c/i2c_master.h"
 
 struct up_i2c_master_s
 {

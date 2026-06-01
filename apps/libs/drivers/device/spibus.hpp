@@ -1,6 +1,6 @@
 #pragma once
 
-#include <device/spi.h>
+#include <gpm/spi/spi.h>
 
 namespace device
 {
@@ -52,7 +52,7 @@ protected:
 	void		set_lockmode(enum LockMode mode) { _locking_mode = mode; }
 
 protected:
-    const char	*_devname{nullptr};
+    char	_devname[16];
 	uint32_t		_device;
     int             _bus;
 	enum spi_mode_e		_mode;

@@ -36,10 +36,10 @@
 
 #include <assert.h>
 #include <time.h>
-#include <sdqueue.h>
+#include <queue.h>
 #include <string.h>
 
-#include "drv_hrt.h"
+#include "gpm/drv_hrt.h"
 #include "hrt_stm32.h"
 
 #if defined(CONFIG_FREERTOS_ENABLE) && defined(CONFIG_HRT_PRIMASK_CONTROL)

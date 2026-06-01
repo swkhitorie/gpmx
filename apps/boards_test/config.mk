@@ -41,10 +41,6 @@ MK_USE_CRUSB_IP=dwc2_st
 MK_USE_CRUSB_CLASS+=cdc_acm
 MK_USE_NET_LWIP_CORE=n
 
-ifeq ($(TEST_ITEM),)
-$(error Invalid empty TEST_ITEM)
-endif
-
 include ${SDK_ROOTDIR}/apps/board_selection.mk
 
 # uorb include and source
@@ -52,5 +48,5 @@ UORB_CINCDIRSS = $(subst ;,,$(UORB_INCLUDING))
 PROJ_CINCDIRS += $(subst ${SDK_ROOTDIR},,$(subst ;, ,$(UORB_INCLUDING)))
 CPPSOURCES += $(subst ${SDK_ROOTDIR},,$(wildcard ${UORB_CINCDIRSS}/msg/topics_sources/*cpp))
 
-PROJ_CDEFS += ${TEST_ITEM}
+PROJ_CDEFS += BOARD_TEST_ITEM=${TEST_ENTRY}
 CPPSOURCES += ${APP_PROJ_DIR}/app_main.cpp
