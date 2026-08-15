@@ -10,3 +10,11 @@
 [submodule "tools/flight_review"]
 	path = tools/flight_review
 	url = https://github.com/PX4/flight_review.git
+[submodule "nuttx/nuttx"]
+	path = nuttx/nuttx
+	url = https://github.com/swkhitorie/nuttx.git
+	branch = releases/11.0
+[submodule "nuttx/apps"]
+	path = nuttx/apps
+	url = https://github.com/swkhitorie/nuttx-apps.git
+	branch = releases/11.0
