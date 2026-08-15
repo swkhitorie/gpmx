@@ -1,9 +1,14 @@
+#define _GNU_SOURCE
+
+#include <gpmx/config.h>
 #include "workqueue.h"
 #include "workitem.h"
 #include <string.h>
-#include "kmodule_defines.h"
+#include <pthread.h>
 
-#include "gpm/sched.h"
+#include <driver/drv_sched.h>
+#include <driver/drv_hrt.h>
+#include <mlog.h>
 
 bool workqueue_cmp_method(struct intrusive_node *a, struct intrusive_node *b)
 {
@@ -186,7 +191,7 @@ void workqueue_print_status(struct __workqueue *queue, bool last)
 
     const size_t num_items = blocking_list_size(&queue->_work_items);
 
-    KMINFO("%-16s\n", workqueue_getname(queue));
+    KMRAW("%-16s\n", workqueue_getname(queue));
     unsigned i = 0;
 
     for (iterator = queue->_work_items.list.head; iterator != NULL; iterator = iterator->next) {
@@ -195,17 +200,17 @@ void workqueue_print_status(struct __workqueue *queue, bool last)
         i++;
 
         if (last) {
-            KMINFO("    ");
+            KMRAW("    ");
 
         } else {
-            KMINFO("|   ");
+            KMRAW("|   ");
         }
 
         if (i < num_items) {
-            KMINFO("|__%2d) ", i);
+            KMRAW("|__%2d) ", i);
 
         } else {
-            KMINFO("\\__%2d) ", i);
+            KMRAW("\\__%2d) ", i);
         }
 
         workitem_printstatus(item);

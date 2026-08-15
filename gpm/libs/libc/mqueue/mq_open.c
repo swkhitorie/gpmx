@@ -1,7 +1,7 @@
 #include <mqueue.h>
 #include <fcntl.h>
 #include <errno.h>
-
+#include <gpmx/config.h>
 #include "./prv_mqueue.h"
 
 #define posixconfigMQ_MAX_MESSAGES       10 /**< Maximum number of messages in an mq at one time. */

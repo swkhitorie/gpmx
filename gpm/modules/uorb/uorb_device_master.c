@@ -1,10 +1,10 @@
 #include "uorb_device_master.h"
 #include "uorb_manager.h"
 #include "uorb_gnode.h"
-#include "kmodule_defines.h"
 #include <math.h>
-
-#include "gpm/sched.h"
+#include <errno.h>
+#include <driver/drv_sched.h>
+#include <mlog.h>
 
 static void uorb_device_master_lock(struct __uorb_device_master *master)
 {
@@ -39,7 +39,7 @@ int uorb_device_master_add_new_nodes(struct __uorb_device_master *master, struct
     struct __uorb_device_node *node = NULL;
     struct __device_node_static_data *cur_node = NULL;
     struct __device_node_static_data *last_node = *first_node;
-    struct orb_metadata *meta;
+    const struct orb_metadata *meta;
 
     *num_topics = 0;
 
@@ -132,7 +132,7 @@ void uorb_device_master_deinit(struct __uorb_device_master *master)
     sem_destroy(&master->_lock);
 }
 
-int uorb_device_master_advertise(struct __uorb_device_master *master, struct orb_metadata *meta, bool is_advertiser, int *instance, enum ORB_PRIO priority)
+int uorb_device_master_advertise(struct __uorb_device_master *master, const struct orb_metadata *meta, bool is_advertiser, int *instance, enum ORB_PRIO priority)
 {
 	int ret = -1;
 
@@ -432,7 +432,7 @@ void uorb_device_master_showtop(struct __uorb_device_master *master, char **topi
 			while (cur_node) {
 
 				if (!print_active_only || (cur_node->pub_msg_delta > 0 && uorb_device_node_subscriber_count(cur_node->node) > 0)) {
-                    struct orb_metadata *meta = uorb_device_node_get_meta(cur_node->node);
+                    const struct orb_metadata *meta = uorb_device_node_get_meta(cur_node->node);
 					KMINFO(CLEAR_LINE "%-*s %2i %4i %4i %2i %4i \n", (int)max_topic_name_length,
                             meta->o_name, (int)uorb_device_node_get_instance(cur_node->node),
                             (int)uorb_device_node_subscriber_count(cur_node->node), cur_node->pub_msg_delta,

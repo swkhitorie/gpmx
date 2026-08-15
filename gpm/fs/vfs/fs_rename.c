@@ -1,3 +1,27 @@
+/****************************************************************************
+ * fs/vfs/fs_rename.c
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
 #include <sys/stat.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -6,9 +30,34 @@
 #include <assert.h>
 #include <errno.h>
 
-#include "gpm/fs/fs.h"
-#include "inode/inode.h"
+#include <gpmx/config.h>
+#include <gpm/fs/fs.h>
+#include <inode/inode.h>
 
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+#undef FS_HAVE_RENAME
+#if !defined(CONFIG_DISABLE_MOUNTPOINT) || !defined(CONFIG_DISABLE_PSEUDOFS_OPERATIONS)
+#  define FS_HAVE_RENAME 1
+#endif
+
+#ifdef FS_HAVE_RENAME
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: pseudorename
+ *
+ * Description:
+ *   Rename an inode in the pseudo file system
+ *
+ ****************************************************************************/
+
+#ifndef CONFIG_DISABLE_PSEUDOFS_OPERATIONS
 static int pseudorename(const char *oldpath, struct inode *oldinode,
                         const char *newpath)
 {
@@ -28,6 +77,7 @@ next_subdir:
 
         /* We found it.  Get the search results */
         newinode = newdesc.node;
+        DEBUGASSERT(newinode != NULL);
 
         /* If the old and new inodes are the same, then this is an attempt to
         * move the directory entry onto itself.  Let's not but say we did.
@@ -64,8 +114,7 @@ next_subdir:
 
             subdir = kmm_malloc(PATH_MAX);
 
-            extern int local_asprintf(char **strp, const char *fmt, ...);
-            local_asprintf(&subdir, "%s/%s", newpath, subdirname);
+            asprintf(&subdir, "%s/%s", newpath, subdirname);
 
             if (tmp != NULL) {
                 kmm_free(tmp);
@@ -87,7 +136,7 @@ next_subdir:
 
             RELEASE_SEARCH(&newdesc);
             goto next_subdir;
-      } else {
+        } else {
             /* Not a directory... remove it.  It may still be something
             * important (like a driver), but we will just have to suffer
             * the consequences.
@@ -99,9 +148,9 @@ next_subdir:
             */
 
             inode_remove(newpath);
-      }
+        }
 
-      inode_release(newinode);
+        inode_release(newinode);
     }
 
     /* Create a new, empty inode at the destination location.
@@ -156,6 +205,16 @@ errout:
     return ret;
 }
 
+#endif /* CONFIG_DISABLE_PSEUDOFS_OPERATIONS */
+
+/****************************************************************************
+ * Name: mountptrename
+ *
+ * Description:
+ *   Rename a file residing on a mounted volume.
+ *
+ ****************************************************************************/
+
 static int mountptrename(const char *oldpath, struct inode *oldinode,
                          const char *oldrelpath, const char *newpath)
 {
@@ -164,6 +223,8 @@ static int mountptrename(const char *oldpath, struct inode *oldinode,
     const char *newrelpath;
     char *subdir = NULL;
     int ret;
+
+    DEBUGASSERT(oldinode->u.i_mops);
 
     /* If the file system does not support the rename() method, then bail now.
     * As of this writing, only NXFFS does not support the rename method.  A
@@ -189,6 +250,7 @@ static int mountptrename(const char *oldpath, struct inode *oldinode,
     /* Get the search results */
     newinode   = newdesc.node;
     newrelpath = newdesc.relpath;
+    DEBUGASSERT(newinode != NULL && newrelpath != NULL);
 
     /* Verify that the two paths lie on the same mountpoint inode */
     if (oldinode != newinode) {
@@ -215,10 +277,10 @@ static int mountptrename(const char *oldpath, struct inode *oldinode,
 
 next_subdir:
 
-      /* Something exists for this directory entry.  Do nothing in the
-       * degenerate case where a directory or file is being moved to
-       * itself.
-       */
+        /* Something exists for this directory entry.  Do nothing in the
+        * degenerate case where a directory or file is being moved to
+        * itself.
+        */
 
         if (strcmp(oldrelpath, newrelpath) != 0) {
             ret = oldinode->u.i_mops->stat(oldinode, newrelpath, &buf);
@@ -246,8 +308,7 @@ next_subdir:
                         char *tmp = subdir;
 
                         subdir = NULL;
-                        extern int local_asprintf(char **strp, const char *fmt, ...);
-                        local_asprintf(&subdir, "%s/%s", newrelpath,
+                        asprintf(&subdir, "%s/%s", newrelpath,
                                 subdirname);
 
                         if (tmp != NULL) {
@@ -269,7 +330,7 @@ next_subdir:
                     */
 
                     goto next_subdir;
-              } else if (oldinode->u.i_mops->unlink) {
+                } else if (oldinode->u.i_mops->unlink) {
                     /* No.. newrelpath must refer to a regular file.  Attempt
                     * to remove the file before doing the rename.
                     *
@@ -310,6 +371,18 @@ errout_with_newsearch:
     return ret;
 }
 
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: rename
+ *
+ * Description:
+ *   Rename a file or directory.
+ *
+ ****************************************************************************/
+
 int rename(const char *oldpath, const char *newpath)
 {
     struct inode_search_s olddesc;
@@ -334,6 +407,7 @@ int rename(const char *oldpath, const char *newpath)
 
     /* Get the search results */
     oldinode = olddesc.node;
+    DEBUGASSERT(oldinode != NULL);
 
     /* Verify that the old inode is a valid mountpoint. */
     if (INODE_IS_MOUNTPT(oldinode) && *olddesc.relpath != '\0') {
@@ -356,3 +430,4 @@ errout:
     return 0; // OK
 }
 
+#endif /* FS_HAVE_RENAME */

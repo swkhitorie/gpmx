@@ -1,8 +1,10 @@
+#include <gpmx/config.h>
+
 #include "workitem.h"
 #include <string.h>
 #include <float.h>
 #include <math.h>
-#include "kmodule_defines.h"
+#include <mlog.h>
 
 bool workitem_cmp_method(struct intrusive_node *a, struct intrusive_node *b)
 {
@@ -135,7 +137,7 @@ float workitem_average_interval(struct __workitem *item)
 
 void workitem_printstatus(struct __workitem *item)
 {
-    KMINFO("%-26s %8.1f Hz %12.0f us\n", item->_name, (double)workitem_average_rate(item), (double)workitem_average_interval(item));
+    KMRAW("%-26s %8.1f Hz %12.0f us\n", item->_name, (double)workitem_average_rate(item), (double)workitem_average_interval(item));
 }
 
 

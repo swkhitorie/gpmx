@@ -1,2 +1,0 @@
-
-PROJ_CINCDIRS += ${GPMPATH}/include

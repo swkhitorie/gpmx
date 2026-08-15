@@ -1,6 +1,7 @@
 #include <semaphore.h>
 #include <errno.h>
 #include "prv_sem.h"
+#include <gpmx/config.h>
 
 int sem_init(sem_t *sem, int pshared, unsigned value)
 {
@@ -8,6 +9,7 @@ int sem_init(sem_t *sem, int pshared, unsigned value)
 
     char name[RT_NAME_MAX];
     static rt_uint16_t psem_number = 0;
+    (void)pshared;
 
     if (sem == RT_NULL) {
         rt_set_errno(EINVAL);
@@ -15,11 +17,22 @@ int sem_init(sem_t *sem, int pshared, unsigned value)
     }
 
     rt_snprintf(name, sizeof(name), "psem%02d", psem_number++);
+
+#if defined(CONFIG_LIBC_SEMAPHORE_INHERIT)
+    sem->protocol = SEM_PRIO_INHERIT;
+    sem->sem      = RT_NULL;
+    sem->mutex = rt_mutex_create(name, RT_IPC_FLAG_FIFO);
+    if (sem->mutex == RT_NULL) { 
+        rt_set_errno(ENOMEM);
+        return -1; 
+    }
+#else
     sem->sem = rt_sem_create(name, value, RT_IPC_FLAG_FIFO);
     if (sem->sem == RT_NULL) {
         rt_set_errno(ENOMEM);
         return -1;
     }
+#endif
 
     /* initialize posix semaphore */
     sem->refcount = 1;
@@ -31,19 +44,27 @@ int sem_init(sem_t *sem, int pshared, unsigned value)
     posix_sem_unlock();
 #elif defined(CONFIG_FREERTOS_ENABLE)
 
-    int ret = 0;
-    sem_t *p = (sem_t *)sem;
     (void)pshared;
-    if (value > SEM_VALUE_MAX) {
+    if (!sem || value > SEM_VALUE_MAX) { 
         errno = EINVAL;
-        ret = -1;
-    }
-    p->val = (int)value;
-    if (ret == 0) {
-        xSemaphoreCreateCountingStatic(SEM_VALUE_MAX, 0, &p->sem);
+        return -1;
     }
 
-    return ret;
+    sem->val = value;
+    sem->protocol = SEM_PRIO_INHERIT;
+
+#if !defined(CONFIG_LIBC_SEMAPHORE_FREERTOS_DYNAMIC)
+    xSemaphoreCreateMutexStatic(&sem->handle);
+#else
+    sem->handle = xSemaphoreCreateMutex();
+    if (sem->handle == NULL) { 
+        errno = ENOMEM;
+        return -1;
+    }
+#endif
+
+    return 0;
+
 #else
 
     return -1;

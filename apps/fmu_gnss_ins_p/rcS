@@ -1,0 +1,18 @@
+
+
+ekf2 start
+param select
+reboot start
+echo "teststring"
+
+set BOARD_RC_MAVLINK /etc/init.d/rc.board_mavlink
+echo "Board mavlink: ${BOARD_RC_MAVLINK}"
+unset BOARD_RC_MAVLINK
+echo "Board mavlink2: ${BOARD_RC_MAVLINK}"
+
+set SDCARD_AVAILABLE yes
+
+if [ $SDCARD_AVAILABLE = yes ]
+then
+    echo "value: ${SDCARD_AVAILABLE}"
+fi

@@ -1,8 +1,9 @@
 #ifndef SCHEDULED_WORKITEM_H_
 #define SCHEDULED_WORKITEM_H_
 
+#include <gpmx/config.h>
 #include "workitem.h"
-#include "gpm/drv_hrt.h"
+#include <driver/drv_hrt.h>
 
 struct __scheduledworkitem {
     struct __workitem item;

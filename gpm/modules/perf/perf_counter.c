@@ -1,3 +1,5 @@
+
+#include <gpmx/config.h>
 #include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -6,12 +8,11 @@
 #include <pthread.h>
 #include <queue.h>
 
-#include "container/container_of.h"
 #include "perf_counter.h"
-#include "kmodule_defines.h"
-
-#include "gpm/drv_hrt.h"
-#include "gpm/sched.h"
+#include "container/container_of.h"
+#include <driver/drv_hrt.h>
+#include <driver/drv_sched.h>
+#include <mlog.h>
 
 /**
  * Header common to all counters.

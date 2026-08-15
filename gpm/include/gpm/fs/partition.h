@@ -1,12 +1,44 @@
-#ifndef INCLUDE_FS_PARTITION_H
-#define INCLUDE_FS_PARTITION_H
+/****************************************************************************
+ * include/gpm/fs/partition.h
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+#ifndef __INCLUDE_GPM_FS_PARTITION_H
+#define __INCLUDE_GPM_FS_PARTITION_H
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
+#include <gpmx/config.h>
 
 #include <limits.h>
 #include <sys/types.h>
 
+#ifndef CONFIG_DISABLE_MOUNTPOINT
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/****************************************************************************
+ * Public Types
+ ****************************************************************************/
 
 struct partition_s {
     char   name[NAME_MAX + 1];
@@ -18,9 +50,29 @@ struct partition_s {
 
 typedef void (*partition_handler_t)(struct partition_s *part, void *arg);
 
+/****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
+
 int parse_block_partition(  const char *path,
                             partition_handler_t handler,
                             void *arg);
+
+/****************************************************************************
+ * Name: parse_mtd_partition
+ *
+ * Description:
+ *   parse the partition table on a mtd device.
+ *
+ * Input Parameters:
+ *   mtd     - The MTD device to be parsed
+ *   handler - The function to be called for each found partition
+ *   arg     - A caller provided value to return with the handler
+ *
+ * Returned Value:
+ *   Zero on success; A negated errno value is returned on a failure
+ *
+ ****************************************************************************/
 
 struct mtd_dev_s;
 int parse_mtd_partition(struct mtd_dev_s *mtd,
@@ -31,4 +83,6 @@ int parse_mtd_partition(struct mtd_dev_s *mtd,
 }
 #endif
 
-#endif
+#endif /* CONFIG_DISABLE_MOUNTPOINT */
+
+#endif  /* __INCLUDE_GPM_FS_PARTITION_H */

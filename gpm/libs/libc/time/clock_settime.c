@@ -1,3 +1,4 @@
+#include <gpmx/config.h>
 #include <time.h>
 #include <errno.h>
 #include <board_config.h>

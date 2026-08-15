@@ -63,7 +63,6 @@ PROJ_CDEFS += ENAGAL
 
 PROJ_CINCDIRS += ${APP_PROJ_DIR}/
 CPPSOURCES += ${APP_PROJ_DIR}/app_main.cpp
-CPPSOURCES += ${APP_PROJ_DIR}/gsh_main.cpp
 
 PROJ_CINCDIRS += ${APP_PROJ_DIR}/rtkplatform/
 CSOURCES += ${APP_PROJ_DIR}/rtkplatform/stream.c

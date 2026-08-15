@@ -1,13 +1,15 @@
 #include "./prv_mqueue.h"
 #include <string.h>
 #include <fcntl.h>
-
+#include <gpmx/config.h>
 #include "utils.h"
 
 #if defined(CONFIG_FREERTOS_ENABLE)
 
 /**< Maximum number of bytes in a filename (not including terminating null). */
+#ifndef NAME_MAX
 #define NAME_MAX                         64
+#endif
 
 static Link_t            queue_listhead  = {0};
 static StaticSemaphore_t queue_listmutex = { {0}, .u = {0} };

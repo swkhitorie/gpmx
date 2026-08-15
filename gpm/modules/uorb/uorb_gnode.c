@@ -1,11 +1,12 @@
 #include "uorb_gnode.h"
 #include <pthread.h>
-#include "kmodule_defines.h"
 #include <semaphore.h>
 #include <string.h>
+#include <errno.h>
 
-#include "container/container_of.h"
 #include "uorb_device_node.h"
+#include "container/container_of.h"
+#include <mlog.h>
 
 #define NODEMAP_LENGTH  (128)
 

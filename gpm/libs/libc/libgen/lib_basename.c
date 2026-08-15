@@ -1,5 +1,51 @@
+/****************************************************************************
+ * libs/libc/libgen/lib_basename.c
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
 #include <string.h>
 #include <libgen.h>
+
+/****************************************************************************
+ * Name: basename
+ *
+ * Description:
+ *   basename() extracts the filename component from a null-terminated
+ *   pathname string. In the usual case, basename() returns the component
+ *   following the final '/'. Trailing '/' characters are not counted as
+ *   part of the pathname.
+ *
+ *   If path does not contain a slash, basename() returns a copy of path.
+ *   If path is the string "/", then basename() returns the string "/". If
+ *   path is a NULL pointer or points to an empty string, then basename()
+ *   return the string ".".
+ *
+ *   basename() may modify the contents of path, so copies should be passed.
+ *   basename() may return pointers to statically allocated memory which may
+ *   be overwritten by subsequent calls.
+ *
+ * Input Parameters:
+ *   path The null-terminated string referring to the path to be decomposed
+ *
+ * Returned Value:
+ *   On success the filename component of the path is returned.
+ *
+ ****************************************************************************/
 
 char *basename(char *path)
 {

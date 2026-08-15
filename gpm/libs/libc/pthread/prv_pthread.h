@@ -1,10 +1,12 @@
 #ifndef PRV_PTHREAD_H_
 #define PRV_PTHREAD_H_
 
+#include <gpmx/config.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <pthread.h>
 #include <sys/time.h>
+#include <gpm/fs/fs.h>
 
 #if defined(CONFIG_FREERTOS_ENABLE)
 
@@ -19,6 +21,9 @@ typedef struct __pthread_obj
     void *arg;
     void *ret;
     int pterrno;
+
+    struct filelist tg_filelist;
+
     TaskHandle_t handle;             /**< FreeRTOS task handle. */
     StaticSemaphore_t join_barrier;  /**< Synchronizes the two callers of pthread_join. */
     StaticSemaphore_t join_mutex;    /**< Ensures that only one other thread may join this thread. */
@@ -66,6 +71,7 @@ typedef struct _pthread_data {
 
     _pthread_cleanup_t *cleanup;
     void** tls; /* thread-local storage area */
+    struct filelist tg_filelist;
 } _pthread_data_t;
 #endif
 
@@ -81,8 +87,8 @@ void prv_run_thread(void *xarg);
 #elif defined(CONFIG_RTTNANO_ENABLE)
 
 _pthread_data_t *_pthread_get_data(pthread_t thread);
-pthread_t _pthread_data_get_pth(_pthread_data_t *ptd)
-pthread_t _pthread_data_create(void)
+pthread_t _pthread_data_get_pth(_pthread_data_t *ptd);
+pthread_t _pthread_data_create(void);
 void _pthread_data_destroy(_pthread_data_t *ptd);
 void _pthread_cleanup(rt_thread_t tid);
 void pthread_entry_stub(void *parameter);

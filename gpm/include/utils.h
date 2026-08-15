@@ -1,6 +1,9 @@
+#ifndef __INCLUDE_UTILS_H
+#define __INCLUDE_UTILS_H
 
-#ifndef POSIX_UTILS_H_
-#define POSIX_UTILS_H_
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -14,6 +17,10 @@ extern "C"
 #else
 #define EXTERN extern
 #endif
+
+/****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
 
 size_t  utils_strlen          (const char *p, size_t maxlen);
 bool    utils_validtimespec   (const struct timespec *p);
@@ -31,4 +38,4 @@ int  utils_timespec_todeltaticks        (const struct timespec *ab, const struct
 }
 #endif
 
-#endif
+#endif /* __INCLUDE_UTILS_H */

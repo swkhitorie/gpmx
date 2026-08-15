@@ -1,8 +1,37 @@
+/****************************************************************************
+ * fs/vfs/fs_dup2.c
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
 
-#include "inode/inode.h"
+#include <gpmx/config.h>
+#include <inode/inode.h>
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
 
 /****************************************************************************
  * Name: file_dup2
@@ -20,6 +49,7 @@
  *   any failure.
  *
  ****************************************************************************/
+
 int file_dup2(struct file *filep1, struct file *filep2)
 {
     struct inode *inode;
@@ -35,6 +65,7 @@ int file_dup2(struct file *filep1, struct file *filep2)
     }
 
     /* Increment the reference count on the contained inode */
+
     inode = filep1->f_inode;
     ret   = inode_addref(inode);
 
@@ -43,6 +74,7 @@ int file_dup2(struct file *filep1, struct file *filep2)
     }
 
     /* Then clone the file structure */
+
     temp.f_oflags = filep1->f_oflags;
     temp.f_pos    = filep1->f_pos;
     temp.f_inode  = inode;
@@ -51,18 +83,26 @@ int file_dup2(struct file *filep1, struct file *filep2)
     /* Call the open method on the file, driver, mountpoint so that it
     * can maintain the correct open counts.
     */
+
     if (inode->u.i_ops) {
+
         if (INODE_IS_MOUNTPT(inode)) {
 
             /* Dup the open file on the in the new file structure */
+
             if (inode->u.i_mops->dup) {
+
                 ret = inode->u.i_mops->dup(filep1, &temp);
             }
+
         } else {
 
             /* (Re-)open the pseudo file or device driver */
+
             temp.f_priv = filep1->f_priv;
+
             if (inode->u.i_ops->open) {
+
                 ret = inode->u.i_ops->open(&temp);
             }
         }
@@ -76,7 +116,13 @@ int file_dup2(struct file *filep1, struct file *filep2)
     /* If there is already an inode contained in the new file structure,
     * close the file and release the inode.
     */
+
     ret = file_close(filep2);
+
+    DEBUGASSERT(ret == 0);
+
+    /* Return the file structure */
+
     memcpy(filep2, &temp, sizeof(temp));
     return 0;
 }

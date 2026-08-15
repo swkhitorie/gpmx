@@ -1,8 +1,6 @@
-#include <board_config.h>
+#include <gpmx/config.h>
 
-#ifndef TEST_PRINTF
-#define TEST_PRINTF    BOARD_PRINTF
-#endif
+#include <mlog.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -56,7 +54,7 @@ void* p4_entry(void *p)
     attr_node0.mq_curmsgs = 0;
 
     msg_1 = mq_open("/node0", O_RDWR | O_CREAT | O_NONBLOCK, 0, &attr_node0);
-    TEST_PRINTF("[%s] msg_1 : 0x%x %d\r\n", &name[0], (uint32_t)msg_1, (uint32_t)msg_1 < 0);
+    KMRAW("[%s] msg_1 : 0x%x %d\r\n", &name[0], (uint32_t)msg_1, (uint32_t)msg_1 < 0);
 
     euler_t tmp = {.pitch = 1.0f, .roll = 2.0f, .yaw = 3.14f,};
     for (;;) {
@@ -65,7 +63,7 @@ void* p4_entry(void *p)
         tmp.yaw -= 0.5f;
 
         mq_send(msg_1, (const char*)&tmp, sizeof(euler_t), 0);
-        TEST_PRINTF("[%s] send data: %.3f, %.3f, %.3f\r\n", &name[0], tmp.pitch, tmp.roll, tmp.yaw);
+        KMRAW("[%s] send data: %.3f, %.3f, %.3f\r\n", &name[0], tmp.pitch, tmp.roll, tmp.yaw);
         usleep(500*1000);
     }
 
@@ -88,9 +86,9 @@ void* p5_entry(void *p)
 
     mq_node0 = mq_open("/node0", O_RDWR | O_NONBLOCK, 0, NULL);
     if (mq_node0 == (mqd_t)-1) {
-        TEST_PRINTF("/node0 open failed \r\n");
+        KMRAW("/node0 open failed \r\n");
     } else {
-        TEST_PRINTF("/node0 open success \r\n");
+        KMRAW("/node0 open success \r\n");
     }
 
     mq_getattr(mq_node0, &attr);
@@ -99,7 +97,7 @@ void* p5_entry(void *p)
         int res = mq_receive(mq_node0, &rcv_array[0], attr.mq_msgsize, NULL);
         if (res == attr.mq_msgsize) {
             memcpy((char *)&tmp_rcv, &rcv_array[0], sizeof(euler_t));
-            TEST_PRINTF("[%s] rcv data: %.3f, %.3f, %.3f, %d, %d\r\n", &name[0], tmp_rcv.pitch, tmp_rcv.roll, tmp_rcv.yaw, res, attr.mq_msgsize);
+            KMRAW("[%s] rcv data: %.3f, %.3f, %.3f, %d, %d\r\n", &name[0], tmp_rcv.pitch, tmp_rcv.roll, tmp_rcv.yaw, res, attr.mq_msgsize);
         }
 
         usleep(50*1000);
@@ -117,7 +115,7 @@ int klibc_mq_test(int argc, char **argv)
         pthread_attr_init(&p4.attr);
         pthread_attr_setdetachstate(&p4.attr, PTHREAD_CREATE_JOINABLE);
         pthread_attr_setschedparam(&p4.attr, &p4.param);
-        pthread_attr_setstacksize(&p4.attr, 512*sizeof(StackType_t));
+        pthread_attr_setstacksize(&p4.attr, 512*4);
         rv = pthread_create(&p4.id, &p4.attr, &p4_entry, &p4.arg);
     }
 
@@ -128,7 +126,7 @@ int klibc_mq_test(int argc, char **argv)
         pthread_attr_init(&p5.attr);
         pthread_attr_setdetachstate(&p5.attr, PTHREAD_CREATE_JOINABLE);
         pthread_attr_setschedparam(&p5.attr, &p5.param);
-        pthread_attr_setstacksize(&p5.attr, 512*sizeof(StackType_t));
+        pthread_attr_setstacksize(&p5.attr, 512*4);
         rv = pthread_create(&p5.id, &p5.attr, &p5_entry, &p5.arg);
     }
 

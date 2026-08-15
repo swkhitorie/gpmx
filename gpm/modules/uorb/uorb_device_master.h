@@ -3,11 +3,9 @@
 
 #include "uorb_common.h"
 #include "uorb_device_node.h"
-
-#include <uorb/topics/uorb_topics.h>
-
 #include "container/intrusive_node.h"
 #include "container/atomic_bitset.h"
+#include <uorb/topics/uorb_topics.h>
 
 #include <string.h>
 #include <stdlib.h>
@@ -38,7 +36,7 @@ extern "C" {
 void uorb_device_master_init(struct __uorb_device_master *master);
 void uorb_device_master_deinit(struct __uorb_device_master *master);
 
-int uorb_device_master_advertise(struct __uorb_device_master *master, struct orb_metadata *meta, bool is_advertiser, int *instance, enum ORB_PRIO priority);
+int uorb_device_master_advertise(struct __uorb_device_master *master, const struct orb_metadata *meta, bool is_advertiser, int *instance, enum ORB_PRIO priority);
 
 bool uorb_device_master_node_exists(struct __uorb_device_master *master, enum ORB_ID id, const uint8_t instance);
 

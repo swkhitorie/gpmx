@@ -1,10 +1,11 @@
+#include <gpmx/config.h>
 #include <stddef.h>
 #include <pthread.h>
 #include <errno.h>
 #include <time.h>
 
 #include "utils.h"
-#include "./prv_timer.h"
+#include "prv_timer.h"
 
 int timer_gettime(timer_t timerid, struct itimerspec *value)
 {

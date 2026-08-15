@@ -1,0 +1,1353 @@
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
+#include <gpmx/config.h>
+
+#include <errno.h>
+#include <fcntl.h>
+#include <string.h>
+
+#include <gpm/fs/fs.h>
+#include <driver/drv_sched.h>
+#include <gpm/mtd/mtd.h>
+#include <semaphore.h>
+
+#include <sys/stat.h>
+#include <sys/statfs.h>
+
+#include "littlefs/lfs.h"
+#include "littlefs/lfs_util.h"
+
+/****************************************************************************
+ * Private Types
+ ****************************************************************************/
+
+struct littlefs_dir_s
+{
+    struct fs_dirent_s    base;
+    struct lfs_dir        dir;
+};
+
+struct littlefs_file_s
+{
+    struct lfs_file       file;
+    int                   refs;
+};
+
+/* This structure represents the overall mountpoint state. An instance of
+ * this structure is retained as inode private data on each mountpoint that
+ * is mounted with a littlefs filesystem.
+ */
+
+struct littlefs_mountpt_s
+{
+    sem_t                 sem;
+    struct inode         *drv;
+    struct mtd_geometry_s geo;
+    struct lfs_config     cfg;
+    struct lfs            lfs;
+};
+
+/****************************************************************************
+ * Private Function Prototypes
+ ****************************************************************************/
+
+static void    littlefs_semgive(struct littlefs_mountpt_s *fs);
+static int     littlefs_semtake(struct littlefs_mountpt_s *fs);
+
+static int     littlefs_open(struct file *filep, const char *relpath,
+                            int oflags, mode_t mode);
+static int     littlefs_close(struct file *filep);
+static ssize_t littlefs_read(struct file *filep, char *buffer,
+                            size_t buflen);
+static ssize_t littlefs_write(struct file *filep, const char *buffer,
+                              size_t buflen);
+static off_t   littlefs_seek(struct file *filep, off_t offset,
+                            int whence);
+static int     littlefs_ioctl(struct file *filep, int cmd,
+                              unsigned long arg);
+
+static int     littlefs_sync(struct file *filep);
+static int     littlefs_dup(const struct file *oldp,
+                            struct file *newp);
+static int     littlefs_fstat(const struct file *filep,
+                              struct stat *buf);
+static int     littlefs_truncate(struct file *filep,
+                                off_t length);
+
+static int     littlefs_opendir(struct inode *mountpt,
+                                const char *relpath,
+                                struct fs_dirent_s **dir);
+static int     littlefs_closedir(struct inode *mountpt,
+                                 struct fs_dirent_s *dir);
+static int     littlefs_readdir(struct inode *mountpt,
+                                struct fs_dirent_s *dir,
+                                struct dirent *entry);
+static int     littlefs_rewinddir(struct inode *mountpt,
+                                  struct fs_dirent_s *dir);
+
+static int     littlefs_bind(struct inode *driver,
+                            const void *data, void **handle);
+static int     littlefs_unbind(void *handle, struct inode **driver,
+                              unsigned int flags);
+static int     littlefs_statfs(struct inode *mountpt,
+                              struct statfs *buf);
+
+static int     littlefs_unlink(struct inode *mountpt,
+                              const char *relpath);
+static int     littlefs_mkdir(struct inode *mountpt,
+                              const char *relpath, mode_t mode);
+static int     littlefs_rmdir(struct inode *mountpt,
+                              const char *relpath);
+static int     littlefs_rename(struct inode *mountpt,
+                              const char *oldrelpath,
+                              const char *newrelpath);
+static int     littlefs_stat(struct inode *mountpt,
+                            const char *relpath, struct stat *buf);
+
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
+
+/* See fs_mount.c -- this structure is explicitly extern'ed there.
+ * We use the old-fashioned kind of initializers so that this will compile
+ * with any compiler.
+ */
+
+const struct mountpt_operations littlefs_operations =
+{
+    littlefs_open,          /* open */
+    littlefs_close,         /* close */
+    littlefs_read,          /* read */
+    littlefs_write,         /* write */
+    littlefs_seek,          /* seek */
+    littlefs_ioctl,         /* ioctl */
+
+    littlefs_sync,          /* sync */
+    littlefs_dup,           /* dup */
+    littlefs_fstat,         /* fstat */
+    NULL,                   /* fchstat */
+    littlefs_truncate,      /* truncate */
+
+    littlefs_opendir,       /* opendir */
+    littlefs_closedir,      /* closedir */
+    littlefs_readdir,       /* readdir */
+    littlefs_rewinddir,     /* rewinddir */
+
+    littlefs_bind,          /* bind */
+    littlefs_unbind,        /* unbind */
+    littlefs_statfs,        /* statfs */
+
+    littlefs_unlink,        /* unlink */
+    littlefs_mkdir,         /* mkdir */
+    littlefs_rmdir,         /* rmdir */
+    littlefs_rename,        /* rename */
+    littlefs_stat,          /* stat */
+    NULL                    /* chstat */
+};
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: littlefs_semtake
+ ****************************************************************************/
+
+static int littlefs_semtake(struct littlefs_mountpt_s *fs)
+{
+    return sem_wait_uninterruptible(&fs->sem);
+}
+
+/****************************************************************************
+ * Name: littlefs_semgive
+ ****************************************************************************/
+
+static void littlefs_semgive(struct littlefs_mountpt_s *fs)
+{
+    sem_post(&fs->sem);
+}
+
+/****************************************************************************
+ * Name: littlefs_convert_result
+ ****************************************************************************/
+
+static int littlefs_convert_result(int ret)
+{
+    switch (ret) {
+    case LFS_ERR_IO:
+        return -EIO;
+
+    case LFS_ERR_CORRUPT:
+        return -EFAULT;
+
+    case LFS_ERR_NOENT:
+        return -ENOENT;
+
+    case LFS_ERR_EXIST:
+        return -EEXIST;
+
+    case LFS_ERR_NOTDIR:
+        return -ENOTDIR;
+
+    case LFS_ERR_ISDIR:
+        return -EISDIR;
+
+    case LFS_ERR_NOTEMPTY:
+        return -ENOTEMPTY;
+
+    case LFS_ERR_BADF:
+        return -EBADF;
+
+    case LFS_ERR_FBIG:
+        return -EFBIG;
+
+    case LFS_ERR_INVAL:
+        return -EINVAL;
+
+    case LFS_ERR_NOSPC:
+        return -ENOSPC;
+
+    case LFS_ERR_NOMEM:
+        return -ENOMEM;
+
+    case LFS_ERR_NOATTR:
+        return -ENODATA;
+
+    case LFS_ERR_NAMETOOLONG:
+        return -ENAMETOOLONG;
+
+    case LFS_ERR_OK:
+    default:
+        return ret;
+    }
+}
+
+/****************************************************************************
+ * Name: littlefs_convert_oflags
+ ****************************************************************************/
+
+static int littlefs_convert_oflags(int oflags)
+{
+    int ret = 0;
+
+    if ((oflags & O_RDONLY) != 0) {
+        ret |= LFS_O_RDONLY;
+    }
+
+    if ((oflags & O_WRONLY) != 0) {
+        ret |= LFS_O_WRONLY;
+    }
+
+    if ((oflags & O_CREAT) != 0) {
+        ret |= LFS_O_CREAT;
+    }
+
+    if ((oflags & O_EXCL) != 0) {
+        ret |= LFS_O_EXCL;
+    }
+
+    if ((oflags & O_APPEND) != 0) {
+        ret |= LFS_O_APPEND;
+    }
+
+    if ((oflags & O_TRUNC) != 0) {
+        ret |= LFS_O_TRUNC;
+    }
+
+    return ret;
+}
+
+/****************************************************************************
+ * Name: littlefs_open
+ ****************************************************************************/
+
+static int littlefs_open(struct file *filep, const char *relpath,
+                        int oflags, mode_t mode)
+{
+    struct littlefs_mountpt_s *fs;
+    struct littlefs_file_s *priv;
+    struct inode *inode;
+    int ret;
+
+    /* Get the mountpoint inode reference from the file structure and the
+    * mountpoint private data from the inode structure
+    */
+
+    inode = filep->f_inode;
+    fs    = inode->i_private;
+
+    /* Allocate memory for the open file */
+
+    priv = kmm_malloc(sizeof(*priv));
+    if (priv == NULL) {
+        return -ENOMEM;
+    }
+
+    priv->refs = 1;
+
+    /* Take the semaphore */
+
+    ret = littlefs_semtake(fs);
+    if (ret < 0) {
+        goto errsem;
+    }
+
+    /* Try to open the file */
+
+    oflags = littlefs_convert_oflags(oflags);
+    ret = littlefs_convert_result(lfs_file_open(&fs->lfs, &priv->file,
+                                                relpath, oflags));
+
+    if (ret < 0) {
+        /* Error opening file */
+
+        goto errout;
+    }
+
+    /* In append mode, we need to set the file pointer to the end of the
+    * file.
+    */
+
+    if (oflags & LFS_O_APPEND) {
+
+        ret = littlefs_convert_result(lfs_file_seek(&fs->lfs, &priv->file,
+                                                    0, LFS_SEEK_END));
+        if (ret >= 0) {
+
+            filep->f_pos = ret;
+        } else {
+
+            goto errout_with_file;
+        }
+    }
+
+    /* Sync here in case of O_TRUNC haven't actually done immediately,
+    * e.g. total 8M, fileA 6M, O_TRUNC re-wrting fileA 6M, meet error.
+    */
+
+    lfs_file_sync(&fs->lfs, &priv->file);
+    littlefs_semgive(fs);
+
+    /* Attach the private date to the struct file instance */
+
+    filep->f_priv = priv;
+    return 0;
+
+errout_with_file:
+    lfs_file_close(&fs->lfs, &priv->file);
+errout:
+    littlefs_semgive(fs);
+errsem:
+    kmm_free(priv);
+    return ret;
+}
+
+/****************************************************************************
+ * Name: littlefs_close
+ ****************************************************************************/
+
+static int littlefs_close(struct file *filep)
+{
+    struct littlefs_mountpt_s *fs;
+    struct littlefs_file_s *priv;
+    struct inode *inode;
+    int ret;
+
+    /* Recover our private data from the struct file instance */
+
+    priv  = filep->f_priv;
+    inode = filep->f_inode;
+    fs    = inode->i_private;
+
+    /* Close the file */
+
+    ret = littlefs_semtake(fs);
+    if (ret < 0) {
+        return ret;
+    }
+
+    if (--priv->refs <= 0) {
+        ret = littlefs_convert_result(lfs_file_close(&fs->lfs, &priv->file));
+    }
+
+    littlefs_semgive(fs);
+    if (priv->refs <= 0) {
+        kmm_free(priv);
+    }
+
+    return ret;
+}
+
+/****************************************************************************
+ * Name: littlefs_read
+ ****************************************************************************/
+
+static ssize_t littlefs_read(struct file *filep, char *buffer,
+                            size_t buflen)
+{
+    struct littlefs_mountpt_s *fs;
+    struct littlefs_file_s *priv;
+    struct inode *inode;
+    ssize_t ret;
+
+    /* Recover our private data from the struct file instance */
+
+    priv  = filep->f_priv;
+    inode = filep->f_inode;
+    fs    = inode->i_private;
+
+    /* Call LFS to perform the read */
+
+    ret = littlefs_semtake(fs);
+    if (ret < 0) {
+
+        return ret;
+    }
+
+    if (filep->f_pos != priv->file.pos) {
+        ret = littlefs_convert_result(lfs_file_seek(&fs->lfs, &priv->file,
+                                                    filep->f_pos,
+                                                    LFS_SEEK_SET));
+        if (ret < 0) {
+            goto out;
+        }
+      }
+
+    ret = littlefs_convert_result(lfs_file_read(&fs->lfs, &priv->file,
+                                                buffer, buflen));
+    if (ret > 0) {
+        filep->f_pos += ret;
+    }
+
+out:
+    littlefs_semgive(fs);
+    return ret;
+}
+
+/****************************************************************************
+ * Name: littlefs_write
+ ****************************************************************************/
+
+static ssize_t littlefs_write(struct file *filep, const char *buffer,
+                              size_t buflen)
+{
+    struct littlefs_mountpt_s *fs;
+    struct littlefs_file_s *priv;
+    struct inode *inode;
+    ssize_t ret;
+
+    /* Recover our private data from the struct file instance */
+
+    priv  = filep->f_priv;
+    inode = filep->f_inode;
+    fs    = inode->i_private;
+
+    /* Call LFS to perform the write */
+
+    ret = littlefs_semtake(fs);
+    if (ret < 0) {
+        return ret;
+    }
+
+    if (filep->f_pos != priv->file.pos) {
+        ret = littlefs_convert_result(lfs_file_seek(&fs->lfs, &priv->file,
+                                                    filep->f_pos,
+                                                    LFS_SEEK_SET));
+        if (ret < 0) {
+            goto out;
+        }
+    }
+
+    ret = littlefs_convert_result(lfs_file_write(&fs->lfs, &priv->file,
+                                                buffer, buflen));
+    if (ret > 0) {
+        filep->f_pos += ret;
+    }
+
+out:
+    littlefs_semgive(fs);
+    return ret;
+}
+
+/****************************************************************************
+ * Name: littlefs_seek
+ ****************************************************************************/
+
+static off_t littlefs_seek(struct file *filep, off_t offset, int whence)
+{
+    struct littlefs_mountpt_s *fs;
+    struct littlefs_file_s *priv;
+    struct inode *inode;
+    off_t ret;
+
+    /* Recover our private data from the struct file instance */
+
+    priv  = filep->f_priv;
+    inode = filep->f_inode;
+    fs    = inode->i_private;
+
+    /* Call LFS to perform the seek */
+
+    ret = littlefs_semtake(fs);
+    if (ret < 0) {
+        return ret;
+    }
+
+    ret = littlefs_convert_result(lfs_file_seek(&fs->lfs, &priv->file,
+                                                offset, whence));
+    if (ret >= 0) {
+        filep->f_pos = ret;
+    }
+
+    littlefs_semgive(fs);
+    return ret;
+}
+
+/****************************************************************************
+ * Name: littlefs_ioctl
+ ****************************************************************************/
+
+static int littlefs_ioctl(struct file *filep, int cmd, unsigned long arg)
+{
+    struct littlefs_mountpt_s *fs;
+    struct inode *inode;
+    struct inode *drv;
+
+    /* Recover our private data from the struct file instance */
+
+    inode = filep->f_inode;
+    fs    = inode->i_private;
+    drv   = fs->drv;
+
+    if (INODE_IS_MTD(drv)) {
+
+        return MTD_IOCTL(drv->u.i_mtd, cmd, arg);
+    } else {
+
+        if (drv->u.i_bops->ioctl != NULL) {
+
+            return drv->u.i_bops->ioctl(drv, cmd, arg);
+        } else {
+
+            return -ENOTTY;
+        }
+    }
+}
+
+/****************************************************************************
+ * Name: littlefs_sync
+ *
+ * Description: Synchronize the file state on disk to match internal, in-
+ *   memory state.
+ *
+ ****************************************************************************/
+
+static int littlefs_sync(struct file *filep)
+{
+    struct littlefs_mountpt_s *fs;
+    struct littlefs_file_s *priv;
+    struct inode *inode;
+    int ret;
+
+    /* Recover our private data from the struct file instance */
+
+    priv  = filep->f_priv;
+    inode = filep->f_inode;
+    fs    = inode->i_private;
+
+    ret = littlefs_semtake(fs);
+    if (ret < 0) {
+        return ret;
+    }
+
+    ret = littlefs_convert_result(lfs_file_sync(&fs->lfs, &priv->file));
+    littlefs_semgive(fs);
+
+    return ret;
+}
+
+/****************************************************************************
+ * Name: littlefs_dup
+ *
+ * Description: Duplicate open file data in the new file structure.
+ *
+ ****************************************************************************/
+
+static int littlefs_dup(const struct file *oldp, struct file *newp)
+{
+    struct littlefs_mountpt_s *fs;
+    struct littlefs_file_s *priv;
+    struct inode *inode;
+    int ret;
+
+    /* Recover our private data from the struct file instance */
+
+    priv  = oldp->f_priv;
+    inode = oldp->f_inode;
+    fs    = inode->i_private;
+
+    ret = littlefs_semtake(fs);
+    if (ret < 0) {
+        return ret;
+    }
+
+    priv->refs++;
+    newp->f_priv = priv;
+    littlefs_semgive(fs);
+
+    return ret;
+}
+
+/****************************************************************************
+ * Name: littlefs_fstat
+ *
+ * Description:
+ *   Obtain information about an open file associated with the file
+ *   descriptor 'fd', and will write it to the area pointed to by 'buf'.
+ *
+ ****************************************************************************/
+
+static int littlefs_fstat(const struct file *filep, struct stat *buf)
+{
+    struct littlefs_mountpt_s *fs;
+    struct littlefs_file_s *priv;
+    struct inode *inode;
+    int ret;
+
+    memset(buf, 0, sizeof(*buf));
+
+    /* Recover our private data from the struct file instance */
+
+    priv  = filep->f_priv;
+    inode = filep->f_inode;
+    fs    = inode->i_private;
+
+    /* Call LFS to get file size */
+
+    ret = littlefs_semtake(fs);
+    if (ret < 0) {
+        return ret;
+    }
+
+    buf->st_size = lfs_file_size(&fs->lfs, &priv->file);
+    littlefs_semgive(fs);
+
+    if (buf->st_size < 0) {
+        return littlefs_convert_result(buf->st_size);
+    }
+
+    buf->st_mode    = S_IRWXO | S_IRWXG | S_IRWXU | S_IFREG;
+    buf->st_blksize = fs->cfg.block_size;
+    buf->st_blocks  = (buf->st_size + buf->st_blksize - 1) / buf->st_blksize;
+
+    return 0;
+}
+
+/****************************************************************************
+ * Name: littlefs_truncate
+ *
+ * Description:
+ *   Set the length of the open, regular file associated with the file
+ *   structure 'filep' to 'length'.
+ *
+ ****************************************************************************/
+
+static int littlefs_truncate(struct file *filep, off_t length)
+{
+    struct littlefs_mountpt_s *fs;
+    struct littlefs_file_s *priv;
+    struct inode *inode;
+    int ret;
+
+    /* Recover our private data from the struct file instance */
+
+    priv  = filep->f_priv;
+    inode = filep->f_inode;
+    fs    = inode->i_private;
+
+    /* Call LFS to perform the truncate */
+
+    ret = littlefs_semtake(fs);
+    if (ret < 0) {
+        return ret;
+    }
+
+    ret = littlefs_convert_result(lfs_file_truncate(&fs->lfs, &priv->file,
+                                                    length));
+    littlefs_semgive(fs);
+
+    return ret;
+}
+
+/****************************************************************************
+ * Name: littlefs_opendir
+ *
+ * Description: Open a directory for read access
+ *
+ ****************************************************************************/
+
+static int littlefs_opendir(struct inode *mountpt,
+                            const char *relpath,
+                            struct fs_dirent_s **dir)
+{
+    struct littlefs_mountpt_s *fs;
+    struct littlefs_dir_s *ldir;
+    int ret;
+
+    /* Recover our private data from the inode instance */
+
+    fs = mountpt->i_private;
+
+    /* Allocate memory for the open directory */
+
+    ldir = kmm_malloc(sizeof(*ldir));
+    if (ldir == NULL) {
+        return -ENOMEM;
+    }
+
+    /* Take the semaphore */
+
+    ret = littlefs_semtake(fs);
+    if (ret < 0) {
+        goto errsem;
+    }
+
+    /* Call the LFS's opendir function */
+
+    ret = littlefs_convert_result(lfs_dir_open(&fs->lfs, &ldir->dir, relpath));
+    if (ret < 0) {
+        goto errout;
+    }
+
+    littlefs_semgive(fs);
+    *dir = &ldir->base;
+    return 0;
+
+errout:
+    littlefs_semgive(fs);
+errsem:
+    kmm_free(ldir);
+    return ret;
+}
+
+/****************************************************************************
+ * Name: littlefs_closedir
+ *
+ * Description: Close a directory
+ *
+ ****************************************************************************/
+
+static int littlefs_closedir(struct inode *mountpt,
+                             struct fs_dirent_s *dir)
+{
+    struct littlefs_mountpt_s *fs;
+    struct littlefs_dir_s *ldir;
+    int ret;
+
+    /* Recover our private data from the inode instance */
+
+    ldir = (struct littlefs_dir_s *)dir;
+    fs   = mountpt->i_private;
+
+    /* Call the LFS's closedir function */
+
+    ret = littlefs_semtake(fs);
+    if (ret < 0) {
+
+        return ret;
+    }
+
+    lfs_dir_close(&fs->lfs, &ldir->dir);
+    littlefs_semgive(fs);
+
+    kmm_free(ldir);
+    return 0;
+}
+
+/****************************************************************************
+ * Name: littlefs_readdir
+ *
+ * Description: Read the next directory entry
+ *
+ ****************************************************************************/
+
+static int littlefs_readdir(struct inode *mountpt,
+                            struct fs_dirent_s *dir,
+                            struct dirent *entry)
+{
+    struct littlefs_mountpt_s *fs;
+    struct littlefs_dir_s *ldir;
+    struct lfs_info info;
+    int ret;
+
+    /* Recover our private data from the inode instance */
+
+    ldir = (struct littlefs_dir_s *)dir;
+    fs   = mountpt->i_private;
+
+    /* Call the LFS's readdir function */
+
+    ret = littlefs_semtake(fs);
+    if (ret < 0) {
+        return ret;
+    }
+
+    ret = littlefs_convert_result(lfs_dir_read(&fs->lfs, &ldir->dir, &info));
+    if (ret > 0) {
+
+        if (info.type == LFS_TYPE_REG) {
+            entry->d_type = DTYPE_FILE;
+        } else {
+            entry->d_type = DTYPE_DIRECTORY;
+        }
+
+        strlcpy(entry->d_name, info.name, sizeof(entry->d_name));
+    } else if (ret == 0) {
+
+        ret = -ENOENT;
+    }
+
+    littlefs_semgive(fs);
+    return ret;
+}
+
+/****************************************************************************
+ * Name: littlefs_rewindir
+ *
+ * Description: Reset directory read to the first entry
+ *
+ ****************************************************************************/
+
+static int littlefs_rewinddir(struct inode *mountpt,
+                              struct fs_dirent_s *dir)
+{
+    struct littlefs_mountpt_s *fs;
+    struct littlefs_dir_s *ldir;
+    int ret;
+
+    /* Recover our private data from the inode instance */
+
+    ldir = (struct littlefs_dir_s *)dir;
+    fs   = mountpt->i_private;
+
+    /* Call the LFS's rewinddir function */
+
+    ret = littlefs_semtake(fs);
+    if (ret < 0) {
+        return ret;
+    }
+
+    ret = littlefs_convert_result(lfs_dir_rewind(&fs->lfs, &ldir->dir));
+
+    littlefs_semgive(fs);
+    return ret;
+}
+
+/****************************************************************************
+ * Name: littlefs_bind
+ *
+ * Description: This implements a portion of the mount operation. This
+ *  function allocates and initializes the mountpoint private data and
+ *  binds the driver inode to the filesystem private data. The final
+ *  binding of the private data (containing the driver) to the
+ *  mountpoint is performed by mount().
+ *
+ ****************************************************************************/
+
+static int littlefs_read_block(const struct lfs_config *c,
+                            lfs_block_t block, lfs_off_t off,
+                            void *buffer, lfs_size_t size)
+{
+    struct littlefs_mountpt_s *fs = c->context;
+    struct mtd_geometry_s *geo = &fs->geo;
+    struct inode *drv = fs->drv;
+    int ret;
+
+    block = (block * c->block_size + off) / geo->blocksize;
+    size  = size / geo->blocksize;
+
+    if (INODE_IS_MTD(drv)) {
+        ret = MTD_BREAD(drv->u.i_mtd, block, size, buffer);
+    } else {
+        ret = drv->u.i_bops->read(drv, buffer, block, size);
+    }
+
+    return ret >= 0 ? 0 : ret;
+}
+
+/****************************************************************************
+ * Name: littlefs_write_block
+ ****************************************************************************/
+
+static int littlefs_write_block(const struct lfs_config *c,
+                                lfs_block_t block, lfs_off_t off,
+                                const void *buffer, lfs_size_t size)
+{
+    struct littlefs_mountpt_s *fs = c->context;
+    struct mtd_geometry_s *geo = &fs->geo;
+    struct inode *drv = fs->drv;
+    int ret;
+
+    block = (block * c->block_size + off) / geo->blocksize;
+    size  = size / geo->blocksize;
+
+    if (INODE_IS_MTD(drv)) {
+        ret = MTD_BWRITE(drv->u.i_mtd, block, size, buffer);
+    } else {
+        ret = drv->u.i_bops->write(drv, buffer, block, size);
+    }
+
+    return ret >= 0 ? 0 : ret;
+}
+
+/****************************************************************************
+ * Name: littlefs_erase_block
+ ****************************************************************************/
+
+static int littlefs_erase_block(const struct lfs_config *c,
+                                lfs_block_t block)
+{
+    struct littlefs_mountpt_s *fs = c->context;
+    struct inode *drv = fs->drv;
+    int ret = 0;
+
+    if (INODE_IS_MTD(drv)) {
+        struct mtd_geometry_s *geo = &fs->geo;
+        size_t size = c->block_size / geo->erasesize;
+
+        block = block * c->block_size / geo->erasesize;
+        ret = MTD_ERASE(drv->u.i_mtd, block, size);
+    }
+
+    return ret >= 0 ? 0 : ret;
+}
+
+/****************************************************************************
+ * Name: littlefs_sync_block
+ ****************************************************************************/
+
+static int littlefs_sync_block(const struct lfs_config *c)
+{
+    struct littlefs_mountpt_s *fs = c->context;
+    struct inode *drv = fs->drv;
+    int ret;
+
+    if (INODE_IS_MTD(drv)) {
+        ret = MTD_IOCTL(drv->u.i_mtd, BIOC_FLUSH, 0);
+    } else {
+        if (drv->u.i_bops->ioctl != NULL) {
+            ret = drv->u.i_bops->ioctl(drv, BIOC_FLUSH, 0);
+        } else {
+            ret = -ENOTTY;
+        }
+    }
+
+    return ret == -ENOTTY ? 0 : ret;
+}
+
+/****************************************************************************
+ * Name: littlefs_bind
+ ****************************************************************************/
+
+static int littlefs_bind(struct inode *driver, const void *data,
+                         void **handle)
+{
+    struct littlefs_mountpt_s *fs;
+    int ret;
+
+    /* Open the block driver */
+
+    if (INODE_IS_BLOCK(driver) && driver->u.i_bops->open) {
+
+        ret = driver->u.i_bops->open(driver);
+        if (ret < 0) {
+            return ret;
+        }
+    }
+
+    /* Create an instance of the mountpt state structure */
+
+    fs = kmm_zalloc(sizeof(*fs));
+    if (!fs) {
+        ret = -ENOMEM;
+        goto errout_with_block;
+    }
+
+    /* Initialize the allocated mountpt state structure. The filesystem is
+    * responsible for one reference on the driver inode and does not
+    * have to addref() here (but does have to release in unbind().
+    */
+
+    fs->drv = driver;           /* Save the driver reference */
+    sem_init(&fs->sem, 0, 0); /* Initialize the access control semaphore */
+
+    if (INODE_IS_MTD(driver)) {
+
+        /* Get MTD geometry directly */
+
+        ret = MTD_IOCTL(driver->u.i_mtd, MTDIOC_GEOMETRY,
+                        (unsigned long)&fs->geo);
+    } else {
+
+        /* Try to get FLT MTD geometry first */
+
+        if (driver->u.i_bops->ioctl != NULL) {
+            ret = driver->u.i_bops->ioctl(driver, MTDIOC_GEOMETRY,
+                                        (unsigned long)&fs->geo);
+        } else {
+            ret = -ENOTTY;
+        }
+
+        if (ret < 0) {
+
+            struct geometry geometry;
+
+            /* Not FLT MTD device, get normal block geometry */
+
+            ret = driver->u.i_bops->geometry(driver, &geometry);
+            if (ret >= 0) {
+                /* And convert to MTD geometry */
+
+                fs->geo.blocksize    = geometry.geo_sectorsize;
+                fs->geo.erasesize    = geometry.geo_sectorsize;
+                fs->geo.neraseblocks = geometry.geo_nsectors;
+            }
+        }
+    }
+
+    if (ret < 0) {
+        goto errout_with_fs;
+    }
+
+    /* Initialize lfs_config structure */
+
+    fs->cfg.context        = fs;
+    fs->cfg.read           = littlefs_read_block;
+    fs->cfg.prog           = littlefs_write_block;
+    fs->cfg.erase          = littlefs_erase_block;
+    fs->cfg.sync           = littlefs_sync_block;
+    fs->cfg.read_size      = fs->geo.blocksize *
+                            CONFIG_FS_LITTLEFS_BLOCK_FACTOR;
+    fs->cfg.prog_size      = fs->geo.blocksize;
+    fs->cfg.block_size     = fs->geo.erasesize;
+    fs->cfg.block_count    = fs->geo.neraseblocks;
+    fs->cfg.block_cycles   = CONFIG_FS_LITTLEFS_BLOCK_CYCLE;
+    fs->cfg.cache_size     = fs->geo.blocksize *
+                            CONFIG_FS_LITTLEFS_BLOCK_FACTOR;
+    fs->cfg.lookahead_size = lfs_min(lfs_alignup(fs->cfg.block_count, 64) / 8,
+                                    fs->cfg.read_size);
+
+    /* Then get information about the littlefs filesystem on the devices
+    * managed by this driver.
+    */
+
+    /* Force format the device if -o forceformat */
+
+    if (data && strcmp(data, "forceformat") == 0) {
+
+        ret = littlefs_convert_result(lfs_format(&fs->lfs, &fs->cfg));
+        if (ret < 0) {
+            goto errout_with_fs;
+        }
+    }
+
+    ret = littlefs_convert_result(lfs_mount(&fs->lfs, &fs->cfg));
+    if (ret < 0) {
+        /* Auto format the device if -o autoformat */
+
+        if (ret != -EFAULT || !data || strcmp(data, "autoformat")) {
+            goto errout_with_fs;
+        }
+
+        ret = littlefs_convert_result(lfs_format(&fs->lfs, &fs->cfg));
+        if (ret < 0) {
+            goto errout_with_fs;
+        }
+
+        /* Try to mount the device again */
+
+        ret = littlefs_convert_result(lfs_mount(&fs->lfs, &fs->cfg));
+        if (ret < 0) {
+            goto errout_with_fs;
+        }
+    }
+
+    *handle = fs;
+    littlefs_semgive(fs);
+    return 0;
+
+errout_with_fs:
+    sem_destroy(&fs->sem);
+    kmm_free(fs);
+errout_with_block:
+    if (INODE_IS_BLOCK(driver) && driver->u.i_bops->close) {
+        driver->u.i_bops->close(driver);
+    }
+
+    return ret;
+}
+
+/****************************************************************************
+ * Name: littlefs_unbind
+ *
+ * Description: This implements the filesystem portion of the umount
+ *  operation.
+ *
+ ****************************************************************************/
+
+static int littlefs_unbind(void *handle, struct inode **driver,
+                          unsigned int flags)
+{
+    struct littlefs_mountpt_s *fs = handle;
+    struct inode *drv = fs->drv;
+    int ret;
+
+    /* Unmount */
+
+    ret = littlefs_semtake(fs);
+    if (ret < 0) {
+
+        return ret;
+    }
+
+    ret = littlefs_convert_result(lfs_unmount(&fs->lfs));
+    littlefs_semgive(fs);
+
+    if (ret >= 0) {
+
+        /* Close the block driver */
+
+        if (INODE_IS_BLOCK(drv) && drv->u.i_bops->close) {
+
+            drv->u.i_bops->close(drv);
+        }
+
+        /* We hold a reference to the driver but should not but
+        * mucking with inodes in this context. So, we will just return
+        * our contained reference to the driver inode and let the
+        * umount logic dispose of it.
+        */
+
+        if (driver) {
+            *driver = drv;
+        }
+
+        /* Release the mountpoint private data */
+
+        sem_destroy(&fs->sem);
+        kmm_free(fs);
+      }
+
+    return ret;
+}
+
+/****************************************************************************
+ * Name: littlefs_statfs
+ *
+ * Description: Return filesystem statistics
+ *
+ ****************************************************************************/
+
+static int littlefs_statfs(struct inode *mountpt, struct statfs *buf)
+{
+    struct littlefs_mountpt_s *fs;
+    int ret;
+
+    /* Get the mountpoint private data from the inode structure */
+
+    fs = mountpt->i_private;
+
+    /* Return something for the file system description */
+
+    memset(buf, 0, sizeof(*buf));
+    buf->f_type    = LITTLEFS_SUPER_MAGIC;
+    buf->f_namelen = LFS_NAME_MAX;
+    buf->f_bsize   = fs->cfg.block_size;
+    buf->f_blocks  = fs->cfg.block_count;
+    buf->f_bfree   = fs->cfg.block_count;
+    buf->f_bavail  = fs->cfg.block_count;
+
+    ret = littlefs_semtake(fs);
+    if (ret < 0) {
+        return ret;
+    }
+
+    ret = littlefs_convert_result(lfs_fs_size(&fs->lfs));
+    if (ret > 0) {
+
+        buf->f_bfree -= ret;
+        buf->f_bavail -= ret;
+
+        ret = 0;
+    }
+
+    littlefs_semgive(fs);
+    return ret;
+}
+
+/****************************************************************************
+ * Name: littlefs_unlink
+ *
+ * Description: Remove a file
+ *
+ ****************************************************************************/
+
+static int littlefs_unlink(struct inode *mountpt,
+                           const char *relpath)
+{
+    struct littlefs_mountpt_s *fs;
+    int ret;
+
+    /* Get the mountpoint private data from the inode structure */
+
+    fs = mountpt->i_private;
+
+    /* Call the LFS to perform the unlink */
+
+    ret = littlefs_semtake(fs);
+    if (ret < 0) {
+        return ret;
+    }
+
+    ret = littlefs_convert_result(lfs_remove(&fs->lfs, relpath));
+    littlefs_semgive(fs);
+
+    return ret;
+}
+
+/****************************************************************************
+ * Name: littlefs_mkdir
+ *
+ * Description: Create a directory
+ *
+ ****************************************************************************/
+
+static int littlefs_mkdir(struct inode *mountpt, const char *relpath,
+                          mode_t mode)
+{
+    struct littlefs_mountpt_s *fs;
+    int ret;
+
+    /* Get the mountpoint private data from the inode structure */
+
+    fs = mountpt->i_private;
+
+    /* Call LFS to do the mkdir */
+
+    ret = littlefs_semtake(fs);
+    if (ret < 0) {
+        return ret;
+    }
+
+    ret = lfs_mkdir(&fs->lfs, relpath);
+    littlefs_semgive(fs);
+
+    return ret;
+}
+
+/****************************************************************************
+ * Name: littlefs_rmdir
+ *
+ * Description: Remove a directory
+ *
+ ****************************************************************************/
+
+static int littlefs_rmdir(struct inode *mountpt, const char *relpath)
+{
+    struct stat buf;
+
+    littlefs_stat(mountpt, relpath, &buf);
+    if (S_ISDIR(buf.st_mode)) {
+
+        return littlefs_unlink(mountpt, relpath);
+    } else {
+
+        return -ENOTDIR;
+    }
+}
+
+/****************************************************************************
+ * Name: littlefs_rename
+ *
+ * Description: Rename a file or directory
+ *
+ ****************************************************************************/
+
+static int littlefs_rename(struct inode *mountpt,
+                           const char *oldrelpath,
+                           const char *newrelpath)
+{
+    struct littlefs_mountpt_s *fs;
+    int ret;
+
+    /* Get the mountpoint private data from the inode structure */
+
+    fs = mountpt->i_private;
+
+    /* Call LFS to do the rename */
+
+    ret = littlefs_semtake(fs);
+    if (ret < 0) {
+        return ret;
+    }
+
+    ret = littlefs_convert_result(lfs_rename(&fs->lfs, oldrelpath,
+                                  newrelpath));
+    littlefs_semgive(fs);
+
+    return ret;
+}
+
+/****************************************************************************
+ * Name: littlefs_stat
+ *
+ * Description: Return information about a file or directory
+ *
+ ****************************************************************************/
+
+static int littlefs_stat(struct inode *mountpt, const char *relpath,
+                         struct stat *buf)
+{
+    struct littlefs_mountpt_s *fs;
+    struct lfs_info info;
+    int ret;
+
+    memset(buf, 0, sizeof(*buf));
+
+    /* Get the mountpoint private data from the inode structure */
+
+    fs = mountpt->i_private;
+
+    /* Call the LFS to do the stat operation */
+
+    ret = littlefs_semtake(fs);
+    if (ret < 0) {
+        return ret;
+    }
+
+    ret = lfs_stat(&fs->lfs, relpath, &info);
+    littlefs_semgive(fs);
+
+    if (ret >= 0) {
+        /* Convert info to stat */
+
+        buf->st_mode = S_IRWXO | S_IRWXG | S_IRWXU;
+        if (info.type == LFS_TYPE_REG) {
+
+            buf->st_mode |= S_IFREG;
+            buf->st_size = info.size;
+        } else {
+
+            buf->st_mode |= S_IFDIR;
+            buf->st_size = 0;
+        }
+
+        buf->st_blksize = fs->cfg.block_size;
+        buf->st_blocks  = (buf->st_size + buf->st_blksize - 1) /
+                        buf->st_blksize;
+    }
+
+    return ret;
+}

@@ -1,4 +1,5 @@
 #include <mqueue.h>
+#include <gpmx/config.h>
 
 int mq_send(mqd_t mqdes, const char *msg_ptr, size_t msg_len, unsigned msg_prio)
 {

@@ -1,10 +1,7 @@
 
-MK_USE_NEW_LWIP_ICMP=y
+ifeq (${CONFIG_LWIP_CORE},y)
+CONFIG_LWIP_ICMP=y
 
-ifeq (${MK_USE_NET_LWIP_CORE},y)
-PROJ_CDEFS += CONFIG_NET_LWIP_ENABLE
-PROJ_CDEFS += CONFIG_LWIP_TCP
-PROJ_CDEFS += CONFIG_LWIP_UDP
 PROJ_CINCDIRS += ${GPMPATH}/net/lwip/src/include
 PROJ_CINCDIRS += ${GPMPATH}/net/lwip/src/include/netif
 PROJ_CINCDIRS += ${GPMPATH}/net/lwip/src/include/compat/posix
@@ -47,56 +44,47 @@ CSOURCES += $(CORE_SOURCES)
 # 2. core module
 # ===========================================================================
 ###### DNS
-ifeq ($(MK_USE_NEW_LWIP_DNS),y)
-PROJ_CDEFS += CONFIG_LWIP_DNS
+ifeq ($(CONFIG_LWIP_DNS),y)
 CSOURCES += ${GPMPATH}/net/lwip/src/core/dns.c
 endif
 
 ###### RAW socket
-ifeq ($(MK_USE_NEW_LWIP_RAW),y)
-PROJ_CDEFS += CONFIG_LWIP_RAW
+ifeq ($(CONFIG_LWIP_RAW),y)
 CSOURCES += ${GPMPATH}/net/lwip/src/core/raw.c
 endif
 
 ###### IGMP 
-ifeq ($(MK_USE_NEW_LWIP_IGMP),y)
-PROJ_CDEFS += CONFIG_LWIP_IGMP
+ifeq ($(CONFIG_LWIP_IGMP),y)
 CSOURCES += ${GPMPATH}/net/lwip/src/core/ipv4/igmp.c
 endif
 
 ###### ICMP 
-ifeq ($(MK_USE_NEW_LWIP_ICMP),y)
-PROJ_CDEFS += CONFIG_LWIP_ICMP
+ifeq ($(CONFIG_LWIP_ICMP),y)
 CSOURCES += ${GPMPATH}/net/lwip/src/core/ipv4/icmp.c
 endif
 
 ###### DHCP
-ifeq ($(MK_USE_NEW_LWIP_DHCP),y)
-PROJ_CDEFS += CONFIG_LWIP_DHCP
+ifeq ($(CONFIG_LWIP_DHCP),y)
 CSOURCES += ${GPMPATH}/net/lwip/src/core/ipv4/dhcp.c
 endif
 
 ###### AUTOIP
-ifeq ($(MK_USE_NEW_LWIP_AUTOIP),y)
-PROJ_CDEFS += CONFIG_LWIP_AUTOIP
+ifeq ($(CONFIG_LWIP_AUTOIP),y)
 CSOURCES += ${GPMPATH}/net/lwip/src/core/ipv4/autoip.c
 endif
 
 ###### IP fragmentation & reassembly
-ifeq ($(MK_USE_NEW_LWIP_REASSEMBLY_FRAG),y)
-PROJ_CDEFS += CONFIG_LWIP_REASSEMBLY_FRAG
+ifeq ($(CONFIG_LWIP_REASSEMBLY_FRAG),y)
 CSOURCES += ${GPMPATH}/net/lwip/src/core/ipv4/ip4_frag.c
 endif
 
 ###### statistics function
-ifeq ($(MK_USE_NEW_LWIP_STATS),y)
-PROJ_CDEFS += CONFIG_LWIP_STATS
+ifeq ($(CONFIG_LWIP_STATS),y)
 CSOURCES += ${GPMPATH}/net/lwip/src/core/stats.c
 endif
 
 ###### ALTCP (available TLS layer)
-ifeq ($(MK_USE_NEW_LWIP_ALTCP),y)
-PROJ_CDEFS += CONFIG_LWIP_ALTCP
+ifeq ($(CONFIG_LWIP_ALTCP),y)
 CSOURCES += ${GPMPATH}/net/lwip/src/core/altcp.c
 CSOURCES += ${GPMPATH}/net/lwip/src/core/altcp_alloc.c
 CSOURCES += ${GPMPATH}/net/lwip/src/core/altcp_tcp.c
@@ -105,8 +93,7 @@ endif
 # ===========================================================================
 # 3. ipv6 support (master switch, submodules optional)
 # ===========================================================================
-ifeq (${MK_USE_NET_LWIP_CORE6},y)
-PROJ_CDEFS += CONFIG_LWIP_IPV6
+ifeq (${CONFIG_LWIP_CORE6},y)
 # Core IPv6 files (always needed when IPv6 is enabled)
 CSOURCES += ${GPMPATH}/net/lwip/src/core/ipv6/inet6.c
 CSOURCES += ${GPMPATH}/net/lwip/src/core/ipv6/ip6.c
@@ -126,7 +113,7 @@ endif
 # ===========================================================================
 # 4. Sequential and socket APIs (optional, enabled by default)
 # ===========================================================================
-ifeq ($(MK_USE_NET_LWIP_SOCKET),n)
+ifeq ($(CONFIG_LWIP_SOCKET),n)
 # Socket API explicitly disabled
 else
 CSOURCES += ${GPMPATH}/net/lwip/src/api/api_lib.c
@@ -146,32 +133,32 @@ endif
 CSOURCES += ${GPMPATH}/net/lwip/src/netif/ethernet.c
 
 # ===========================================================================
-# 6. Optional netif drivers (controlled by MK_USE_NET_LWIP_*)
+# 6. Optional netif drivers (controlled by CONFIG_LWIP_*)
 # ===========================================================================
 # IEEE 802.1D bridge
-ifeq ($(MK_USE_NET_LWIP_BRIDGEIF),y)
+ifeq ($(CONFIG_LWIP_BRIDGEIF),y)
 CSOURCES += ${GPMPATH}/net/lwip/src/netif/bridgeif.c
 CSOURCES += ${GPMPATH}/net/lwip/src/netif/bridgeif_fdb.c
 endif
 
 # SLIP (Serial Line IP)
-ifeq ($(MK_USE_NET_LWIP_SLIPIF),y)
+ifeq ($(CONFIG_LWIP_SLIPIF),y)
 CSOURCES += ${GPMPATH}/net/lwip/src/netif/slipif.c
 endif
 
 # 6LoWPAN (IPv6 over Low-Power Wireless Personal Area Networks)
-ifeq ($(MK_USE_NET_LWIP_LOWPAN6),y)
+ifeq ($(CONFIG_LWIP_LOWPAN6),y)
 CSOURCES += ${GPMPATH}/net/lwip/src/netif/lowpan6.c
 endif
 
 # 6LoWPAN over BLE (RFC 7668)
-ifeq ($(MK_USE_NET_LWIP_LOWPAN6_BLE),y)
+ifeq ($(CONFIG_LWIP_LOWPAN6_BLE),y)
 CSOURCES += ${GPMPATH}/net/lwip/src/netif/lowpan6_ble.c
 CSOURCES += ${GPMPATH}/net/lwip/src/netif/lowpan6_common.c
 endif
 
 # ZigBee Encapsulation Protocol (ZEP)
-ifeq ($(MK_USE_NET_LWIP_ZEPIF),y)
+ifeq ($(CONFIG_LWIP_ZEPIF),y)
 CSOURCES += ${GPMPATH}/net/lwip/src/netif/zepif.c
 endif
 
@@ -179,10 +166,7 @@ endif
 # 7. LwIP applications (optional)
 # ===========================================================================
 # PPP
-ifeq (${MK_USE_NET_LWIP_PPP},y)
-PROJ_CDEFS += CONFIG_LWIP_PPP
-PROJ_CDEFS += CONFIG_LWIP_PPPOE
-PROJ_CDEFS += CONFIG_LWIP_PPPOS
+ifeq (${CONFIG_LWIP_PPP},y)
 PROJ_CINCDIRS += ${GPMPATH}/net/lwip/src/netif/ppp
 CSOURCES += ${GPMPATH}/net/lwip/src/netif/ppp/auth.c
 CSOURCES += ${GPMPATH}/net/lwip/src/netif/ppp/ccp.c
@@ -217,8 +201,7 @@ CSOURCES += ${GPMPATH}/net/lwip/src/netif/ppp/polarssl/sha1.c
 endif
 
 # SNMPv3 agent
-ifeq (${MK_USE_NET_LWIP_SNMP},y)
-PROJ_CDEFS += CONFIG_LWIP_SNMP
+ifeq (${CONFIG_LWIP_SNMP},y)
 PROJ_CINCDIRS += ${GPMPATH}/net/lwip/src/apps/snmp
 CSOURCES += ${GPMPATH}/net/lwip/src/apps/snmp/snmp_asn1.c
 CSOURCES += ${GPMPATH}/net/lwip/src/apps/snmp/snmp_core.c
@@ -244,7 +227,7 @@ CSOURCES += ${GPMPATH}/net/lwip/src/apps/snmp/snmp_traps.c
 endif
 
 # HTTP server + client
-ifeq ($(MK_USE_NET_LWIP_HTTP),y)
+ifeq ($(CONFIG_LWIP_HTTP),y)
 CSOURCES += ${GPMPATH}/net/lwip/src/apps/http/altcp_proxyconnect.c
 CSOURCES += ${GPMPATH}/net/lwip/src/apps/http/fs.c
 CSOURCES += ${GPMPATH}/net/lwip/src/apps/http/http_client.c
@@ -252,55 +235,55 @@ CSOURCES += ${GPMPATH}/net/lwip/src/apps/http/httpd.c
 endif
 
 # IPERF server
-ifeq ($(MK_USE_NET_LWIP_IPERF),y)
+ifeq ($(CONFIG_LWIP_IPERF),y)
 CSOURCES += ${GPMPATH}/net/lwip/src/apps/lwiperf/lwiperf.c
 endif
 
 # SMTP client
-ifeq ($(MK_USE_NET_LWIP_SMTP),y)
+ifeq ($(CONFIG_LWIP_SMTP),y)
 CSOURCES += ${GPMPATH}/net/lwip/src/apps/smtp/smtp.c
 endif
 
 # SNTP client
-ifeq ($(MK_USE_NET_LWIP_SNTP),y)
+ifeq ($(CONFIG_LWIP_SNTP),y)
 CSOURCES += ${GPMPATH}/net/lwip/src/apps/sntp/sntp.c
 endif
 
 # MDNS responder
-ifeq ($(MK_USE_NET_LWIP_MDNS),y)
+ifeq ($(CONFIG_LWIP_MDNS),y)
 CSOURCES += ${GPMPATH}/net/lwip/src/apps/mdns/mdns.c
 endif
 
 # NetBIOS name server
-ifeq ($(MK_USE_NET_LWIP_NETBIOSNS),y)
+ifeq ($(CONFIG_LWIP_NETBIOSNS),y)
 CSOURCES += ${GPMPATH}/net/lwip/src/apps/netbiosns/netbiosns.c
 endif
 
 # TFTP server
-ifeq ($(MK_USE_NET_LWIP_TFTP),y)
+ifeq ($(CONFIG_LWIP_TFTP),y)
 CSOURCES += ${GPMPATH}/net/lwip/src/apps/tftp/tftp_server.c
 CSOURCES += ${GPMPATH}/net/lwip/src/apps/tftp/tftp_port.c
 endif
 
 # MQTT client
-ifeq ($(MK_USE_NET_LWIP_MQTT),y)
+ifeq ($(CONFIG_LWIP_MQTT),y)
 CSOURCES += ${GPMPATH}/net/lwip/src/apps/mqtt/mqtt.c
 endif
 
 # ALTCP with mbedTLS
-ifeq ($(MK_USE_NET_LWIP_ALTCP_TLS),y)
+ifeq ($(CONFIG_LWIP_ALTCP_TLS),y)
 CSOURCES += ${GPMPATH}/net/lwip/src/apps/altcp_tls/altcp_tls_mbedtls.c
 CSOURCES += ${GPMPATH}/net/lwip/src/apps/altcp_tls/altcp_tls_mbedtls_mem.c
 endif
 
 # SNMPv3 with mbedTLS
-ifeq ($(MK_USE_NET_LWIP_SNMP_MBEDTLS),y)
+ifeq ($(CONFIG_LWIP_SNMP_MBEDTLS),y)
 CSOURCES += ${GPMPATH}/net/lwip/src/apps/snmp/snmpv3_mbedtls.c
 endif
 
 # Ping utility
-ifeq ($(MK_USE_NET_LWIP_PING),y)
+ifeq ($(CONFIG_LWIP_PING),y)
 CSOURCES += ${GPMPATH}/net/lwip/src/apps/ping/ping.c
 endif
 
-endif
+endif #### end with CONFIG_LWIP_CORE

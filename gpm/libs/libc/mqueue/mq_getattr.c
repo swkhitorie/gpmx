@@ -1,6 +1,6 @@
 #include <mqueue.h>
 #include <errno.h>
-
+#include <gpmx/config.h>
 #include "./prv_mqueue.h"
 
 int mq_getattr(mqd_t mqdes, struct mq_attr *mqstat)

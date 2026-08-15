@@ -1,7 +1,35 @@
+/****************************************************************************
+ * include/sys/time.h
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
 #ifndef __INCLUDE_SYS_TIME_H
 #define __INCLUDE_SYS_TIME_H
 
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
 #include <time.h>
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
 
 #define ITIMER_REAL    0 /* Timers run in real time. */
 #define ITIMER_VIRTUAL 1 /* Timers run only when the process is executing. */
@@ -96,8 +124,8 @@
 
 struct timeval
 {
-  time_t tv_sec;         /* Seconds */
-  long tv_usec;          /* Microseconds */
+    time_t tv_sec;         /* Seconds */
+    long tv_usec;          /* Microseconds */
 };
 
 /* Type of the second argument to `getitimer' and
@@ -106,8 +134,8 @@ struct timeval
 
 struct itimerval
 {
-  struct timeval it_interval; /* Interval for periodic timer */
-  struct timeval it_value;    /* Time until next expiration */
+    struct timeval it_interval; /* Interval for periodic timer */
+    struct timeval it_value;    /* Time until next expiration */
 };
 
 /* The use of the struct timezone  is obsolete; the tz argument should
@@ -116,8 +144,8 @@ struct itimerval
 
 struct timezone
 {
-  int tz_minuteswest;     /* Minutes west of Greenwich */
-  int tz_dsttime;         /* Type of DST correction */
+    int tz_minuteswest;     /* Minutes west of Greenwich */
+    int tz_dsttime;         /* Type of DST correction */
 };
 
 #undef EXTERN
@@ -129,7 +157,9 @@ extern "C"
 #define EXTERN extern
 #endif
 
-
+/****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
 
 #undef EXTERN
 #if defined(__cplusplus)

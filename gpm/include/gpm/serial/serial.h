@@ -1,7 +1,15 @@
 #ifndef DEV_OPS_SERIAL_H_
 #define DEV_OPS_SERIAL_H_
 
-#include "gpm/sched.h"
+#include <gpmx/config.h>
+#include "driver/drv_sched.h"
+
+#include <gpm/fs/fs.h>
+#include <semaphore.h>
+
+#ifndef CONFIG_SERIAL_NPOLLWAITERS
+#define CONFIG_SERIAL_NPOLLWAITERS 4
+#endif
 
 #define SERIAL_DMASEND(d,m,c) ((d)->ops->dmasend(d,m,c))
 
@@ -10,6 +18,8 @@
 #define SERIAL_RDBUF(d,m,c) ((d)->ops->readbuf(d,m,c))
 
 #define SERIAL_RXCLEAR(d) ((d)->ops->rxclear(d))
+
+#define SERIAL_RX_AVAILABLE(d) ((d)->ops->rxavailable(d))
 
 struct uart_buffer_s {
     volatile uint16_t in;   /* Index to the head [IN] index in the buffer */
@@ -91,6 +101,9 @@ struct uart_dev_s {
     /* Driver interface */
     const struct uart_ops_s *ops;  /* Arch-specific operations */
     void                    *priv; /* Used by the arch-specific logic */
+
+    sem_t          pollsem;
+    struct pollfd *fds[CONFIG_SERIAL_NPOLLWAITERS];
 };
 
 typedef struct uart_dev_s uart_dev_t;
@@ -103,6 +116,10 @@ int                  serial_register(struct uart_dev_s *dev, int bus);
 struct uart_dev_s*   serial_bus_get(int bus);
 int                  serial_bus_initialize(int bus);
 
+#if defined(CONFIG_LIBC_VFS)
+int                  uart_register(const char *path, uart_dev_t *dev);
+#endif
+
 int  serial_dev_lock(struct uart_dev_s *dev);
 int  serial_dev_unlock(struct uart_dev_s *dev);
 
@@ -114,6 +131,7 @@ void serial_tx_post(struct uart_dev_s *dev);
 uint16_t serial_buf_write(struct uart_buffer_s *obj, const uint8_t *p, uint16_t len);
 uint16_t serial_buf_read(struct uart_buffer_s *obj, uint8_t *p, uint16_t len);
 void     serial_buf_clear(struct uart_buffer_s *obj);
+uint16_t serial_buf_size(struct uart_buffer_s *obj);
 
 #if defined(__cplusplus)
 }

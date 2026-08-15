@@ -1,21 +1,54 @@
+/****************************************************************************
+ * fs/vfs/fs_dir.c
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
 #include <string.h>
 #include <errno.h>
 
-#include "gpm/fs/fs.h"
-#include "gpm/fs/ioctl.h"
-#include "inode/inode.h"
-#include "gpm/sched.h"
+#include <gpmx/config.h>
+#include <gpm/fs/fs.h>
+#include <gpm/fs/ioctl.h>
+#include <inode/inode.h>
+
+#include <driver/drv_sched.h>
+
+/****************************************************************************
+ * Private Types
+ ****************************************************************************/
 
 /* For the root pseudo-file system, we need retain only the 'next' inode
  * need for the next readdir() operation. We hold a reference on this
  * inode so we know that it will persist until closedir is called.
  */
 
-struct fs_pseudodir_s
-{
-  struct fs_dirent_s dir;
-  struct inode *next;
+struct fs_pseudodir_s {
+    struct fs_dirent_s dir;
+    struct inode *next;
 };
+
+/****************************************************************************
+ * Private Functions Prototypes
+ ****************************************************************************/
 
 static int     dir_open(struct file *filep);
 static int     dir_close(struct file *filep);
@@ -24,28 +57,53 @@ static ssize_t dir_read(struct file *filep, char *buffer,
 static off_t   dir_seek(struct file *filep, off_t offset, int whence);
 static int     dir_ioctl(struct file *filep, int cmd, unsigned long arg);
 
-static const struct file_operations g_dir_fileops =
-{
-  dir_open,   /* open */
-  dir_close,  /* close */
-  dir_read,   /* read */
-  NULL,       /* write */
-  dir_seek,   /* seek */
-  dir_ioctl,  /* ioctl */
-  NULL,       /* poll */
-  NULL,       /* unlink */
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
+
+static const struct file_operations g_dir_fileops = {
+
+    dir_open,   /* open */
+    dir_close,  /* close */
+    dir_read,   /* read */
+    NULL,       /* write */
+    dir_seek,   /* seek */
+    dir_ioctl,  /* ioctl */
+    NULL,       /* poll */
+    NULL,       /* unlink */
 };
 
 static struct inode g_dir_inode =
 {
-  NULL,
-  NULL,
-  NULL,
-  1,
-  0,
-  { &g_dir_fileops },
+    NULL,
+    NULL,
+    NULL,
+    1,
+    0,
+    { &g_dir_fileops },
 };
 
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: open_mountpoint
+ *
+ * Description:
+ *   Handle the case where the inode to be opened is within a mountpoint.
+ *
+ * Input Parameters:
+ *   inode -- the inode of the mountpoint to open
+ *   relpath -- the relative path within the mountpoint to open
+ *   dir -- the dirent structure to be initialized
+ *
+ * Returned Value:
+ *   On success, 0 is returned; Otherwise, a negative errno is returned.
+ *
+ ****************************************************************************/
+
+#ifndef CONFIG_DISABLE_MOUNTPOINT
 static int open_mountpoint(struct inode *inode, const char *relpath,
                            struct fs_dirent_s **dir)
 {
@@ -70,11 +128,22 @@ static int open_mountpoint(struct inode *inode, const char *relpath,
 
     return ret;
 }
+#endif
 
 /****************************************************************************
+ * Name: open_pseudodir
+ *
  * Description:
  *   Handle the case where the inode to be opened is within the top-level
  *   pseudo-file system.
+ *
+ * Input Parameters:
+ *   inode -- the inode of the mountpoint to open
+ *   dir -- the dirent structure to be initialized
+ *
+ * Returned Value:
+ *   On success, 0 is returned; Otherwise, a negative errno is returned.
+ *
  ****************************************************************************/
 
 static int open_pseudodir(struct inode *inode,
@@ -83,6 +152,7 @@ static int open_pseudodir(struct inode *inode,
     struct fs_pseudodir_s *pdir;
 
     pdir = kmm_zalloc(sizeof(*pdir));
+
     if (pdir == NULL) {
         return -ENOMEM;
     }
@@ -91,8 +161,13 @@ static int open_pseudodir(struct inode *inode,
     pdir->dir.fd_root = inode;          /* Save the inode where we start */
     pdir->next        = inode->i_child; /* This next node for readdir */
     inode_addref(inode->i_child);
+
     return 0;
 }
+
+/****************************************************************************
+ * Name: seek_pseudodir
+ ****************************************************************************/
 
 static off_t seek_pseudodir(struct file *filep, off_t offset)
 {
@@ -108,9 +183,11 @@ static off_t seek_pseudodir(struct file *filep, off_t offset)
     */
 
     if (offset < filep->f_pos) {
+
         pos  = 0;
         curr = pdir->dir.fd_root->i_child;
     } else {
+
         pos  = filep->f_pos;
         curr = pdir->next;
     }
@@ -126,12 +203,15 @@ static off_t seek_pseudodir(struct file *filep, off_t offset)
     for (; curr != NULL && pos != offset; pos++, curr = curr->i_peer);
 
     /* Now get the inode to vist next time that readdir() is called */
+
     prev = pdir->next;
 
     /* The next node to visit (might be null) */
 
     pdir->next = curr;
+
     if (curr != NULL) {
+
         /* Increment the reference count on this next node */
 
         curr->i_crefs++;
@@ -145,7 +225,11 @@ static off_t seek_pseudodir(struct file *filep, off_t offset)
 
     return pos;
 }
+/****************************************************************************
+ * Name: seek_mountptdir
+ ****************************************************************************/
 
+#ifndef CONFIG_DISABLE_MOUNTPOINT
 static off_t seek_mountptdir(struct file *filep, off_t offset)
 {
     struct fs_dirent_s *dir = filep->f_priv;
@@ -160,13 +244,18 @@ static off_t seek_mountptdir(struct file *filep, off_t offset)
     */
 
     if (offset < filep->f_pos) {
+
         if (inode->u.i_mops->rewinddir != NULL) {
+
             inode->u.i_mops->rewinddir(inode, dir);
             pos = 0;
         } else {
+
             return -ENOTSUP;
         }
+
     } else {
+
         pos = filep->f_pos;
     }
 
@@ -178,6 +267,7 @@ static off_t seek_mountptdir(struct file *filep, off_t offset)
         int ret;
 
         ret = inode->u.i_mops->readdir(inode, dir, &entry);
+
         if (ret < 0) {
             return ret;
         }
@@ -188,6 +278,11 @@ static off_t seek_mountptdir(struct file *filep, off_t offset)
 
     return pos;
 }
+#endif
+
+/****************************************************************************
+ * Name: read_pseudodir
+ ****************************************************************************/
 
 static int read_pseudodir(struct fs_dirent_s *dir,
                           struct dirent *entry)
@@ -198,6 +293,7 @@ static int read_pseudodir(struct fs_dirent_s *dir,
     /* Check if we are at the end of the list */
 
     if (pdir->next == NULL) {
+
         /* End of file and error conditions are not distinguishable with
         * readdir. Here we return -ENOENT to signal the end of the directory.
         */
@@ -210,22 +306,34 @@ static int read_pseudodir(struct fs_dirent_s *dir,
     strlcpy(entry->d_name, pdir->next->i_name, sizeof(entry->d_name));
 
     /* If the node has file operations, we will say that it is a file. */
+
     entry->d_type = DTYPE_UNKNOWN;
+
     if (pdir->next->u.i_ops != NULL) {
 
+#ifndef CONFIG_DISABLE_MOUNTPOINT
         if (INODE_IS_BLOCK(pdir->next)) {
+
             entry->d_type = DTYPE_BLK;
         } else if (INODE_IS_MTD(pdir->next)) {
+
             entry->d_type = DTYPE_MTD;
         } else if (INODE_IS_MOUNTPT(pdir->next)) {
+
             entry->d_type = DTYPE_DIRECTORY;
-        } else if (INODE_IS_DRIVER(pdir->next)) {
+        } else
+#endif
+        if (INODE_IS_DRIVER(pdir->next)) {
+
             entry->d_type = DTYPE_CHR;
         } else if (INODE_IS_NAMEDSEM(pdir->next)) {
+
             entry->d_type = DTYPE_SEM;
         } else if (INODE_IS_MQUEUE(pdir->next)) {
+
             entry->d_type = DTYPE_MQ;
         } else if (INODE_IS_SHM(pdir->next)) {
+
             entry->d_type = DTYPE_SHM;
         }
     }
@@ -242,12 +350,14 @@ static int read_pseudodir(struct fs_dirent_s *dir,
     }
 
     /* Now get the inode to visit next time that readdir() is called */
+
     inode_semtake();
 
     prev       = pdir->next;
     pdir->next = prev->i_peer; /* The next node to visit */
 
     if (pdir->next != NULL) {
+
         /* Increment the reference count on this next node */
         pdir->next->i_crefs++;
     }
@@ -281,18 +391,22 @@ static int dir_close(struct file *filep)
     /* The way that we handle the close operation depends on what kind of
     * root inode we have open.
     */
-
+#ifndef CONFIG_DISABLE_MOUNTPOINT
     if (INODE_IS_MOUNTPT(inode)) {
+
         /* The node is a file system mointpoint. Verify that the
         * mountpoint supports the closedir() method (not an error if it
         * does not)
         */
 
         if (inode->u.i_mops->closedir != NULL) {
+
             ret = inode->u.i_mops->closedir(inode, dir);
         }
-    } else{
-    
+    } else 
+#endif
+    {
+
         struct fs_pseudodir_s *pdir = filep->f_priv;
 
         /* The node is part of the root pseudo file system, release
@@ -300,6 +414,7 @@ static int dir_close(struct file *filep)
         */
 
         if (pdir->next != NULL) {
+
             inode_release(pdir->next);
         }
 
@@ -308,6 +423,7 @@ static int dir_close(struct file *filep)
     }
 
     /* Release our references on the contained 'root' inode */
+
     inode_release(inode);
     kmm_free(relpath);
 
@@ -318,7 +434,9 @@ static ssize_t dir_read(struct file *filep, char *buffer,
                         size_t buflen)
 {
     struct fs_dirent_s *dir = filep->f_priv;
+#ifndef CONFIG_DISABLE_MOUNTPOINT
     struct inode *inode = dir->fd_root;
+#endif
     int ret;
 
     /* Verify that we were provided with a valid directory structure */
@@ -330,15 +448,21 @@ static ssize_t dir_read(struct file *filep, char *buffer,
     /* The way we handle the readdir depends on the type of inode
     * that we are dealing with.
     */
+#ifndef CONFIG_DISABLE_MOUNTPOINT
     if (INODE_IS_MOUNTPT(inode)) {
+
         ret = inode->u.i_mops->readdir(inode, dir,
                                         (struct dirent *)buffer);
-    } else {
+    } else
+#endif
+    {
+
         /* The node is part of the root pseudo file system */
         ret = read_pseudodir(dir, (struct dirent *)buffer);
     }
 
     /* ret < 0 is an error. Special case: ret = -ENOENT is end of file */
+
     if (ret < 0) {
         if (ret == -ENOENT) {
             ret = 0;
@@ -360,20 +484,29 @@ static off_t dir_seek(struct file *filep, off_t offset, int whence)
     */
 
     if (whence == SEEK_SET) {
+#ifndef CONFIG_DISABLE_MOUNTPOINT
       struct fs_dirent_s *dir = filep->f_priv;
 
         if (INODE_IS_MOUNTPT(dir->fd_root)) {
+
             pos = seek_mountptdir(filep, offset);
-        } else {
+        } else
+#endif
+        {
+
             pos = seek_pseudodir(filep, offset);
         }
+
     } else if (whence == SEEK_CUR) {
+
         return filep->f_pos;
     } else {
+
         return -EINVAL;
     }
 
     if (pos >= 0) {
+
         filep->f_pos = pos;
     }
 
@@ -386,6 +519,7 @@ static int dir_ioctl(struct file *filep, int cmd, unsigned long arg)
     int ret = -ENOTTY;
 
     if (cmd == FIOC_FILEPATH) {
+
         strcpy((char *)(uintptr_t)arg, dir->fd_path);
         ret = 0; // OK
     }
@@ -394,7 +528,15 @@ static int dir_ioctl(struct file *filep, int cmd, unsigned long arg)
 }
 
 /****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: dir_allocate
+ *
+ * Description:
  *   Allocate a directory instance and bind it to f_priv of filep.
+ *
  ****************************************************************************/
 
 int dir_allocate(struct file *filep, const char *relpath)
@@ -403,26 +545,32 @@ int dir_allocate(struct file *filep, const char *relpath)
     struct inode *inode = filep->f_inode;
     int ret;
 
-  /* Is this a node in the pseudo filesystem? Or a mountpoint? */
-
+    /* Is this a node in the pseudo filesystem? Or a mountpoint? */
+#ifndef CONFIG_DISABLE_MOUNTPOINT
     if (INODE_IS_MOUNTPT(inode)) {
+
         /* Open the directory at the relative path */
 
         ret = open_mountpoint(inode, relpath, &dir);
+
         if (ret < 0) {
             return ret;
         }
-    } else {
+    } else
+#endif
+
+    {
         ret = open_pseudodir(inode, &dir);
+
         if (ret < 0) {
             return ret;
         }
     }
 
-    extern char *local_strdup(const char *s);
-    dir->fd_path = local_strdup(relpath);
+    dir->fd_path = strdup(relpath);
     filep->f_inode  = &g_dir_inode;
     filep->f_priv   = dir;
     inode_addref(&g_dir_inode);
+
     return ret;
 }

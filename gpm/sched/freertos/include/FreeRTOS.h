@@ -1121,7 +1121,7 @@ typedef struct xSTATIC_TCB
 		void			*pvDummy15[ configNUM_THREAD_LOCAL_STORAGE_POINTERS ];
 	#endif
 	#if ( configGENERATE_RUN_TIME_STATS == 1 )
-		uint32_t		ulDummy16;
+		uint64_t		ulDummy16;
 	#endif
 	#if ( configUSE_NEWLIB_REENTRANT == 1 )
 		struct	_reent	xDummy17;
@@ -1272,6 +1272,8 @@ typedef struct xSTATIC_STREAM_BUFFER
 
 /* Message buffers are built on stream buffers. */
 typedef StaticStreamBuffer_t StaticMessageBuffer_t;
+
+extern int gsh_kprintf(const char *format, ...);
 
 #ifdef __cplusplus
 }

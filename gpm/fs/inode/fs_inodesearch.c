@@ -1,3 +1,29 @@
+/****************************************************************************
+ * fs/inode/fs_inodesearch.c
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
+#include <gpmx/config.h>
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -5,15 +31,34 @@
 #include <assert.h>
 #include <errno.h>
 
-#include "gpm/fs/fs.h"
-#include "inode/inode.h"
+#include <gpm/fs/fs.h>
+#include <inode/inode.h>
+
+/****************************************************************************
+ * Private Function Prototypes
+ ****************************************************************************/
 
 static int _inode_compare(const char *fname, struct inode *node);
 static int _inode_search(struct inode_search_s *desc);
 static const char *_inode_getcwd(void);
 
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
+
 struct inode *g_root_inode = NULL;
 
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: _inode_compare
+ *
+ * Description:
+ *   Compare two inode names
+ *
+ ****************************************************************************/
 static int _inode_compare(const char *fname, struct inode *node)
 {
     char *nname = node->i_name;
@@ -26,26 +71,34 @@ static int _inode_compare(const char *fname, struct inode *node)
     }
 
     for (;;) {
+
         /* At the end of the node name? */
         if (!*nname) {
+
             /* Yes.. also at the end of find name? */
             if (!*fname || *fname == '/') {
+
                 /* Yes.. return match */
                 return 0;
             } else {
+
                 /* No... return find name > node name */
                 return 1;
             }
+
         /* At end of the find name? */
         } else if (!*fname || *fname == '/') {
+
             /* Yes... return find name < node name */
             return -1;
+
         /* Check for non-matching characters */
         } else if (*fname > *nname) {
             return 1;
         } else if (*fname < *nname) {
             return -1;
         } else {
+
             /* Not at the end of either string and all of the
             * characters still match.  keep looking.
             */
@@ -87,6 +140,9 @@ static int _inode_search(struct inode_search_s *desc)
     /* Get the search path, skipping over the leading '/'.  The leading '/' is
     * mandatory because only absolute paths are expected in this context.
     */
+
+    DEBUGASSERT(desc != NULL && desc->path != NULL);
+
     name  = desc->path;
     if (*name != '/') {
         return -EINVAL;
@@ -97,6 +153,7 @@ static int _inode_search(struct inode_search_s *desc)
     * matching node is found.
     */
     while (node != NULL) {
+
         int result = _inode_compare(name, node);
 
         /* Case 1:  The name is less than the name of the node.
@@ -112,7 +169,9 @@ static int _inode_search(struct inode_search_s *desc)
         * In this case, the name may still be in the list to the
         * "right"
         */
+
         } else if (result > 0) {
+
             /* Continue looking to the "right" of this inode. */
             left = node;
             node = node->i_peer;
@@ -128,16 +187,42 @@ static int _inode_search(struct inode_search_s *desc)
             */
             name = inode_nextname(name);
             if (*name == '\0' || INODE_IS_MOUNTPT(node)) {
+
+                /* Either (1) we are at the end of the path, so this must be
+                * the node we are looking for or else (2) this node is a
+                * mountpoint and will handle the remaining part of the
+                * pathname
+                */
+
                 relpath = name;
                 ret = 0;
                 break;
             } else {
+
+                /* Keep looking at the next level "down" */
+
                 above = node;
                 left  = NULL;
                 node  = node->i_child;
             }
         }
     }
+
+    /* The node may or may not be null as per one of the following four cases:
+    *
+    * With node = NULL
+    *
+    *   (1) We went left past the final peer:  The new node name is larger
+    *       than any existing node name at that level.
+    *   (2) We broke out in the middle of the list of peers because the name
+    *       was not found in the ordered list.
+    *   (3) We went down past the final parent:  The new node name is
+    *       "deeper" than anything that we currently have in the tree.
+    *
+    * With node != NULL
+    *
+    *   (4) When the node matching the full path is found
+    */
 
     desc->path    = name;
     desc->node    = node;
@@ -147,51 +232,63 @@ static int _inode_search(struct inode_search_s *desc)
     return ret;
 }
 
+/****************************************************************************
+ * Name: _inode_getcwd
+ *
+ * Description:
+ *   Return the current working directory
+ *
+ ****************************************************************************/
+
 static const char *_inode_getcwd(void)
 {
     const char *pwd = "/";
     return pwd;
 }
 
-static int local_vasprintf(char **strp, const char *fmt, va_list ap)
-{
-    va_list ap_copy;
-    va_copy(ap_copy, ap);
-    int len = vsnprintf(NULL, 0, fmt, ap_copy);
-    va_end(ap_copy);
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
 
-    if (len < 0) { 
-        *strp = NULL;
-        return -1; 
-    }
-
-    char *buf = kmm_malloc((size_t)len + 1);
-
-    if (!buf) { 
-        *strp = NULL;
-        return -1; 
-    }
-
-    vsnprintf(buf, (size_t)len + 1, fmt, ap);
-    *strp = buf;
-    return len;
-}
-
-static int local_asprintf(char **strp, const char *fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-    int ret = local_vasprintf(strp, fmt, ap);
-    va_end(ap);
-    return ret;
-}
+/****************************************************************************
+ * Name: inode_search
+ *
+ * Description:
+ *   Find the inode associated with 'path' returning the inode references
+ *   and references to its companion nodes.
+ *
+ *   If a mountpoint is encountered in the search prior to encountering the
+ *   terminal node, the search will terminate at the mountpoint inode.  That
+ *   inode and the relative path from the mountpoint, 'relpath' will be
+ *   returned.
+ *
+ *   inode_search will follow soft links in path leading up to the terminal
+ *   node.  Whether or no inode_search() will deference that terminal node
+ *   depends on the 'nofollow' input.
+ *
+ *   If a soft link is encountered that is not the terminal node in the path,
+ *   that link WILL be deferenced unconditionally.
+ *
+ * Assumptions:
+ *   The caller holds the g_inode_sem semaphore
+ *
+ ****************************************************************************/
 
 int inode_search(struct inode_search_s *desc)
 {
     int ret;
 
+    /* Perform the common _inode_search() logic.  This does everything except
+    * operations special operations that must be performed on the terminal
+    * node if node is a symbolic link.
+    */
+
+    DEBUGASSERT(desc != NULL && desc->path != NULL);
+
+    /* Convert the relative path to the absolute path */
+
     if (*desc->path != '/') {
-        local_asprintf(&desc->buffer, "%s/%s", _inode_getcwd(), desc->path);
+        asprintf(&desc->buffer, "%s/%s", _inode_getcwd(), desc->path);
         if (desc->buffer == NULL) {
             return -ENOMEM;
         }
@@ -203,15 +300,21 @@ int inode_search(struct inode_search_s *desc)
     return ret;
 }
 
-/*
+/****************************************************************************
+ * Name: inode_nextname
+ *
+ * Description:
  *   Given a path with node names separated by '/', return the next path
  *   segment name.
-*/
+ *
+ ****************************************************************************/
+
 const char *inode_nextname(const char *name)
 {
     /* Search for the '/' delimiter or the NUL terminator at the end of the
     * path segment.
     */
+
     while (*name != '\0' && *name != '/') {
         name++;
     }
@@ -219,6 +322,7 @@ const char *inode_nextname(const char *name)
     /* If we found the '/' delimiter, then the path segment we want begins at
     * the next character (which might also be the NUL terminator).
     */
+
     while (*name == '/') {
         name++;
     }

@@ -1,9 +1,17 @@
-#ifndef POSIX_SCHED_H_
-#define POSIX_SCHED_H_
+#ifndef __INCLUDE_SCHED_H
+#define __INCLUDE_SCHED_H
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
 
 #include <stdint.h>
 #include <stdbool.h>
 #include <sys/types.h>
+
+/************************************************************************
+ * Pre-processor Definitions
+ ************************************************************************/
 
 /* POSIX-like scheduling policies */
 
@@ -17,6 +25,10 @@
 
 #define SCHED_MIN       SCHED_OTHER
 #define SCHED_MAX       SCHED_RR
+
+/********************************************************************************
+ * Public Type Definitions
+ ********************************************************************************/
 
 struct sched_param
 {
@@ -32,7 +44,11 @@ extern "C"
 #define EXTERN extern
 #endif
 
-/* start scheduler in freertos */
+/********************************************************************************
+ * Public Function Prototypes
+ ********************************************************************************/
+
+/* start scheduler */
 void sched_start(void);
 
 int sched_yield(void);
@@ -48,4 +64,4 @@ int sched_unlock(void);
 }
 #endif
 
-#endif
+#endif /* __INCLUDE_SCHED_H */

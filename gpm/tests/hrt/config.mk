@@ -1,4 +1,4 @@
 
-ifeq (${MK_TEST_ENABLE},y)
-CPPSOURCES += ${GPMPATH}/tests/hrt/hrt_test.cpp
+ifeq (${CONFIG_HRT},y)
+CSOURCES += ${GPMPATH}/tests/hrt/hrt_test.c
 endif

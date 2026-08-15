@@ -1,5 +1,6 @@
 #include "sched.h"
 #include "errno.h"
+#include <gpmx/config.h>
 
 #if defined(CONFIG_FREERTOS_ENABLE)
 #include <FreeRTOS.h>
@@ -14,7 +15,8 @@ int sched_unlock()
 #if defined(CONFIG_FREERTOS_ENABLE)
     xTaskResumeAll();
 #elif defined(CONFIG_RTTNANO_ENABLE)
-    rt_sched_unlock();
+    rt_exit_critical();
 #endif
+
     return EOPNOTSUPP;
 }

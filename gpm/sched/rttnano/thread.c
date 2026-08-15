@@ -936,4 +936,24 @@ rt_thread_t rt_thread_find(char *name)
 
 RTM_EXPORT(rt_thread_find);
 
+rt_err_t rt_thread_rename(rt_thread_t thread, const char *name)
+{
+    rt_object_t obj_thread;
+    rt_object_t obj_threadtimer;
+    char oldname[RT_NAME_MAX];
+    rt_strncpy(oldname, thread->name, RT_NAME_MAX);
+
+    obj_thread = rt_object_find(oldname, RT_Object_Class_Thread);
+    obj_threadtimer = rt_object_find(oldname, RT_Object_Class_Timer);
+    if (obj_thread == RT_NULL || obj_threadtimer == RT_NULL) {
+        return RT_EEMPTY;
+    }
+
+    rt_strncpy(obj_thread->name, name, RT_NAME_MAX);
+    rt_strncpy(obj_threadtimer->name, name, RT_NAME_MAX);
+
+    return RT_EOK;
+}
+
+RTM_EXPORT(rt_thread_rename);
 /**@}*/

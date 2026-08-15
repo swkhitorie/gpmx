@@ -1,8 +1,6 @@
-#include <board_config.h>
+#include <gpmx/config.h>
 
-#ifndef TEST_PRINTF
-#define TEST_PRINTF    BOARD_PRINTF
-#endif
+#include <mlog.h>
 
 #include <pthread.h>
 #include <stdio.h>
@@ -23,7 +21,7 @@ void* reader(void* arg)
 
     for (i = 0; i < 3; i++) {
         pthread_rwlock_rdlock(&rwlock);
-        TEST_PRINTF("Reader %d: acquired read lock, shared_data = %d\n", id, shared_data);
+        KMRAW("Reader %d: acquired read lock, shared_data = %d\n", id, shared_data);
         usleep(100000);
         pthread_rwlock_unlock(&rwlock);
         usleep(10000);
@@ -41,7 +39,7 @@ void* writer(void* arg)
     for (i = 0; i < 2; i++) {
         pthread_rwlock_wrlock(&rwlock);
         shared_data++;
-        TEST_PRINTF("Writer %d: acquired write lock, incremented to %d\n", id, shared_data);
+        KMRAW("Writer %d: acquired write lock, incremented to %d\n", id, shared_data);
         usleep(200000);
         pthread_rwlock_unlock(&rwlock);
         usleep(20000);
@@ -91,6 +89,6 @@ int klibc_pthread_rwlock_test(int argc, char **argv)
     pthread_rwlock_destroy(&rwlock);
     pthread_barrier_destroy(&start_barrier);
 
-    TEST_PRINTF("All threads finished, final shared_data = %d\n", shared_data);
+    KMRAW("All threads finished, final shared_data = %d\n", shared_data);
     return 0;
 }

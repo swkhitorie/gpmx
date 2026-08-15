@@ -1,18 +1,51 @@
+/****************************************************************************
+ * fs/vfs/fs_fcntl.c
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
 #include <stdarg.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <assert.h>
 #include <sys/ioctl.h>
 
-#include "gpm/fs/fs.h"
+#include <gpmx/config.h>
+#include <inode/inode.h>
+#include <gpm/fs/fs.h>
 
-#include "inode/inode.h"
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: file_vfcntl
+ ****************************************************************************/
 
 static int file_vfcntl(struct file *filep, int cmd, va_list ap)
 {
     int ret = -EINVAL;
 
     /* Was this file opened ? */
+
     if (!filep->f_inode) {
         return -EBADF;
     }
@@ -30,9 +63,9 @@ static int file_vfcntl(struct file *filep, int cmd, va_list ap)
          */
 
         {
-          /* Does not set the errno variable in the event of a failure */
+            /* Does not set the errno variable in the event of a failure */
 
-          ret = file_dup(filep, va_arg(ap, int));
+            ret = file_dup(filep, va_arg(ap, int));
         }
         break;
 
@@ -44,7 +77,7 @@ static int file_vfcntl(struct file *filep, int cmd, va_list ap)
          */
 
         {
-          ret = filep->f_oflags & O_CLOEXEC ? FD_CLOEXEC : 0;
+            ret = filep->f_oflags & O_CLOEXEC ? FD_CLOEXEC : 0;
         }
         break;
 
@@ -82,10 +115,10 @@ static int file_vfcntl(struct file *filep, int cmd, va_list ap)
          * file with different open file descriptions.
          */
 
-          {
+        {
             ret = filep->f_oflags;
-          }
-          break;
+        }
+        break;
 
     case F_SETFL:
         /* Set the file status flags, defined in <fcntl.h>, for the file
@@ -102,12 +135,15 @@ static int file_vfcntl(struct file *filep, int cmd, va_list ap)
             int nonblock = !!(oflags & O_NONBLOCK);
 
             ret = file_ioctl(filep, FIONBIO, &nonblock);
+
             if (ret == 0 /* OK */) {
+
                 oflags          &=  (FFCNTL & ~O_NONBLOCK);
                 filep->f_oflags &= ~(FFCNTL & ~O_NONBLOCK);
                 filep->f_oflags |=  oflags;
 
                 if ((filep->f_oflags & O_APPEND) != 0) {
+
                     file_seek(filep, 0, SEEK_END);
                 }
             }
@@ -131,8 +167,8 @@ static int file_vfcntl(struct file *filep, int cmd, va_list ap)
          * to a socket, the results are unspecified.
          */
 
-          ret = -EBADF; /* Only valid on socket descriptors */
-          break;
+        ret = -EBADF; /* Only valid on socket descriptors */
+        break;
 
     case F_GETLK:
         /* Get the first lock which blocks the lock description pointed to
@@ -165,8 +201,8 @@ static int file_vfcntl(struct file *filep, int cmd, va_list ap)
          * the lock operation shall not be done.
          */
 
-          ret = -ENOSYS; /* Not implemented */
-          break;
+        ret = -ENOSYS; /* Not implemented */
+        break;
 
     case F_GETPATH:
         /* Get the path of the file descriptor. The argument must be a buffer
@@ -181,8 +217,12 @@ static int file_vfcntl(struct file *filep, int cmd, va_list ap)
         break;
     }
 
-  return ret;
+    return ret;
 }
+
+/****************************************************************************
+ * Name: nx_vfcntl
+ ****************************************************************************/
 
 static int nx_vfcntl(int fd, int cmd, va_list ap)
 {
@@ -190,48 +230,136 @@ static int nx_vfcntl(int fd, int cmd, va_list ap)
     int ret;
 
     /* Get the file structure corresponding to the file descriptor. */
+
     ret = fs_getfilep(fd, &filep);
+
     if (ret >= 0) {
+
+        DEBUGASSERT(filep != NULL);
+
+        /* Let file_vfcntl() do the real work.  The errno is not set on
+        * failures.
+        */
         ret = file_vfcntl(filep, cmd, ap);
     }
 
     return ret;
 }
 
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: file_fcntl
+ *
+ * Description:
+ *   Similar to the standard fcntl function except that is accepts a struct
+ *   struct file instance instead of a file descriptor.
+ *
+ * Input Parameters:
+ *   filep - Instance for struct file for the opened file.
+ *   cmd   - Identifies the operation to be performed.  Command specific
+ *           arguments may follow.
+ *
+ * Returned Value:
+ *   The nature of the return value depends on the command.  Non-negative
+ *   values indicate success.  Failures are reported as negated errno
+ *   values.
+ *
+ ****************************************************************************/
+
 int file_fcntl(struct file *filep, int cmd, ...)
 {
     va_list ap;
     int ret;
 
+    /* Setup to access the variable argument list */
     va_start(ap, cmd);
+
+    /* Let file_vfcntl() do the real work.  The errno is not set on
+    * failures.
+    */
+
     ret = file_vfcntl(filep, cmd, ap);
+
     va_end(ap);
 
     return ret;
 }
+
+/****************************************************************************
+ * Name: nx_fcntl
+ *
+ * Description:
+ *   nx_fcntl() is similar to the standard 'fcntl' interface except that is
+ *   not a cancellation point and it does not modify the errno variable.
+ *
+ *   nx_fcntl() is an internal NuttX interface and should not be called
+ *   from applications.
+ *
+ * Returned Value:
+ *   Returns a non-negative number on success;  A negated errno value is
+ *   returned on any failure (see comments fcntl() for a list of appropriate
+ *   errno values).
+ *
+ ****************************************************************************/
 
 int nx_fcntl(int fd, int cmd, ...)
 {
     va_list ap;
     int ret;
 
+    /* Setup to access the variable argument list */
     va_start(ap, cmd);
+
+    /* Let nx_vfcntl() do the real work.  The errno is not set on
+    * failures.
+    */
+
     ret = nx_vfcntl(fd, cmd, ap);
+
     va_end(ap);
 
     return ret;
 }
+
+/****************************************************************************
+ * Name: fcntl
+ *
+ * Description:
+ *   fcntl() will perform the operation specified by 'cmd' on an open file.
+ *
+ * Input Parameters:
+ *   fd  - File descriptor of the open file
+ *   cmd - Identifies the operation to be performed.  Command specific
+ *         arguments may follow.
+ *
+ * Returned Value:
+ *   The returned value depends on the nature of the command but for all
+ *   commands the return value of -1 (ERROR) indicates that an error has
+ *   occurred and, in this case, the errno variable will be set
+ *   appropriately
+ *
+ ****************************************************************************/
 
 int fcntl(int fd, int cmd, ...)
 {
     va_list ap;
     int ret;
 
+    /* Setup to access the variable argument list */
     va_start(ap, cmd);
+
+    /* Let nx_vfcntl() do the real work.  The errno is not set on
+    * failures.
+    */
     ret = nx_vfcntl(fd, cmd, ap);
+
     va_end(ap);
 
     if (ret < 0) {
+
         set_errno(-ret);
         ret = -1;
     }

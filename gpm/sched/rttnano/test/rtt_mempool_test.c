@@ -1,0 +1,62 @@
+#include <rtthread.h>
+#include "rtt_test.h"
+
+static rt_uint8_t *ptr[50];
+static rt_uint8_t mempool[4096];
+static struct rt_mempool mp;
+#define THREAD_PRIORITY      25
+#define THREAD_STACK_SIZE    512
+#define THREAD_TIMESLICE     5
+
+static rt_thread_t tid1 = RT_NULL;
+static rt_thread_t tid2 = RT_NULL;
+
+static void thread1_mp_alloc(void *parameter)
+{
+    int i;
+    for (i = 0 ; i < 50 ; i++)
+    {
+        if (ptr[i] == RT_NULL)
+        {
+            ptr[i] = rt_mp_alloc(&mp, RT_WAITING_FOREVER);
+            if (ptr[i] != RT_NULL)
+                rt_kprintf("allocate No.%d\n", i);
+        }
+    }
+}
+
+static void thread2_mp_release(void *parameter)
+{
+    int i;
+    rt_kprintf("thread2 try to release block\n");
+    for (i = 0; i < 50 ; i++)
+    {
+        if (ptr[i] != RT_NULL)
+        {
+            rt_kprintf("release block %d\n", i);
+            rt_mp_free(ptr[i]);
+            ptr[i] = RT_NULL;
+        }
+    }
+}
+
+int rtt_mempool_test(int argc, char **argv)
+{
+    int i;
+    for (i = 0; i < 50; i ++) ptr[i] = RT_NULL;
+
+    rt_mp_init(&mp, "mp1", &mempool[0], sizeof(mempool), 80);
+
+    tid1 = rt_thread_create("thread1", thread1_mp_alloc, RT_NULL,
+                            THREAD_STACK_SIZE,
+                            THREAD_PRIORITY, THREAD_TIMESLICE);
+    if (tid1 != RT_NULL)
+        rt_thread_startup(tid1);
+
+    tid2 = rt_thread_create("thread2", thread2_mp_release, RT_NULL,
+                            THREAD_STACK_SIZE,
+                            THREAD_PRIORITY + 1, THREAD_TIMESLICE);
+    if (tid2 != RT_NULL)
+        rt_thread_startup(tid2);
+    return 0;
+}

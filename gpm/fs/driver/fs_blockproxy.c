@@ -1,3 +1,28 @@
+/****************************************************************************
+ * fs/driver/fs_blockproxy.c
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
+#include <gpmx/config.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -8,36 +33,45 @@
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
+#include <assert.h>
+#include <debug.h>
 
 #include <semaphore.h>
+#include "driver/drv_sched.h"
 #include "gpm/fs/fs.h"
-#include "gpm/sched.h"
 #include "gpm/drivers/drivers.h"
 
+#if !defined(CONFIG_DISABLE_MOUNTPOINT) && \
+    !defined(CONFIG_DISABLE_PSEUDOFS_OPERATIONS)
+
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
+
 static uint32_t g_devno;
+static sem_t g_devno_sem;
 
-// static sem_t g_devno_sem = SEM_INITIALIZER(1);
-#if defined(CONFIG_RTTNANO_ENABLE)
-static sem_t g_devno_sem = {.refcount = 254};
-#elif defined(CONFIG_FREERTOS_ENABLE)
-static sem_t g_devno_sem = {.val = 254};
-#endif
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
 
-char *local_strdup(const char *s)
-{
-    if (s == NULL) {
-        return NULL;
-    }
-
-    size_t len = strlen(s) + 1;
-
-    char *dup = (char *)kmm_malloc(len);
-
-    if (dup != NULL) {
-        memcpy(dup, s, len);
-    }
-    return dup;
-}
+/****************************************************************************
+ * Name: unique_chardev
+ *
+ * Description:
+ *   Create a unique temporary device name in the /dev/ directory of the
+ *   pseudo-file system.  We cannot use mktemp for this because it will
+ *   attempt to open() the file.
+ *
+ * Input Parameters:
+ *   None
+ *
+ * Returned Value:
+ *   The allocated path to the device.  This must be released by the caller
+ *   to prevent memory links.  NULL will be returned only the case where
+ *   we fail to allocate memory.
+ *
+ ****************************************************************************/
 
 static char *unique_chardev(void)
 {
@@ -46,44 +80,65 @@ static char *unique_chardev(void)
     uint32_t devno;
     int ret;
 
-#if defined(CONFIG_RTTNANO_ENABLE)
-    if (g_devno_sem.refcount == 254) {
-        sem_init(&g_devno_sem, 0, 1);
-    }
-#elif defined(CONFIG_FREERTOS_ENABLE)
-    if (g_devno_sem.val == 254) {
-        sem_init(&g_devno_sem, 0, 1);
-    }
-#endif
-
     /* Loop until we get a unique device name */
+
     for (;;) {
 
         /* Get the semaphore protecting the path number */
-        ret = sem_wait(&g_devno_sem); //nxsem_wait_uninterruptible(&g_devno_sem);
+
+        ret = sem_wait_uninterruptible(&g_devno_sem);
+
         if (ret < 0) {
-            // ferr("ERROR: nxsem_wait_uninterruptible failed: %d\n", ret);
+
+            ferr("ERROR: nxsem_wait_uninterruptible failed: %d\n", ret);
             return NULL;
         }
 
         /* Get the next device number and release the semaphore */
+
         devno = ++g_devno;
         sem_post(&g_devno_sem);
 
         /* Construct the full device number */
+
         devno &= 0xffffff;
         snprintf(devbuf, 16, "/dev/tmpc%06lx", (unsigned long)devno);
 
         /* Make sure that file name is not in use */
+
         ret = nx_stat(devbuf, &statbuf, 1);
         if (ret < 0) {
-            extern char *local_strdup(const char *s);
-            return local_strdup(devbuf);
+
+            DEBUGASSERT(ret == -ENOENT);
+            return strdup(devbuf);
         }
 
         /* It is in use, try again */
     }
 }
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: block_proxy
+ *
+ * Description:
+ *   Create a temporary char driver using drivers/bch to mediate character
+ *   oriented accessed to the block driver.
+ *
+ * Input Parameters:
+ *   filep  - The caller provided location in which to return the 'struct
+ *            file' instance.
+ *   blkdev - The path to the block driver
+ *   oflags - Character driver open flags
+ *
+ * Returned Value:
+ *   Zero (OK) is returned on success.  On failure, a negated errno value is
+ *   returned.
+ *
+ ****************************************************************************/
 
 int block_proxy(struct file *filep, const char *blkdev, int oflags)
 {
@@ -91,28 +146,40 @@ int block_proxy(struct file *filep, const char *blkdev, int oflags)
     bool readonly;
     int ret;
 
+    DEBUGASSERT(blkdev);
+
+    /* Create a unique temporary file name for the character device */
+
     chardev = unique_chardev();
+
     if (chardev == NULL) {
-        // ferr("ERROR: Failed to create temporary device name\n");
+
+        ferr("ERROR: Failed to create temporary device name\n");
         return -ENOMEM;
     }
 
     /* Should this character driver be read-only? */
+
     readonly = ((oflags & O_WROK) == 0);
 
     /* Wrap the block driver with an instance of the BCH driver */
+
     ret = bchdev_register(blkdev, chardev, readonly);
     if (ret < 0) {
-        // ferr("ERROR: bchdev_register(%s, %s) failed: %d\n",
-        //     blkdev, chardev, ret);
+
+        ferr("ERROR: bchdev_register(%s, %s) failed: %d\n",
+            blkdev, chardev, ret);
+
         goto errout_with_chardev;
     }
 
     /* Open the newly created character driver */
+
     oflags &= ~(O_CREAT | O_EXCL | O_APPEND | O_TRUNC);
     ret = file_open(filep, chardev, oflags);
     if (ret < 0) {
-        // ferr("ERROR: Failed to open %s: %d\n", chardev, ret);
+
+        ferr("ERROR: Failed to open %s: %d\n", chardev, ret);
         goto errout_with_bchdev;
     }
 
@@ -122,8 +189,10 @@ int block_proxy(struct file *filep, const char *blkdev, int oflags)
     */
 
     ret = nx_unlink(chardev);
+
     if (ret < 0) {
-        // ferr("ERROR: Failed to unlink %s: %d\n", chardev, ret);
+
+        ferr("ERROR: Failed to unlink %s: %d\n", chardev, ret);
         goto errout_with_chardev;
     }
 
@@ -138,4 +207,11 @@ errout_with_chardev:
     kmm_free(chardev);
     return ret;
 }
+
+void block_devsem_initialize(void)
+{
+    sem_init(&g_devno_sem, 0, 1);
+}
+
+#endif /* !CONFIG_DISABLE_MOUNTPOINT && !CONFIG_DISABLE_PSEUDOFS_OPERATIONS */
 

@@ -1,8 +1,7 @@
-#include <board_config.h>
+#include <gpmx/config.h>
 
-#ifndef TEST_PRINTF
-#define TEST_PRINTF    BOARD_PRINTF
-#endif
+#include <mlog.h>
+#include <board_config.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -40,16 +39,16 @@ void* p1_entry(void *p)
 
     pthread_getname_np(pthread_self(), &name[0], 16);
 
-    TEST_PRINTF("[%s] %.6f p1 start\r\n", name, board_get_time()/1e3f);
+    KMRAW("[%s] %.6f p1 start\r\n", name, board_get_time()/1e3f);
 
     pthread_setname_np(pthread_self(), "pthread_1");
 
     for (; i < 3; i++) {
-        TEST_PRINTF("[%s] %.6f p1 tag, val: %.5f, %d\r\n", name, board_get_time()/1e3f,
+        KMRAW("[%s] %.6f p1 tag, val: %.5f, %d\r\n", name, board_get_time()/1e3f,
                                     *value, i);
         usleep(1000000); // sleep 1s
     }
-    TEST_PRINTF("[%s] %.6f p1 end\r\n", name, board_get_time()/1e3f);
+    KMRAW("[%s] %.6f p1 end\r\n", name, board_get_time()/1e3f);
     return NULL;
 }
 
@@ -61,16 +60,16 @@ void* p2_entry(void *p)
 
     pthread_getname_np(pthread_self(), &name[0], 16);
 
-    TEST_PRINTF("[%s] %.6f p2 start\r\n", name, board_get_time()/1e3f);
+    KMRAW("[%s] %.6f p2 start\r\n", name, board_get_time()/1e3f);
 
     pthread_setname_np(pthread_self(), "pthread_2");
 
     for (; i < 15; i++) {
-        TEST_PRINTF("[%s] %.6f p2 tag, val: %.5f, %d\r\n", name, board_get_time()/1e3f,
+        KMRAW("[%s] %.6f p2 tag, val: %.5f, %d\r\n", name, board_get_time()/1e3f,
                                     *value, i);
         usleep(2000000); // sleep 2s
     }
-    TEST_PRINTF("[%s] %.6f p2 end\r\n", name, board_get_time()/1e3f);
+    KMRAW("[%s] %.6f p2 end\r\n", name, board_get_time()/1e3f);
     return NULL;
 }
 
@@ -83,7 +82,7 @@ int klibc_pthread_test(int argc, char **argv)
         pthread_attr_init(&p1.attr);
         pthread_attr_setdetachstate(&p1.attr, PTHREAD_CREATE_JOINABLE);
         pthread_attr_setschedparam(&p1.attr, &p1.param);
-        pthread_attr_setstacksize(&p1.attr, 512*sizeof(StackType_t));
+        pthread_attr_setstacksize(&p1.attr, 512*4);
         rv = pthread_create(&p1.id, &p1.attr, &p1_entry, &p1.arg);
     }
 
@@ -95,7 +94,7 @@ int klibc_pthread_test(int argc, char **argv)
         // PTHREAD_CREATE_DETACHED PTHREAD_CREATE_JOINABLE
         pthread_attr_setdetachstate(&p2.attr, PTHREAD_CREATE_JOINABLE);
         pthread_attr_setschedparam(&p2.attr, &p2.param);
-        pthread_attr_setstacksize(&p2.attr, 512*sizeof(StackType_t));
+        pthread_attr_setstacksize(&p2.attr, 512*4);
         rv = pthread_create(&p2.id, &p2.attr, &p2_entry, &p2.arg);
     }
 

@@ -1,17 +1,17 @@
-ifeq (${MK_USE_KERNEL_WORKQUEUE},y)
-PROJ_CDEFS += CONFIG_MODULE_WORKQUEUE
-PROJ_CINCDIRS += ${GPMPATH}/modules/common
-PROJ_CINCDIRS += ${GPMPATH}/modules/ccontainer
+
+ifeq (${CONFIG_MODULE_WORKQUEUE},y)
+
+ifneq (${CONFIG_POSIXRUN_ENABLE},y)
+ifneq (${CONFIG_LIBC_PTHREAD}${CONFIG_LIBC_SEMAPHORE},yy)
+$(error CONFIG_MODULE_WORKQUEUE depend on CONFIG_LIBC_PTHREAD, CONFIG_LIBC_SEMAPHORE)
+endif
+endif
+
 PROJ_CINCDIRS += ${GPMPATH}/modules/workqueue
-CSOURCES += ${GPMPATH}/modules/ccontainer/blocking_list.c
-CSOURCES += ${GPMPATH}/modules/ccontainer/intrusive_queue.c
-CSOURCES += ${GPMPATH}/modules/ccontainer/intrusive_list.c
-CSOURCES += ${GPMPATH}/modules/ccontainer/intrusive_sorted_list.c
 CSOURCES += ${GPMPATH}/modules/workqueue/scheduledworkitem.c
 CSOURCES += ${GPMPATH}/modules/workqueue/workitem.c
 CSOURCES += ${GPMPATH}/modules/workqueue/workqueue.c
 CSOURCES += ${GPMPATH}/modules/workqueue/workqueue_manager.c
 
-MK_USE_KERNEL_POSIX_PTHREAD:=y
-MK_USE_KERNEL_POSIX_SEMAPHORE:=y
+include ${GPMPATH}/modules/container/config.mk
 endif

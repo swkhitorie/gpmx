@@ -1,10 +1,11 @@
+#include <gpmx/config.h>
 #include <stddef.h>
 #include <time.h>
 #include <pthread.h>
 #include <errno.h>
 
 #include "utils.h"
-#include "./prv_timer.h"
+#include "prv_timer.h"
 
 int timer_delete(timer_t timerid)
 {

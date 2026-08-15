@@ -1,6 +1,7 @@
 #ifndef WORKQUEUE_MANAGER_H_
 #define WORKQUEUE_MANAGER_H_
 
+#include <gpmx/config.h>
 #include <stdint.h>
 
 struct __workqueue;

@@ -1,25 +1,12 @@
-#include <board_config.h>
+#include <gpmx/config.h>
 
-#ifndef TEST_PRINTF
-#define TEST_PRINTF    BOARD_PRINTF
-#endif
+#include <mlog.h>
 
 #include <stdio.h>
 #include <string.h>
 
-#include <sys/ioctl.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <mqueue.h>
-#include <sched.h>
-#include <queue.h>
 #include <semaphore.h>
-#include <signal.h>
-#include <time.h>
 #include <unistd.h>
-#include <utils.h>
 #include <pthread.h>
 
 typedef struct __pthread_test{
@@ -42,19 +29,18 @@ void* p6_entry(void *p)
     pthread_setname_np(pthread_self(), "sem_t1");
     pthread_getname_np(pthread_self(), &name[0], 16);
 
-    sem_init(&a_sem, 0, 1);
     int val;
     sem_getvalue(&a_sem, &val);
     for (;;) {
 
-        TEST_PRINTF("[%s] sem val: %d\r\n", &name[0], val);
+        KMRAW("[%s] sem val: %d\r\n", &name[0], val);
         if (0 == sem_wait(&a_sem)) {
             sem_getvalue(&a_sem, &val);
-            TEST_PRINTF("[%s] get sem : %d\r\n", &name[0], val);
+            KMRAW("[%s] get sem : %d\r\n", &name[0], val);
         }
         sem_post(&a_sem);
         sem_getvalue(&a_sem, &val);
-        TEST_PRINTF("[%s] post sem : %d\r\n", &name[0], val);
+        KMRAW("[%s] post sem : %d\r\n", &name[0], val);
         usleep(500*1000);
     }
 
@@ -70,18 +56,19 @@ void* p7_entry(void *p)
     pthread_setname_np(pthread_self(), "sem_t2");
     pthread_getname_np(pthread_self(), &name[0], 16);
 
+    usleep(5*1000);
     int val;
     sem_getvalue(&a_sem, &val);
     for (;;) {
 
-        TEST_PRINTF("[%s] sem val: %d\r\n", &name[0], val);
+        KMRAW("[%s] sem val: %d\r\n", &name[0], val);
         if (0 == sem_wait(&a_sem)) {
             sem_getvalue(&a_sem, &val);
-            TEST_PRINTF("[%s] get sem : %d\r\n", &name[0], val);
+            KMRAW("[%s] get sem : %d\r\n", &name[0], val);
         }
         sem_post(&a_sem);
         sem_getvalue(&a_sem, &val);
-        TEST_PRINTF("[%s] post sem : %d\r\n", &name[0], val);
+        KMRAW("[%s] post sem : %d\r\n", &name[0], val);
         usleep(1000*1000);
         // debug_led_toggle();
     }
@@ -93,6 +80,8 @@ int klibc_sem_test(int argc, char **argv)
 {
     pthread_setname_np(pthread_self(), "ksem_start");
 
+    sem_init(&a_sem, 0, 1);
+
     {
         int rv;
         p6.param.sched_priority = 6;
@@ -100,7 +89,7 @@ int klibc_sem_test(int argc, char **argv)
         pthread_attr_init(&p6.attr);
         pthread_attr_setdetachstate(&p6.attr, PTHREAD_CREATE_JOINABLE);
         pthread_attr_setschedparam(&p6.attr, &p6.param);
-        pthread_attr_setstacksize(&p6.attr, 512*sizeof(StackType_t));
+        pthread_attr_setstacksize(&p6.attr, 512*4);
         rv = pthread_create(&p6.id, &p6.attr, &p6_entry, &p6.arg);
     }
 
@@ -112,7 +101,7 @@ int klibc_sem_test(int argc, char **argv)
         // PTHREAD_CREATE_DETACHED PTHREAD_CREATE_JOINABLE
         pthread_attr_setdetachstate(&p7.attr, PTHREAD_CREATE_JOINABLE);
         pthread_attr_setschedparam(&p7.attr, &p7.param);
-        pthread_attr_setstacksize(&p7.attr, 512*sizeof(StackType_t));
+        pthread_attr_setstacksize(&p7.attr, 512*4);
         rv = pthread_create(&p7.id, &p7.attr, &p7_entry, &p7.arg);
     }
 

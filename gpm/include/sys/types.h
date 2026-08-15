@@ -1,7 +1,36 @@
-#ifndef POSIX_SYS_TYPES_H_
-#define POSIX_SYS_TYPES_H_
+/****************************************************************************
+ * include/sys/types.h
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
 
+#ifndef __INCLUDE_SYS_TYPES_H
+#define __INCLUDE_SYS_TYPES_H
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
+#include <gpmx/config.h>
 #include <stdint.h>
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
 
 #ifndef TRUE
 #define TRUE  1
@@ -14,6 +43,43 @@
 #ifndef NULL
 #define NULL ((void*)0)
 #endif
+
+#undef  NAME_MAX
+#ifndef CONFIG_NAME_MAX
+#define NAME_MAX 40
+#else
+#define NAME_MAX CONFIG_NAME_MAX
+#endif
+
+#undef  PATH_MAX
+#ifndef CONFIG_PATH_MAX
+#define PATH_MAX 256
+#else
+#define PATH_MAX CONFIG_PATH_MAX
+#endif
+
+#undef  OPEN_MAX
+#ifndef CONFIG_LIBC_OPEN_MAX
+#define OPEN_MAX 255
+#elif
+#define OPEN_MAX CONFIG_LIBC_OPEN_MAX
+#endif
+
+#if defined(CONFIG_FREERTOS_ENABLE)
+#define SCHED_PRIORITY_MAX     (configMAX_PRIORITIES - 1)
+#define SCHED_PRIORITY_DEFAULT (configMAX_PRIORITIES / 2)
+#define SCHED_PRIORITY_MIN       0
+#define SCHED_PRIORITY_IDLE      SCHED_PRIORITY_MIN
+#elif defined(CONFIG_RTTNANO_ENABLE)
+#define SCHED_PRIORITY_MAX       0
+#define SCHED_PRIORITY_DEFAULT   (RT_THREAD_PRIORITY_MAX / 2)
+#define SCHED_PRIORITY_MIN       (RT_THREAD_PRIORITY_MAX - 1)
+#define SCHED_PRIORITY_IDLE      SCHED_PRIORITY_MIN
+#endif
+
+/****************************************************************************
+ * Type Declarations
+ ****************************************************************************/
 
 typedef unsigned int mode_t;
 
@@ -76,6 +142,16 @@ typedef intptr_t     ptrdiff_t;
 
 typedef int wctype_t;
 
+#if defined(CONFIG_FS_LARGEFILE) && defined(CONFIG_HAVE_LONG_LONG)
+/* Large file versions */
+
+typedef uint64_t     fsblkcnt_t;
+typedef uint64_t     fsfilcnt_t;
+
+typedef uint64_t     blkcnt_t;
+typedef int64_t      off_t;
+typedef int64_t      fpos_t;
+#else
 /* fsblkcnt_t and fsfilcnt_t shall be defined as unsigned integer types. */
 
 typedef uint32_t     fsblkcnt_t;
@@ -93,17 +169,13 @@ typedef uint32_t     fsfilcnt_t;
 typedef uint32_t     blkcnt_t;
 typedef int32_t      off_t;
 typedef int32_t      fpos_t;
+#endif
 
 /* blksize_t is a signed integer value used for file block sizes */
 
 typedef int16_t      blksize_t;
 
-typedef uint32_t     blkcnt_t;
-typedef int16_t      blksize_t;
-
-typedef int32_t      off_t;
-
-#if 0
+#if defined(CONFIG_SYSTEM_TIME64)
 typedef uint64_t     clock_t;
 #else
 typedef uint32_t     clock_t;
@@ -129,30 +201,11 @@ typedef int (*main_t)(int argc, char *argv[]);
 
 /* POSIX-like OS return values: */
 
-// enum {
-//     ERROR = -1,
-//     OK = 0,
-// };
-
-#undef  NAME_MAX
-#ifndef CONFIG_NAME_MAX
-#define NAME_MAX 40
-#else
-#define NAME_MAX CONFIG_NAME_MAX
+#if 0
+enum {
+    ERROR = -1,
+    OK = 0,
+};
 #endif
 
-#undef  PATH_MAX
-#ifndef CONFIG_PATH_MAX
-#define PATH_MAX 256
-#else
-#define PATH_MAX CONFIG_PATH_MAX
-#endif
-
-#undef  OPEN_MAX
-#ifndef CONFIG_LIBC_OPEN_MAX
-#define OPEN_MAX 255
-#elif
-#define OPEN_MAX CONFIG_LIBC_OPEN_MAX
-#endif
-
-#endif
+#endif /* __INCLUDE_SYS_TYPES_H */

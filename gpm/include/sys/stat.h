@@ -1,8 +1,36 @@
-#ifndef POSIX_SYS_STAT_H_
-#define POSIX_SYS_STAT_H_
+/****************************************************************************
+ * include/sys/stat.h
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+#ifndef __INCLUDE_SYS_STAT_H
+#define __INCLUDE_SYS_STAT_H
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
 
 #include <sys/types.h>
 #include <time.h>
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
 
 /* mode_t bit settings  This assumes
  * that the full size of a mode_t is 16-bits. (However, mode_t must be size
@@ -77,23 +105,27 @@
 #define S_TYPEISMQ(buf)  S_ISMQ((buf)->st_mode)
 #define S_TYPEISSHM(buf) S_ISSHM((buf)->st_mode)
 
+/****************************************************************************
+ * Type Definitions
+ ****************************************************************************/
+
 struct stat
 {
-  /* Required, standard fields */
+    /* Required, standard fields */
 
-  dev_t            st_dev;     /* Device ID of device containing file */
-  ino_t            st_ino;     /* File serial number */
-  mode_t           st_mode;    /* File type, attributes, and access mode bits */
-  nlink_t          st_nlink;   /* Number of hard links to the file */
-  uid_t            st_uid;     /* User ID of file */
-  gid_t            st_gid;     /* Group ID of file */
-  dev_t            st_rdev;    /* Device ID (if file is character or block special) */
-  off_t            st_size;    /* Size of file/directory, in bytes */
-  struct timespec  st_atim;    /* Time of last access */
-  struct timespec  st_mtim;    /* Time of last modification */
-  struct timespec  st_ctim;    /* Time of last status change */
-  blksize_t        st_blksize; /* Block size used for filesystem I/O */
-  blkcnt_t         st_blocks;  /* Number of blocks allocated */
+    dev_t            st_dev;     /* Device ID of device containing file */
+    ino_t            st_ino;     /* File serial number */
+    mode_t           st_mode;    /* File type, attributes, and access mode bits */
+    nlink_t          st_nlink;   /* Number of hard links to the file */
+    uid_t            st_uid;     /* User ID of file */
+    gid_t            st_gid;     /* Group ID of file */
+    dev_t            st_rdev;    /* Device ID (if file is character or block special) */
+    off_t            st_size;    /* Size of file/directory, in bytes */
+    struct timespec  st_atim;    /* Time of last access */
+    struct timespec  st_mtim;    /* Time of last modification */
+    struct timespec  st_ctim;    /* Time of last status change */
+    blksize_t        st_blksize; /* Block size used for filesystem I/O */
+    blkcnt_t         st_blocks;  /* Number of blocks allocated */
 };
 
 #undef EXTERN
@@ -105,18 +137,14 @@ extern "C"
 #define EXTERN extern
 #endif
 
+/****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
+
 int mkdir(const char *pathname, mode_t mode);
-int mkfifo(const char *pathname, mode_t mode);
-int mknod(const char *path, mode_t mode, dev_t dev);
 int stat(const char *path, struct stat *buf);
 int lstat(const char *path, struct stat *buf);
 int fstat(int fd, struct stat *buf);
-int chmod(const char *path, mode_t mode);
-int lchmod(const char *path, mode_t mode);
-int fchmod(int fd, mode_t mode);
-int utimens(const char *path, const struct timespec times[2]);
-int lutimens(const char *path, const struct timespec times[2]);
-int futimens(int fd, const struct timespec times[2]);
 
 mode_t umask(mode_t mask);
 mode_t getumask(void);
@@ -126,5 +154,4 @@ mode_t getumask(void);
 }
 #endif
 
-
-#endif
+#endif /* __INCLUDE_SYS_STAT_H */

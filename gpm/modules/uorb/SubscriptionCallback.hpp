@@ -5,9 +5,10 @@
 #include "uorb_device_node.h"
 #include "uorb_manager.h"
 
-#include "container/intrusive_node.h"
-#include "workitem.h"
+#include "workqueue/workitem.h"
 #include <SubscriptionInterval.hpp>
+
+#include "container/intrusive_node.h"
 
 extern "C" {
 

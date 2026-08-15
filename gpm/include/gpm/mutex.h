@@ -1,21 +1,22 @@
-#ifndef __INCLUDE_MUTEX_H
-#define __INCLUDE_MUTEX_H
+#ifndef __INCLUDE_KMUTEX_H
+#define __INCLUDE_KMUTEX_H
 
 #include <stdbool.h>
 #include <errno.h>
 #include <assert.h>
 #include <unistd.h>
 
+#include <pthread.h>
 #include <semaphore.h>
 
-#define NXRMUTEX_NO_HOLDER     (-1)
+#define NXRMUTEX_NO_HOLDER     (0)
 
 typedef sem_t mutex_t;
 
 struct rmutex_s
 {
     mutex_t mutex;
-    pid_t holder;
+    pthread_t holder;
     uint16_t count;
 };
 
@@ -99,7 +100,7 @@ static inline int krmutex_destroy(rmutex_t *rmutex)
 
 static inline int krmutex_lock(rmutex_t *rmutex)
 {
-    pid_t tid = gettid();
+    pthread_t tid = pthread_self();
     int ret;
 
     if (rmutex->holder == tid) {
@@ -118,7 +119,7 @@ static inline int krmutex_lock(rmutex_t *rmutex)
 
 static inline int krmutex_trylock( rmutex_t *rmutex)
 {
-    pid_t tid = gettid();
+    pthread_t tid = pthread_self();
     int ret;
 
     if (rmutex->holder == tid) {
@@ -142,12 +143,12 @@ static inline bool krmutex_is_locked(rmutex_t *rmutex)
 
 static inline bool krmutex_is_hold(rmutex_t *rmutex)
 {
-    return rmutex->holder == gettid();
+    return rmutex->holder == pthread_self();
 }
 
 static inline int krmutex_unlock(rmutex_t *rmutex)
 {
-    pid_t tid = gettid();
+    pthread_t tid = pthread_self();
     int ret = 0;
 
     if (rmutex->count == 1) {

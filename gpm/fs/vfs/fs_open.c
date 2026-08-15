@@ -1,3 +1,27 @@
+/****************************************************************************
+ * fs/vfs/fs_open.c
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdbool.h>
@@ -6,34 +30,52 @@
 #include <assert.h>
 #include <stdarg.h>
 
-#include "gpm/fs/fs.h"
-#include "inode/inode.h"
+#include <gpmx/config.h>
+#include <inode/inode.h>
+#include <gpm/fs/fs.h>
 #include "driver/driver.h"
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: file_vopen
+ ****************************************************************************/
 
 static int file_vopen(struct file *filep, const char *path,
                       int oflags, mode_t umask, va_list ap)
 {
     struct inode_search_s desc;
     struct inode *inode;
+#ifndef CONFIG_DISABLE_MOUNTPOINT
     mode_t mode = 0666;
+#endif
     int ret;
 
     if (path == NULL) {
         return -EINVAL;
     }
 
+#ifndef CONFIG_DISABLE_MOUNTPOINT
+
     /* If the file is opened for creation, then get the mode bits */
+
     if ((oflags & (O_WRONLY | O_CREAT)) != 0) {
         mode = va_arg(ap, mode_t);
     }
 
     mode &= ~umask;
+#endif
 
     /* Get an inode for this file */
+
     SETUP_SEARCH(&desc, path, false);
 
     ret = inode_find(&desc);
+
     if (ret < 0) {
+
         /* "O_CREAT is not set and the named file does not exist.  Or, a
         * directory component in pathname does not exist or is a dangling
         * symbolic link."
@@ -42,7 +84,12 @@ static int file_vopen(struct file *filep, const char *path,
     }
 
     /* Get the search results */
+
     inode = desc.node;
+    DEBUGASSERT(inode != NULL);
+
+#if !defined(CONFIG_DISABLE_MOUNTPOINT) && \
+    !defined(CONFIG_DISABLE_PSEUDOFS_OPERATIONS)
 
     /* If the inode is block driver, then we may return a character driver
     * proxy for the block driver.  block_proxy() will instantiate a BCH
@@ -51,18 +98,27 @@ static int file_vopen(struct file *filep, const char *path,
     *
     * NOTE: This will recurse to open the character driver proxy.
     */
+
     if (INODE_IS_BLOCK(inode) || INODE_IS_MTD(inode)) {
+
+        /* Release the inode reference */
 
         inode_release(inode);
         RELEASE_SEARCH(&desc);
+
+        /* Get the file structure of the opened character driver proxy */
         return block_proxy(filep, path, oflags);
     }
+#endif
 
     /* Make sure that the inode supports the requested access */
+
     ret = inode_checkflags(inode, oflags);
     if (ret < 0) {
         goto errout_with_inode;
     }
+
+    /* Associate the inode with a file structure */
 
     filep->f_oflags = oflags;
     filep->f_pos    = 0;
@@ -73,15 +129,20 @@ static int file_vopen(struct file *filep, const char *path,
     * called many times.  The driver/mountpoint logic should handled this
     * because it may also be closed that many times.
     */
+
     if (oflags & O_DIRECTORY) {
 
         ret = dir_allocate(filep, desc.relpath);
-    } else if (INODE_IS_MOUNTPT(inode)) {
+    } 
+#ifndef CONFIG_DISABLE_MOUNTPOINT
+    else if (INODE_IS_MOUNTPT(inode)) {
 
         if (inode->u.i_mops->open != NULL) {
             ret = inode->u.i_mops->open(filep, desc.relpath, oflags, mode);
         }
-    } else if (INODE_IS_DRIVER(inode)) {
+    }
+#endif
+    else if (INODE_IS_DRIVER(inode)) {
 
         if (inode->u.i_ops->open != NULL) {
             ret = inode->u.i_ops->open(filep);
@@ -117,12 +178,16 @@ static int nx_vopen(const char *path, int oflags, va_list ap)
     int ret;
     int fd;
 
+    /* Let file_vopen() do all of the work */
+
     ret = file_vopen(&filep, path, oflags, getumask(), ap);
+
     if (ret < 0) {
         return ret;
     }
 
     /* Allocate a new file descriptor for the inode */
+
     fd = files_allocate(filep.f_inode, filep.f_oflags,
                         filep.f_pos, filep.f_priv, 0);
     if (fd < 0) {
@@ -132,6 +197,18 @@ static int nx_vopen(const char *path, int oflags, va_list ap)
 
     return fd;
 }
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: inode_checkflags
+ *
+ * Description:
+ *   Check if the access described by 'oflags' is supported on 'inode'
+ *
+ ****************************************************************************/
 
 int inode_checkflags(struct inode *inode, int oflags)
 {
@@ -152,6 +229,27 @@ int inode_checkflags(struct inode *inode, int oflags)
     }
 }
 
+/****************************************************************************
+ * Name: file_open
+ *
+ * Description:
+ *   file_open() is similar to the standard 'open' interface except that it
+ *   returns an instance of 'struct file' rather than a file descriptor.  It
+ *   also is not a cancellation point and does not modify the errno variable.
+ *
+ * Input Parameters:
+ *   filep  - The caller provided location in which to return the 'struct
+ *            file' instance.
+ *   path   - The full path to the file to be open.
+ *   oflags - open flags
+ *   ...    - Variable number of arguments, may include 'mode_t mode'
+ *
+ * Returned Value:
+ *   Zero (OK) is returned on success.  On failure, a negated errno value is
+ *   returned.
+ *
+ ****************************************************************************/
+
 int file_open(struct file *filep, const char *path, int oflags, ...)
 {
     va_list ap;
@@ -164,10 +262,28 @@ int file_open(struct file *filep, const char *path, int oflags, ...)
     return ret;
 }
 
+/****************************************************************************
+ * Name: nx_open
+ *
+ * Description:
+ *   nx_open() is similar to the standard 'open' interface except that is is
+ *   not a cancellation point and it does not modify the errno variable.
+ *
+ *   nx_open() is an internal NuttX interface and should not be called from
+ *   applications.
+ *
+ * Returned Value:
+ *   The new file descriptor is returned on success; a negated errno value is
+ *   returned on any failure.
+ *
+ ****************************************************************************/
+
 int nx_open(const char *path, int oflags, ...)
 {
     va_list ap;
     int fd;
+
+    /* Let nx_vopen() do all of the work */
 
     va_start(ap, oflags);
     fd = nx_vopen(path, oflags, ap);
@@ -176,16 +292,33 @@ int nx_open(const char *path, int oflags, ...)
     return fd;
 }
 
+/****************************************************************************
+ * Name: open
+ *
+ * Description:
+ *   Standard 'open' interface
+ *
+ * Returned Value:
+ *   The new file descriptor is returned on success; -1 (ERROR) is returned
+ *   on any failure the errno value set appropriately.
+ *
+ ****************************************************************************/
+
 int open(const char *path, int oflags, ...)
 {
     va_list ap;
     int fd;
 
+    /* Let nx_vopen() do most of the work */
+
     va_start(ap, oflags);
     fd = nx_vopen(path, oflags, ap);
     va_end(ap);
 
+    /* Set the errno value if any errors were reported by nx_open() */
+
     if (fd < 0) {
+
         set_errno(-fd);
         fd = -1; // ERROR
     }

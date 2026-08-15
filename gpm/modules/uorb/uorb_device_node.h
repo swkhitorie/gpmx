@@ -4,9 +4,9 @@
 #include <uorb/topics/uorb_topics.h>
 #include "uorb_common.h"
 #include "uorb_device_master.h"
+#include "uorb_gnode.h"
 #include "container/atomic.h"
 #include "container/intrusive_node.h"
-#include "uorb_gnode.h"
 
 struct __subscription_callback;
 typedef void (*sub_callback)(struct __subscription_callback *);
@@ -18,7 +18,7 @@ struct __subscription_callback {
 struct __uorb_device_node {
     struct intrusive_node sorted_list_node;
 
-    struct orb_metadata *_meta; /**< object metadata information */
+    const struct orb_metadata *_meta; /**< object metadata information */
 
     uint8_t    *_data;   /**< allocated object buffer */
     atomic_uint32_t _generation;  /**< object generation count */
@@ -39,7 +39,7 @@ struct __uorb_device_node {
 extern "C" {
 #endif
 
-void uorb_device_node_init(struct __uorb_device_node *unode, struct orb_metadata *meta, const uint8_t instance, 
+void uorb_device_node_init(struct __uorb_device_node *unode, const struct orb_metadata *meta, const uint8_t instance, 
             const char *path, enum ORB_PRIO priority, uint8_t queue_size);
 void uorb_device_node_deinit(struct __uorb_device_node *unode);
 
@@ -65,7 +65,7 @@ const char *uorb_device_node_get_name(struct __uorb_device_node *unode);
 uint8_t uorb_device_node_get_instance(struct __uorb_device_node *unode);
 enum ORB_PRIO uorb_device_node_get_priority(struct __uorb_device_node *unode);
 void uorb_device_node_set_priority(struct __uorb_device_node *unode, enum ORB_PRIO priority);
-struct orb_metadata *uorb_device_node_get_meta(struct __uorb_device_node *unode);
+const struct orb_metadata *uorb_device_node_get_meta(struct __uorb_device_node *unode);
 
 bool uorb_device_node_print_statistics(struct __uorb_device_node *unode, int max_topic_length);
 

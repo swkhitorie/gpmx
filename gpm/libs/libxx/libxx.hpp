@@ -2,15 +2,12 @@
 #define __LIBXX_LIBXX_HXX
 
 #include <new>
+#include <gpmx/config.h>
 
-#if defined(CONFIG_FREERTOS_ENABLE)
-#include <FreeRTOS.h>
-#include <portable.h>
-#define lib_malloc(s)    pvPortMalloc(s)
-#define lib_free(p)      vPortFree(p)
-#else
-#error libxx.hpp: please define operator new method
-#endif
+#include "driver/drv_sched.h"
+
+#define lib_malloc(s)    kmm_malloc(s)
+#define lib_free(p)      kmm_free(p)
 
 #define sys_mem_malloc(s)   lib_malloc(s)
 #define sys_mem_free(p)     lib_free(p)

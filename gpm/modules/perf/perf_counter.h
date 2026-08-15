@@ -6,6 +6,7 @@
 #ifndef PERF_COUNTER_H
 #define PERF_COUNTER_H
 
+#include <gpmx/config.h>
 #include <stdint.h>
 
 enum perf_counter_type {

@@ -1,6 +1,7 @@
 #ifndef PRV_TIMER_H_
 #define PRV_TIMER_H_
 
+#include <gpmx/config.h>
 #include <signal.h>
 
 #if defined(CONFIG_FREERTOS_ENABLE)

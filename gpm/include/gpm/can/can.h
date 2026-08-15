@@ -1,8 +1,9 @@
 #ifndef DEV_OPS_CAN_H_
 #define DEV_OPS_CAN_H_
 
-#include "gpm/sched.h"
+#include <gpmx/config.h>
 #include "sys/ioctl.h"
+#include "driver/drv_sched.h"
 
 /* Configuration ********************************************************************/
 

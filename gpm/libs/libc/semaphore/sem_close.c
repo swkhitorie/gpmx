@@ -1,5 +1,6 @@
 #include <semaphore.h>
 #include "prv_sem.h"
+#include <gpmx/config.h>
 
 int sem_close(sem_t *sem)
 {

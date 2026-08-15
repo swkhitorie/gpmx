@@ -163,6 +163,10 @@ long list_thread(void)
 
     list_find_init(&find_arg, RT_Object_Class_Thread, obj_list, sizeof(obj_list) / sizeof(obj_list[0]));
 
+#ifdef RT_USING_CPU_USAGE
+    rt_uint64_t total_run = rt_scheduler_total_runtime();
+#endif
+
     maxlen = RT_NAME_MAX;
 
 #ifdef RT_USING_SMP
@@ -170,9 +174,9 @@ long list_thread(void)
     object_split(maxlen);
     rt_kprintf(" --- ---- ---  ------- ---------- ----------  ------  ---------- ---\n");
 #else
-    rt_kprintf("%-*.s pri  status      sp     stack size max used left tick  error\n", maxlen, item_title);
+    rt_kprintf("%-*.s pri  status      sp     stack size max used left tick  error usage\n", maxlen, item_title);
     object_split(maxlen);
-    rt_kprintf(" ---  ------- ---------- ----------  ------  ---------- ---\n");
+    rt_kprintf(" ---  ------- ---------- ----------  ------  ---------- ---  ------\n");
 #endif /*RT_USING_SMP*/
 
     do
@@ -231,13 +235,18 @@ long list_thread(void)
 #else
                     ptr = (rt_uint8_t *)thread->stack_addr;
                     while (*ptr == '#') ptr ++;
-                    rt_kprintf(" 0x%08x 0x%08x    %02d%%   0x%08x %s\n",
+                    rt_kprintf(" 0x%08x 0x%08x    %02d%%   0x%08x %s   %5.2f%%\n",
                                thread->stack_size + ((rt_ubase_t)thread->stack_addr - (rt_ubase_t)thread->sp),
                                thread->stack_size,
                                (thread->stack_size - ((rt_ubase_t) ptr - (rt_ubase_t) thread->stack_addr)) * 100
                                / thread->stack_size,
                                thread->remaining_tick,
-                               rt_strerror(thread->error));
+                               rt_strerror(thread->error),
+#if defined(RT_USING_CPU_USAGE)
+                               (float)thread->duration_tick*100.0f/(float)total_run);
+#else
+                               0.0f);
+#endif
 #endif
                 }
             }
@@ -990,5 +999,44 @@ _usage:
     return 0;
 }
 MSH_CMD_EXPORT_ALIAS(cmd_list, list, list objects);
+
+
+#if defined(CONFIG_LIBC_TIME)
+#include <time.h>
+#include <stdlib.h>
+#include "gpm/rtc/rtc.h"
+#include "driver/drv_hrt.h"
+
+int systime_handle(int argc, char **argv)
+{
+    if (argc > 2 && !strcmp(argv[1], "set")) {
+        struct timespec real_time;
+        real_time.tv_sec = (time_t)strtoul(argv[2], NULL, 10);
+        clock_settime(CLOCK_REALTIME, &real_time);
+
+        rt_kprintf("[system_time] epoch time set completed: %u\r\n", real_time.tv_sec);
+    } else if (argc == 2 && !strcmp(argv[1], "get")) {
+        struct timespec real_time;
+        struct timespec boot_time;
+        time_t now_time;
+        clock_gettime(CLOCK_REALTIME, &real_time);
+        clock_gettime(CLOCK_MONOTONIC, &boot_time);
+
+        now_time = real_time.tv_sec;
+        struct rtc_tm now_tm;
+        rtc_timstamp_to_tm((rtc_time_t)now_time, &now_tm);
+
+        rt_kprintf("[system_time] Unix epoch time: %u\r\n", real_time.tv_sec);
+        rt_kprintf("[system_time] System time: Tue %04d-%02d-%02d %02d:%02d:%02d\r\n",
+            now_tm._year+1900, now_tm._mon+1, now_tm._mday,
+            now_tm._hour, now_tm._min, now_tm._sec);
+        rt_kprintf("[system_time] Uptime (since boot): %u.%03u s, HRT: %.3f s\r\n", boot_time.tv_sec, boot_time.tv_nsec/1000000, hrt_absolute_time()/1e6f);
+    } else {
+        rt_kprintf("Usage: system_time <set/get>\r\n");
+    }
+    return 0;
+}
+MSH_CMD_EXPORT_ALIAS(systime_handle, system_time, handle the systime);
+#endif
 
 #endif /* RT_USING_FINSH */

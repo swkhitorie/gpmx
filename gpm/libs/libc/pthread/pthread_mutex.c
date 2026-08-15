@@ -1,6 +1,7 @@
 
 #include <pthread.h>
 #include <errno.h>
+#include <gpmx/config.h>
 
 #include "utils.h"
 

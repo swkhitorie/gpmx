@@ -1,9 +1,8 @@
 #include "uorb_device_node.h"
 #include "uorb_gnode.h"
-#include "kmodule_defines.h"
-#include "gpm/drv_hrt.h"
-
-
+#include <errno.h>
+#include <driver/drv_hrt.h>
+#include <mlog.h>
 struct __update_interval_data {
     uint64_t last_update; /**< time at which the last update was provided, used when update_interval is nonzero */
     unsigned interval; /**< if nonzero minimum interval between updates */
@@ -74,7 +73,7 @@ static bool uorb_device_node_appears_updated(struct __uorb_device_node *unode)
 	return (sd->generation != uorb_device_node_published_message_count(unode));
 }
 
-void uorb_device_node_init(struct __uorb_device_node *unode, struct orb_metadata *meta, const uint8_t instance, 
+void uorb_device_node_init(struct __uorb_device_node *unode, const struct orb_metadata *meta, const uint8_t instance, 
             const char *path, enum ORB_PRIO priority, uint8_t queue_size)
 {
 	uorbnode_init(&unode->nd, path);
@@ -479,7 +478,7 @@ void uorb_device_node_set_priority(struct __uorb_device_node *unode, enum ORB_PR
     unode->_priority = priority; 
 }
 
-struct orb_metadata *uorb_device_node_get_meta(struct __uorb_device_node *unode)
+const struct orb_metadata *uorb_device_node_get_meta(struct __uorb_device_node *unode)
 { 
     return unode->_meta; 
 }

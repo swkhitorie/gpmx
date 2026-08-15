@@ -1,7 +1,15 @@
-#ifndef POSIX_UNISTD_H_
-#define POSIX_UNISTD_H_
+#ifndef __INCLUDE_UNISTD_H
+#define __INCLUDE_UNISTD_H
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
 
 #include <sys/types.h>
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
 
 /* Values for seeking */
 
@@ -31,13 +39,38 @@ extern "C"
 #define EXTERN extern
 #endif
 
-pid_t   gettid(void);
+/****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
+
+/* Task Control Interfaces */
+
 unsigned int sleep(unsigned int ms);
 int          usleep(useconds_t usec);
+
+/* File descriptor operations */
+
+int     close(int fd);
+int     dup(int fd);
+int     dup2(int fd1, int fd2);
+int     fsync(int fd);
+off_t   lseek(int fd, off_t offset, int whence);
+ssize_t read(int fd, void *buf, size_t nbytes);
+ssize_t write(int fd, const void *buf, size_t nbytes);
+
+/* Special devices */
+
+int     pipe(int fd[2]);
+int     pipe2(int pipefd[2], int flags);
+
+/* File path operations */
+
+int     rmdir(const char *pathname);
+int     unlink(const char *pathname);
 
 #undef EXTERN
 #if defined(__cplusplus)
 }
 #endif
 
-#endif
+#endif /* __INCLUDE_UNISTD_H */

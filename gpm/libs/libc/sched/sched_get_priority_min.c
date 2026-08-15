@@ -1,5 +1,6 @@
 #include "sched.h"
 #include "errno.h"
+#include <gpmx/config.h>
 
 #if defined(CONFIG_FREERTOS_ENABLE)
 #include <FreeRTOS.h>
@@ -17,7 +18,7 @@ int sched_get_priority_min(int policy)
 #elif defined(CONFIG_RTTNANO_ENABLE)
     if (policy != SCHED_FIFO && policy != SCHED_RR)
         return EINVAL;
-    return 0;
+    return RT_THREAD_PRIORITY_MAX - 1;
 #endif
     return 0;
 }

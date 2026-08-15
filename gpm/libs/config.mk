@@ -1,3 +1,3 @@
 
-include ${GPMPATH}/libs/libc/libc.mk
-include ${GPMPATH}/libs/libxx/libxx.mk
+include ${GPMPATH}/libs/libc/config.mk
+include ${GPMPATH}/libs/libxx/config.mk

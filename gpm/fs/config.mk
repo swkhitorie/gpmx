@@ -1,9 +1,9 @@
 
-#PROJ_CINCDIRS += ${GPMPATH}/sched/freertos/include
+include ${GPMPATH}/fs/fat/config.mk
+include ${GPMPATH}/fs/littlefs/config.mk
+include ${GPMPATH}/fs/romfs/config.mk
 
-PROJ_CINCDIRS += ${GPMPATH}/fs
-CSOURCES += ${GPMPATH}/fs/fs_initialize.c
-
-include ${GPMPATH}/fs/driver/config.mk
-include ${GPMPATH}/fs/inode/config.mk
 include ${GPMPATH}/fs/vfs/config.mk
+include ${GPMPATH}/fs/mount/config.mk
+include ${GPMPATH}/fs/inode/config.mk
+include ${GPMPATH}/fs/driver/config.mk

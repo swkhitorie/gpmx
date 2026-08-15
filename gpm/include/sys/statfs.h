@@ -1,9 +1,36 @@
+/****************************************************************************
+ * include/sys/statfs.h
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
 
 #ifndef __INCLUDE_SYS_STATFS_H
 #define __INCLUDE_SYS_STATFS_H
 
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
 #include <sys/types.h>
 #include <stdint.h>
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
 
 /* struct statfs file system types. */
 
@@ -53,6 +80,7 @@
 #define _XIAFS_SUPER_MAGIC    0x012fd16d
 #define SPIFFS_SUPER_MAGIC    0x20090315
 #define LITTLEFS_SUPER_MAGIC  0x0a732923
+#define FATFS_SUPER_MAGIC     0x46415446
 
 /* specific file-systems */
 
@@ -66,16 +94,20 @@
 #define CROMFS_MAGIC          0x4d4f5243
 #define RPMSGFS_MAGIC         0x54534f47
 
+/****************************************************************************
+ * Type Definitions
+ ****************************************************************************/
+
 struct statfs
 {
-  uint32_t   f_type;     /* Type of filesystem (see definitions above) */
-  size_t     f_namelen;  /* Maximum length of filenames */
-  size_t     f_bsize;    /* Optimal block size for transfers */
-  fsblkcnt_t f_blocks;   /* Total data blocks in the file system of this size */
-  fsblkcnt_t f_bfree;    /* Free blocks in the file system */
-  fsblkcnt_t f_bavail;   /* Free blocks avail to non-superuser */
-  fsfilcnt_t f_files;    /* Total file nodes in the file system */
-  fsfilcnt_t f_ffree;    /* Free file nodes in the file system */
+    uint32_t   f_type;     /* Type of filesystem (see definitions above) */
+    size_t     f_namelen;  /* Maximum length of filenames */
+    size_t     f_bsize;    /* Optimal block size for transfers */
+    fsblkcnt_t f_blocks;   /* Total data blocks in the file system of this size */
+    fsblkcnt_t f_bfree;    /* Free blocks in the file system */
+    fsblkcnt_t f_bavail;   /* Free blocks avail to non-superuser */
+    fsfilcnt_t f_files;    /* Total file nodes in the file system */
+    fsfilcnt_t f_ffree;    /* Free file nodes in the file system */
 };
 
 #undef EXTERN
@@ -86,6 +118,10 @@ extern "C"
 #else
 #define EXTERN extern
 #endif
+
+/****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
 
 /* Inspired by Linux statfs() which was, in turn, inspired by
  * the BSD statfs(). None of these implementations agree in the
@@ -100,4 +136,4 @@ int fstatfs(int fd, struct statfs *buf);
 }
 #endif
 
-#endif
+#endif /* __INCLUDE_SYS_STATFS_H */

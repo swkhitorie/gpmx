@@ -2,11 +2,13 @@
 #include <string.h>
 #include <pthread.h>
 #include <errno.h>
+#include <gpmx/config.h>
 
 #include "utils.h"
 #include "prv_pthread.h"
 
 static int concurrency_level;
+static int pthread_counter = 0;
 
 static int g_irqerrno = 0;
 int *__errno()
@@ -32,6 +34,8 @@ int pthread_create(pthread_t *tid, const pthread_attr_t *attr, void *(*start)(vo
 #if defined(CONFIG_FREERTOS_ENABLE)
 
     int ret = 0;
+    char name[16];
+    static uint16_t pthread_number = 0;
     pthread_obj_t *pthread = NULL;
     struct sched_param sched_p = { .sched_priority = tskIDLE_PRIORITY };
     pthread_attr_t attr_default;
@@ -43,6 +47,8 @@ int pthread_create(pthread_t *tid, const pthread_attr_t *attr, void *(*start)(vo
         ret = ENOMEM;
         goto pthread_create_exit;
     }
+
+    snprintf(name, sizeof(name), "pth%02d", pthread_number++);
 
     pthread->attr = (attr == NULL) ? attr_default : *attr;
 
@@ -56,7 +62,17 @@ int pthread_create(pthread_t *tid, const pthread_attr_t *attr, void *(*start)(vo
 
     vTaskSuspendAll();
 
-    if (xTaskCreate(prv_run_thread,"pthread",
+    files_initlist(&pthread->tg_filelist);
+    pthread->tg_filelist.fl_files = NULL;
+    pthread->tg_filelist.fl_rows = 0;
+    if (pthread_counter > 0) {
+        pthread_obj_t *p_self = (pthread_obj_t *)pthread_self();
+        if (p_self) {
+            files_duplist(&p_self->tg_filelist, &pthread->tg_filelist);
+        }
+    }
+
+    if (xTaskCreate(prv_run_thread, name,
         (uint16_t)(pthread->attr.stacksize/sizeof(StackType_t)), (void *)pthread,
         sched_p.sched_priority, &pthread->handle) != pdPASS) {
         vPortFree(pthread);
@@ -65,6 +81,9 @@ int pthread_create(pthread_t *tid, const pthread_attr_t *attr, void *(*start)(vo
         vTaskSetApplicationTaskTag(pthread->handle, (TaskHookFunction_t)pthread);
         *tid = (pthread_t)pthread;
     }
+
+    pthread_counter++;
+
     xTaskResumeAll();
 pthread_create_exit:
     return ret;
@@ -124,7 +143,7 @@ pthread_create_exit:
 
     /* set parameter */
     ptd->thread_entry = start;
-    ptd->thread_parameter = parameter;
+    ptd->thread_parameter = arg;
 
     /* stack */
     if (ptd->attr.stackaddr == 0) {
@@ -138,6 +157,25 @@ pthread_create_exit:
         goto __exit;
     }
 
+    files_initlist(&ptd->tg_filelist);
+    ptd->tg_filelist.fl_files = NULL;
+    ptd->tg_filelist.fl_rows = 0;
+    if (pthread_counter > 0) {
+        rt_thread_t tid_self;
+        _pthread_data_t *ptd_self;
+
+        tid_self = rt_thread_self();
+        if (tid_self == NULL) {
+            return -1;
+        }
+
+        ptd_self = (_pthread_data_t *)rt_thread_self()->pthread_data;
+        files_duplist(&ptd_self->tg_filelist, &ptd->tg_filelist);
+    }
+
+    ptd->attr.schedparam.sched_priority = 
+        (RT_THREAD_PRIORITY_MAX - 1) - ptd->attr.schedparam.sched_priority;
+
     /* initial this pthread to system */
     if (rt_thread_init(ptd->tid, name, pthread_entry_stub, ptd,
                         stack, ptd->attr.stacksize,
@@ -146,8 +184,10 @@ pthread_create_exit:
         goto __exit;
     }
 
+    pthread_counter++;
+
     /* set pthread id */
-    *pid = pth_id;
+    *tid = pth_id;
 
     /* set pthread cleanup function and ptd data */
     ptd->tid->cleanup = _pthread_cleanup;
@@ -220,7 +260,7 @@ pthread_detach_exit:
         goto __exit;
     }
 
-    if ((RT_SCHED_CTX(ptd->tid).stat & RT_THREAD_STAT_MASK) == RT_THREAD_CLOSE) {
+    if ((ptd->tid->stat & RT_THREAD_STAT_MASK) == RT_THREAD_CLOSE) {
         /* destroy this pthread */
         _pthread_data_destroy(ptd);
         goto __exit;
@@ -744,6 +784,17 @@ int pthread_setname_np(pthread_t thread, const char *name)
     return 0;
 #elif defined(CONFIG_RTTNANO_ENABLE)
 
+    _pthread_data_t *ptd;
+    rt_thread_t tid;
+
+    ptd = _pthread_get_data(thread);
+    if (ptd == RT_NULL) {
+        return EINVAL;
+    }
+
+    tid = ptd->tid;
+    rt_thread_rename(tid, name);
+
     return EINVAL;
 #endif
 }
@@ -784,4 +835,21 @@ int pthread_getname_np(pthread_t thread, char *name, int namelen)
 
     return 0;
 #endif
+}
+
+struct filelist *pt_sched_get_files()
+{
+#if defined(CONFIG_FREERTOS_ENABLE)
+    pthread_obj_t *p = (pthread_obj_t *)pthread_self();
+    return &p->tg_filelist;
+#elif defined(CONFIG_RTTNANO_ENABLE)
+    pthread_t thread = pthread_self();
+    _pthread_data_t *ptd = _pthread_get_data(thread);
+    return &ptd->tg_filelist;
+#endif
+}
+
+struct streamlist *pt_sched_get_streams(void)
+{
+    return NULL;
 }

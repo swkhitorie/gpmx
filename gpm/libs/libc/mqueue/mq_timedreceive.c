@@ -2,7 +2,7 @@
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
-
+#include <gpmx/config.h>
 #include "./prv_mqueue.h"
 
 ssize_t mq_timedreceive(mqd_t mqdes, char *msg_ptr, size_t msg_len, unsigned *msg_prio, const struct timespec *abstime)

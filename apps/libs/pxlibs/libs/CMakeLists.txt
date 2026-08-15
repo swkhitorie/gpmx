@@ -1,0 +1,16 @@
+
+add_subdirectory(airspeed)
+add_subdirectory(controllib)
+add_subdirectory(conversion)
+add_subdirectory(drivers)
+add_subdirectory(crc)
+add_subdirectory(crc32)
+add_subdirectory(geo)
+add_subdirectory(mathlib)
+add_subdirectory(matrix)
+add_subdirectory(parameters)
+add_subdirectory(terrain_estimation)
+add_subdirectory(timesync)
+add_subdirectory(tinybson)
+add_subdirectory(world_magnetic_model)
+

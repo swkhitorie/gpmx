@@ -1,13 +1,13 @@
 #ifndef WORK_QUEUE_H_
 #define WORK_QUEUE_H_
 
+#include <gpmx/config.h>
 #include <stdint.h>
+#include "workqueue_manager.h"
+#include <semaphore.h>
 #include "container/atomic.h"
 #include "container/intrusive_node.h"
 #include "container/blocking_list.h"
-#include "workqueue_manager.h"
-
-#include <semaphore.h>
 
 struct __workitem;
 

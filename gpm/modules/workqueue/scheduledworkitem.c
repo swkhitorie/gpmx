@@ -1,5 +1,6 @@
+#include <gpmx/config.h>
 #include "scheduledworkitem.h"
-#include "kmodule_defines.h"
+#include <mlog.h>
 
 static void schedule_trampoline(void *arg)
 {
@@ -31,7 +32,7 @@ void schedule_workitem_clear(struct __scheduledworkitem *sitem)
 void schedule_workitem_print_status(struct __scheduledworkitem *sitem)
 {
     if (sitem->_call.period > 0) {
-        KMINFO("%-26s %8.1f Hz %12.0f us (%" PRId64 " us)\n", sitem->item._name, (double)workitem_average_rate(&sitem->item),
+        KMRAW("%-26s %8.1f Hz %12.0f us (%" PRId64 " us)\n", sitem->item._name, (double)workitem_average_rate(&sitem->item),
                     (double)workitem_average_interval(&sitem->item), sitem->_call.period);
     } else {
         workitem_printstatus(&sitem->item);

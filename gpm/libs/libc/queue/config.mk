@@ -1,5 +1,4 @@
-ifeq (${MK_USE_KERNEL_POSIX_QUEUE},y)
-PROJ_CDEFS += CONFIG_MODULE_KPOSIX_QUEUE
+ifeq (${CONFIG_LIBC_QUEUE},y)
 CSOURCES += ${GPMPATH}/libs/libc/queue/dq_addafter.c
 CSOURCES += ${GPMPATH}/libs/libc/queue/dq_addbefore.c
 CSOURCES += ${GPMPATH}/libs/libc/queue/dq_addfirst.c

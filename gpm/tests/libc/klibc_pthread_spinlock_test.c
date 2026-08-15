@@ -1,8 +1,6 @@
-#include <board_config.h>
+#include <gpmx/config.h>
 
-#ifndef TEST_PRINTF
-#define TEST_PRINTF    BOARD_PRINTF
-#endif
+#include <mlog.h>
 
 #include <pthread.h>
 #include <sched.h>
@@ -18,33 +16,33 @@ static pthread_spinlock_t spinlock;
 void *spinlock_dbg1(void *arg)
 {
     int i;
-    TEST_PRINTF("spinlock_dbg1 enter \r\n");
+    KMRAW("spinlock_dbg1 enter \r\n");
 
     for (i = 0; i < ITERATIONS; i++) {
         pthread_spin_lock(&spinlock);
         shared_counter++;
         pthread_spin_unlock(&spinlock);
         if (i % 100000 == 0) {
-            TEST_PRINTF("spinlock_dbg1 loop %d \r\n", i);
+            KMRAW("spinlock_dbg1 loop %d \r\n", i);
         }
     }
-    TEST_PRINTF("spinlock_dbg1 loop end \r\n");
+    KMRAW("spinlock_dbg1 loop end \r\n");
     return NULL;
 }
 
 void *spinlock_dbg2(void *arg)
 {
     int i;
-    TEST_PRINTF("spinlock_dbg2 enter \r\n");
+    KMRAW("spinlock_dbg2 enter \r\n");
     for (i = 0; i < ITERATIONS; i++) {
         pthread_spin_lock(&spinlock);
         shared_counter++;
         pthread_spin_unlock(&spinlock);
         if (i % 100000 == 0) {
-            TEST_PRINTF("spinlock_dbg2 loop %d \r\n", i);
+            KMRAW("spinlock_dbg2 loop %d \r\n", i);
         }
     }
-    TEST_PRINTF("spinlock_dbg2 loop end \r\n");
+    KMRAW("spinlock_dbg2 loop end \r\n");
     return NULL;
 }
 
@@ -56,7 +54,7 @@ int klibc_pthread_spinlock_test(int argc, char **argv)
     int ret = 0;
 
     if (pthread_spin_init(&spinlock, PTHREAD_PROCESS_PRIVATE) != 0) {
-        TEST_PRINTF("pthread_spin_init error \r\n");
+        KMRAW("pthread_spin_init error \r\n");
         return -1;
     }
 
@@ -77,13 +75,13 @@ int klibc_pthread_spinlock_test(int argc, char **argv)
 
     ret = pthread_create(&thread1, &attr1, spinlock_dbg1, NULL);
     if (ret != 0) {
-        TEST_PRINTF("pthread_create 1 failed: %d\n", ret);
+        KMRAW("pthread_create 1 failed: %d\n", ret);
         return -1;
     }
 
     ret = pthread_create(&thread2, &attr2, spinlock_dbg2, NULL);
     if (ret != 0) {
-        TEST_PRINTF("pthread_create 2 failed: %d\n", ret);
+        KMRAW("pthread_create 2 failed: %d\n", ret);
         return -1;
     }
 
@@ -93,10 +91,10 @@ int klibc_pthread_spinlock_test(int argc, char **argv)
 
     int expected = 2 * ITERATIONS;
     if (shared_counter == expected) {
-        TEST_PRINTF("Test passed: counter = %d (expected %d)\n", shared_counter, expected);
+        KMRAW("Test passed: counter = %d (expected %d)\n", shared_counter, expected);
         return 0;
     } else {
-        TEST_PRINTF("Test failed: counter = %d (expected %d)\n", shared_counter, expected);
+        KMRAW("Test failed: counter = %d (expected %d)\n", shared_counter, expected);
         return -1;
     }
 

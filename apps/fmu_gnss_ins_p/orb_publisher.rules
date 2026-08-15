@@ -1,0 +1,3 @@
+restrict_topics: sensor_accel, sensor_accel_fifo, sensor_gyro, sensor_gyro_fifo, sensor_mag, sensor_baro, sensor_hygrometer, sensor_optical_flow, sensor_uwb, sensor_gnss_relative, sensor_gps, gps_dump, gps_inject_data, satellite_info, adc_report, battery_status, system_power, power_monitor, distance_sensor, differential_pressure
+module: replay
+ignore_others: true

@@ -1,3 +1,29 @@
+/****************************************************************************
+ * drivers/bch/bchdev_driver.c
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
+#include <gpmx/config.h>
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
@@ -8,38 +34,59 @@
 #include <sched.h>
 #include <errno.h>
 #include <poll.h>
+#include <assert.h>
+#include <debug.h>
 
-#include "gpm/fs/fs.h"
-#include "nuttx/fs/ioctl.h"
-#include "gpm/drivers/drivers.h"
+#include <gpm/fs/fs.h>
+#include <gpm/fs/ioctl.h>
+#include <gpm/drivers/drivers.h>
 
 #include "bch.h"
+
+/****************************************************************************
+ * Private Function Prototypes
+ ****************************************************************************/
 
 static int     bch_open(struct file *filep);
 static int     bch_close(struct file *filep);
 static off_t   bch_seek(struct file *filep, off_t offset, int whence);
 static ssize_t bch_read(struct file *filep, char *buffer,
-                 size_t buflen);
+                size_t buflen);
 static ssize_t bch_write(struct file *filep, const char *buffer,
-                 size_t buflen);
+                size_t buflen);
 static int     bch_ioctl(struct file *filep, int cmd,
-                 unsigned long arg);
+                unsigned long arg);
 static int     bch_poll(struct file *filep, struct pollfd *fds,
-                 bool setup);
+                bool setup);
+#ifndef CONFIG_DISABLE_PSEUDOFS_OPERATIONS
 static int     bch_unlink(struct inode *inode);
+#endif
+
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
 
 const struct file_operations bch_fops =
 {
-  bch_open,    /* open */
-  bch_close,   /* close */
-  bch_read,    /* read */
-  bch_write,   /* write */
-  bch_seek,    /* seek */
-  bch_ioctl,   /* ioctl */
-  bch_poll,     /* poll */
-  bch_unlink /* unlink */
+    bch_open,    /* open */
+    bch_close,   /* close */
+    bch_read,    /* read */
+    bch_write,   /* write */
+    bch_seek,    /* seek */
+    bch_ioctl,   /* ioctl */
+    bch_poll     /* poll */
+#ifndef CONFIG_DISABLE_PSEUDOFS_OPERATIONS
+  , bch_unlink /* unlink */
+#endif
 };
 
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: bch_poll
+ ****************************************************************************/
 
 static int bch_poll(struct file *filep, struct pollfd *fds,
                     bool setup)
@@ -47,12 +94,19 @@ static int bch_poll(struct file *filep, struct pollfd *fds,
     if (setup) {
         fds->revents |= (fds->events & (POLLIN | POLLOUT));
         if (fds->revents != 0) {
-            nxsem_post(fds->sem);
+            sem_post(fds->sem);
         }
     }
 
     return 0; // OK
 }
+
+/****************************************************************************
+ * Name: bch_open
+ *
+ * Description: Open the block device
+ *
+ ****************************************************************************/
 
 static int bch_open(struct file *filep)
 {
@@ -60,6 +114,7 @@ static int bch_open(struct file *filep)
     struct bchlib_s *bch;
     int ret = 0; // OK
 
+    DEBUGASSERT(inode && inode->i_private);
     bch = (struct bchlib_s *)inode->i_private;
 
     /* Increment the reference count */
@@ -69,8 +124,10 @@ static int bch_open(struct file *filep)
     }
 
     if (bch->refs == MAX_OPENCNT) {
+
         ret = -EMFILE;
     } else {
+
         bch->refs++;
     }
 
@@ -78,21 +135,31 @@ static int bch_open(struct file *filep)
     return ret;
 }
 
+/****************************************************************************
+ * Name: bch_close
+ *
+ * Description: close the block device
+ *
+ ****************************************************************************/
+
 static int bch_close(struct file *filep)
 {
     struct inode *inode = filep->f_inode;
     struct bchlib_s *bch;
     int ret = 0; // OK
 
+    DEBUGASSERT(inode && inode->i_private);
     bch = (struct bchlib_s *)inode->i_private;
 
     /* Get exclusive access */
+
     ret = bchlib_semtake(bch);
     if (ret < 0) {
         return ret;
     }
 
     /* Flush any dirty pages remaining in the cache */
+
     bchlib_flushsector(bch);
 
     /* Decrement the reference count (I don't use bchlib_decref() because I
@@ -101,15 +168,19 @@ static int bch_close(struct file *filep)
     */
 
     if (bch->refs == 0) {
+
         ret = -EIO;
     } else {
+
         bch->refs--;
         /* If the reference count decremented to zero AND if the character
         * driver has been unlinked, then teardown the BCH device now.
         */
 
         if (bch->refs == 0 && bch->unlinked) {
+
             /* Tear the driver down now. */
+
             ret = bchlib_teardown((void *)bch);
 
             /* bchlib_teardown() would only fail if there are outstanding
@@ -117,6 +188,7 @@ static int bch_close(struct file *filep)
             * should not fail at all.
             */
 
+            DEBUGASSERT(ret >= 0);
             if (ret >= 0) {
                 /* Return without releasing the stale semaphore */
                 return 0; // OK
@@ -128,6 +200,10 @@ static int bch_close(struct file *filep)
     return ret;
 }
 
+/****************************************************************************
+ * Name: bch_seek
+ ****************************************************************************/
+
 static off_t bch_seek(struct file *filep, off_t offset, int whence)
 {
     struct inode *inode = filep->f_inode;
@@ -135,6 +211,7 @@ static off_t bch_seek(struct file *filep, off_t offset, int whence)
     off_t newpos;
     off_t ret;
 
+    DEBUGASSERT(inode && inode->i_private);
     bch = (struct bchlib_s *)inode->i_private;
     ret = bchlib_semtake(bch);
     if (ret < 0) {
@@ -157,11 +234,13 @@ static off_t bch_seek(struct file *filep, off_t offset, int whence)
         break;
 
     default:
+        /* Return EINVAL if the whence argument is invalid */
+
         bchlib_semgive(bch);
         return -EINVAL;
     }
 
-  /* Opengroup.org:
+    /* Opengroup.org:
    *
    *  "The lseek() function shall allow the file offset to be set beyond the
    *   end of the existing data in the file. If data is later written at this
@@ -176,9 +255,11 @@ static off_t bch_seek(struct file *filep, off_t offset, int whence)
    */
 
     if (newpos >= 0) {
+
         filep->f_pos = newpos;
         ret = newpos;
     } else {
+
         ret = -EINVAL;
     }
 
@@ -186,27 +267,39 @@ static off_t bch_seek(struct file *filep, off_t offset, int whence)
     return ret;
 }
 
+/****************************************************************************
+ * Name: bch_read
+ ****************************************************************************/
+
 static ssize_t bch_read(struct file *filep, char *buffer, size_t len)
 {
     struct inode *inode = filep->f_inode;
     struct bchlib_s *bch;
     ssize_t ret;
 
+    DEBUGASSERT(inode && inode->i_private);
     bch = (struct bchlib_s *)inode->i_private;
 
     ret = bchlib_semtake(bch);
+
     if (ret < 0) {
         return ret;
     }
 
     ret = bchlib_read(bch, buffer, filep->f_pos, len);
+
     if (ret > 0) {
+
         filep->f_pos += ret;
     }
 
     bchlib_semgive(bch);
     return ret;
 }
+
+/****************************************************************************
+ * Name: bch_write
+ ****************************************************************************/
 
 static ssize_t bch_write(struct file *filep, const char *buffer,
                         size_t len)
@@ -215,15 +308,19 @@ static ssize_t bch_write(struct file *filep, const char *buffer,
     struct bchlib_s *bch;
     ssize_t ret = -EACCES;
 
+    DEBUGASSERT(inode && inode->i_private);
     bch = (struct bchlib_s *)inode->i_private;
 
     if (!bch->readonly) {
+
         ret = bchlib_semtake(bch);
+
         if (ret < 0) {
             return ret;
         }
 
         ret = bchlib_write(bch, buffer, filep->f_pos, len);
+
         if (ret > 0) {
             filep->f_pos += ret;
         }
@@ -234,16 +331,28 @@ static ssize_t bch_write(struct file *filep, const char *buffer,
     return ret;
 }
 
+/****************************************************************************
+ * Name: bch_ioctl
+ *
+ * Description:
+ *   Handle IOCTL commands
+ *
+ ****************************************************************************/
+
 static int bch_ioctl(struct file *filep, int cmd, unsigned long arg)
 {
     struct inode *inode = filep->f_inode;
     struct bchlib_s *bch;
     int ret = -ENOTTY;
 
+    DEBUGASSERT(inode && inode->i_private);
     bch = (struct bchlib_s *)inode->i_private;
 
+    /* Process the call according to the command */
+
     switch (cmd) {
-      /* This isa request to get the private data structure */
+
+    /* This isa request to get the private data structure */
 
     case DIOC_GETPRIV:
         {
@@ -256,8 +365,10 @@ static int bch_ioctl(struct file *filep, int cmd, unsigned long arg)
             }
 
             if (!bchr || bch->refs == MAX_OPENCNT) {
+
                 ret   = -EINVAL;
             } else {
+
                 bch->refs++;
                 *bchr = bch;
                 ret   = 0; // OK
@@ -267,18 +378,24 @@ static int bch_ioctl(struct file *filep, int cmd, unsigned long arg)
         }
         break;
 
-        /* This is a required to return the geometry of the underlying block
-        * driver.
-        */
+    /* This is a required to return the geometry of the underlying block
+    * driver.
+    */
 
     case BIOC_GEOMETRY:
         {
             struct geometry *geo = (struct geometry *)((uintptr_t)arg);
+
+            DEBUGASSERT(geo != NULL && bch->inode && bch->inode->u.i_bops &&
+                        bch->inode->u.i_bops->geometry);
+
             ret = bch->inode->u.i_bops->geometry(bch->inode, geo);
             if (ret < 0) {
-                // ferr("ERROR: geometry failed: %d\n", -ret);
+
+                ferr("ERROR: geometry failed: %d\n", -ret);
             } else if (!geo->geo_available) {
-                // ferr("ERROR: geometry failed: %d\n", -ret);
+
+                ferr("ERROR: geometry failed: %d\n", -ret);
                 ret = -ENODEV;
             }
         }
@@ -287,13 +404,14 @@ static int bch_ioctl(struct file *filep, int cmd, unsigned long arg)
     case BIOC_FLUSH:
         {
             /* Flush any dirty pages remaining in the cache */
+
             ret = bchlib_flushsector(bch);
         }
         break;
 
-        /* Otherwise, pass the IOCTL command on to the contained block
-        * driver.
-        */
+    /* Otherwise, pass the IOCTL command on to the contained block
+    * driver.
+    */
 
     default:
         {
@@ -301,6 +419,7 @@ static int bch_ioctl(struct file *filep, int cmd, unsigned long arg)
 
             /* Does the block driver support the ioctl method? */
             if (bchinode->u.i_bops->ioctl != NULL) {
+
                 ret = bchinode->u.i_bops->ioctl(bchinode, cmd, arg);
             }
         }
@@ -310,21 +429,31 @@ static int bch_ioctl(struct file *filep, int cmd, unsigned long arg)
     return ret;
 }
 
+/****************************************************************************
+ * Name: bch_unlink
+ *
+ * Handle unlinking of the BCH device
+ *
+ ****************************************************************************/
 
+#ifndef CONFIG_DISABLE_PSEUDOFS_OPERATIONS
 static int bch_unlink(struct inode *inode)
 {
     struct bchlib_s *bch;
     int ret = 0; // OK
 
+    DEBUGASSERT(inode && inode->i_private);
     bch = (struct bchlib_s *)inode->i_private;
 
     /* Get exclusive access to the BCH device */
+
     ret = bchlib_semtake(bch);
     if (ret < 0) {
         return ret;
     }
 
     /* Indicate that the driver has been unlinked */
+
     bch->unlinked = true;
 
     /* If there are no open references to the driver then teardown the BCH
@@ -332,6 +461,7 @@ static int bch_unlink(struct inode *inode)
     */
 
     if (bch->refs == 0) {
+
         /* Tear the driver down now. */
         ret = bchlib_teardown((void *)bch);
 
@@ -340,6 +470,7 @@ static int bch_unlink(struct inode *inode)
         * should not fail at all.
         */
 
+        DEBUGASSERT(ret >= 0);
         if (ret >= 0) {
             /* Return without releasing the stale semaphore */
             return 0; // OK
@@ -349,3 +480,4 @@ static int bch_unlink(struct inode *inode)
     bchlib_semgive(bch);
     return ret;
 }
+#endif

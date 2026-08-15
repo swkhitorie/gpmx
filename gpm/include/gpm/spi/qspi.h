@@ -2,7 +2,8 @@
 #ifndef DEV_OPS_QUAD_SPI_H_
 #define DEV_OPS_QUAD_SPI_H_
 
-#include "gpm/sched.h"
+#include <gpmx/config.h>
+#include "driver/drv_sched.h"
 
 /****************************************************************************
  * Name: QSPI_LOCK

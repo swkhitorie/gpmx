@@ -4,8 +4,11 @@
 #include <sys/types.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <driver/drv_hrt.h>
 
-#include "gpm/drv_hrt.h"
+#ifndef __EXPORT
+#define __EXPORT
+#endif
 
 /**
  * Topic priority.
@@ -33,13 +36,13 @@ struct orb_metadata {
 typedef struct orb_metadata *orb_id_t;
 
 struct orb_advertdata {
-    struct orb_metadata *meta;
+    const struct orb_metadata *meta;
     int *instance;
     enum ORB_PRIO priority;
 };
 
-#define ATOMIC_ENTER uint32_t flags = portSET_INTERRUPT_MASK_FROM_ISR()
-#define ATOMIC_LEAVE portCLEAR_INTERRUPT_MASK_FROM_ISR(flags)
+#define ATOMIC_ENTER uint32_t flags = enter_critical_section()
+#define ATOMIC_LEAVE leave_critical_section(flags)
 
 #define UORB_F_RDONLY 1
 #define UORB_F_WRONLY 2
@@ -140,20 +143,20 @@ extern "C" {
  */
 typedef void 	*orb_advert_t;
 
-extern orb_advert_t orb_advertise(struct orb_metadata *meta, const void *data);
+extern orb_advert_t orb_advertise(const struct orb_metadata *meta, const void *data);
 
-extern orb_advert_t orb_advertise_queue(struct orb_metadata *meta, const void *data,
+extern orb_advert_t orb_advertise_queue(const struct orb_metadata *meta, const void *data,
 					unsigned int queue_size);
 
-extern orb_advert_t orb_advertise_multi(struct orb_metadata *meta, const void *data, int *instance,
+extern orb_advert_t orb_advertise_multi(const struct orb_metadata *meta, const void *data, int *instance,
 					enum ORB_PRIO priority);
 
-extern orb_advert_t orb_advertise_multi_queue(struct orb_metadata *meta, const void *data, int *instance,
+extern orb_advert_t orb_advertise_multi_queue(const struct orb_metadata *meta, const void *data, int *instance,
 		enum ORB_PRIO priority, unsigned int queue_size);
 
 extern int orb_unadvertise(orb_advert_t handle);
 
-extern int	orb_publish(struct orb_metadata *meta, orb_advert_t handle, const void *data);
+extern int	orb_publish(const struct orb_metadata *meta, orb_advert_t handle, const void *data);
 
 /**
  * Advertise as the publisher of a topic.
@@ -161,7 +164,7 @@ extern int	orb_publish(struct orb_metadata *meta, orb_advert_t handle, const voi
  * This performs the initial advertisement of a topic; it creates the topic
  * node in /obj if required and publishes the initial data.
  */
-static inline int orb_publish_auto(struct orb_metadata *meta, orb_advert_t *handle, const void *data,
+static inline int orb_publish_auto(const struct orb_metadata *meta, orb_advert_t *handle, const void *data,
 				   int *instance, enum ORB_PRIO priority)
 {
 	if (!*handle) {
@@ -178,22 +181,22 @@ static inline int orb_publish_auto(struct orb_metadata *meta, orb_advert_t *hand
 	return -1;
 }
 
-extern int	orb_subscribe(struct orb_metadata *meta);
+extern int	orb_subscribe(const struct orb_metadata *meta);
 
-extern int	orb_subscribe_multi(struct orb_metadata *meta, unsigned instance);
+extern int	orb_subscribe_multi(const struct orb_metadata *meta, unsigned instance);
 
 extern int	orb_unsubscribe(int handle);
 
-extern int  orb_copy(struct orb_metadata *meta, int handle, void *buffer);
+extern int  orb_copy(const struct orb_metadata *meta, int handle, void *buffer);
 
 extern int  orb_check(int handle, bool *updated);
 
-extern int	orb_exists(struct orb_metadata *meta, int instance);
+extern int	orb_exists(const struct orb_metadata *meta, int instance);
 
 /**
  * Get the number of published instances of a topic group
  */
-extern int	orb_group_count(struct orb_metadata *meta);
+extern int	orb_group_count(const struct orb_metadata *meta);
 
 extern int	orb_priority(int handle, enum ORB_PRIO *priority);
 
@@ -201,9 +204,13 @@ extern int	orb_set_interval(int handle, unsigned interval);
 
 extern int	orb_get_interval(int handle, unsigned *interval);
 
-extern int uorb_node_mkpath(char *buf, struct orb_metadata *meta, int *instance);
+extern int uorb_node_mkpath(char *buf, const struct orb_metadata *meta, int *instance);
 
 extern int uorb_node_mkpath2(char *buf, const char *orbMsgName);
+
+const char *orb_get_c_type(unsigned char short_type);
+
+void orb_print_message_internal(const struct orb_metadata *meta, const void *data, bool print_topic_name);
 
 #ifdef __cplusplus
 }

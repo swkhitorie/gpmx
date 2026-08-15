@@ -2,7 +2,7 @@
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
-
+#include <gpmx/config.h>
 #include "./prv_mqueue.h"
 
 int mq_timedsend( mqd_t mqdes, const char *msg_ptr, size_t msg_len, unsigned int msg_prio, const struct timespec *abstime)

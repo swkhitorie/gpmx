@@ -1,8 +1,17 @@
-#ifndef POSIX_MQUEUE_H_
-#define POSIX_MQUEUE_H_
+#ifndef __INCLUDE_MQUEUE_H
+#define __INCLUDE_MQUEUE_H
 
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
+#include <gpmx/config.h>
 #include <sys/types.h>
 #include <time.h>
+
+/********************************************************************************
+ * Public Type Definitions
+ ********************************************************************************/
 
 struct mq_attr
 {
@@ -28,6 +37,10 @@ extern "C"
 #define EXTERN extern
 #endif
 
+/********************************************************************************
+ * Public Function Prototypes
+ ********************************************************************************/
+
 int     mq_close        (mqd_t mqdes);
 int     mq_getattr      (mqd_t mqdes, struct mq_attr *mqstat);
 mqd_t   mq_open         (const char *name, int oflag, mode_t mode, struct mq_attr *attr);
@@ -43,4 +56,4 @@ int     mq_unlink       (const char *name);
 }
 #endif
 
-#endif
+#endif /* __INCLUDE_LIBGEN_H */

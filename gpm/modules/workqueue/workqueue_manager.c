@@ -1,18 +1,21 @@
+#define _GNU_SOURCE
+#include <gpmx/config.h>
 #include "workqueue_manager.h"
 #include "workqueue.h"
 
+#include <driver/drv_sched.h>
+
+#include <string.h>
+#include <pthread.h>
+#include <unistd.h>
 #include "container/blocking_list.h"
 #include "container/blocking_queue.h"
 #include "container/atomic.h"
+#include <mlog.h>
 
-#include <string.h>
-
-#include <pthread.h>
-#include <unistd.h>
-
-#include "kmodule_defines.h"
-
-#include "gpm/sched.h"
+#if defined(CONFIG_POSIXRUN_ENABLE)
+#include <limits.h>
+#endif
 
 const struct wq_config_t wq_config_rate_ctrl = {"wq:rate_ctrl", 1664, 0};
 
@@ -262,7 +265,13 @@ static void* workqueue_manager_run(void *p)
 			}
 
 			// stack size
+#if !defined(CONFIG_POSIXRUN_ENABLE)
 			const size_t stacksize = ((uint16_t)PTHREAD_STACK_MIN > wq->stacksize) ? (uint16_t)PTHREAD_STACK_MIN : wq->stacksize;
+#else
+			const unsigned int page_size = sysconf(_SC_PAGESIZE);
+			const size_t stacksize_adj = ((uint16_t)PTHREAD_STACK_MIN > wq->stacksize) ? (uint16_t)PTHREAD_STACK_MIN : wq->stacksize;
+			const size_t stacksize = (stacksize_adj + page_size - (stacksize_adj % page_size));
+#endif
 			int ret_setstacksize = pthread_attr_setstacksize(&attr, stacksize);
 
 			if (ret_setstacksize != 0) {
@@ -304,6 +313,7 @@ static void* workqueue_manager_run(void *p)
 		}
 	}
 
+    return NULL;
 }
 
 int workqueue_manager_start()
@@ -313,9 +323,18 @@ int workqueue_manager_start()
     pthread_t id;
 
     pthread_attr_init(&attr);
-    attr.schedparam.sched_priority = sched_get_priority_max(0);
-    attr.schedpolicy = PTHREAD_CREATE_JOINABLE;
-    attr.stacksize = 1280 * sizeof(StackType_t);
+
+#if 1
+    struct sched_param attr_param;
+    attr_param.sched_priority = sched_get_priority_max(SCHED_FIFO);
+    pthread_attr_setschedparam(&attr, &attr_param);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+    pthread_attr_setstacksize(&attr, 1280*sizeof(void *));
+#else
+    attr.schedparam.sched_priority = sched_get_priority_max(SCHED_FIFO);
+    attr.detachstate = PTHREAD_CREATE_JOINABLE;
+    attr.stacksize = 1280 * sizeof(void *);
+#endif
 
     if (atomic_bool_load(&_wq_manager_should_exit) && (_wq_manager_create_queue == NULL)) {
 
@@ -404,7 +423,7 @@ int workqueue_manager_status()
 
         const size_t num_wqs = blocking_list_size(_wq_manager_wqs_list);
 
-        KMINFO("\nWork Queue: %-1zu threads                        RATE        INTERVAL\n", num_wqs);
+        KMRAW("\nWork Queue: %-1zu threads                        RATE        INTERVAL\n", num_wqs);
 
         pthread_mutex_lock(&_wq_manager_wqs_list->_mutex);
 
@@ -417,10 +436,10 @@ int workqueue_manager_status()
             const bool last_wq = (i >= num_wqs);
 
             if (!last_wq) {
-                KMINFO("|__ %zu) ", i);
+                KMRAW("|__ %zu) ", i);
 
             } else {
-                KMINFO("\\__ %zu) ", i);
+                KMRAW("\\__ %zu) ", i);
             }
 
             workqueue_print_status(wq, last_wq);
@@ -434,7 +453,7 @@ int workqueue_manager_status()
     return 0;
 }
 
-#if defined(CONFIG_MODULE_GPMSHELL)
+#if defined(CONFIG_GMSH)
 #include "gmsh.h"
 int workqueue_main(int argc, char **argv)
 {

@@ -40,6 +40,11 @@ rt_uint32_t rt_thread_ready_priority_group;
 rt_uint8_t rt_thread_ready_table[32];
 #endif /* RT_THREAD_PRIORITY_MAX > 32 */
 
+#ifdef RT_USING_CPU_USAGE
+static rt_uint64_t rt_task_schedule_time = 0;
+static rt_uint64_t rt_total_run_time = 0;
+#endif
+
 #ifndef RT_USING_SMP
 extern volatile rt_uint8_t rt_interrupt_nest;
 static rt_int16_t rt_scheduler_lock_nest;
@@ -433,6 +438,17 @@ void rt_schedule(void)
     if (rt_scheduler_lock_nest == 0)
     {
         rt_ubase_t highest_ready_priority;
+
+#ifdef RT_USING_CPU_USAGE
+			rt_total_run_time = RT_CPU_USAGE_HRT_VALUE();
+
+			if (rt_total_run_time > rt_task_schedule_time) {
+				rt_current_thread->duration_tick += (rt_total_run_time - rt_task_schedule_time);
+			} else {
+                // do nothing
+			}
+			rt_task_schedule_time = rt_total_run_time;
+#endif
 
         if (rt_thread_ready_priority_group != 0)
         {
@@ -1027,5 +1043,14 @@ rt_uint16_t rt_critical_level(void)
 #endif /* RT_USING_SMP */
 }
 RTM_EXPORT(rt_critical_level);
+
+#ifdef RT_USING_CPU_USAGE
+rt_uint64_t rt_scheduler_total_runtime(void)
+{
+    return rt_total_run_time;
+}
+
+RTM_EXPORT(rt_scheduler_total_runtime);
+#endif
 
 /**@}*/

@@ -4,3 +4,9 @@
 [submodule "gpm/usb/CherryUSB"]
 	path = gpm/usb/CherryUSB
 	url = https://github.com/cherry-embedded/CherryUSB.git
+[submodule "apps/libs/ulog_cpp"]
+	path = apps/libs/ulog_cpp
+	url = https://github.com/PX4/ulog_cpp.git
+[submodule "tools/flight_review"]
+	path = tools/flight_review
+	url = https://github.com/PX4/flight_review.git

@@ -1,6 +1,7 @@
 #ifndef PRV_MQUEUE_H_
 #define PRV_MQUEUE_H_
 
+#include <gpmx/config.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <mqueue.h>

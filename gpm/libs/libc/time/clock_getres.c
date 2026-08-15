@@ -1,4 +1,5 @@
 #include <time.h>
+#include <gpmx/config.h>
 
 int clock_getres(clockid_t clock_id, struct timespec *res)
 {

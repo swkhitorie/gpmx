@@ -1,8 +1,6 @@
-#include <board_config.h>
+#include <gpmx/config.h>
 
-#ifndef TEST_PRINTF
-#define TEST_PRINTF    BOARD_PRINTF
-#endif
+#include <mlog.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -52,7 +50,7 @@ void* p8_entry(void *p)
         critical_val++;
         pthread_mutex_unlock(&lock1);
 
-        TEST_PRINTF("[%s] lock after val : %d\r\n", &name[0], critical_val);
+        KMRAW("[%s] lock after val : %d\r\n", &name[0], critical_val);
         usleep(1000*1000);
     }
 
@@ -77,7 +75,7 @@ void* p9_entry(void *p)
         critical_val--;
         pthread_mutex_unlock(&lock1);
 
-        TEST_PRINTF("[%s] lock after val : %d\r\n", &name[0], critical_val);
+        KMRAW("[%s] lock after val : %d\r\n", &name[0], critical_val);
         usleep(1000*1000);
         // debug_led_toggle();
     }
@@ -94,7 +92,7 @@ int klibc_pthread_mutex_test(int argc, char **argv)
         pthread_attr_init(&p8.attr);
         pthread_attr_setdetachstate(&p8.attr, PTHREAD_CREATE_JOINABLE);
         pthread_attr_setschedparam(&p8.attr, &p8.param);
-        pthread_attr_setstacksize(&p8.attr, 512*sizeof(StackType_t));
+        pthread_attr_setstacksize(&p8.attr, 512*4);
         rv = pthread_create(&p8.id, &p8.attr, &p8_entry, &p8.arg);
     }
 
@@ -106,7 +104,7 @@ int klibc_pthread_mutex_test(int argc, char **argv)
         // PTHREAD_CREATE_DETACHED PTHREAD_CREATE_JOINABLE
         pthread_attr_setdetachstate(&p9.attr, PTHREAD_CREATE_JOINABLE);
         pthread_attr_setschedparam(&p9.attr, &p9.param);
-        pthread_attr_setstacksize(&p9.attr, 512*sizeof(StackType_t));
+        pthread_attr_setstacksize(&p9.attr, 512*4);
         rv = pthread_create(&p9.id, &p9.attr, &p9_entry, &p9.arg);
     }
 

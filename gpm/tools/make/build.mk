@@ -1,0 +1,292 @@
+################################################################################
+#
+# build.mk
+#
+# Build rules to generate exe file from sources
+#
+################################################################################
+
+include ${MAKEFILES_ROOTDIR}/make/const.mk
+
+include ${MAKEFILES_ROOTDIR}/make/dbg_openocd.mk 
+
+include ${MAKEFILES_ROOTDIR}/make/check.mk
+
+include ${MAKEFILES_ROOTDIR}/make/common.mk
+
+################################################################################
+#
+# Constants section
+#
+################################################################################
+
+################################################################################
+#
+# Macros section
+#
+################################################################################
+
+# Filter a source file from a list.
+# As vpath is used to add c/s/asm sources paths to make search folders, it could
+# happen that a file with same name is present in more folders. To avoid
+# building the wrong one, this macro can filter a sources list and return the
+# proper file in the list.
+# 1 - source to look for (with or without path)
+# 2 - target sources lists
+MK_LOOKUPSRC=$(filter %/$(notdir ${1}),${2})
+
+################################################################################
+# Variable section
+################################################################################
+
+# C thumb sources
+BUILD_CSOURCES:=$(foreach src,${PROJ_CSOURCES},${SDK_ROOTDIR}/$(src))
+ifneq (${USR_ROOTDIR},)
+BUILD_CSOURCES+=
+BUILD_CSOURCES+=$(foreach src,${USR_CSOURCES},${USR_ROOTDIR}/$(src))
+endif
+
+BUILD_CPPSOURCES:=$(foreach src,${PROJ_CPPSOURCES},${SDK_ROOTDIR}/$(src))
+ifneq (${USR_ROOTDIR},)
+BUILD_CPPSOURCES+=
+BUILD_CPPSOURCES+=$(foreach src,${USR_CPPSOURCES},${USR_ROOTDIR}/$(src))
+endif
+
+# C ARM sources
+BUILD_CARMSOURCES:=$(foreach src,${PROJ_CARMSOURCES},${SDK_ROOTDIR}/$(src))
+ifneq (${USR_ROOTDIR},)
+BUILD_CARMSOURCES+=
+BUILD_CARMSOURCES+=$(foreach src,${USR_CARMSOURCES},${USR_ROOTDIR}/$(src))
+endif
+
+# Assembly sources
+BUILD_ASMSOURCES:=$(foreach src,${PROJ_ASMSOURCES},${SDK_ROOTDIR}/$(src))
+ifneq (${USR_ROOTDIR},)
+BUILD_ASMSOURCES+=
+BUILD_ASMSOURCES+=$(foreach src,${USR_ASMSOURCES},${USR_ROOTDIR}/$(src))
+endif
+
+# All sources
+BUILD_SOURCES:=${BUILD_CSOURCES} ${BUILD_CPPSOURCES} ${BUILD_CARMSOURCES} ${BUILD_ASMSOURCES}
+
+# All dependency files
+BUILD_DEPENDS:=$(patsubst %.c,%.d,${BUILD_CSOURCES} ${BUILD_CARMSOURCES})
+
+# All sources
+PROJ_OBJS:=$(foreach obj,$(basename $(notdir ${BUILD_SOURCES})),${OBJS_FOLDER}/${obj}.o)
+BUILD_OBJS:=${PROJ_OBJS}
+PROJ_OBJS+=$(foreach src,${EXT_OBJS},${SDK_ROOTDIR}/$(src))
+ifneq (${USR_ROOTDIR},)
+PROJ_OBJS+=
+PROJ_OBJS+=$(foreach src,${USR_EXT_OBJS},${USR_ROOTDIR}/$(src))
+endif
+
+#
+# dependency file or dependency variable
+# 
+#C_ADEP := $(call TC_CC_VIA,${TARGET_ROOTDIR}/copts.via)
+#ASM_ADEP := $(call TC_ASM_VIA,${TARGET_ROOTDIR}/asmopts.via)
+#LINK_ADEP := $(call TC_LINK_VIA, ${TARGET_ROOTDIR}/lopts.via)
+EXT_ADEP ?=
+define add_ext_opt
+$(foreach src,$($(1)_SRC), \
+    $(eval $(OBJS_FOLDER)/$(basename $(src)).o: EXT_ADEP += $($(1)_OPT)) \
+)
+endef
+$(foreach group,$(ALL_EXT_GROUPS),$(call add_ext_opt,$(group)))
+
+C_ADEP := ${COPTS} ${CDEFS} ${CINCDIRS}
+CPP_ADEP := ${CPPOPTS} ${CDEFS} ${CINCDIRS}
+ASM_ADEP := ${ASMOPTS} ${ASMDEFS} ${CDEFS} ${ASMINCDIRS}
+LINK_ADEP := ${LIBOPTS} $(call MK_TC_LIBDIRS,${LIBDIRS}) $(call MK_TC_LIBS,${LIBS})
+
+# Add sources paths to makefile search paths specific for each pattern
+vpath %.c $(dir ${BUILD_CSOURCES} ${BUILD_CARMSOURCES})
+vpath %.cpp $(dir ${BUILD_CPPSOURCES})
+vpath %.S $(dir ${BUILD_ASMSOURCES})
+vpath %.asm $(dir ${BUILD_ASMSOURCES})
+
+##################################
+# Targets section - Folder
+##################################
+${TARGET_ROOTDIR}:
+	$(call MK_MKDIR,"$(call MK_PATHTOWIN,$@)")
+
+${OBJS_FOLDER}:
+	$(call MK_MKDIR,"$(call MK_PATHTOWIN,$@)")
+
+${TARGET_DEST_ROOTDIR}:
+	$(call MK_MKDIR,"$(call MK_PATHTOWIN,$@)")
+
+${GLOBAL_CMACROS_PATH}:
+	$(call MK_MKDIR,"$(call MK_PATHTOWIN,$@)")
+
+##################################
+# Targets section - Via files
+##################################
+${SCF_FILE_NAME}: ${BUILD_CONFIG_FILE} ${SCF_TEMPLATE_FILE_NAME} ${DEFSINCLIST}
+	$(call MK_ECHO,Generating scatter file for ${PROJ_TC} builder)
+	$(call MK_RMFILE,${SCF_FILE_NAME})
+	$(call MK_TC_GENSCF,"${SCF_TEMPLATE_FILE_NAME}","${SCF_FILE_NAME}",${SCF_DEFS})
+
+${ASMOPTS_FILE}: ${BUILD_CONFIG_FILE} ${LIST_DEFSINC} ${PROJ_MAKEFILE}
+	$(call MK_ECHO,Generating assembler via file for ${PROJ_TC} builder)
+	$(call MK_RMFILE,${ASMOPTS_FILE})
+	$(call MK_APPEND,${ASMOPTS},"${ASMOPTS_FILE}")
+	$(call MK_APPEND,${ASMDEFS},"${ASMOPTS_FILE}")
+	$(call MK_APPEND,${ASMINCDIRS},"${ASMOPTS_FILE}")
+
+${COPTS_FILE}: ${BUILD_CONFIG_FILE} ${LIST_DEFSINC} ${PROJ_MAKEFILE}
+	$(call MK_APPGET,Generating C compiler via file for ${PROJ_TC} builder)
+	$(call MK_RMFILE,${COPTS_FILE})
+	$(call MK_APPEND,${COPTS},"${COPTS_FILE}")
+	$(call MK_APPEND,${CDEFS},"${COPTS_FILE}")
+	$(call MK_APPEND,${CINCDIRS},"${COPTS_FILE}")
+
+${CINC_FILE}: ${BUILD_CONFIG_FILE} ${LIST_DEFSINC} ${PROJ_MAKEFILE}
+	$(call MK_APPGET,Generating C include via file for ${PROJ_TC} builder)
+	$(call MK_RMFILE,${CINC_FILE})
+	$(call MK_APPENDLINE,${CINCDIRS_FILSRC},"${CINC_FILE}")
+
+${CPPOPTS_FILE}: ${BUILD_CONFIG_FILE} ${LIST_DEFSINC} ${PROJ_MAKEFILE}
+	$(call MK_APPGET,Generating Cpp compiler via file for ${PROJ_TC} builder)
+	$(call MK_RMFILE,${CPPOPTS_FILE})
+	$(call MK_APPEND,${CPPOPTS},"${CPPOPTS_FILE}")
+	$(call MK_APPEND,${CDEFS},"${CPPOPTS_FILE}")
+	$(call MK_APPEND,${CINCDIRS},"${CPPOPTS_FILE}")
+
+${LOPTS_FILE}: ${BUILD_CONFIG_FILE} ${LIST_DEFSINC} ${PROJ_MAKEFILE}
+	$(call MK_ECHO,Generating linker via file for ${PROJ_TC} builder)
+	$(call MK_RMFILE,${LOPTS_FILE})
+	$(call MK_APPEND,${LIBOPTS},"${LOPTS_FILE}")
+	$(call MK_APPEND,$(call MK_TC_LIBDIRS,${LIBDIRS}),"${LOPTS_FILE}")
+	$(call MK_APPEND,$(call MK_TC_LIBS,${LIBS}),"${LOPTS_FILE}")
+
+${GLOBAL_CMACROS_FILE}: ${GLOBAL_CMACROS_PATH} ${BUILD_CONFIG_FILE} ${LIST_DEFSINC} ${PROJ_MAKEFILE}
+	$(call MK_ECHO,Generating macros file and cmacros include file)
+	$(call MK_RMFILE,${MACROS_FILE})
+	$(call MK_APPENDLINE,${PROJ_CDEFS},"${MACROS_FILE}")
+	$(call MK_APPENDCMACROSFILE,${PROJ_CDEFS},${GLOBAL_CMACROS_FILE},GPMX_GLOBAL_CONFIG_H_)
+
+##################################
+# Targets section - Compiler implicit targets
+##################################
+#${OBJS_FOLDER}/%.o: %.c ${OBJS_FOLDER}/%.d
+${OBJS_FOLDER}/%.o: %.c ${COPTS_FILE} ${CINC_FILE} ${GLOBAL_CMACROS_FILE}
+	$(eval SRCFILE:=$(call MK_LOOKUPSRC,$^,${BUILD_CSOURCES} ${BUILD_CARMSOURCES}))
+	$(eval SRCMODE:=$(if $(findstring $<,${BUILD_CARMSOURCES}),${TC_TARGETARM},${TC_TARGETTHUMB}))
+	$(call MK_ECHO,Compiling ${SRCFILE} )
+	@${TC_CC} ${C_ADEP} ${EXT_ADEP} ${SRCMODE} -o $@ ${SRCFILE}
+
+${OBJS_FOLDER}/%.o: %.cpp ${CPPOPTS_FILE} ${CINC_FILE} ${GLOBAL_CMACROS_FILE}
+	$(eval SRCFILE:=$(call MK_LOOKUPSRC,$^,${BUILD_CPPSOURCES}))
+	$(eval SRCMODE:=$(if $(findstring $<,${BUILD_CARMSOURCES}),${TC_TARGETARM},${TC_TARGETTHUMB}))
+	$(call MK_ECHO,Compiling ${SRCFILE})
+	@${TC_CPP} ${CPP_ADEP} ${EXT_ADEP} ${SRCMODE} -o $@ ${SRCFILE}
+
+# asm file suffix for arm is (.s), not (.asm)
+${OBJS_FOLDER}/%.o: %.S ${ASMOPTS_FILE} ${CINC_FILE} ${GLOBAL_CMACROS_FILE}
+	$(eval SRCFILE:=$(call MK_LOOKUPSRC,$^,${BUILD_ASMSOURCES}))
+	$(call MK_ECHO,Assembling ${SRCFILE})
+	@${TC_ASM} ${ASM_ADEP} ${EXT_ADEP} -o $@ ${SRCFILE}
+
+# ${OBJS_FOLDER}/%.o: %.asm ${ASMOPTS_FILE}
+# 	$(eval SRCFILE:=$(call MK_LOOKUPSRC,$^,${BUILD_ASMSOURCES}))
+# 	$(call MK_ECHO,Assembling gae ${SRCFILE})
+# 	@${TC_ASM} ${ASM_ADEP} -o $@ ${SRCFILE}
+
+# .PRECIOUS: ${OBJS_FOLDER}/%.d
+# ${OBJS_FOLDER}/%.d: %.c
+# 	$(eval SRCFILE:=$(call MK_LOOKUPSRC,$^,${BUILD_CSOURCES} ${BUILD_CARMSOURCES}))
+# 	$(call MK_ECHO,Building dependency for ${SRCFILE})
+# 	@${TC_MAKEDEP} $(call TC_CC_VIA,${TARGET_ROOTDIR}/copts.via) \
+# 		-o $(patsubst %.d,%.o,$@) ${SRCFILE} > $@
+# 		-o $(patsubst %.d,%.o,$@) ${SRCFILE} > $@
+# 		${SRCFILE} > $@_tmp ; \
+# 	  $(MK_BUSYBOX) awk "{ print \"pippo/\"$1\" \"$2}" $@_tmp)
+# 	$(call MK_RMFILE,$@_tmp)
+
+-include ${OBJS_FOLDER}/%.d
+
+#
+# Executable target
+#
+${TARGET_SRC_FILENAME_EXE}: ${LOPTS_FILE} ${SCF_FILE_NAME} ${OBJS_FOLDER} ${PROJ_OBJS} ${LOPTS_FILE}
+	$(call MK_ECHO,Linking to $(subst ${SDK_ROOTDIR}/,,$@))
+	@${TC_LINK} -o $@ ${PROJ_OBJS} \
+	${LINK_ADEP} \
+	$(call TC_LINK_ENTRY,${PROJ_ENTRY_POINT}) \
+    $(call TC_LINK_SCF,${SCF_FILE_NAME}) \
+	$(call TC_LINK_LIST,${TARGET_SRC_FILENAME_LIST})
+	@${TC_SIZE} $@
+	@${TC_SIZE} ${PROJ_OBJS} >> ${TARGET_SRC_FILENAME_LIST}
+
+#
+# target static lib
+#
+${TARGET_LIBS}: ${LOPTS_FILE} ${OBJS_FOLDER} ${PROJ_OBJS}
+	$(call MK_ECHO,Creating static library $@)
+	@${TC_AR} -rc $@ ${PROJ_OBJS}
+
+#
+# Binary target
+#
+${TARGET_DEST_FILENAME_BIN}: ${TARGET_DEST_ROOTDIR} ${TARGET_SRC_FILENAME_EXE} ${TARGET_EXTRA_RULES}
+	$(call MK_TC_COMPILE_ANALYZE, ${TARGET_SRC_FILENAME_LIST})
+	$(call MK_ECHO,Copying to bin folder)
+	$(call MK_RMFILE,"${TARGET_DEST_FILENAME_EXE}" "${TARGET_DEST_FILENAME_LIST}" "${TARGET_DEST_FILENAME_BIN}")
+	$(call MK_CP,"${TARGET_SRC_FILENAME_EXE}","${TARGET_DEST_FILENAME_EXE}")
+	$(call MK_CP,"${TARGET_SRC_FILENAME_LIST}","${TARGET_DEST_FILENAME_LIST}")
+	$(call MK_ECHO,Generating standard binary and hex image)
+	$(call MK_TC_GENBIN,"${TARGET_SRC_FILENAME_EXE}","${TARGET_DEST_FILENAME_BIN}")
+	$(call MK_TC_GENHEX,"${TARGET_SRC_FILENAME_EXE}","${TARGET_DEST_FILENAME_HEX}")
+	$(call MK_ECHO,Disassembly the binary image)
+	$(call MK_TC_DISASSEMBLY,"${TARGET_SRC_FILENAME_EXE}","${TARGET_SRC_FILENAME_DISASM}")
+
+#
+# internal secondary targets
+#
+.SECONDARY: generatemk build postbuild clean distclean program
+
+FORCE:
+
+# pre build target
+prebuild: ${TARGET_ROOTDIR} ${ASMOPTS_FILE} ${COPTS_FILE} ${LOPTS_FILE} ${GLOBAL_CMACROS_FILE} ${USER_COMMAND_PREBUILD} ${USER_FILE_PREBUILD}
+
+# build makefile target
+ifeq ($(BUILD_TYPE),exe)
+build: ${TARGET_SRC_FILENAME_EXE}
+else ifeq ($(BUILD_TYPE),lib)
+build: ${TARGET_LIBS}
+else ifeq ($(BUILD_TYPE),both)
+build: ${TARGET_SRC_FILENAME_EXE} ${TARGET_LIBS}
+endif
+
+# apply default configuration target
+postbuild: ${TARGET_POSTBUILD} ${USER_FILE_POSTBUILD} ${USER_COMMAND_POSTBUILD}
+
+#
+# exported targets
+#
+clean:
+	$(call MK_ECHO,Executing clean on target ${PROJ_NAME})
+	$(call MK_RMFILE,${BUILD_OBJS})
+	$(call MK_RMFILE,${TARGET_SRC_FILENAME_EXE})
+	$(call MK_RMFILE,${TARGET_SRC_FILENAME_LIST})
+	$(call MK_RMFILE,${SCF_FILE_NAME})
+
+distclean:
+	$(call MK_ECHO,Executing distclean on target ${PROJ_NAME})
+	$(call MK_RMDIR,${TARGET_ROOTDIR})
+
+program: ${TARGET_POSTBUILD}
+	$(call MK_ECHO,Programming image)
+	$(call MK_FWPROGRAM,@${TC_OPENOCD_PATH},${TC_OPENOCD_DEBUG_CFG},${TC_OPENOCD_CHIP_CFG},${TARGET_DEST_FILENAME_BIN},${PROJ_OPENOCD_LOAD_ADDR})
+
+rebuild:
+	${MAKE} clean
+	${MAKE} all
+
+regenerate:
+	${MAKE} distclean
+	${MAKE} all

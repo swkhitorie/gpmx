@@ -1,12 +1,46 @@
+/****************************************************************************
+ * fs/mount/fs_mount.c
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
+#include <gpmx/config.h>
+
 #include <sys/mount.h>
 
 #include <stdbool.h>
 #include <string.h>
 #include <errno.h>
+#include <assert.h>
+#include <debug.h>
 
-#include "gpm/fs/fs.h"
+#include <gpm/fs/fs.h>
 #include "inode/inode.h"
 #include "driver/driver.h"
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+/* Configuration ************************************************************/
 
 /* In the canonical case, a file system is bound to a block driver.  However,
  * some less typical cases a block driver is not required.  Examples are
@@ -16,53 +50,43 @@
  * These file systems all require block drivers:
  */
 
-#if defined(CONFIG_FS_FAT) || defined(CONFIG_FS_ROMFS) || \
-    defined(CONFIG_FS_LITTLEFS)
+#if defined(CONFIG_FS_LITTLEFS)
 #  define BDFS_SUPPORT 1
 #endif
 
 /* These file systems require MTD drivers */
-#if defined(CONFIG_FS_LITTLEFS)
+#if defined(CONFIG_FS_LITTLEFS) && defined(CONFIG_MTD)
 #  define MDFS_SUPPORT 1
 #endif
 
 /* These file systems do not require block or MTD drivers */
-#if defined(CONFIG_FS_NXFFS) || defined(CONFIG_FS_BINFS) || \
-    defined(CONFIG_FS_PROCFS) || defined(CONFIG_NFS) || \
-    defined(CONFIG_FS_TMPFS) || defined(CONFIG_FS_USERFS) || \
-    defined(CONFIG_FS_CROMFS) || defined(CONFIG_FS_UNIONFS) || \
-    defined(CONFIG_FS_HOSTFS)
+#if defined(CONFIG_FS_CROMFS) || defined(CONFIG_FS_FATFS)
 #  define NODFS_SUPPORT
 #endif
 
+/****************************************************************************
+ * Private Types
+ ****************************************************************************/
+
 struct fsmap_t
 {
-  const char                      *fs_filesystemtype;
-  const struct mountpt_operations *fs_mops;
+    const char                      *fs_filesystemtype;
+    const struct mountpt_operations *fs_mops;
 };
 
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
 
 #ifdef BDFS_SUPPORT
 /* File systems that require block drivers */
 
-#ifdef CONFIG_FS_FAT
-extern const struct mountpt_operations fat_operations;
-#endif
-#ifdef CONFIG_FS_ROMFS
-extern const struct mountpt_operations romfs_operations;
-#endif
 #ifdef CONFIG_FS_LITTLEFS
 extern const struct mountpt_operations littlefs_operations;
 #endif
 
 static const struct fsmap_t g_bdfsmap[] =
 {
-#ifdef CONFIG_FS_FAT
-    { "vfat", &fat_operations },
-#endif
-#ifdef CONFIG_FS_ROMFS
-    { "romfs", &romfs_operations },
-#endif
 #ifdef CONFIG_FS_LITTLEFS
     { "littlefs", &littlefs_operations },
 #endif
@@ -73,18 +97,12 @@ static const struct fsmap_t g_bdfsmap[] =
 #ifdef MDFS_SUPPORT
 /* File systems that require MTD drivers */
 
-#ifdef CONFIG_FS_ROMFS
-extern const struct mountpt_operations romfs_operations;
-#endif
 #ifdef CONFIG_FS_LITTLEFS
 extern const struct mountpt_operations littlefs_operations;
 #endif
 
 static const struct fsmap_t g_mdfsmap[] =
 {
-#ifdef CONFIG_FS_ROMFS
-    { "romfs", &romfs_operations },
-#endif
 #ifdef CONFIG_FS_LITTLEFS
     { "littlefs", &littlefs_operations },
 #endif
@@ -95,30 +113,36 @@ static const struct fsmap_t g_mdfsmap[] =
 #ifdef NODFS_SUPPORT
 /* File systems that require neither block nor MTD drivers */
 
-#ifdef CONFIG_FS_TMPFS
-extern const struct mountpt_operations tmpfs_operations;
+#ifdef CONFIG_FS_CROMFS
+extern const struct mountpt_operations cromfs_operations;
 #endif
-#ifdef CONFIG_FS_BINFS
-extern const struct mountpt_operations binfs_operations;
-#endif
-#ifdef CONFIG_FS_PROCFS
-extern const struct mountpt_operations procfs_operations;
+#ifdef CONFIG_FS_FATFS
+extern const struct mountpt_operations fatfs_operations;
 #endif
 
 static const struct fsmap_t g_nonbdfsmap[] =
 {
-#ifdef CONFIG_FS_TMPFS
-    { "tmpfs", &tmpfs_operations },
+#ifdef CONFIG_FS_CROMFS
+    { "cromfs", &cromfs_operations },
 #endif
-#ifdef CONFIG_FS_BINFS
-    { "binfs", &binfs_operations },
-#endif
-#ifdef CONFIG_FS_PROCFS
-    { "procfs", &procfs_operations },
+#ifdef CONFIG_FS_FATFS
+    { "vfat",   &fatfs_operations },
 #endif
     { NULL, NULL },
 };
 #endif /* NODFS_SUPPORT */
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: mount_findfs
+ *
+ * Description:
+ *    find the specified filesystem
+ *
+ ****************************************************************************/
 
 #if defined(BDFS_SUPPORT) || defined(MDFS_SUPPORT) || defined(NODFS_SUPPORT)
 static const struct mountpt_operations *
@@ -135,6 +159,25 @@ mount_findfs(const struct fsmap_t *fstab, const char *filesystemtype)
 }
 #endif
 
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: nx_mount
+ *
+ * Description:
+ *   nx_mount() is similar to the standard 'mount' interface except that is
+ *   not a cancellation point and it does not modify the errno variable.
+ *
+ *   nx_mount() is an internal NuttX interface and should not be called from
+ *   applications.
+ *
+ * Returned Value:
+ *   Zero is returned on success; a negated value is returned on any failure.
+ *
+ ****************************************************************************/
+
 int nx_mount(const char *source, const char *target,
              const char *filesystemtype, unsigned long mountflags,
              const void *data)
@@ -147,6 +190,10 @@ int nx_mount(const char *source, const char *target,
     void *fshandle;
     int ret;
 
+    /* Verify required pointer arguments */
+
+    DEBUGASSERT(target && filesystemtype);
+
     /* Find the specified filesystem. Try the block driver filesystems first */
     if (source != NULL &&
         find_blockdriver(source, mountflags, &drvr_inode) >= 0)
@@ -157,11 +204,13 @@ int nx_mount(const char *source, const char *target,
         mops = mount_findfs(g_bdfsmap, filesystemtype);
 #endif
         if (mops == NULL) {
-            // ferr("ERROR: Failed to find block based file system %s\n",
-            //     filesystemtype);
+
+            ferr("ERROR: Failed to find block based file system %s\n",
+                filesystemtype);
             ret = -ENODEV;
             goto errout_with_inode;
         }
+
     } else if (source != NULL &&
             (ret = find_mtddriver(source, &drvr_inode)) >= 0)
     {
@@ -171,8 +220,9 @@ int nx_mount(const char *source, const char *target,
         mops = mount_findfs(g_mdfsmap, filesystemtype);
 #endif
         if (mops == NULL) {
-            // ferr("ERROR: Failed to find MTD based file system %s\n",
-            //      filesystemtype);
+
+            ferr("ERROR: Failed to find MTD based file system %s\n",
+                filesystemtype);
             ret = -ENODEV;
             goto errout_with_inode;
         }
@@ -207,7 +257,8 @@ int nx_mount(const char *source, const char *target,
         */
 
         if (!INODE_IS_PSEUDODIR(mountpt_inode)) {
-            // ferr("ERROR: target %s exists and is a special node\n", target);
+
+            ferr("ERROR: target %s exists and is a special node\n", target);
             ret = -ENOTDIR;
             inode_release(mountpt_inode);
             goto errout_with_semaphore;
@@ -220,17 +271,17 @@ int nx_mount(const char *source, const char *target,
         */
         ret = inode_reserve(target, 0777, &mountpt_inode);
         if (ret < 0) {
-          /* inode_reserve can fail for a couple of reasons, but the most
-           * likely one is that the inode already exists. inode_reserve may
-           * return:
-           *
-           *  -EINVAL - 'path' is invalid for this operation
-           *  -EEXIST - An inode already exists at 'path'
-           *  -ENOMEM - Failed to allocate in-memory resources for the
-           *            operation
-           */
+            /* inode_reserve can fail for a couple of reasons, but the most
+            * likely one is that the inode already exists. inode_reserve may
+            * return:
+            *
+            *  -EINVAL - 'path' is invalid for this operation
+            *  -EEXIST - An inode already exists at 'path'
+            *  -ENOMEM - Failed to allocate in-memory resources for the
+            *            operation
+            */
 
-            // ferr("ERROR: Failed to reserve inode for target %s\n", target);
+            ferr("ERROR: Failed to reserve inode for target %s\n", target);
             goto errout_with_semaphore;
         }
     }
@@ -242,7 +293,8 @@ int nx_mount(const char *source, const char *target,
 
     if (mops->bind == NULL) {
         /* The filesystem does not support the bind operation ??? */
-        // ferr("ERROR: Filesystem does not support bind\n");
+
+        ferr("ERROR: Filesystem does not support bind\n");
         ret = -EINVAL;
         goto errout_with_mountpt;
     }
@@ -271,7 +323,7 @@ int nx_mount(const char *source, const char *target,
         * error.
         */
 
-        // ferr("ERROR: Bind method failed: %d\n", ret);
+        ferr("ERROR: Bind method failed: %d\n", ret);
 
 #if defined(BDFS_SUPPORT) || defined(MDFS_SUPPORT)
 #ifdef NODFS_SUPPORT
@@ -330,10 +382,34 @@ errout:
     return ret;
 
 #else
-    // ferr("ERROR: No filesystems enabled\n");
+    // ERROR: No filesystems enabled
     return -ENOSYS;
 #endif /* BDFS_SUPPORT || MDFS_SUPPORT || NODFS_SUPPORT */
 }
+
+/****************************************************************************
+ * Name: mount
+ *
+ * Description:
+ *   mount() attaches the filesystem specified by the 'source' block device
+ *   name into the root file system at the path specified by 'target.'
+ *
+ * Returned Value:
+ *   Zero is returned on success; -1 is returned on an error and errno is
+ *   set appropriately:
+ *
+ *   EACCES A component of a path was not searchable or mounting a read-only
+ *      filesystem was attempted without giving the MS_RDONLY flag.
+ *   EBUSY 'source' is already  mounted.
+ *   EFAULT One of the pointer arguments points outside the user address
+ *      space.
+ *   EINVAL 'source' had an invalid superblock.
+ *   ENODEV 'filesystemtype' not configured
+ *   ENOENT A pathname was empty or had a nonexistent component.
+ *   ENOMEM Could not allocate a memory to copy filenames or data into.
+ *   ENOTBLK 'source' is not a block device
+ *
+ ****************************************************************************/
 
 int mount(const char *source, const char *target,
           const char *filesystemtype, unsigned long mountflags,
@@ -342,11 +418,12 @@ int mount(const char *source, const char *target,
     int ret;
 
     ret = nx_mount(source, target, filesystemtype, mountflags, data);
+
     if (ret < 0) {
+
         set_errno(-ret);
         ret = -1; /* ERROR */
     }
 
     return ret;
 }
-

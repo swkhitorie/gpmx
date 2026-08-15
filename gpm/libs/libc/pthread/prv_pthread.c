@@ -1,11 +1,14 @@
+#include <gpmx/config.h>
 #include "prv_pthread.h"
+#include <string.h>
 
 #if defined(CONFIG_RTTNANO_ENABLE)
-RT_DEFINE_HW_SPINLOCK(pth_lock);
+RT_DEFINE_SPINLOCK(pth_lock);
 _pthread_data_t *pth_table[PTHREAD_NUM_MAX] = {NULL};
 
 _pthread_data_t *_pthread_get_data(pthread_t thread)
 {
+    RT_DECLARE_SPINLOCK(pth_lock);
     _pthread_data_t *ptd;
 
     if (thread >= PTHREAD_NUM_MAX) {
@@ -26,6 +29,7 @@ _pthread_data_t *_pthread_get_data(pthread_t thread)
 pthread_t _pthread_data_get_pth(_pthread_data_t *ptd)
 {
     int index;
+    RT_DECLARE_SPINLOCK(pth_lock);
 
     rt_hw_spin_lock(&pth_lock);
     for (index = 0; index < PTHREAD_NUM_MAX; index ++) {
@@ -40,6 +44,7 @@ pthread_t _pthread_data_create(void)
 {
     int index;
     _pthread_data_t *ptd = NULL;
+    RT_DECLARE_SPINLOCK(pth_lock);
 
     ptd = (_pthread_data_t*)rt_malloc(sizeof(_pthread_data_t));
     if (!ptd) {
@@ -69,78 +74,46 @@ pthread_t _pthread_data_create(void)
     return index;
 }
 
-static inline void _destroy_item(int index, _pthread_data_t *ptd)
-{
-    extern _pthread_key_data_t _thread_keys[PTHREAD_KEY_MAX];
-    void *data;
-
-    if (_thread_keys[index].is_used) {
-        data = ptd->tls[index];
-        if (data && _thread_keys[index].destructor) {
-            _thread_keys[index].destructor(data);
-        }
-    }
-}
-
 void _pthread_data_destroy(_pthread_data_t *ptd)
 {
+    RT_DECLARE_SPINLOCK(pth_lock);
+
+    extern _pthread_key_data_t _thread_keys[PTHREAD_KEY_MAX];
     pthread_t pth;
 
     if (ptd) {
+
         /* if this thread create the local thread data,
          * destruct thread local key
          */
         if (ptd->tls != RT_NULL) {
-            int index;
-#ifdef RT_USING_CPLUSPLUS11
-            /* If C++11 is enabled and emutls is used,
-             * destructors of C++ object must be called safely.
-             */
-            extern pthread_key_t emutls_get_pthread_key(void);
-            pthread_key_t emutls_pthread_key = emutls_get_pthread_key();
-
-            if (emutls_pthread_key != NOT_USE_CXX_TLS) {
-                /* If execution reaches here, C++ 'thread_local' may be used.
-                 * Destructors of c++ class object must be called before emutls_key_destructor.
-                 */
-                int start = ((emutls_pthread_key - 1 + PTHREAD_KEY_MAX) % PTHREAD_KEY_MAX);
-                int i = 0;
-                for (index = start; i < PTHREAD_KEY_MAX; index = (index - 1 + PTHREAD_KEY_MAX) % PTHREAD_KEY_MAX, i ++)
-                {
-                    _destroy_item(index, ptd);
-                }
-            } else
-#endif
-            {
-                /* If only C TLS is used, that is, POSIX TLS or __Thread_local,
-                 * just iterate the _thread_keys from index 0.
-                 */
-                for (index = 0; index < PTHREAD_KEY_MAX; index ++)
-                {
-                    _destroy_item(index, ptd);
+            void *data;
+            rt_uint32_t index;
+            for (index = 0; index < PTHREAD_KEY_MAX; index ++) {
+                if (_thread_keys[index].is_used) {
+                    data = ptd->tls[index];
+                    if (data && _thread_keys[index].destructor) {
+                        _thread_keys[index].destructor(data);
+                    }
                 }
             }
-            /* release tls area */
+
             rt_free(ptd->tls);
             ptd->tls = RT_NULL;
         }
 
         pth  = _pthread_data_get_pth(ptd);
-        /* remove from pthread table */
         rt_hw_spin_lock(&pth_lock);
         pth_table[pth] = NULL;
         rt_hw_spin_unlock(&pth_lock);
 
-        /* delete joinable semaphore */
         if (ptd->joinable_sem != RT_NULL) {
             rt_sem_delete(ptd->joinable_sem);
             ptd->joinable_sem = RT_NULL;
         }
 
-        /* clean magic */
         ptd->magic = 0x0;
-
-        /* free ptd */
+        ptd->tid->pthread_data = RT_NULL;
         rt_free(ptd);
     }
 }

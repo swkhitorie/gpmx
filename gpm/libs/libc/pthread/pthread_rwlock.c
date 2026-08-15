@@ -1,5 +1,6 @@
 #include <pthread.h>
 #include <errno.h>
+#include <gpmx/config.h>
 
 int pthread_rwlockattr_init(pthread_rwlockattr_t *attr)
 {

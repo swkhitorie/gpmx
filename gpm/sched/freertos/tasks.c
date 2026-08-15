@@ -391,8 +391,8 @@ PRIVILEGED_DATA static volatile UBaseType_t uxSchedulerSuspended	= ( UBaseType_t
 
 	/* Do not move these variables to function scope as doing so prevents the
 	code working with debuggers that need to remove the static qualifier. */
-	PRIVILEGED_DATA static uint64_t ulTaskSwitchedInTime = 0UL;	/*< Holds the value of a timer/counter the last time a task was switched in. */
-	PRIVILEGED_DATA static uint64_t ulTotalRunTime = 0UL;		/*< Holds the total amount of execution time as defined by the run time counter clock. */
+	PRIVILEGED_DATA static uint64_t ulTaskSwitchedInTime = 0ULL;	/*< Holds the value of a timer/counter the last time a task was switched in. */
+	PRIVILEGED_DATA static uint64_t ulTotalRunTime = 0ULL;		/*< Holds the total amount of execution time as defined by the run time counter clock. */
 
 #endif
 
@@ -966,7 +966,7 @@ UBaseType_t x;
 
 	#if ( configGENERATE_RUN_TIME_STATS == 1 )
 	{
-		pxNewTCB->ulRunTimeCounter = 0UL;
+		pxNewTCB->ulRunTimeCounter = 0ULL;
 	}
 	#endif /* configGENERATE_RUN_TIME_STATS */
 
@@ -5268,19 +5268,35 @@ char * vTaskName()
 	return pxCurrentTCB->pcTaskName;
 }
 
-void uxTaskStatus(TaskHandle_t xTask, UBaseType_t *stackBase, UBaseType_t *stackHighWater, 
-	UBaseType_t *stackSize, UBaseType_t *stackUsed)
+void uxTaskStatus(TaskHandle_t xTask, TaskTrace_t *trace)
 {
 	TCB_t *pxTCB;
 	pxTCB = prvGetTCBFromHandle( xTask );
 
 #if ( ( portSTACK_GROWTH > 0 ) || ( configRECORD_STACK_HIGH_ADDRESS == 1 ) )
-    *stackSize = (pxTCB->pxEndOfStack - pxTCB->pxStack + 1);
+    trace->stackSize = (pxTCB->pxEndOfStack - pxTCB->pxStack + 1) * sizeof(StackType_t);
 #else
-    *stackSize = pxTCB->uxSizeOfStack * sizeof(StackType_t);
+    trace->stackSize = pxTCB->uxSizeOfStack * sizeof(StackType_t);
 #endif
 
-	*stackBase = (UBaseType_t)(pxTCB->pxStack);
-	*stackUsed = (*stackSize) - (uxTaskGetStackHighWaterMark(pxTCB) * sizeof(StackType_t));
-    *stackHighWater = (UBaseType_t)((*stackBase) + (*stackUsed));
+	trace->stackBase = (UBaseType_t)(pxTCB->pxStack);
+	trace->stackUsed = (trace->stackSize) - (uxTaskGetStackHighWaterMark(pxTCB) * sizeof(StackType_t));
+
+#if ( portSTACK_GROWTH > 0 )
+    trace->stackHighWater = (UBaseType_t)((trace->stackBase) + (trace->stackUsed));
+#else
+    trace->stackHighWater = (UBaseType_t)((trace->stackBase) - (trace->stackUsed));
+#endif
+
+#if ( configUSE_TRACE_FACILITY == 1 )
+	trace->taskNum = pxTCB->uxTaskNumber;
+#endif
+#if ( configUSE_MUTEXES == 1 )
+	trace->BasePriority = pxTCB->uxBasePriority;
+	trace->mutexHeld = pxTCB->uxMutexesHeld;
+#endif
+#if( configUSE_TASK_NOTIFICATIONS == 1 )
+	trace->notifiedState = pxTCB->ucNotifyState;
+	trace->notifiedValue = pxTCB->ulNotifiedValue;
+#endif
 }

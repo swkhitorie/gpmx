@@ -28,6 +28,7 @@ void sensors_group_start(int argc, char **argv)
 
 extern "C" void main_root(void *p)
 {
+    workqueue_manager_start();
     uorb_manager_initialize();
 
     sensors_group_start(0, nullptr);

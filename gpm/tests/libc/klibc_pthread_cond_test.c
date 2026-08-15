@@ -1,8 +1,6 @@
-#include <board_config.h>
+#include <gpmx/config.h>
 
-#ifndef TEST_PRINTF
-#define TEST_PRINTF    BOARD_PRINTF
-#endif
+#include <mlog.h>
 
 #include <pthread.h>
 #include <stdio.h>
@@ -30,13 +28,13 @@ void* worker(void* arg)
 
     pthread_mutex_lock(&mutex);
     waiting_count++;
-    TEST_PRINTF("Worker %d: waiting... (waiting_count=%d)\n", id, waiting_count);
+    KMRAW("Worker %d: waiting... (waiting_count=%d)\n", id, waiting_count);
     while (!condition_met) {
         pthread_cond_wait(&cond, &mutex);
     }
 
     awakened_count++;
-    TEST_PRINTF("Worker %d: awakened (awakened_count=%d)\n", id, awakened_count);
+    KMRAW("Worker %d: awakened (awakened_count=%d)\n", id, awakened_count);
     pthread_mutex_unlock(&mutex);
 
     return NULL;
@@ -48,7 +46,7 @@ int klibc_pthread_cond_test(int argc, char **argv)
     int ids[NUM_WORKERS];
     int i;
 
-    TEST_PRINTF("=== Multiple waiters test with broadcast ===\n");
+    KMRAW("=== Multiple waiters test with broadcast ===\n");
 
     for (i = 0; i < NUM_WORKERS; i++) {
         ids[i] = i + 1;
@@ -65,13 +63,13 @@ int klibc_pthread_cond_test(int argc, char **argv)
 
     usleep(100000);
 
-    TEST_PRINTF("Main: setting condition and broadcasting...\n");
+    KMRAW("Main: setting condition and broadcasting...\n");
 
 #if defined(CONFIG_FREERTOS_ENABLE)
     // NUM_WORKERS of pthread state -> SUSPENDED
     static char pstr2[512];
     vTaskList(pstr2);
-    TEST_PRINTF("\r\n%s\r\n", pstr2);
+    KMRAW("\r\n%s\r\n", pstr2);
 #endif
 
     pthread_mutex_lock(&mutex);
@@ -83,11 +81,11 @@ int klibc_pthread_cond_test(int argc, char **argv)
         pthread_join(threads[i], NULL);
     }
 
-    TEST_PRINTF("Main: awakened_count = %d (expected %d)\n", awakened_count, NUM_WORKERS);
+    KMRAW("Main: awakened_count = %d (expected %d)\n", awakened_count, NUM_WORKERS);
     if (awakened_count == NUM_WORKERS) {
-        TEST_PRINTF("=== TEST PASSED ===\n");
+        KMRAW("=== TEST PASSED ===\n");
     } else {
-        TEST_PRINTF("=== TEST FAILED ===\n");
+        KMRAW("=== TEST FAILED ===\n");
     }
 
     pthread_mutex_destroy(&mutex);

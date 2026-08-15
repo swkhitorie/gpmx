@@ -1,14 +1,14 @@
-GPM is a microcontroller project template that integrates open-source components
+| Directory | Description                                     |
+| --------- | ----------------------------------------------- |
+| boards    | chip library and boards support pack            |
+| gpm       | rtos kernel, drivers, lib, and other components |
+| tools     | toolchains run script                           |
+
+GPMX is a personal mcu project that integrates open-source components
 
 ## directory Structure
 
-| Directory | Description                                          |
-| --------- | ---------------------------------------------------- |
-| boards    | chip library and boards support pack                 |
-| kernel    | rtos kernel, drivers interface, and kernel component |
-| libs      | components souces files                              |
-| make      | build makefiles                                      |
-| tools     | build scripts                                        |
+
 
 ## component list
 
@@ -21,7 +21,7 @@ GPM is a microcontroller project template that integrates open-source components
 
 ## toolchain
 
-Edit Toolchain path in ./make/toolchain.sh:
+Edit Toolchain path in tools/toolchain.sh:
 
 ```bash
 linux:
@@ -39,12 +39,12 @@ add toolchain to windows system variables
 
 STM32 :
 
-|           | F1           | F4 | H7 | WL |
-| --------- | ------------ | -- | -- | -- |
-| GPIO/EXTI | **√** | √ | √ | √ |
-| RTC       | √           | √ | √ | √ |
-| USART     | √           | √ | √ | √ |
-| I2C       | √           | √ | √ | × |
-| SPI       | √           | √ | √ | × |
-| CAN       | √           | √ | × | × |
-| ETH       | √           | √ | √ | × |
+|           | F1  | F4 | H7 | WL |
+| --------- | --- | -- | -- | -- |
+| GPIO/EXTI | √  | √ | √ | √ |
+| RTC       | √  | √ | √ | √ |
+| USART     | √  | √ | √ | √ |
+| I2C       | √  | √ | √ | × |
+| SPI       | √  | √ | √ | × |
+| CAN       | √  | √ | × | × |
+| ETH       | √  | √ | √ | × |

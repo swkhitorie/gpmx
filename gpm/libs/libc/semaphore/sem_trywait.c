@@ -1,5 +1,6 @@
 #include <semaphore.h>
 #include <errno.h>
+#include <gpmx/config.h>
 
 int sem_trywait(sem_t *sem)
 {
@@ -11,17 +12,26 @@ int sem_trywait(sem_t *sem)
         return -1;
     }
 
-    result = rt_sem_take(sem->sem, 0);
+#if defined(CONFIG_LIBC_SEMAPHORE_INHERIT)
+    if (sem->protocol == SEM_PRIO_INHERIT) {
+        result = rt_mutex_take(sem->mutex, 0);
+    } else
+#endif
+    {
+        result = rt_sem_take(sem->sem, 0);
+    }
+
     if (result == -RT_ETIMEOUT) {
         rt_set_errno(EAGAIN);
         return -1;
     }
-    if (result == RT_EOK) {
-        return 0;
+
+    if (result != RT_EOK) {
+        rt_set_errno(EINTR);
+        return -1;
     }
 
-    rt_set_errno(EINTR);
-    return -1;
+    return 0;
 #elif defined(CONFIG_FREERTOS_ENABLE)
 
     int ret = 0;

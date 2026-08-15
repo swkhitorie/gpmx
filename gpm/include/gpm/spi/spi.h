@@ -1,7 +1,8 @@
 #ifndef DEV_OPS_SPI_H_
 #define DEV_OPS_SPI_H_
 
-#include "gpm/sched.h"
+#include <gpmx/config.h>
+#include "driver/drv_sched.h"
 
 /****************************************************************************
  * Name: SPI_LOCK
@@ -99,6 +100,24 @@
 
 #define SPI_SETBITS(d,b) \
     do { if ((d)->ops->setbits) (d)->ops->setbits(d,b); } while (0)
+
+/****************************************************************************
+ * Name: SPI_SEND
+ *
+ * Description:
+ *   Exchange one word on SPI. Required.
+ *
+ * Input Parameters:
+ *   dev - Device-specific state data
+ *   wd  - The word to send.  The size of the data is determined by the
+ *         number of bits selected for the SPI interface.
+ *
+ * Returned Value:
+ *   Received value
+ *
+ ****************************************************************************/
+
+#define SPI_SEND(d,wd) ((d)->ops->send(d,(uint16_t)(wd)))
 
 /****************************************************************************
  * Name: SPI_SNDBLOCK
@@ -275,6 +294,8 @@ struct spi_ops_s
 
     int (*exchangeblock)(struct spi_dev_s *dev,
         const void *txbuffer, void *rxbuffer, size_t nwords);
+
+    uint32_t (*send)(struct spi_dev_s *dev, uint32_t wd);
 
     int (*sndblock)(struct spi_dev_s *dev, const void *buffer, size_t nwords);
 

@@ -6,11 +6,15 @@ param_num=$#
 
 if [ ${makefile_os} != "Linux" ]
 then
-    armcc_path=$1
-    armclang_path=$2
-    armgcc_path=$3
-    shift 3
+    armcc_path=$(busybox dirname "$(busybox dirname $(busybox which armcc.exe 2>/dev/null | head -n 1))")
+    armclang_path=$(busybox dirname "$(busybox dirname $(busybox which armclang.exe 2>/dev/null | head -n 1))")
+    armgcc_path=$(busybox dirname "$(busybox dirname $(busybox which arm-none-eabi-gcc.exe 2>/dev/null | head -n 1))")
 fi
+
+echo "-- $(make --version | head -n 1)"
+echo "-- compiler gae:     " ${armgcc_path}
+echo "-- compiler armcc:   " ${armcc_path}
+echo "-- compiler armclang:" ${armclang_path}
 
 OPTS=$(getopt -o j:ra:umb:ve: --long jobs:,rebuild,app_path:,uorb,mavlink,board:,virtualmachine,entry: -- "$@") || exit 1
 eval set -- "$OPTS"
@@ -24,7 +28,7 @@ mavlink_generate=0
 mavlink_including=""
 build_board=""
 virtual_environment=0
-test_entry=""
+test_entry="null_test_item"
 while true; do
     case "$1" in
         -j | --jobs)
@@ -76,30 +80,25 @@ fi
 
 if [ $rebuild_flag -eq 1 ];then
     bash ${script_dir}/clean.sh $app_subpath $build_board "$@"
-    echo "Rebuilding..."
-else
-    echo "Building..."
 fi
 
 uorb_generate_path=${script_dir}/../build/${app_subpath}
-if [ $uorb_generate -eq 1 ]; then
-    if [ ! -d ${uorb_generate_path} ];then
-        mkdir -p ${uorb_generate_path}
-    fi
-    bash ${script_dir}/msg/uorb_msg_generate.sh ${script_dir}/../apps/${app_subpath}/msg/ ${uorb_generate_path}
+uorb_msg_path=${script_dir}/../apps/${app_subpath}/msg/
+bash ${script_dir}/../gpm/tools/msg/uorb_msg_generate.sh ${uorb_msg_path} ${uorb_generate_path} ${uorb_generate}
+exit_code=$?
+if [ ${exit_code} == 0 ]; then
     uorb_including="${uorb_generate_path}/;"
     uorb_enable=y
-    exit_code=$?
-    if [ ${exit_code} != 0 ]; then
-        echo "uorb_msg_generate.sh exec failed"
-        exit 1
-    fi
+else
+    echo "[uorb] exec failed ${uorb_generate}"
+    uorb_including=
+    uorb_enable=n
 fi
 
 mavlink_generate_path=${script_dir}/../build/${app_subpath}/mavlink
 if [ $mavlink_generate -eq 1 ]; then
-    bash ${script_dir}/mavlink/generate.sh ${mavlink_generate_path} common
-    bash ${script_dir}/mavlink/generate.sh ${mavlink_generate_path} development
+    bash ${script_dir}/genmavlink.sh ${mavlink_generate_path} common
+    bash ${script_dir}/genmavlink.sh ${mavlink_generate_path} development
     mavlink_including+="${mavlink_generate_path};"
     mavlink_including+="${mavlink_generate_path}/common;"
     mavlink_including+="${mavlink_generate_path}/development;"
@@ -109,10 +108,6 @@ if [ $mavlink_generate -eq 1 ]; then
         exit 1
     fi
 fi
-
-echo "Path[gcc-arm ]:" ${armgcc_path}
-echo "Path[armcc   ]:" ${armcc_path}
-echo "Path[armclang]:" ${armclang_path}
 
 if [ ${param_num} -lt 1 ]; then
     echo "Params error, usage: build.sh <app subpath> <make thread> <-r>"
@@ -138,10 +133,13 @@ build_time=$(date +"%Y%m%d_%H%M%S")
 
 BEAR_COMMAND=bear
 if command -v bear >/dev/null 2>&1; then
-    echo "bear found, using intercepted build"
+    :
 else
+    echo "[bear] not found"
     BEAR_COMMAND=""
 fi
+
+echo "[make] building..."
 
 ${BEAR_COMMAND} make all -j${jobs_count} \
     APP_SUBPATH=${app_subpath} \
@@ -151,7 +149,7 @@ ${BEAR_COMMAND} make all -j${jobs_count} \
     TC_PATH_INST_ARMCC=${armcc_path} \
     TC_PATH_INST_ARMCLANG=${armclang_path} \
     BUILD_USR_BOARD=${build_board} \
-    MK_USE_KERNEL_UORB=${uorb_enable} \
+    CONFIG_MODULE_UORB=${uorb_enable} \
     MAVLINK_INCLUDING=${mavlink_including} \
     UORB_INCLUDING=${uorb_including} \
     TEST_ENTRY=${test_entry} \
@@ -200,7 +198,7 @@ if [ ! -d ${shared_path} ] || [ ! -d ${target_shared_path} ];then
     exit 1
 fi
 
-echo "copy to shared path ${target_shared_path}"
+echo "[bin] copy to shared path ${target_shared_path}"
 cp ${proj_bin} ${target_shared_path}
 cp ${proj_hex} ${target_shared_path}
 cp ${proj_elf} ${target_shared_path}

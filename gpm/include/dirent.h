@@ -1,9 +1,37 @@
+/****************************************************************************
+ * include/dirent.h
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
 #ifndef __INCLUDE_DIRENT_H
 #define __INCLUDE_DIRENT_H
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
 
 #include <sys/types.h>
 #include <stdint.h>
 #include <limits.h>
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
 
 /* File type code for the d_type field in dirent structure.
  * Note that because of the simplified filesystem organization of the NuttX,
@@ -64,17 +92,21 @@
  * serial number.  This functionality is not implemented in NuttX.
  */
 
+/****************************************************************************
+ * Public Type Definitions
+ ****************************************************************************/
+
 struct dirent
 {
-  uint8_t  d_type;                /* Type of file */
-  char     d_name[NAME_MAX + 1];  /* File name */
+    uint8_t  d_type;                /* Type of file */
+    char     d_name[NAME_MAX + 1];  /* File name */
 };
 
-// typedef struct
-// {
-//   int fd;
-//   struct dirent entry;
-// } DIR;
+typedef struct
+{
+    int fd;
+    struct dirent entry;
+} DIR;
 
 #undef EXTERN
 #if defined(__cplusplus)
@@ -85,28 +117,32 @@ extern "C"
 #define EXTERN extern
 #endif
 
+/****************************************************************************
+ * Public Function Prototypes
+ ****************************************************************************/
+
 /* POSIX-like File System Interfaces */
+int            closedir(DIR *dirp);
+DIR           *opendir(const char *path);
+struct dirent *readdir(DIR *dirp);
 
-// int        closedir(DIR *dirp);
-// DIR       *opendir(const char *path);
-// struct dirent *readdir(DIR *dirp);
-// int        readdir_r(DIR *dirp, struct dirent *entry,
-//                      struct dirent **result);
-// void       rewinddir(DIR *dirp);
-// void       seekdir(DIR *dirp, off_t loc);
-// off_t      telldir(DIR *dirp);
-// int        scandir(const char *path, struct dirent ***namelist,
-//                    int (*filter)(const struct dirent *),
-//                    int (*compar)(const struct dirent **,
-//                                 const struct dirent **));
-// int        alphasort(const struct dirent **a,
-//                      const struct dirent **b);
+int        readdir_r(DIR *dirp, struct dirent *entry,
+                     struct dirent **result);
+void       rewinddir(DIR *dirp);
+void       seekdir(DIR *dirp, off_t loc);
+off_t      telldir(DIR *dirp);
+int        scandir(const char *path, struct dirent ***namelist,
+                   int (*filter)(const struct dirent *),
+                   int (*compar)(const struct dirent **,
+                                const struct dirent **));
+int        alphasort(const struct dirent **a,
+                     const struct dirent **b);
 
-// int        dirfd(DIR *dirp);
+int        dirfd(DIR *dirp);
 
 #undef EXTERN
 #if defined(__cplusplus)
 }
 #endif
 
-#endif
+#endif /* __INCLUDE_DIRENT_H */

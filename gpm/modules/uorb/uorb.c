@@ -1,25 +1,28 @@
+#include <gpmx/config.h>
+
 #include "uorb_common.h"
 #include "uorb_manager.h"
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
-orb_advert_t orb_advertise(struct orb_metadata *meta, const void *data)
+orb_advert_t orb_advertise(const struct orb_metadata *meta, const void *data)
 {
 	return orb_manager_advertise(uorb_manager_instance(), meta, data, 1);
 }
 
-orb_advert_t orb_advertise_queue(struct orb_metadata *meta, const void *data, unsigned int queue_size)
+orb_advert_t orb_advertise_queue(const struct orb_metadata *meta, const void *data, unsigned int queue_size)
 {
 	return orb_manager_advertise(uorb_manager_instance(), meta, data, queue_size);
 }
 
-orb_advert_t orb_advertise_multi(struct orb_metadata *meta, const void *data, int *instance, enum ORB_PRIO priority)
+orb_advert_t orb_advertise_multi(const struct orb_metadata *meta, const void *data, int *instance, enum ORB_PRIO priority)
 {
 	return orb_manager_advertise_multi(uorb_manager_instance(), meta, data, instance, priority, 1);
 }
 
-orb_advert_t orb_advertise_multi_queue(struct orb_metadata *meta, const void *data, int *instance,
+orb_advert_t orb_advertise_multi_queue(const struct orb_metadata *meta, const void *data, int *instance,
                             enum ORB_PRIO priority, unsigned int queue_size)
 {
 	return orb_manager_advertise_multi(uorb_manager_instance(), meta, data, instance, priority, queue_size);
@@ -30,17 +33,17 @@ int orb_unadvertise(orb_advert_t handle)
 	return orb_manager_unadvertise(uorb_manager_instance(), handle);
 }
 
-int orb_publish(struct orb_metadata *meta, orb_advert_t handle, const void *data)
+int orb_publish(const struct orb_metadata *meta, orb_advert_t handle, const void *data)
 {
 	return orb_manager_publish(uorb_manager_instance(), meta, handle, data);
 }
 
-int orb_subscribe(struct orb_metadata *meta)
+int orb_subscribe(const struct orb_metadata *meta)
 {
 	return orb_manager_subscribe(uorb_manager_instance(), meta);
 }
 
-int orb_subscribe_multi(struct orb_metadata *meta, unsigned instance)
+int orb_subscribe_multi(const struct orb_metadata *meta, unsigned instance)
 {
 	return orb_manager_subscribe_multi(uorb_manager_instance(), meta, instance);
 }
@@ -50,7 +53,7 @@ int orb_unsubscribe(int handle)
 	return orb_manager_unsubscribe(uorb_manager_instance(), handle);
 }
 
-int orb_copy(struct orb_metadata *meta, int handle, void *buffer)
+int orb_copy(const struct orb_metadata *meta, int handle, void *buffer)
 {
 	return orb_manager_copy(uorb_manager_instance(), meta, handle, buffer);
 }
@@ -60,12 +63,12 @@ int orb_check(int handle, bool *updated)
 	return orb_manager_check(uorb_manager_instance(), handle, updated);
 }
 
-int orb_exists(struct orb_metadata *meta, int instance)
+int orb_exists(const struct orb_metadata *meta, int instance)
 {
 	return orb_manager_exists(uorb_manager_instance(), meta, instance);
 }
 
-int orb_group_count(struct orb_metadata *meta)
+int orb_group_count(const struct orb_metadata *meta)
 {
 	unsigned instance = 0;
 
@@ -91,7 +94,7 @@ int orb_get_interval(int handle, unsigned *interval)
 	return orb_manager_get_interval(uorb_manager_instance(), handle, interval);
 }
 
-int uorb_node_mkpath(char *buf, struct orb_metadata *meta, int *instance)
+int uorb_node_mkpath(char *buf, const struct orb_metadata *meta, int *instance)
 {
     unsigned len;
     unsigned index = 0;
@@ -126,7 +129,44 @@ int uorb_node_mkpath2(char *buf, const char *orbMsgName)
     return 0;
 }
 
-#if defined(CONFIG_MODULE_GPMSHELL)
+const char *orb_get_c_type(unsigned char short_type)
+{
+	// this matches with the uorb o_fields generator
+	switch (short_type) {
+	case 0x82: return "int8_t";
+
+	case 0x83: return "int16_t";
+
+	case 0x84: return "int32_t";
+
+	case 0x85: return "int64_t";
+
+	case 0x86: return "uint8_t";
+
+	case 0x87: return "uint16_t";
+
+	case 0x88: return "uint32_t";
+
+	case 0x89: return "uint64_t";
+
+	case 0x8a: return "float";
+
+	case 0x8b: return "double";
+
+	case 0x8c: return "bool";
+
+	case 0x8d: return "char";
+	}
+
+	return NULL;
+}
+
+void orb_print_message_internal(const const struct orb_metadata *meta, const void *data, bool print_topic_name)
+{
+
+}
+
+#if defined(CONFIG_GMSH)
 #include "gmsh.h"
 int uorb_main(int argc, char **argv)
 {

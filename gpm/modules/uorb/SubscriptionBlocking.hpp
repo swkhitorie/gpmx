@@ -7,9 +7,11 @@
 #include "uorb_device_node.h"
 #include "uorb_manager.h"
 
-#include "container/intrusive_node.h"
+
 #include <time.h>
 #include <pthread.h>
+
+#include "container/intrusive_node.h"
 
 namespace uORB
 {

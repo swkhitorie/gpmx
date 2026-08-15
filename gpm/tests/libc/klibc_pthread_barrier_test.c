@@ -1,8 +1,6 @@
-#include <board_config.h>
+#include <gpmx/config.h>
 
-#ifndef TEST_PRINTF
-#define TEST_PRINTF    BOARD_PRINTF
-#endif
+#include <mlog.h>
 
 #include <pthread.h>
 #include <stdio.h>
@@ -20,16 +18,16 @@ void* thread_func(void* arg)
     int id = *(int*)arg;
     int rc;
 
-    TEST_PRINTF("Thread %d: before barrier\n", id);
+    KMRAW("Thread %d: before barrier\n", id);
     usleep(100000 * id);
 
     rc = pthread_barrier_wait(&barrier);
     if (rc != 0 && rc != PTHREAD_BARRIER_SERIAL_THREAD) {
-        TEST_PRINTF("Thread %d: barrier wait failed (rc=%d)\n", id, rc);
+        KMRAW("Thread %d: barrier wait failed (rc=%d)\n", id, rc);
         return NULL;
     }
 
-    TEST_PRINTF("Thread %d: after barrier\n", id);
+    KMRAW("Thread %d: after barrier\n", id);
 
     pthread_mutex_lock(&counter_mutex);
     counter++;
@@ -46,7 +44,7 @@ int klibc_pthread_barrier_test(int argc, char **argv)
 
     rc = pthread_barrier_init(&barrier, NULL, NUM_THREADS);
     if (rc != 0) {
-        TEST_PRINTF("pthread_barrier_init failed \r\n");
+        KMRAW("pthread_barrier_init failed \r\n");
         return -1;
     }
 
@@ -54,7 +52,7 @@ int klibc_pthread_barrier_test(int argc, char **argv)
         thread_ids[i] = i;
         rc = pthread_create(&threads[i], NULL, thread_func, &thread_ids[i]);
         if (rc != 0) {
-            TEST_PRINTF("pthread_create failed\r\n");
+            KMRAW("pthread_create failed\r\n");
             return -1;
         }
     }
@@ -65,12 +63,12 @@ int klibc_pthread_barrier_test(int argc, char **argv)
 
     pthread_barrier_destroy(&barrier);
 
-    TEST_PRINTF("All threads finished, counter = %d (expected %d)\n", counter, NUM_THREADS);
+    KMRAW("All threads finished, counter = %d (expected %d)\n", counter, NUM_THREADS);
     if (counter == NUM_THREADS) {
-        TEST_PRINTF("Test passed.\n");
+        KMRAW("Test passed.\n");
         return 0;
     } else {
-        TEST_PRINTF("Test failed.\n");
+        KMRAW("Test failed.\n");
         return 1;
     }
 }

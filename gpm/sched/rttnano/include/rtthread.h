@@ -159,6 +159,7 @@ rt_err_t rt_thread_mdelay(rt_int32_t ms);
 rt_err_t rt_thread_control(rt_thread_t thread, int cmd, void *arg);
 rt_err_t rt_thread_suspend(rt_thread_t thread);
 rt_err_t rt_thread_resume(rt_thread_t thread);
+rt_err_t rt_thread_rename(rt_thread_t thread, const char *name);
 
 #ifdef RT_USING_SIGNALS
 void rt_thread_alloc_sig(rt_thread_t tid);
@@ -203,6 +204,10 @@ void rt_scheduler_switch_sethook(void (*hook)(struct rt_thread *tid));
 
 #ifdef RT_USING_SMP
 void rt_scheduler_ipi_handler(int vector, void *param);
+#endif
+
+#ifdef RT_USING_CPU_USAGE
+rt_uint64_t rt_scheduler_total_runtime(void);
 #endif
 
 /**@}*/

@@ -1,4 +1,5 @@
 #include <pthread.h>
+#include <gpmx/config.h>
 
 int pthread_spin_init(pthread_spinlock_t *lock, int pshared)
 {

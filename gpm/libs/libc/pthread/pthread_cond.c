@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include <errno.h>
+#include <gpmx/config.h>
 
 #include "utils.h"
 
@@ -90,7 +91,7 @@ rt_err_t _pthread_cond_timedwait(pthread_cond_t *cond,
                 rt_thread_suspend(thread);
 
                 /* Only support FIFO */
-                rt_list_insert_before(&(sem->parent.suspend_thread), &RT_THREAD_LIST_NODE(thread));
+                rt_list_insert_before(&(sem->parent.suspend_thread), &(thread->tlist));
 
                 /**
                 rt_ipc_list_suspend(&(sem->parent.suspend_thread),
@@ -218,7 +219,7 @@ int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr)
         return EINVAL;
     }
 
-    if ((attr != RT_NULL) && (*attr != PTHREAD_PROCESS_PRIVATE)) {
+    if ((attr != RT_NULL) && (attr->pshared != PTHREAD_PROCESS_PRIVATE)) {
         return EINVAL;
     }
 
@@ -363,7 +364,7 @@ int pthread_cond_signal(pthread_cond_t *cond)
         return EINVAL;
     }
 
-    if (cond->attr == -1) {
+    if (cond->attr.pshared == -1) {
         pthread_cond_init(cond, RT_NULL);
     }
 
@@ -475,11 +476,9 @@ int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex)
     return pthread_cond_timedwait(cond, mutex, (const struct timespec *)NULL);
 #elif defined(CONFIG_RTTNANO_ENABLE)
 
-    int timeout;
     rt_err_t result;
 
-    timeout = rt_timespec_to_tick(abstime);
-    result = _pthread_cond_timedwait(cond, mutex, timeout);
+    result = _pthread_cond_timedwait(cond, mutex, RT_WAITING_FOREVER);
     if (result == RT_EOK){
         return 0;
     }

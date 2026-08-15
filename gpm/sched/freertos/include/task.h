@@ -142,7 +142,7 @@ typedef struct xTASK_STATUS
 	eTaskState eCurrentState;		/* The state in which the task existed when the structure was populated. */
 	UBaseType_t uxCurrentPriority;	/* The priority at which the task was running (may be inherited) when the structure was populated. */
 	UBaseType_t uxBasePriority;		/* The priority to which the task will return if the task's current priority has been inherited to avoid unbounded priority inversion when obtaining a mutex.  Only valid if configUSE_MUTEXES is defined as 1 in FreeRTOSConfig.h. */
-	uint32_t ulRunTimeCounter;		/* The total run time allocated to the task so far, as defined by the run time stats clock.  See http://www.freertos.org/rtos-run-time-stats.html.  Only valid when configGENERATE_RUN_TIME_STATS is defined as 1 in FreeRTOSConfig.h. */
+	uint64_t ulRunTimeCounter;		/* The total run time allocated to the task so far, as defined by the run time stats clock.  See http://www.freertos.org/rtos-run-time-stats.html.  Only valid when configGENERATE_RUN_TIME_STATS is defined as 1 in FreeRTOSConfig.h. */
 	StackType_t *pxStackBase;		/* Points to the lowest address of the task's stack area. */
 	configSTACK_DEPTH_TYPE usStackHighWaterMark;	/* The minimum amount of stack space that has remained for the task since the task was created.  The closer this value is to zero the closer the task has come to overflowing its stack. */
 } TaskStatus_t;
@@ -2411,8 +2411,19 @@ TaskHandle_t pvTaskIncrementMutexHeldCount( void ) PRIVILEGED_FUNCTION;
  */
 void vTaskInternalSetTimeOutState( TimeOut_t * const pxTimeOut ) PRIVILEGED_FUNCTION;
 
-void uxTaskStatus(TaskHandle_t xTask, UBaseType_t *stackBase, UBaseType_t *stackHighWater, 
-	UBaseType_t *stackSize, UBaseType_t *stackUsed);
+typedef struct __task_trace {
+	UBaseType_t stackBase;
+	UBaseType_t stackHighWater;
+	UBaseType_t stackSize;
+	UBaseType_t stackUsed;
+	UBaseType_t taskNum;
+	UBaseType_t BasePriority;
+	UBaseType_t mutexHeld;
+	uint8_t notifiedState;
+	uint32_t notifiedValue;
+} TaskTrace_t;
+
+void uxTaskStatus(TaskHandle_t xTask, TaskTrace_t *trace);
 
 #ifdef __cplusplus
 }

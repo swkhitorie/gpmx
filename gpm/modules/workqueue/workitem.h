@@ -1,12 +1,13 @@
 #ifndef WORK_ITEM_H_
 #define WORK_ITEM_H_
 
-#include <stdint.h>
-#include "container/intrusive_node.h"
+#include <gpmx/config.h>
 
+#include <stdint.h>
+#include <driver/drv_hrt.h>
 #include "workqueue_manager.h"
 #include "workqueue.h"
-#include "gpm/drv_hrt.h"
+#include "container/intrusive_node.h"
 
 typedef void (*workitem_entry)(void *);
 

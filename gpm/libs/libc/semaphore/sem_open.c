@@ -1,6 +1,7 @@
 #include <semaphore.h>
 #include <fcntl.h>
 #include "prv_sem.h"
+#include <gpmx/config.h>
 
 sem_t *sem_open(const char *name, int oflag, ...)
 {
@@ -34,11 +35,21 @@ sem_t *sem_open(const char *name, int oflag, ...)
         }
 
         /* create RT-Thread semaphore */
+#if defined(CONFIG_LIBC_SEMAPHORE_INHERIT)
+        sem->protocol = SEM_PRIO_INHERIT;
+        sem->sem      = RT_NULL;
+        sem->mutex = rt_mutex_create(name, RT_IPC_FLAG_FIFO);
+        if (sem->mutex == RT_NULL) { 
+            rt_set_errno(ENFILE);
+            goto __return;
+        }
+#else
         sem->sem = rt_sem_create(name, value, RT_IPC_FLAG_FIFO);
         if (sem->sem == RT_NULL) {
             rt_set_errno(ENFILE);
             goto __return;
         }
+#endif
 
         /* initialize reference count */
         sem->refcount = 1;

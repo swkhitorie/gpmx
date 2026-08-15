@@ -1,5 +1,4 @@
-ifeq (${MK_USE_KERNEL_POSIX_TIMER},y)
-PROJ_CDEFS += CONFIG_MODULE_KPOSIX_TIMER
+ifeq (${CONFIG_LIBC_TIMER},y)
 CSOURCES += ${GPMPATH}/libs/libc/timer/prv_timer.c
 CSOURCES += ${GPMPATH}/libs/libc/timer/timer_create.c
 CSOURCES += ${GPMPATH}/libs/libc/timer/timer_delete.c

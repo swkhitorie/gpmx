@@ -1,5 +1,11 @@
-#ifndef POSIX_PTHREAD_H_
-#define POSIX_PTHREAD_H_
+#ifndef __INCLUDE_PTHREAD_H
+#define __INCLUDE_PTHREAD_H
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
+#include <gpmx/config.h>
 
 #include <stdint.h>
 #include <sched.h>
@@ -13,17 +19,28 @@
 #include <task.h>
 #include <semphr.h>
 #include <event_groups.h>
+#elif defined(CONFIG_RTTNANO_ENABLE)
+
+#include <rthw.h>
+#include <rtthread.h>
+#endif
+
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
+
+#if defined(CONFIG_FREERTOS_ENABLE)
+
 #define CONFIG_PTHREAD_STACK_MIN          (configMINIMAL_STACK_SIZE * sizeof(BaseType_t))
 #define CONFIG_PTHREAD_STACK_DEFAULT      (CONFIG_PTHREAD_STACK_MIN * 2)
 #define CONFIG_PTHREAD_GUARDSIZE_DEFAULT  (CONFIG_PTHREAD_STACK_DEFAULT)
 #define CONFIG_PTHREAD_COND_MAX_WAITERS   (4)
 #elif defined(CONFIG_RTTNANO_ENABLE)
 
-#include <rthw.h>
-#include <rtthread.h>
-#define CONFIG_PTHREAD_STACK_MIN          (128 * sizeof(BaseType_t))
+#define CONFIG_PTHREAD_STACK_MIN          (128 * 4)
 #define CONFIG_PTHREAD_STACK_DEFAULT      (CONFIG_PTHREAD_STACK_MIN * 2)
 #define CONFIG_PTHREAD_GUARDSIZE_DEFAULT  (CONFIG_PTHREAD_STACK_DEFAULT)
+#define PTHREAD_KEY_MAX                   (8)
 #endif
 
 /* Values for the process shared (pshared) attribute */
@@ -88,6 +105,7 @@
 
 #define PTHREAD_CANCEL_DEFERRED       (0)
 #define PTHREAD_CANCEL_ASYNCHRONOUS   (1)
+#define PTHREAD_CANCELED              (2)
 
 /* This is returned by pthread_barrier_wait.  It must not match any errno
  * in errno.h
@@ -125,9 +143,23 @@
     }))
 #elif defined(CONFIG_RTTNANO_ENABLE)
 
-#define PTHREAD_COND_INITIALIZER    {-1}
-#define PTHREAD_MUTEX_INITIALIZER   {-1}
+#define PTHREAD_COND_INITIALIZER \
+    (((pthread_cond_t)           \
+    {                            \
+        .attr = -1,              \
+    }))
+
+#define PTHREAD_MUTEX_INITIALIZER \
+    (((pthread_mutex_t)           \
+    {                             \
+        .attr = -1,               \
+    }))
+
 #endif
+
+/********************************************************************************
+ * Public Type Definitions
+ ********************************************************************************/
 
 #if defined(CONFIG_FREERTOS_ENABLE)
 typedef void* pthread_t;
@@ -223,9 +255,10 @@ extern "C"
 #define EXTERN extern
 #endif
 
-/****************************************************************************
- * pthread thread interface
- ****************************************************************************/
+/********************************************************************************
+ * Public Function Prototypes
+ ********************************************************************************/
+
 int pthread_attr_destroy(pthread_attr_t *attr);
 int pthread_attr_init(pthread_attr_t *attr);
 int pthread_attr_setdetachstate(pthread_attr_t *attr, int state);
@@ -358,9 +391,19 @@ int pthread_barrier_destroy(pthread_barrier_t *barrier);
 int pthread_barrier_init(pthread_barrier_t *barrier, const pthread_barrierattr_t *attr, unsigned count);
 int pthread_barrier_wait(pthread_barrier_t *barrier);
 
+void *pthread_getspecific(pthread_key_t key);
+int pthread_setspecific(pthread_key_t key, const void *value);
+int pthread_key_create(pthread_key_t *key, void (*destructor)(void*));
+int pthread_key_delete(pthread_key_t key);
+
+struct filelist;
+struct streamlist;
+struct filelist *pt_sched_get_files(void);
+struct streamlist *pt_sched_get_streams(void);
+
 #undef EXTERN
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* __INCLUDE_PTHREAD_H */

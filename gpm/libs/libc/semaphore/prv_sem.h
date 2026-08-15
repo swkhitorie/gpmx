@@ -1,6 +1,7 @@
 #ifndef PRIVATE_SEM_H_
 #define PRIVATE_SEM_H_
 
+#include <gpmx/config.h>
 #include <semaphore.h>
 
 #ifdef __cplusplus

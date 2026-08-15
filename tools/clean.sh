@@ -15,6 +15,7 @@ fi
 
 shift 2
 
+echo "[make] cleaning..."
 make clean distclean \
     APP_SUBPATH=${app_subpath} \
     OS=${makefile_os} \
