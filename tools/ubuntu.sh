@@ -72,6 +72,15 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get -y --quiet --no-install-recommends i
 	bear \
 	;
 
+sudo apt install \
+bison flex gettext texinfo libncurses5-dev libncursesw5-dev xxd \
+git gperf automake libtool pkg-config build-essential gperf genromfs \
+libgmp-dev libmpc-dev libmpfr-dev libisl-dev binutils-dev libelf-dev \
+libexpat1-dev gcc-multilib g++-multilib picocom u-boot-tools util-linux
+
+sudo apt install kconfig-frontends
+sudo apt install gcc-arm-none-eabi binutils-arm-none-eabi
+
 # Python3 dependencies
 echo
 echo "[ubuntu.sh] Installing PX4 Python3 dependencies"
