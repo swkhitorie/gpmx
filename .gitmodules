@@ -7,8 +7,8 @@
 [submodule "nuttx/nuttx"]
 	path = nuttx/nuttx
 	url = https://github.com/swkhitorie/nuttx.git
-	branch = releases/11.0
+	branch = releases/12.12
 [submodule "nuttx/apps"]
 	path = nuttx/apps
 	url = https://github.com/swkhitorie/nuttx-apps.git
-	branch = releases/11.0
+	branch = releases/12.12
