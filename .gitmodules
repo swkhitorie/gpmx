@@ -4,9 +4,6 @@
 [submodule "gpm/usb/CherryUSB"]
 	path = gpm/usb/CherryUSB
 	url = https://github.com/cherry-embedded/CherryUSB.git
-[submodule "apps/libs/ulog_cpp"]
-	path = apps/libs/ulog_cpp
-	url = https://github.com/PX4/ulog_cpp.git
 [submodule "nuttx/nuttx"]
 	path = nuttx/nuttx
 	url = https://github.com/swkhitorie/nuttx.git
