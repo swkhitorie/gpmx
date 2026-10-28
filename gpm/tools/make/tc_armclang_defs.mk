@@ -101,6 +101,9 @@ TC_ASMOPTS:=\
 ifeq (${BUILD_LIB_USE_NANO},y)
 TC_ASMOPTS+= -Wa,armasm,--pd,"__MICROLIB SETA 1"
 endif
+ifeq ($(BUILD_COMPILE_NO_DEBUG),y)
+TC_ASMOPTS += -g0
+endif
 
 # Assembly compiler defines
 TC_ASMDEFS:=
@@ -123,6 +126,10 @@ ifneq (${BUILD_CXX_STANDARD},)
 TC_CPPOPTS += -std=${BUILD_CXX_STANDARD}
 endif
 
+ifeq ($(BUILD_COMPILE_NO_DEBUG),y)
+TC_COPTS += -g0
+TC_CPPOPTS += -g0
+endif
 
 # C compiler defines
 TC_CDEFS:=
@@ -141,11 +148,20 @@ TC_LIBOPTS:=\
   --info=totals                           \
   --info=unused                           \
   --info=veneers                          \
-  --info=stack                            \
   --diag_style=gnu                        \
   --diag_suppress=6314,9931               \
   --verbose                               \
   --load_addr_map_info
+
+ifeq ($(BUILD_COMPILE_NO_DEBUG),y)
+TC_LIBOPTS += --no_debug --no_comment_section
+else
+TC_LIBOPTS += --info=stack
+endif
+
+ifeq ($(BUILD_LINK_EXPORT_SYMBOLS),y)
+TC_LIBOPTS += --base_platform --export_dynamic
+endif
 
 # Scatter file extension
 TC_SCFEXT:=sct
@@ -186,7 +202,11 @@ MK_TC_GENHEX=$(if $(and ${1},${2}),@${TC_GENHEX} -c --i32 -o ${2} ${1})
 # command to disassembly output file
 # 1 - input file
 # 2 - output file
+ifeq ($(BUILD_COMPILE_NO_DEBUG),y)
+MK_TC_DISASSEMBLY=$(if $(and ${1},${2}), @${TC_DUMP} -c ${1} -o ${2})
+else
 MK_TC_DISASSEMBLY=$(if $(and ${1},${2}), @${TC_DUMP} -c -a ${1} -o ${2})
+endif
 
 # more accurate compilation result analysis cmd
 # 1 - input file

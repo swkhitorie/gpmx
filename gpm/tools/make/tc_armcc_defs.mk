@@ -105,6 +105,11 @@ TC_COPTS:= --c99 \
 TC_CPPOPTS:= --cpp   \
   ${TC_SOURCEOPTS}
 
+ifeq ($(BUILD_COMPILE_NO_DEBUG),y)
+TC_COPTS += --no_debug
+TC_CPPOPTS += --no_debug
+endif
+
 # Linker options
 TC_LIBOPTS:=\
   --libpath=$(call MK_PATHTOUNX,${TC_PATH_LIB}) \
@@ -120,8 +125,17 @@ TC_LIBOPTS:=\
   --info totals                           \
   --info unused                           \
   --info veneers                          \
-  --info stack                            \
   ${TC_LIB_SELECT}
+
+ifeq ($(BUILD_COMPILE_NO_DEBUG),y)
+TC_LIBOPTS += --no_debug --no_comment_section
+else
+TC_LIBOPTS += --info stack
+endif
+
+ifeq ($(BUILD_LINK_EXPORT_SYMBOLS),y)
+TC_LIBOPTS += --base_platform --export_dynamic
+endif
 
 # Scatter file extension
 TC_SCFEXT:=sct
@@ -162,7 +176,11 @@ MK_TC_GENHEX=$(if $(and ${1},${2}),@${TC_GENHEX} -c --i32 -o ${2} ${1})
 # command to disassembly output file
 # 1 - input file
 # 2 - output file
+ifeq ($(BUILD_COMPILE_NO_DEBUG),y)
+MK_TC_DISASSEMBLY=$(if $(and ${1},${2}), @${TC_DUMP} -c ${1} -o ${2})
+else
 MK_TC_DISASSEMBLY=$(if $(and ${1},${2}), @${TC_DUMP} -c -a ${1} -o ${2})
+endif
 
 # more accurate compilation result analysis cmd
 # 1 - input file

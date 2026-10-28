@@ -97,7 +97,11 @@ endif
 
 # Assembly compiler options
 TC_ASMOPTS:=\
-  -c -gdwarf-2                  
+  -c -gdwarf-2    
+
+ifeq ($(BUILD_COMPILE_NO_DEBUG),y)
+TC_ASMOPTS += -g0
+endif
 
 TC_DBG_ASMOPTS:=
   # -g                    \
@@ -105,6 +109,10 @@ TC_DBG_ASMOPTS:=
 
 # Assembly compiler defines
 TC_ASMDEFS:=
+
+ifeq ($(BUILD_COMPILE_NO_DEBUG),y)
+TC_SOURCEOPTS += -g0
+endif
 
 # C compiler options
 TC_COPTS:=\
@@ -122,6 +130,11 @@ TC_CPPOPTS:=\
   -fno-use-cxa-atexit
 ifneq (${BUILD_CXX_STANDARD},)
 TC_CPPOPTS += -std=${BUILD_CXX_STANDARD}
+endif
+
+ifeq ($(BUILD_LINK_RELOCATABLE),y)
+TC_COPTS   += -fPIC
+TC_CPPOPTS += -fPIC
 endif
 
 TC_DBG_COPTS:=
@@ -145,6 +158,14 @@ TC_LIBOPTS:=\
   -lm                        \
   ${EXT_LIBOPTS}             \
   ${TC_LIB_SELECT}
+
+ifeq ($(BUILD_COMPILE_NO_DEBUG),y)
+TC_LIBOPTS += -Wl,--strip-debug
+endif
+
+ifeq ($(BUILD_LINK_EXPORT_SYMBOLS),y)
+TC_LIBOPTS += -Wl,--export-dynamic
+endif
 
 ifeq (${BUILD_LINK_PRINTF_FLOAT},y)
 TC_LIBOPTS += -u _printf_float 
@@ -203,7 +224,11 @@ MK_TC_GENHEX=$(if $(and ${1},${2}),@${TC_GENHEX} -O ihex ${1} ${2})
 # command to disassembly output file
 # 1 - input file
 # 2 - output file
+ifeq ($(BUILD_COMPILE_NO_DEBUG),y)
+MK_TC_DISASSEMBLY=$(if $(and ${1},${2}), @${TC_DUMP} -h -d ${1} > "${2}")
+else
 MK_TC_DISASSEMBLY=$(if $(and ${1},${2}), @${TC_DUMP} -h -S ${1} > "${2}")
+endif
 
 # more accurate compilation result analysis cmd
 # 1 - input file
