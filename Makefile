@@ -16,15 +16,11 @@ SDK_DIR_CUR = $(CURRENT_DIR)
 
 SDK_ROOTDIR := ${SDK_DIR_MK}
 
-GPMPATH     := gpm
-GPMPATHABS  := ${SDK_ROOTDIR}/${GPMPATH}
-
-BUILD_CONFIG_FILE := ${SDK_ROOTDIR}/apps/app_config.mk
-include ${BUILD_CONFIG_FILE}
-
-# Absolute path to makefiles
+GPMPATH           := gpm
+GPMPATHABS        := ${SDK_ROOTDIR}/${GPMPATH}
 MAKEFILES_ROOTDIR := ${GPMPATHABS}/tools
 
-# including common build makefile
+ifneq ($(wildcard ${SDK_ROOTDIR}/apps/${APP_SUBPATH}/config.mk),)
+include ${SDK_ROOTDIR}/apps/${APP_SUBPATH}/config.mk
 include $(MAKEFILES_ROOTDIR)/make/build.mk
-all: prebuild build postbuild
+endif

@@ -51,7 +51,7 @@ static double varerr(const prcopt_t *opt, double el, int sys)
     fact=sys==SYS_GLO?EFACT_GLO:(sys==SYS_SBS?EFACT_SBS:EFACT_GPS);
     if (el<MIN_EL) el=MIN_EL;
     varr=SQR(opt->err[0])*(SQR(opt->err[1])+SQR(opt->err[2])/sin(el));
-    if (opt->ionoopt==IONOOPT_IFLC) varr*=SQR(3.0); /* iono-rtkfree */
+    if (opt->ionoopt==IONOOPT_IFLC) varr*=SQR(3.0); /* iono-rtkport_free */
     return SQR(fact)*varr;
 }
 /* get group delay parameter (m) ---------------------------------------------*/
@@ -451,13 +451,13 @@ static int estpos(const obsd_t *obs, int n, const double *rs, const double *dts,
             if ((stat=valsol(azel,vsat,n,opt,v,nv,NX,msg))) {
                 sol->stat=opt->sateph==EPHOPT_SBAS?SOLQ_SBAS:SOLQ_SINGLE;
             }
-            rtkfree(v); rtkfree(H); rtkfree(var);
+            rtkport_free(v); rtkport_free(H); rtkport_free(var);
             return stat;
         }
     }
     if (i>=MAXITR) sprintf(msg,"iteration divergent i=%d",i);
     
-    rtkfree(v); rtkfree(H); rtkfree(var);
+    rtkport_free(v); rtkport_free(H); rtkport_free(var);
     return 0;
 }
 /* RAIM FDE (failure detection and exclution) -------------------------------*/
@@ -474,7 +474,7 @@ static int raim_fde(const obsd_t *obs, int n, const double *rs,
     
     trace(3,"raim_fde: %s n=%2d\n",time_str(obs[0].time,0),n);
     
-    if (!(obs_e=(obsd_t *)rtkmalloc(sizeof(obsd_t)*n))) return 0;
+    if (!(obs_e=(obsd_t *)rtkport_malloc(sizeof(obsd_t)*n))) return 0;
     rs_e = mat(6,n); dts_e = mat(2,n); vare_e=mat(1,n); azel_e=zeros(2,n);
     svh_e=imat(1,n); vsat_e=imat(1,n); resp_e=mat(1,n); 
     
@@ -529,9 +529,9 @@ static int raim_fde(const obsd_t *obs, int n, const double *rs,
         time2str(obs[0].time,tstr,2); satno2id(sat,name);
         trace(2,"%s: %s excluded by raim\n",tstr+11,name);
     }
-    rtkfree(obs_e);
-    rtkfree(rs_e ); rtkfree(dts_e ); rtkfree(vare_e); rtkfree(azel_e);
-    rtkfree(svh_e); rtkfree(vsat_e); rtkfree(resp_e);
+    rtkport_free(obs_e);
+    rtkport_free(rs_e ); rtkport_free(dts_e ); rtkport_free(vare_e); rtkport_free(azel_e);
+    rtkport_free(svh_e); rtkport_free(vsat_e); rtkport_free(resp_e);
     return stat;
 }
 /* range rate residuals ------------------------------------------------------*/
@@ -618,7 +618,7 @@ static void estvel(const obsd_t *obs, int n, const double *rs, const double *dts
             break;
         }
     }
-    rtkfree(v); rtkfree(H);
+    rtkport_free(v); rtkport_free(H);
 }
 /* single-point positioning ----------------------------------------------------
 * compute receiver position, velocity, clock bias by single-point positioning
@@ -691,6 +691,6 @@ extern int pntpos(const obsd_t *obs, int n, const nav_t *nav,
             ssat[obs[i].sat-1].resp[0]=resp[i];
         }
     }
-    rtkfree(rs); rtkfree(dts); rtkfree(var); rtkfree(azel_); rtkfree(resp);
+    rtkport_free(rs); rtkport_free(dts); rtkport_free(var); rtkport_free(azel_); rtkport_free(resp);
     return stat;
 }

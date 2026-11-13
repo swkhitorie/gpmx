@@ -211,7 +211,7 @@ ${OBJS_FOLDER}/%.o: %.S ${ASMOPTS_FILE} ${CINC_FILE} ${GLOBAL_CMACROS_FILE}
 #
 # Executable target
 #
-${TARGET_SRC_FILENAME_EXE}: ${LOPTS_FILE} ${SCF_FILE_NAME} ${OBJS_FOLDER} ${PROJ_OBJS} ${LOPTS_FILE}
+${TARGET_SRC_FILENAME_EXE}: ${LOPTS_FILE} ${SCF_FILE_NAME} ${OBJS_FOLDER} ${PROJ_OBJS}
 	$(call MK_ECHO,Linking to $(subst ${SDK_ROOTDIR}/,,$@))
 	@${TC_LINK} -o $@ ${PROJ_OBJS} \
 	${LINK_ADEP} \
@@ -227,6 +227,13 @@ ${TARGET_SRC_FILENAME_EXE}: ${LOPTS_FILE} ${SCF_FILE_NAME} ${OBJS_FOLDER} ${PROJ
 ${TARGET_LIBS}: ${LOPTS_FILE} ${OBJS_FOLDER} ${PROJ_OBJS}
 	$(call MK_ECHO,Creating static library $@)
 	@${TC_AR} -rc $@ ${PROJ_OBJS}
+
+#
+# target app
+#
+${TARGET_APP}: ${LOPTS_FILE} ${OBJS_FOLDER} ${PROJ_OBJS}
+	$(call MK_ECHO,Link to app $(subst ${SDK_ROOTDIR}/,,$@))
+	@${TC_LINK} -o $@ ${PROJ_OBJS} ${LINK_ADEP}
 
 #
 # Binary target
@@ -254,16 +261,17 @@ FORCE:
 prebuild: ${TARGET_ROOTDIR} ${ASMOPTS_FILE} ${COPTS_FILE} ${LOPTS_FILE} ${GLOBAL_CMACROS_FILE} ${USER_COMMAND_PREBUILD} ${USER_FILE_PREBUILD}
 
 # build makefile target
-ifeq ($(BUILD_TYPE),exe)
+ifeq ($(BUILD_TYPE),firmware)
 build: ${TARGET_SRC_FILENAME_EXE}
 else ifeq ($(BUILD_TYPE),lib)
 build: ${TARGET_LIBS}
-else ifeq ($(BUILD_TYPE),both)
-build: ${TARGET_SRC_FILENAME_EXE} ${TARGET_LIBS}
+else ifeq ($(BUILD_TYPE),app)
+build: ${TARGET_APP}
 endif
 
 # apply default configuration target
 postbuild: ${TARGET_POSTBUILD} ${USER_FILE_POSTBUILD} ${USER_COMMAND_POSTBUILD}
+	@:
 
 #
 # exported targets

@@ -60,9 +60,9 @@ static tec_t *addtec(const double *lats, const double *lons, const double *hgts,
     
     if (nav->nt>=nav->ntmax) {
         nav->ntmax+=256;
-        if (!(nav_tec=(tec_t *)rtkmalloc(nav->tec,sizeof(tec_t)*nav->ntmax))) {
-            trace(1,"readionex rtkmalloc error ntmax=%d\n",nav->ntmax);
-            rtkfree(nav->tec); nav->tec=NULL; nav->nt=nav->ntmax=0;
+        if (!(nav_tec=(tec_t *)rtkport_malloc(nav->tec,sizeof(tec_t)*nav->ntmax))) {
+            trace(1,"readionex rtkport_malloc error ntmax=%d\n",nav->ntmax);
+            rtkport_free(nav->tec); nav->tec=NULL; nav->nt=nav->ntmax=0;
             return NULL;
         }
         nav->tec=nav_tec;
@@ -78,8 +78,8 @@ static tec_t *addtec(const double *lats, const double *lons, const double *hgts,
     }
     n=ndata[0]*ndata[1]*ndata[2];
     
-    if (!(p->data=(double *)rtkmalloc(sizeof(double)*n))||
-        !(p->rms =(float  *)rtkmalloc(sizeof(float )*n))) {
+    if (!(p->data=(double *)rtkport_malloc(sizeof(double)*n))||
+        !(p->rms =(float  *)rtkport_malloc(sizeof(float )*n))) {
         return NULL;
     }
     for (i=0;i<n;i++) {
@@ -255,8 +255,8 @@ static void combtec(nav_t *nav)
     // }
     // for (i=0;i<nav->nt;i++) {
     //     if (i>0&&timediff(nav->tec[i].time,nav->tec[n-1].time)==0.0) {
-    //         rtkfree(nav->tec[n-1].data);
-    //         rtkfree(nav->tec[n-1].rms );
+    //         rtkport_free(nav->tec[n-1].data);
+    //         rtkport_free(nav->tec[n-1].rms );
     //         nav->tec[n-1]=nav->tec[i];
     //         continue;
     //     }
@@ -288,11 +288,11 @@ extern void readtec(const char *file, nav_t *nav, int opt)
     
     /* clear of tec grid data option */
     if (!opt) {
-        rtkfree(nav->tec); nav->tec=NULL; nav->nt=nav->ntmax=0;
+        rtkport_free(nav->tec); nav->tec=NULL; nav->nt=nav->ntmax=0;
     }
     for (i=0;i<MAXEXFILE;i++) {
-        if (!(efiles[i]=(char *)rtkmalloc(1024))) {
-            for (i--;i>=0;i--) rtkfree(efiles[i]);
+        if (!(efiles[i]=(char *)rtkport_malloc(1024))) {
+            for (i--;i>=0;i--) rtkport_free(efiles[i]);
             return;
         }
     }
@@ -314,7 +314,7 @@ extern void readtec(const char *file, nav_t *nav, int opt)
         
         fclose(fp);
     }
-    for (i=0;i<MAXEXFILE;i++) rtkfree(efiles[i]);
+    for (i=0;i<MAXEXFILE;i++) rtkport_free(efiles[i]);
     
     /* combine tec grid data */
     if (nav->nt>0) combtec(nav);

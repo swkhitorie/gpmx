@@ -44,11 +44,14 @@ COREDEFSINC := ${MAKEFILES_COMMONDIR}/core_${MOD_ARCH}_defs.mk
 # List of all incdefs files
 DEFSINCLIST := ${TCDEFSINC} ${COREDEFSINC}
 
+PROJ_CDEFS += $(foreach v, $(sort $(filter CONFIG_% , $(.VARIABLES))), $v=$($v))
+
 #####################################
 # include toolchain, core and OS definitions
 #####################################
 include ${TCDEFSINC}
-ifeq (${MAKE_TARGET_CLEANS},n)
+
+ifeq ($(BUILD_TYPE)|$(filter build,$(MAKECMDGOALS)),firmware|build)
 include ${COREDEFSINC}
 endif
 
@@ -90,6 +93,8 @@ MACROS_FILE := ${TARGET_ROOTDIR}/macros.via
 GLOBAL_CMACROS_PATH := ${TARGET_ROOTDIR}/gpmx
 GLOBAL_CMACROS_FILE := ${GLOBAL_CMACROS_PATH}/config.h
 
+PROJ_CINCDIRS+=${TARGET_ROOTDIR_RAW}
+
 # C options file
 LOPTS_FILE := ${TARGET_ROOTDIR}/lopts.via
 
@@ -108,11 +113,12 @@ SCF_FILE_NAME:=${TARGET_ROOTDIR}/${PROJ_NAME}_gen_link.${TC_SCFEXT}
 # definitions for local folder target outputs
 TARGET_SRC_FILENAME_EXE    :=${TARGET_ROOTDIR}/${PROJ_NAME}.${TC_SUFFIX}
 TARGET_LIBS                :=${TARGET_ROOTDIR}/${PROJ_NAME}.${TC_LIB_SUFFIX}
+TARGET_APP                 :=${TARGET_ROOTDIR}/${PROJ_NAME}
 TARGET_SRC_FILENAME_LIST   :=${TARGET_ROOTDIR}/${PROJ_NAME}.${MOD_LNKLSTEXT}
 TARGET_SRC_FILENAME_DISASM :=${TARGET_ROOTDIR}/${PROJ_NAME}.list
 
 # definitions for binary folder target outputs
-ifneq ($(BUILD_TYPE),lib)
+ifeq ($(BUILD_TYPE),firmware)
 TARGET_POSTBUILD:=${TARGET_DEST_FILENAME_BIN}
 endif
 
@@ -148,7 +154,6 @@ CPPOPTS:=$(strip ${TC_CPPOPTS} ${TC_DBG_COPTS} ${CORE_COPTS} ${PROJ_COPTS} ${EXT
 
 CDEFS:=$(foreach def,$(strip ${TC_CDEFS} ${OS_CDEFS} ${EXT_CDEFS}),-D${def})
 
-PROJ_CINCDIRS+=${TARGET_ROOTDIR_RAW}
 CINCDIRS:=$(foreach inc,$(strip ${PROJ_CINCDIRS} ${OS_CINCDIRS} ${EXT_CINCDIRS}),-I$(call MK_TC_PATH,${SDK_ROOTDIR}/${inc}))
 CINCDIRS_FILSRC:=$(foreach inc,$(strip ${PROJ_CINCDIRS} ${OS_CINCDIRS} ${EXT_CINCDIRS}),$(call MK_TC_PATH,${SDK_ROOTDIR}/${inc}))
 ifneq (${USR_ROOTDIR},)

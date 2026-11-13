@@ -92,7 +92,9 @@ extern int init_rtcm(rtcm_t *rtcm)
         rtcm->sta.pos[i]=rtcm->sta.del[i]=0.0;
     }
     rtcm->sta.hgt=0.0;
+#if defined(CONFIG_RTKLIB_DGPS_ENABLE)
     rtcm->dgps=NULL;
+#endif
     for (i=0;i<MAXSAT;i++) {
 #if defined(CONFIG_RTKLIB_SSR_ENABLE)
         rtcm->ssr[i]=ssr0;
@@ -122,22 +124,34 @@ extern int init_rtcm(rtcm_t *rtcm)
 #endif
 
     /* reallocate memory for observation and ephemeris buffer */
-    if (!(rtcm->obs.data=(obsd_t *)rtkmalloc(sizeof(obsd_t)*MAXOBS))||
-        !(rtcm->nav.eph =(eph_t  *)rtkmalloc(sizeof(eph_t )*MAXSAT*2))
+    if (!(rtcm->obs.data=(obsd_t *)rtkport_malloc(sizeof(obsd_t)*MAXOBS))||
+#if defined(CONFIG_RTKLIB_EPH_FNAV_ENABLE)
+        !(rtcm->nav.eph =(eph_t  *)rtkport_malloc(sizeof(eph_t )*MAXSAT*2))
+#else
+        !(rtcm->nav.eph =(eph_t  *)rtkport_malloc(sizeof(eph_t )*MAXSAT))
+#endif
 #if defined(ENAGLO)
-        ||!(rtcm->nav.geph=(geph_t *)rtkmalloc(sizeof(geph_t)*MAXPRNGLO))
+        ||!(rtcm->nav.geph=(geph_t *)rtkport_malloc(sizeof(geph_t)*MAXPRNGLO))
 #endif
         ) {
         free_rtcm(rtcm);
         return 0;
     }
     rtcm->obs.n=0;
+#if defined(CONFIG_RTKLIB_EPH_FNAV_ENABLE)
     rtcm->nav.n=MAXSAT*2;
+#else
+    rtcm->nav.n=MAXSAT;
+#endif
 #if defined(ENAGLO)
     rtcm->nav.ng=MAXPRNGLO;
 #endif
     for (i=0;i<MAXOBS   ;i++) rtcm->obs.data[i]=data0;
+#if defined(CONFIG_RTKLIB_EPH_FNAV_ENABLE)
     for (i=0;i<MAXSAT*2 ;i++) rtcm->nav.eph [i]=eph0;
+#else
+    for (i=0;i<MAXSAT   ;i++) rtcm->nav.eph [i]=eph0;
+#endif
 #if defined(ENAGLO)
     for (i=0;i<MAXPRNGLO;i++) rtcm->nav.geph[i]=geph0;
 #endif
@@ -153,10 +167,10 @@ extern void free_rtcm(rtcm_t *rtcm)
     trace(3,"free_rtcm:\n");
     
     /* free memory for observation and ephemeris buffer */
-    rtkfree(rtcm->obs.data); rtcm->obs.data=NULL; rtcm->obs.n=0;
-    rtkfree(rtcm->nav.eph ); rtcm->nav.eph =NULL; rtcm->nav.n=0;
+    rtkport_free(rtcm->obs.data); rtcm->obs.data=NULL; rtcm->obs.n=0;
+    rtkport_free(rtcm->nav.eph ); rtcm->nav.eph =NULL; rtcm->nav.n=0;
 #if defined(ENAGLO)
-    rtkfree(rtcm->nav.geph); rtcm->nav.geph=NULL; rtcm->nav.ng=0;
+    rtkport_free(rtcm->nav.geph); rtcm->nav.geph=NULL; rtcm->nav.ng=0;
 #endif
 }
 #if defined(CONFIG_RTKLIB_RTCM2_ENABLE)

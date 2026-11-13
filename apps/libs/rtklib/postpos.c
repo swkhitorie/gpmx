@@ -388,7 +388,7 @@ static void procpos(FILE *fp, const prcopt_t *popt, const solopt_t *sopt,
         sol.time=time;
         outsol(fp,&sol,rb,sopt);
     }
-    rtkfree(&rtk);
+    rtkport_free(&rtk);
 }
 /* validation of combined solutions ------------------------------------------*/
 static int valcomb(const sol_t *solf, const sol_t *solb)
@@ -554,7 +554,7 @@ static void readpreceph(char **infile, int n, const prcopt_t *prcopt,
     }
     /* allocate sbas ephemeris */
     nav->ns=nav->nsmax=NSATSBS*2;
-    if (!(nav->seph=(seph_t *)rtkmalloc(sizeof(seph_t)*nav->ns))) {
+    if (!(nav->seph=(seph_t *)rtkport_malloc(sizeof(seph_t)*nav->ns))) {
          showmsg("error : sbas ephem memory allocation");
          trace(1,"error : sbas ephem memory allocation");
          return;
@@ -580,15 +580,15 @@ static void freepreceph(nav_t *nav, sbs_t *sbs)
     
     trace(3,"freepreceph:\n");
     
-    rtkfree(nav->peph); nav->peph=NULL; nav->ne=nav->nemax=0;
-    rtkfree(nav->pclk); nav->pclk=NULL; nav->nc=nav->ncmax=0;
-    rtkfree(nav->seph); nav->seph=NULL; nav->ns=nav->nsmax=0;
-    rtkfree(sbs->msgs); sbs->msgs=NULL; sbs->n =sbs->nmax =0;
+    rtkport_free(nav->peph); nav->peph=NULL; nav->ne=nav->nemax=0;
+    rtkport_free(nav->pclk); nav->pclk=NULL; nav->nc=nav->ncmax=0;
+    rtkport_free(nav->seph); nav->seph=NULL; nav->ns=nav->nsmax=0;
+    rtkport_free(sbs->msgs); sbs->msgs=NULL; sbs->n =sbs->nmax =0;
     for (i=0;i<nav->nt;i++) {
-        rtkfree(nav->tec[i].data);
-        rtkfree(nav->tec[i].rms );
+        rtkport_free(nav->tec[i].data);
+        rtkport_free(nav->tec[i].rms );
     }
-    rtkfree(nav->tec ); nav->tec =NULL; nav->nt=nav->ntmax=0;
+    rtkport_free(nav->tec ); nav->tec =NULL; nav->nt=nav->ntmax=0;
     
     if (fp_rtcm) fclose(fp_rtcm);
     free_rtcm(&rtcm);
@@ -658,10 +658,10 @@ static void freeobsnav(obs_t *obs, nav_t *nav)
 {
     trace(3,"freeobsnav:\n");
     
-    rtkfree(obs->data); obs->data=NULL; obs->n =obs->nmax =0;
-    rtkfree(nav->eph ); nav->eph =NULL; nav->n =nav->nmax =0;
-    rtkfree(nav->geph); nav->geph=NULL; nav->ng=nav->ngmax=0;
-    rtkfree(nav->seph); nav->seph=NULL; nav->ns=nav->nsmax=0;
+    rtkport_free(obs->data); obs->data=NULL; obs->n =obs->nmax =0;
+    rtkport_free(nav->eph ); nav->eph =NULL; nav->n =nav->nmax =0;
+    rtkport_free(nav->geph); nav->geph=NULL; nav->ng=nav->ngmax=0;
+    rtkport_free(nav->seph); nav->seph=NULL; nav->ns=nav->nsmax=0;
 }
 /* average of single position ------------------------------------------------*/
 static int avepos(double *ra, int rcv, const obs_t *obs, const nav_t *nav,
@@ -807,14 +807,14 @@ static void closeses(nav_t *nav, pcvs_t *pcvs, pcvs_t *pcvr)
     trace(3,"closeses:\n");
     
     /* free antenna parameters */
-    rtkfree(pcvs->pcv); pcvs->pcv=NULL; pcvs->n=pcvs->nmax=0;
-    rtkfree(pcvr->pcv); pcvr->pcv=NULL; pcvr->n=pcvr->nmax=0;
+    rtkport_free(pcvs->pcv); pcvs->pcv=NULL; pcvs->n=pcvs->nmax=0;
+    rtkport_free(pcvr->pcv); pcvr->pcv=NULL; pcvr->n=pcvr->nmax=0;
     
     /* close geoid data */
     closegeoid();
     
     /* free erp data */
-    rtkfree(nav->erp.data); nav->erp.data=NULL; nav->erp.n=nav->erp.nmax=0;
+    rtkport_free(nav->erp.data); nav->erp.data=NULL; nav->erp.n=nav->erp.nmax=0;
     
     /* close solution statistics and debug trace */
     rtkclosestat();
@@ -936,7 +936,7 @@ static int execses(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
     }
     /* read erp data */
     if (*fopt->eop) {
-        rtkfree(navs.erp.data); navs.erp.data=NULL; navs.erp.n=navs.erp.nmax=0;
+        rtkport_free(navs.erp.data); navs.erp.data=NULL; navs.erp.n=navs.erp.nmax=0;
         reppath(fopt->eop,path,ts,"","");
         if (!readerp(path,&navs.erp)) {
             showmsg("error : no erp data %s",path);
@@ -1001,10 +1001,10 @@ static int execses(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
         }
     }
     else { /* combined */
-        solf=(sol_t *)rtkmalloc(sizeof(sol_t)*nepoch);
-        solb=(sol_t *)rtkmalloc(sizeof(sol_t)*nepoch);
-        rbf=(double *)rtkmalloc(sizeof(double)*nepoch*3);
-        rbb=(double *)rtkmalloc(sizeof(double)*nepoch*3);
+        solf=(sol_t *)rtkport_malloc(sizeof(sol_t)*nepoch);
+        solb=(sol_t *)rtkport_malloc(sizeof(sol_t)*nepoch);
+        rbf=(double *)rtkport_malloc(sizeof(double)*nepoch*3);
+        rbb=(double *)rtkport_malloc(sizeof(double)*nepoch*3);
         
         if (solf&&solb) {
             isolf=isolb=0;
@@ -1019,10 +1019,10 @@ static int execses(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
             }
         }
         else showmsg("error : memory allocation");
-        rtkfree(solf);
-        rtkfree(solb);
-        rtkfree(rbf);
-        rtkfree(rbb);
+        rtkport_free(solf);
+        rtkport_free(solb);
+        rtkport_free(rbf);
+        rtkport_free(rbb);
     }
     /* free obs and nav data */
     freeobsnav(&obss,&navs);
@@ -1044,12 +1044,12 @@ static int execses_r(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
     for (i=0;i<n;i++) if (strstr(infile[i],"%r")) break;
     
     if (i<n) { /* include rover keywords */
-        if (!(rov_=(char *)rtkmalloc(strlen(rov)+1))) return 0;
+        if (!(rov_=(char *)rtkport_malloc(strlen(rov)+1))) return 0;
         strcpy(rov_,rov);
         
         for (i=0;i<n;i++) {
-            if (!(ifile[i]=(char *)rtkmalloc(1024))) {
-                rtkfree(rov_); for (;i>=0;i--) rtkfree(ifile[i]);
+            if (!(ifile[i]=(char *)rtkport_malloc(1024))) {
+                rtkport_free(rov_); for (;i>=0;i--) rtkport_free(ifile[i]);
                 return 0;
             }
         }
@@ -1071,7 +1071,7 @@ static int execses_r(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
             }
             if (stat==1||!q) break;
         }
-        rtkfree(rov_); for (i=0;i<n;i++) rtkfree(ifile[i]);
+        rtkport_free(rov_); for (i=0;i<n;i++) rtkport_free(ifile[i]);
     }
     else {
         /* execute processing session */
@@ -1097,15 +1097,15 @@ static int execses_b(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
     for (i=0;i<n;i++) if (strstr(infile[i],"%b")) break;
     
     if (i<n) { /* include base station keywords */
-        if (!(base_=(char *)rtkmalloc(strlen(base)+1))) {
+        if (!(base_=(char *)rtkport_malloc(strlen(base)+1))) {
             freepreceph(&navs,&sbss);
             return 0;
         }
         strcpy(base_,base);
         
         for (i=0;i<n;i++) {
-            if (!(ifile[i]=(char *)rtkmalloc(1024))) {
-                rtkfree(base_); for (;i>=0;i--) rtkfree(ifile[i]);
+            if (!(ifile[i]=(char *)rtkport_malloc(1024))) {
+                rtkport_free(base_); for (;i>=0;i--) rtkport_free(ifile[i]);
                 freepreceph(&navs,&sbss);
                 return 0;
             }
@@ -1127,7 +1127,7 @@ static int execses_b(gtime_t ts, gtime_t te, double ti, const prcopt_t *popt,
             }
             if (stat==1||!q) break;
         }
-        rtkfree(base_); for (i=0;i<n;i++) rtkfree(ifile[i]);
+        rtkport_free(base_); for (i=0;i<n;i++) rtkport_free(ifile[i]);
     }
     else {
         stat=execses_r(ts,te,ti,popt,sopt,fopt,flag,infile,index,n,outfile,rov);
@@ -1202,8 +1202,8 @@ extern int postpos(gtime_t ts, gtime_t te, double ti, double tu,
             return 0;
         }
         for (i=0;i<MAXINFILE;i++) {
-            if (!(ifile[i]=(char *)rtkmalloc(1024))) {
-                for (;i>=0;i--) rtkfree(ifile[i]);
+            if (!(ifile[i]=(char *)rtkport_malloc(1024))) {
+                for (;i>=0;i--) rtkport_free(ifile[i]);
                 closeses(&navs,&pcvss,&pcvsr);
                 return -1;
             }
@@ -1260,12 +1260,12 @@ extern int postpos(gtime_t ts, gtime_t te, double ti, double tu,
             
             if (stat==1) break;
         }
-        for (i=0;i<MAXINFILE;i++) rtkfree(ifile[i]);
+        for (i=0;i<MAXINFILE;i++) rtkport_free(ifile[i]);
     }
     else if (ts.time!=0) {
         for (i=0;i<n&&i<MAXINFILE;i++) {
-            if (!(ifile[i]=(char *)rtkmalloc(1024))) {
-                for (;i>=0;i--) rtkfree(ifile[i]);
+            if (!(ifile[i]=(char *)rtkport_malloc(1024))) {
+                for (;i>=0;i--) rtkport_free(ifile[i]);
                 return -1;
             }
             reppath(infile[i],ifile[i],ts,"","");
@@ -1277,7 +1277,7 @@ extern int postpos(gtime_t ts, gtime_t te, double ti, double tu,
         stat=execses_b(ts,te,ti,popt,sopt,fopt,1,ifile,index,n,ofile,rov,
                        base);
         
-        for (i=0;i<n&&i<MAXINFILE;i++) rtkfree(ifile[i]);
+        for (i=0;i<n&&i<MAXINFILE;i++) rtkport_free(ifile[i]);
     }
     else {
         for (i=0;i<n;i++) index[i]=i;

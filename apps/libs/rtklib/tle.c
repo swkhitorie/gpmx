@@ -18,6 +18,7 @@
 *-----------------------------------------------------------------------------*/
 #include "rtklib.h"
 
+#if defined(CONFIG_RTKLIB_TLE_ENABLE)
 /* SGP4 model propagator by STR#3 (ref [1] sec.6,11) -------------------------*/
 
 #define DE2RA       0.174532925E-1
@@ -359,9 +360,9 @@ static int add_data(tle_t *tle, const tled_t *data)
     if (tle->n>=tle->nmax) {
         tle->nmax=tle->nmax<=0?1024:tle->nmax*2;
         
-        if (!(tle_data=(tled_t *)rtkrealloc(tle->data,sizeof(tled_t)*tle->nmax))) {
+        if (!(tle_data=(tled_t *)rtkport_realloc(tle->data,sizeof(tled_t)*tle->nmax))) {
             trace(1,"tle malloc error\n");
-            rtkfree(tle->data); tle->data=NULL; tle->n=tle->nmax=0;
+            rtkport_free(tle->data); tle->data=NULL; tle->n=tle->nmax=0;
             return 0;
         }
         tle->data=tle_data;
@@ -568,3 +569,5 @@ extern int tle_pos(gtime_t time, const char *name, const char *satno,
     matmul("NN",3,1,3,1.0,W,rs_pef+3,0.0,rs+3);
     return 1;
 }
+
+#endif

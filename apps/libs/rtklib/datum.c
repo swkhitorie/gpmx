@@ -79,7 +79,7 @@ extern int loaddatump(const char *file)
         fprintf(stderr,"%s : datum prm file open error : %s\n",__FILE__,file);
         return -1;
     }
-    if (!(prm=(tprm_t *)rtkmalloc(sizeof(tprm_t)*MAXPRM))) {
+    if (!(prm=(tprm_t *)rtkport_malloc(sizeof(tprm_t)*MAXPRM))) {
         fprintf(stderr,"%s : memory allocation error\n",__FILE__);
         return -1;
     }

@@ -1,3 +1,6 @@
+ifneq (${UORB_INCLUDING},)
+CONFIG_MODULE_UORB=y
+endif
 
 ifeq (${CONFIG_MODULE_UORB},y)
 

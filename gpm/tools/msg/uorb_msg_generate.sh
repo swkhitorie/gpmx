@@ -65,7 +65,7 @@ if [ $UORB_MSG_NUM -eq 0 ]; then
     exit 1
 fi
 
-if [ $UORB_FORCE_GENERATE_FLAG -eq 1 ] || need_generate_uorb "${UORB_MSG_PATH}" "${UORB_GENERATE_PATH}"; then
+if [ $UORB_FORCE_GENERATE_FLAG -eq 1 ] && need_generate_uorb "${UORB_MSG_PATH}" "${UORB_GENERATE_PATH}"; then
     if [ ! -d ${UORB_GENERATE_PATH} ]; then
         mkdir -p ${UORB_GENERATE_PATH}
     fi

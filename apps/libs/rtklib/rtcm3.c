@@ -803,8 +803,6 @@ static int decode_type1019(rtcm_t *rtcm)
     rtcm->nav.eph[sat-1]=eph;
     rtcm->ephsat=sat;
     rtcm->ephset=0;
-    // board_printf("type1019 prn=%2d iode=%3d iodc=%3d week=%d toe=%6.0f toc=%6.0f svh=%02X\r\n",
-    //         prn,eph.iode,eph.iodc,week,eph.toes,toc,eph.svh);
     return 2;
 }
 #if defined(ENAGLO)
@@ -1359,9 +1357,6 @@ static int decode_type1046(rtcm_t *rtcm)
     rtcm->nav.eph[sat-1]=eph;
     rtcm->ephsat=sat;
     rtcm->ephset=0; /* I/NAV */
-    // board_printf("type1046 prn=%2d iode=%3d week=%d toe=%6.0f toc=%6.0f hs=%d %d dvs=%d %d\r\n",
-    //             prn,eph.iode,week,eph.toes,toc,e5b_hs,e1_hs,e5b_dvs,e1_dvs);
-    // board_printf("type1046 toe=%d \r\n", eph.toe.time);
     return 2;
 }
 /* decode type 1042/63: Beidou ephemerides -----------------------------------*/
@@ -1435,9 +1430,6 @@ static int decode_type1042(rtcm_t *rtcm)
     rtcm->nav.eph[sat-1]=eph;
     rtcm->ephset=0;
     rtcm->ephsat=sat;
-    // board_printf("type1042 prn=%2d iode=%3d iodc=%3d week=%d toe=%6.0f toc=%6.0f svh=%02X\r\n",
-    //             prn,eph.iode,eph.iodc,week,eph.toes,toc,eph.svh);
-    // board_printf("type1042 toe=%d \r\n", eph.toe.time);
     return 2;
 }
 #if defined(CONFIG_RTKLIB_SSR_ENABLE)
@@ -2186,8 +2178,8 @@ static int decode_msm_head(rtcm_t *rtcm, int sys, int *sync, int *iod,
     trace(4,"decode_head_msm: time=%s sys=%d staid=%d nsat=%d nsig=%d sync=%d iod=%d ncell=%d\n",
           tstr,sys,staid,h->nsat,h->nsig,*sync,*iod,ncell);
 
-    // board_printf("decode_head_msm: %d time=%s sys=%d staid=%d nsat=%d nsig=%d sync=%d iod=%d ncell=%d\r\n",
-    //     rtcm->time.time, tstr,sys,staid,h->nsat,h->nsig,*sync,*iod,ncell);
+    // printf("decode_head_msm: time=%s sys=%d staid=%d nsat=%d nsig=%d sync=%d iod=%d ncell=%d\n",
+    //         tstr,sys,staid,h->nsat,h->nsig,*sync,*iod,ncell);
 
     if (rtcm->outtype) {
         msg=rtcm->msgtype+strlen(rtcm->msgtype);
@@ -2572,7 +2564,7 @@ extern int decode_rtcm3(rtcm_t *rtcm)
         tow=time2gpst(utc2gpst(timeget()),&week);
         rtcm->time=gpst2time(week,floor(tow));
     }
-
+    
     switch (type) {
         case 1001: ret=decode_type1001(rtcm); break; /* not supported */
         case 1002: ret=decode_type1002(rtcm); break;
@@ -2610,7 +2602,9 @@ extern int decode_rtcm3(rtcm_t *rtcm)
         case 1039: ret=decode_type1039(rtcm); break; /* not supported */
         case 1041: ret=decode_type1041(rtcm); break;
         case 1044: ret=decode_type1044(rtcm); break;
+#if defined(CONFIG_RTKLIB_EPH_FNAV_ENABLE)
         case 1045: ret=decode_type1045(rtcm); break;
+#endif
         case 1046: ret=decode_type1046(rtcm); break;
         case   63: ret=decode_type1042(rtcm); break; /* RTCM draft */
         case 1042: ret=decode_type1042(rtcm); break;

@@ -76,7 +76,7 @@ static int gis_add(gisd_t **p, int type, void *data)
 {
     gisd_t *new_data;
     
-    if (!(new_data=(gisd_t *)rtkmalloc(sizeof(gisd_t)))) {
+    if (!(new_data=(gisd_t *)rtkport_malloc(sizeof(gisd_t)))) {
         return 0;
     }
     new_data->next=*p;
@@ -95,7 +95,7 @@ static int read_pnt(FILE *fp, double *bound, gisd_t **p)
     if (fread(buff,16,1,fp)!=1) {
         return 0;
     }
-    if (!(pnt=(gis_pnt_t *)rtkmalloc(sizeof(gis_pnt_t)))) {
+    if (!(pnt=(gis_pnt_t *)rtkport_malloc(sizeof(gis_pnt_t)))) {
         return 0;
     }
     pos[0]=D8_L(buff+8)*D2R;
@@ -137,7 +137,7 @@ static int read_poly(FILE *fp, double *bound, gisd_t **p)
     nt=I4_L(buff+32);
     np=I4_L(buff+36);
     
-    if (!(part=(int *)rtkmalloc(sizeof(int)*nt))) {
+    if (!(part=(int *)rtkport_malloc(sizeof(int)*nt))) {
         return 0;
     }
     for (i=0;i<nt;i++) {
@@ -147,22 +147,22 @@ static int read_poly(FILE *fp, double *bound, gisd_t **p)
     for (i=0;i<nt;i++) {
         nr=(i<nt-1?part[i+1]:np)-part[i];
         
-        if (!(poly=(gis_poly_t *)rtkmalloc(sizeof(gis_poly_t)))) {
-            rtkfree(part);
+        if (!(poly=(gis_poly_t *)rtkport_malloc(sizeof(gis_poly_t)))) {
+            rtkport_free(part);
             return 0;
         }
-        if (!(poly->pos=(double *)rtkmalloc(sizeof(double)*nr*3))) {
-            rtkfree(poly);
-            rtkfree(part);
+        if (!(poly->pos=(double *)rtkport_malloc(sizeof(double)*nr*3))) {
+            rtkport_free(poly);
+            rtkport_free(part);
             return 0;
         }
         init_bound(poly->bound);
         
         for (j=n=0;j<nr;j++) {
             if (fread(buff,16,1,fp)!=1) {
-                rtkfree(poly->pos);
-                rtkfree(poly);
-                rtkfree(part);
+                rtkport_free(poly->pos);
+                rtkport_free(poly);
+                rtkport_free(part);
                 return 0;
             }
             pos[0]=D8_L(buff+8)*D2R;
@@ -177,13 +177,13 @@ static int read_poly(FILE *fp, double *bound, gisd_t **p)
         }
         poly->npnt=n;
         if (!gis_add(p,2,(void *)poly)) {
-            rtkfree(poly->pos);
-            rtkfree(poly);
-            rtkfree(part);
+            rtkport_free(poly->pos);
+            rtkport_free(poly);
+            rtkport_free(part);
             return 0;
         }
     }
-    rtkfree(part);
+    rtkport_free(part);
     return 1;
 }
 /* read polygon data ---------------------------------------------------------*/
@@ -200,7 +200,7 @@ static int read_polygon(FILE *fp, double *bound, gisd_t **p)
     nt=I4_L(buff+32);
     np=I4_L(buff+36);
     
-    if (!(part=(int *)rtkmalloc(sizeof(int)*nt))) {
+    if (!(part=(int *)rtkport_malloc(sizeof(int)*nt))) {
         return 0;
     }
     for (i=0;i<nt;i++) {
@@ -210,22 +210,22 @@ static int read_polygon(FILE *fp, double *bound, gisd_t **p)
     for (i=0;i<nt;i++) {
         nr=(i<nt-1?part[i+1]:np)-part[i];
         
-        if (!(polygon=(gis_polygon_t *)rtkmalloc(sizeof(gis_poly_t)))) {
-            rtkfree(part);
+        if (!(polygon=(gis_polygon_t *)rtkport_malloc(sizeof(gis_poly_t)))) {
+            rtkport_free(part);
             return 0;
         }
-        if (!(polygon->pos=(double *)rtkmalloc(sizeof(double)*nr*3))) {
-            rtkfree(polygon);
-            rtkfree(part);
+        if (!(polygon->pos=(double *)rtkport_malloc(sizeof(double)*nr*3))) {
+            rtkport_free(polygon);
+            rtkport_free(part);
             return 0;
         }
         init_bound(polygon->bound);
         
         for (j=n=0;j<nr;j++) {
             if (fread(buff,16,1,fp)!=1) {
-                rtkfree(polygon->pos);
-                rtkfree(polygon);
-                rtkfree(part);
+                rtkport_free(polygon->pos);
+                rtkport_free(polygon);
+                rtkport_free(part);
                 return 0;
             }
             pos[0]=D8_L(buff+8)*D2R;
@@ -240,13 +240,13 @@ static int read_polygon(FILE *fp, double *bound, gisd_t **p)
         }
         polygon->npnt=n;
         if (!gis_add(p,3,(void *)polygon)) {
-            rtkfree(polygon->pos);
-            rtkfree(polygon);
-            rtkfree(part);
+            rtkport_free(polygon->pos);
+            rtkport_free(polygon);
+            rtkport_free(part);
             return 0;
         }
     }
-    rtkfree(part);
+    rtkport_free(part);
     return 1;
 }
 /* read shapefile records ----------------------------------------------------*/
@@ -354,12 +354,12 @@ extern int gis_read(const char *file, gis_t *gis, int layer)
     gis->flag[layer]=1;
     return 1;
 }
-/* rtkfree gis-data ---------------------------------------------------------------
-* rtkfree and initialize gis data
+/* rtkport_free gis-data ---------------------------------------------------------------
+* rtkport_free and initialize gis data
 * args   : gis_t  *gis      IO  gis data
 * return : none
 *-----------------------------------------------------------------------------*/
-extern void gis_rtkfree(gis_t *gis)
+extern void gis_rtkport_free(gis_t *gis)
 {
     gisd_t *data,*next;
     int i;
@@ -368,12 +368,12 @@ extern void gis_rtkfree(gis_t *gis)
         for (data=gis->data[i];data;data=next) {
             next=data->next;
             if (data->type==2) {
-                rtkfree(((gis_poly_t *)data->data)->pos);
+                rtkport_free(((gis_poly_t *)data->data)->pos);
             }
             else if (data->type==3) {
-                rtkfree(((gis_polygon_t *)data->data)->pos);
+                rtkport_free(((gis_polygon_t *)data->data)->pos);
             }
-            rtkfree(data);
+            rtkport_free(data);
         }
         gis->data[i]=NULL;
         gis->name[i][0]='\0';

@@ -39,7 +39,8 @@
 #include <time.h>
 #include <ctype.h>
 #include <stdint.h>
-#include <board_config.h>
+
+#include "rtkcfg.h"
 
 #ifdef WIN32
 #include <winsock2.h>
@@ -50,6 +51,15 @@
 #define EXPORT __declspec(dllexport) /* for Windows DLL */
 #else
 #define EXPORT
+#endif
+
+#ifdef WIN32
+#define thread_t    HANDLE
+#define lock_t      CRITICAL_SECTION
+#define initlock(f) InitializeCriticalSection(f)
+#define lock(f)     EnterCriticalSection(f)
+#define unlock(f)   LeaveCriticalSection(f)
+#define FILEPATHSEP '\\'
 #endif
 
 #define VER_RTKLIB  "2.4.3"             /* library version */
@@ -238,9 +248,15 @@
 
 #define NSYS        (NSYSGPS+NSYSGLO+NSYSGAL+NSYSQZS+NSYSCMP+NSYSIRN+NSYSLEO) /* number of systems */
 
+#if defined(CONFIG_RTKLIB_SBAS_CORR_ENABLE)
 #define MINPRNSBS   120                 /* min satellite PRN number of SBAS */
 #define MAXPRNSBS   158                 /* max satellite PRN number of SBAS */
 #define NSATSBS     (MAXPRNSBS-MINPRNSBS+1) /* number of SBAS satellites */
+#else
+#define MINPRNSBS   0
+#define MAXPRNSBS   0
+#define NSATSBS     0
+#endif
 
 #define MAXSAT      (NSATGPS+NSATGLO+NSATGAL+NSATQZS+NSATCMP+NSATIRN+NSATSBS+NSATLEO) /* max satellite number (1 to MAXSAT) */
 #define MAXSTA      255
@@ -286,8 +302,12 @@
 #define MAXRAWLEN   16384               /* max length of receiver raw message */
 #define MAXERRMSG   4096                /* max length of error/warning message */
 #define MAXANT      64                  /* max length of station name/antenna type */
-#define MAXSOLBUF   256                 /* max number of solution buffer */
-#define MAXOBSBUF   10                  /* max number of observation data buffer */
+#ifndef MAXSOLBUF
+#define MAXSOLBUF   2                   /* max number of solution buffer, default 256 */
+#endif
+#ifndef MAXOBSBUF   
+#define MAXOBSBUF   1                   /* max number of observation data buffer, default 10*/
+#endif
 #define MAXNRPOS    16                  /* max number of reference positions */
 #define MAXLEAPS    64                  /* max number of leap seconds table */
 #define MAXGISLAYER 32                  /* max number of GIS data layers */
@@ -515,26 +535,6 @@
 #define LLI_HALFA   0x40                /* LLI: half-cycle added */
 #define LLI_HALFS   0x80                /* LLI: half-cycle subtracted */
 
-#ifdef WIN32
-#define thread_t    HANDLE
-#define lock_t      CRITICAL_SECTION
-#define initlock(f) InitializeCriticalSection(f)
-#define lock(f)     EnterCriticalSection(f)
-#define unlock(f)   LeaveCriticalSection(f)
-#define FILEPATHSEP '\\'
-#else
-#if !defined(CONFIG_RTKLIB_USR_PLATFORM)
-#include <pthread.h>
-#define thread_t    pthread_t
-#define lock_t      pthread_mutex_t
-#define initlock(f) pthread_mutex_init(f,NULL)
-#define lock(f)     pthread_mutex_lock(f)
-#define unlock(f)   pthread_mutex_unlock(f)
-#define FILEPATHSEP '/'
-#else
-#include "rtklib_config.h"
-#endif
-#endif
 
 #if !defined(CONFIG_RTKLIB_INPUT_STREAM) || (CONFIG_RTKLIB_INPUT_STREAM > 3)
 /*
@@ -583,6 +583,7 @@ typedef struct {        /* observation data */
     obsd_t *data;       /* observation data records */
 } obs_t;
 
+#if defined(CONFIG_RTKLIB_TLE_ENABLE) || defined(CONFIG_RTKLIB_EARTH_TIDE_MODLE_ENABLE)
 typedef struct {        /* earth rotation parameter data type */
     double mjd;         /* mjd (days) */
     double xp,yp;       /* pole offset (rad) */
@@ -595,6 +596,9 @@ typedef struct {        /* earth rotation parameter type */
     int n,nmax;         /* number and max number of data */
     erpd_t *data;       /* earth rotation parameter data */
 } erp_t;
+#endif
+
+#if defined(CONFIG_RTKLIB_ANTENNA_PARAMETER_ENABLE)
 
 typedef struct {        /* antenna parameter type */
     int sat;            /* satellite number (0:receiver) */
@@ -610,6 +614,8 @@ typedef struct {        /* antenna parameters type */
     int n,nmax;         /* number of data/allocated */
     pcv_t *pcv;         /* antenna parameters data */
 } pcvs_t;
+
+#endif
 
 #if defined(CONFIG_RTKLIB_ALMANAC_ENABLE)
 typedef struct {        /* almanac type */
@@ -701,6 +707,7 @@ typedef struct {        /* SBAS ephemeris type */
 } seph_t;
 #endif
 
+#if defined(CONFIG_RTKLIB_TLE_ENABLE)
 typedef struct {        /* NORAL TLE data type */
     char name [32];     /* common name */
     char alias[32];     /* alias name */
@@ -727,6 +734,9 @@ typedef struct {        /* norad two line element type */
     tled_t *data;       /* norad two line element data */
 } tle_t;
 
+#endif
+
+#if defined(CONFIG_RTKLIB_IONEX_TEC_MODEL_ENABLE)
 typedef struct {        /* TEC grid type */
     gtime_t time;       /* epoch time (GPST) */
     int ndata[3];       /* TEC grid data size {nlat,nlon,nhgt} */
@@ -737,6 +747,8 @@ typedef struct {        /* TEC grid type */
     double *data;       /* TEC grid data (tecu) */
     float *rms;         /* RMS values (tecu) */
 } tec_t;
+
+#endif
 
 #if defined(CONFIG_RTKLIB_SBAS_CORR_ENABLE)
 typedef struct {        /* SBAS message type */
@@ -802,6 +814,7 @@ typedef struct {        /* SBAS ionospheric corrections type */
 } sbsion_t;
 #endif
 
+#if defined(CONFIG_RTKLIB_DGPS_ENABLE)
 typedef struct {        /* DGPS/GNSS correction type */
     gtime_t t0;         /* correction time */
     double prc;         /* pseudorange correction (PRC) (m) */
@@ -809,6 +822,7 @@ typedef struct {        /* DGPS/GNSS correction type */
     int iod;            /* issue of data (IOD) */
     double udre;        /* UDRE */
 } dgps_t;
+#endif
 
 #if defined(CONFIG_RTKLIB_SSR_ENABLE)
 typedef struct {        /* SSR correction type */
@@ -846,7 +860,9 @@ typedef struct {        /* navigation data type */
 #if defined(CONFIG_RTKLIB_ALMANAC_ENABLE)
     int na,namax;       /* number of almanac data */
 #endif
-    // int nt,ntmax;       /* number of tec grid data */
+#if defined(CONFIG_RTKLIB_IONEX_TEC_MODEL_ENABLE)
+    int nt,ntmax;       /* number of tec grid data */
+#endif
     eph_t *eph;         /* GPS/QZS/GAL/BDS/IRN ephemeris */
 #if defined(ENAGLO)
     geph_t *geph;       /* GLONASS ephemeris */
@@ -861,8 +877,12 @@ typedef struct {        /* navigation data type */
 #if defined(CONFIG_RTKLIB_ALMANAC_ENABLE)
     alm_t *alm;         /* almanac data */
 #endif
-    // tec_t *tec;         /* tec grid data */
-    // erp_t  erp;         /* earth rotation parameters */
+#if defined(CONFIG_RTKLIB_IONEX_TEC_MODEL_ENABLE)
+    tec_t *tec;         /* tec grid data */
+#endif
+#if defined(CONFIG_RTKLIB_TLE_ENABLE) || defined(CONFIG_RTKLIB_EARTH_TIDE_MODLE_ENABLE)
+    erp_t  erp;         /* earth rotation parameters */
+#endif
     double utc_gps[8];  /* GPS delta-UTC parameters {A0,A1,Tot,WNt,dt_LS,WN_LSF,DN,dt_LSF} */
     double utc_glo[8];  /* GLONASS UTC time parameters {tau_C,tau_GPS} */
     double utc_gal[8];  /* Galileo UTC parameters */
@@ -878,12 +898,16 @@ typedef struct {        /* navigation data type */
     int glo_fcn[32];    /* GLONASS FCN + 8 */
     // double cbias[MAXSAT][3]; /* satellite DCB (0:P1-P2,1:P1-C1,2:P2-C2) (m) */
     // double rbias[MAXRCV][2][3]; /* receiver DCB (0:P1-P2,1:P1-C1,2:P2-C2) (m) */
-    // pcv_t pcvs[MAXSAT]; /* satellite antenna pcv */
+#if defined(CONFIG_RTKLIB_ANTENNA_PARAMETER_ENABLE)
+    pcv_t pcvs[MAXSAT]; /* satellite antenna pcv */
+#endif
 #if defined(CONFIG_RTKLIB_SBAS_CORR_ENABLE)
     sbssat_t sbssat;    /* SBAS satellite corrections 10K */
     sbsion_t sbsion[MAXBAND+1]; /* SBAS ionosphere corrections 70K */
 #endif
-    // dgps_t dgps[MAXSAT]; /* DGPS corrections */
+#if defined(CONFIG_RTKLIB_DGPS_ENABLE)
+    dgps_t dgps[MAXSAT]; /* DGPS corrections */
+#endif
 #if defined(CONFIG_RTKLIB_SSR_ENABLE)
     ssr_t ssr[MAXSAT];  /* SSR corrections 97K */
 #endif
@@ -965,7 +989,9 @@ typedef struct {        /* RTCM control struct type */
     obs_t obs;          /* observation data (uncorrected) */
     nav_t nav;          /* satellite ephemerides */
     sta_t sta;          /* station parameters */
+#if defined(CONFIG_RTKLIB_DGPS_ENABLE)
     dgps_t *dgps;       /* output of dgps corrections */
+#endif
 #if defined(CONFIG_RTKLIB_SSR_ENABLE)
     ssr_t ssr[MAXSAT];  /* output of ssr corrections */
 #endif
@@ -1079,7 +1105,9 @@ typedef struct {        /* processing options type */
     double rb[3];       /* base position for relative mode {x,y,z} (ecef) (m) */
     char anttype[2][MAXANT]; /* antenna types {rover,base} */
     double antdel[2][3]; /* antenna delta {{rov_e,rov_n,rov_u},{ref_e,ref_n,ref_u}} */
+#if defined(CONFIG_RTKLIB_ANTENNA_PARAMETER_ENABLE)
     pcv_t pcvr[2];      /* receiver antenna parameters {rov,base} */
+#endif
     uint8_t exsats[MAXSAT]; /* excluded satellites (1:excluded,2:included) */
     int  maxaveep;      /* max averaging epoches */
     int  initrst;       /* initialize by restart */
@@ -1320,7 +1348,7 @@ typedef struct {        /* RTK server type */
     int nmeareq;        /* NMEA request (0:no,1:nmeapos,2:single sol) */
     double nmeapos[3];  /* NMEA request position (ecef) (m) */
     int buffsize;       /* input buffer size (bytes) */
-    int format[3];      /* input format {rov,base,corr} */
+    int format[CONFIG_RTKLIB_INPUT_STREAM];      /* input format {rov,base,corr} */
     solopt_t solopt[CONFIG_RTKLIB_OUTPUT_STREAM]; /* output solution options {sol1,sol2} */
     int navsel;         /* ephemeris select (0:all,1:rover,2:base,3:corr) */
     int nsbs;           /* number of sbas message */
@@ -1348,15 +1376,19 @@ typedef struct {        /* RTK server type */
     sbsmsg_t sbsmsg[MAXSBSMSG]; /* SBAS message buffer */
 #endif
     stream_t stream[CONFIG_RTKLIB_MAXSTREAM]; /* streams {rov,base,corr,sol1,sol2,logr,logb,logc} */
+#if 0
     stream_t *moni;     /* monitor stream */
+#endif
     uint32_t tick;      /* start tick */
     thread_t thread;    /* server thread */
     int cputime;        /* CPU time (ms) for a processing cycle */
     int prcout;         /* missing observation data count */
     int nave;           /* number of averaging base pos */
     double rb_ave[3];   /* averaging base pos */
+#if 0
     char cmds_periodic[CONFIG_RTKLIB_INPUT_STREAM][MAXRCVCMD]; /* periodic commands */
     char cmd_reset[MAXRCVCMD]; /* reset command */
+#endif
     double bl_reset;    /* baseline length to reset (km) */
     lock_t lock;        /* lock flag */
 } rtksvr_t;
@@ -1512,8 +1544,10 @@ EXPORT int  savenav(const char *file, const nav_t *nav);
 EXPORT void freeobs(obs_t *obs);
 EXPORT void freenav(nav_t *nav, int opt);
 EXPORT int  readblq(const char *file, const char *sta, double *odisp);
+#if defined(CONFIG_RTKLIB_TLE_ENABLE) || defined(CONFIG_RTKLIB_EARTH_TIDE_MODLE_ENABLE)
 EXPORT int  readerp(const char *file, erp_t *erp);
 EXPORT int  geterp (const erp_t *erp, gtime_t time, double *val);
+#endif
 
 /* debug trace functions -----------------------------------------------------*/
 EXPORT void traceopen(const char *file);
@@ -1533,7 +1567,9 @@ EXPORT void traceb   (int level, const uint8_t *p, int n);
 /* platform dependent functions ----------------------------------------------*/
 // EXPORT int execcmd(const char *cmd);
 // EXPORT int expath(const char *path, char *paths[], int nmax);
-// EXPORT void createdir(const char *path);
+#if defined(CONFIG_RTKLIB_STREAM_INNER_ENABLE)
+EXPORT void createdir(const char *path);
+#endif
 
 /* positioning models --------------------------------------------------------*/
 EXPORT double satazel(const double *pos, const double *e, double *azel);
@@ -1559,18 +1595,22 @@ EXPORT int tropcorr(gtime_t time, const nav_t *nav, const double *pos,
                     const double *azel, int tropopt, double *trp, double *var);
 
 /* antenna models ------------------------------------------------------------*/
+#if defined(CONFIG_RTKLIB_ANTENNA_PARAMETER_ENABLE)
 EXPORT int  readpcv(const char *file, pcvs_t *pcvs);
 EXPORT pcv_t *searchpcv(int sat, const char *type, gtime_t time,
                         const pcvs_t *pcvs);
 EXPORT void antmodel(const pcv_t *pcv, const double *del, const double *azel,
                      int opt, double *dant);
 EXPORT void antmodel_s(const pcv_t *pcv, double nadir, double *dant);
+#endif
 
 /* earth tide models ---------------------------------------------------------*/
+#if defined(CONFIG_RTKLIB_EARTH_TIDE_MODLE_ENABLE)
 EXPORT void sunmoonpos(gtime_t tutc, const double *erpv, double *rsun,
                        double *rmoon, double *gmst);
 EXPORT void tidedisp(gtime_t tutc, const double *rr, int opt, const erp_t *erp,
                      const double *odisp, double *dr);
+#endif
 
 /* geiod models --------------------------------------------------------------*/
 EXPORT int opengeoid(int model, const char *file);
@@ -1897,10 +1937,14 @@ extern int showmsg(const char *format, ...);
 extern void settspan(gtime_t ts, gtime_t te);
 extern void settime(gtime_t time);
 
-void *rtkmalloc(size_t sz);
-void *rtkrealloc(void *p, size_t sz);
-void *rtkcalloc(size_t num, size_t sz);
-void rtkfree(void *p);
+/* platform port, define CONFIG_RTKLIB_TIME_PORT------------------------------*/
+void *rtkport_malloc(size_t sz);
+void *rtkport_realloc(void *p, size_t sz);
+void *rtkport_calloc(size_t num, size_t sz);
+void  rtkport_free(void *p);
+gtime_t  rtkport_timeget();
+uint32_t rtkport_tickget();
+void     rtkport_sleepms(int ms);
 
 #ifdef __cplusplus
 }

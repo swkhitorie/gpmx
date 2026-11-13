@@ -38,7 +38,7 @@ static int LD(int n, const double *Q, double *L, double *D)
         for (j=0;j<=i-1;j++) for (k=0;k<=j;k++) A[j+k*n]-=L[i+k*n]*L[i+j*n];
         for (j=0;j<=i;j++) L[i+j*n]/=L[i+i*n];
     }
-    rtkfree(A);
+    rtkport_free(A);
     if (info) fprintf(stderr,"%s : LD factorization error\n",__FILE__);
     return info;
 }
@@ -140,7 +140,7 @@ static int search(int n, int m, const double *L, const double *D,
             for (k=0;k<n;k++) SWAP(zn[k+i*n],zn[k+j*n]);
         }
     }
-    rtkfree(S); rtkfree(dist); rtkfree(zb); rtkfree(z); rtkfree(step);
+    rtkport_free(S); rtkport_free(dist); rtkport_free(zb); rtkport_free(z); rtkport_free(step);
     
     if (c>=LOOPMAX) {
         fprintf(stderr,"%s : search loop count overflow\n",__FILE__);
@@ -182,7 +182,7 @@ extern int lambda(int n, int m, const double *a, const double *Q, double *F,
             info=solve("T",Z,E,n,m,F); /* F=Z'\E */
         }
     }
-    rtkfree(L); rtkfree(D); rtkfree(Z); rtkfree(z); rtkfree(E);
+    rtkport_free(L); rtkport_free(D); rtkport_free(Z); rtkport_free(z); rtkport_free(E);
     return info;
 }
 /* lambda reduction ------------------------------------------------------------
@@ -206,13 +206,13 @@ extern int lambda_reduction(int n, const double *Q, double *Z)
     }
     /* LD factorization */
     if ((info=LD(n,Q,L,D))) {
-        rtkfree(L); rtkfree(D);
+        rtkport_free(L); rtkport_free(D);
         return info;
     }
     /* lambda reduction */
     reduction(n,L,D,Z);
     
-    rtkfree(L); rtkfree(D);
+    rtkport_free(L); rtkport_free(D);
     return 0;
 }
 /* mlambda search --------------------------------------------------------------
@@ -237,12 +237,12 @@ extern int lambda_search(int n, int m, const double *a, const double *Q,
     
     /* LD factorization */
     if ((info=LD(n,Q,L,D))) {
-        rtkfree(L); rtkfree(D);
+        rtkport_free(L); rtkport_free(D);
         return info;
     }
     /* mlambda search */
     info=search(n,m,L,D,a,F,s);
     
-    rtkfree(L); rtkfree(D);
+    rtkport_free(L); rtkport_free(D);
     return info;
 }

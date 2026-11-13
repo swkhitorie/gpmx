@@ -619,6 +619,12 @@ int gsh_kprintf(const char *format, ...)
 }
 #endif
 
+#if defined(CONFIG_FS_FATFS) && !defined(CONFIG_DRIVER_MMCSDSPI) && \
+    !defined(CONFIG_LIBC_VFS) && !defined(CONFIG_CRUSB_DEVICE_MSC_ENABLE)
+static FATFS              mmcsd_fatfs;
+static BYTE               mmcsd_work[4096];
+#endif
+
 void board_bsp_kernel_init(void *p)
 {
     board_bsp_init();
@@ -628,6 +634,40 @@ void board_bsp_kernel_init(void *p)
 
 #if defined(CONFIG_GMSH)
     gmsh_system_init();
+#endif
+
+#if defined(CONFIG_FS_FATFS) && !defined(CONFIG_DRIVER_MMCSDSPI) && \
+    !defined(CONFIG_LIBC_VFS) && !defined(CONFIG_CRUSB_DEVICE_MSC_ENABLE)
+    MKFS_PARM opt;
+    opt.fmt = FM_FAT32;
+    opt.n_fat = 1;
+    opt.align = 0;
+    opt.au_size = 0;
+    opt.n_root = 0;
+
+    FRESULT ret_ff = f_mount(&mmcsd_fatfs, "0:/", 1);
+    if (ret_ff != FR_OK) {
+        board_printf("[fat] mmcsd mount failed %d\r\n", ret_ff);
+        if (ret_ff == FR_NO_FILESYSTEM) {
+            board_printf("[fat] try to format...\r\n");
+            ret_ff = f_mkfs("0:/", &opt, mmcsd_work, 4096);
+            if (ret_ff != FR_OK) {
+                board_printf("[fat] try to format failed %d\r\n", ret_ff);
+                return;
+            }
+            board_printf("[fat] format success\r\n");
+            ret_ff = f_mount(&mmcsd_fatfs, "0:/", 1);
+            if (ret_ff != FR_OK) {
+                board_printf("[fat] mmcsd mount failed after format %d\r\n", ret_ff);
+                return;
+            }
+        } else {
+            return;
+        }
+    }
+
+    f_mount(NULL, "0:/", 1);
+    f_mount(&mmcsd_fatfs, "0:/", 0);
 #endif
 
 #if defined(CONFIG_LIBC_PTHREAD)
@@ -642,7 +682,7 @@ void board_bsp_kernel_init(void *p)
     pthread_attr_setstacksize(&attr, 4096);
     pthread_create(&id, &attr, main_proot, NULL);
 #else
-    xTaskCreate(main_root, "u_init", 4096, NULL, 31, NULL);
+    xTaskCreate(main_root, "u_init", 1024, NULL, 31, NULL);
     vTaskDelete(NULL);
 #endif
 }

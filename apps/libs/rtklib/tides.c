@@ -23,6 +23,8 @@
 *-----------------------------------------------------------------------------*/
 #include "rtklib.h"
 
+#if defined(CONFIG_RTKLIB_EARTH_TIDE_MODLE_ENABLE)
+
 #define SQR(x)      ((x)*(x))
 
 #define AS2R        (D2R/3600.0)    /* arc sec to radian */
@@ -286,3 +288,5 @@ extern void tidedisp(gtime_t tutc, const double *rr, int opt, const erp_t *erp,
     }
     trace(5,"tidedisp: dr=%.3f %.3f %.3f\n",dr[0],dr[1],dr[2]);
 }
+
+#endif

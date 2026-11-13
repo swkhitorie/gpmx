@@ -75,7 +75,6 @@
 *                           suppress warning for buffer overflow by sprintf()
 *                           use integer types in stdint.h
 *-----------------------------------------------------------------------------*/
-#if defined(CONFIG_RTKLIB_STREAM_INNER_ENABLE)
 
 #include <ctype.h>
 #include "rtklib.h"
@@ -84,7 +83,9 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#ifndef __USE_MISC
 #define __USE_MISC
+#endif
 #ifndef CRTSCTS
 #define CRTSCTS  020000000000
 #endif
@@ -97,6 +98,10 @@
 #include <netdb.h>
 #endif
 
+#define CONFIG_DISABLE_STREAM_TAG_TIME  (0)
+
+#if defined(CONFIG_RTKLIB_STREAM_INNER_ENABLE)
+
 /* constants -----------------------------------------------------------------*/
 
 #define TINTACT             200         /* period for stream active (ms) */
@@ -106,6 +111,7 @@
 #define MAXSTATMSG          32          /* max length of status message */
 #define DEFAULT_MEMBUF_SIZE 4096        /* default memory buffer size (bytes) */
 
+#if defined(CONFIG_RTKLIB_INNER_STREAM_NTRIP_ENABLE)
 #define NTRIP_AGENT         "RTKLIB/" VER_RTKLIB
 #define NTRIP_CLI_PORT      2101        /* default ntrip-client connection port */
 #define NTRIP_SVR_PORT      80          /* default ntrip-server connection port */
@@ -120,9 +126,12 @@
 #define NTRIP_RSP_UNAUTH    "HTTP/1.0 401 Unauthorized\r\n"
 #define NTRIP_RSP_ERR_PWD   "ERROR - Bad Pasword\r\n"
 #define NTRIP_RSP_ERR_MNTP  "ERROR - Bad Mountpoint\r\n"
+#endif
 
+#if defined(CONFIG_RTKLIB_INNER_STREAM_FTP_ENABLE)
 #define FTP_CMD             "wget"      /* ftp/http command */
 #define FTP_TIMEOUT         30          /* ftp/http timeout (s) */
+#endif
 
 #define MIN(x,y)            ((x)<(y)?(x):(y))
 
@@ -161,9 +170,11 @@ typedef struct {            /* file control type */
     double start;           /* start offset (s) */
     double speed;           /* replay speed (time factor) */
     double swapintv;        /* swap interval (hr) (0: no swap) */
+    int tag_absolute;
     lock_t lock;            /* lock flag */
 } file_t;
 
+#if defined(CONFIG_RTKLIB_INNER_STREAM_TCP_ENABLE)
 typedef struct {            /* tcp control type */
     int state;              /* state (0:close,1:wait,2:connect) */
     char saddr[256];        /* address string */
@@ -185,7 +196,9 @@ typedef struct {            /* tcp cilent type */
     int toinact;            /* inactive timeout (ms) (0:no timeout) */
     int tirecon;            /* reconnect interval (ms) (0:no reconnect) */
 } tcpcli_t;
+#endif
 
+#if defined(CONFIG_RTKLIB_INNER_STREAM_SERIAL_ENABLE)
 typedef struct {            /* serial control type */
     dev_t dev;              /* serial device */
     int error;              /* error state */
@@ -198,7 +211,9 @@ typedef struct {            /* serial control type */
 #endif
     tcpsvr_t *tcpsvr;       /* tcp server for received stream */
 } serial_t;
+#endif
 
+#if defined(CONFIG_RTKLIB_INNER_STREAM_NTRIP_ENABLE)
 typedef struct {            /* ntrip control type */
     int state;              /* state (0:close,1:wait,2:connect) */
     int type;               /* type (0:server,1:client) */
@@ -231,6 +246,9 @@ typedef struct {            /* ntrip caster control type */
     ntripc_con_t con[MAXCLI]; /* ntrip client/server connections */
 } ntripc_t;
 
+#endif
+
+#if defined(CONFIG_RTKLIB_INNER_STREAM_UDP_ENABLE)
 typedef struct {            /* udp type */
     int state;              /* state (0:close,1:open) */
     int type;               /* type (0:server,1:client) */
@@ -240,6 +258,9 @@ typedef struct {            /* udp type */
     socket_t sock;          /* socket descriptor */
 } udp_t;
 
+#endif
+
+#if defined(CONFIG_RTKLIB_INNER_STREAM_FTP_ENABLE)
 typedef struct {            /* ftp download control type */
     int state;              /* state (0:close,1:download,2:complete,3:error) */
     int proto;              /* protocol (0:ftp,1:http) */
@@ -255,18 +276,23 @@ typedef struct {            /* ftp download control type */
     thread_t thread;        /* download thread */
 } ftp_t;
 
+#endif
+
+#if defined(CONFIG_RTKLIB_INNER_STREAM_MEMBUF_ENABLE)
 typedef struct {            /* memory buffer type */
     int state,wp,rp;        /* state,write/read pointer */
     int bufsize;            /* buffer size (bytes) */
     lock_t lock;            /* lock flag */
     uint8_t *buf;           /* write buffer */
 } membuf_t;
+#endif
 
 /* proto types for static functions ------------------------------------------*/
-
+#if defined(CONFIG_RTKLIB_INNER_STREAM_TCP_ENABLE)
 static tcpsvr_t *opentcpsvr(const char *path, char *msg);
 static void closetcpsvr(tcpsvr_t *tcpsvr);
 static int writetcpsvr(tcpsvr_t *tcpsvr, uint8_t *buff, int n, char *msg);
+#endif
 
 /* global options ------------------------------------------------------------*/
 
@@ -278,6 +304,8 @@ static char localdir[1024]=""; /* local directory for ftp/http */
 static char proxyaddr[256]=""; /* http/ntrip/ftp proxy address */
 static uint32_t tick_master=0; /* time tick master for replay */
 static int fswapmargin=30;  /* file swap margin (s) */
+
+#if defined(CONFIG_RTKLIB_INNER_STREAM_SERIAL_ENABLE)
 
 /* read/write serial buffer --------------------------------------------------*/
 #ifdef WIN32
@@ -338,7 +366,7 @@ static DWORD WINAPI serialthread(void *arg)
         if (!serial->state) break;
         sleepms(10-(int)(tickget()-tick)); /* cycle=10ms */
     }
-    rtkfree(serial->buff);
+    rtkport_free(serial->buff);
     return 0;
 }
 #endif /* WIN32 */
@@ -368,7 +396,7 @@ static serial_t *openserial(const char *path, int mode, char *msg)
 #endif
     tracet(3,"openserial: path=%s mode=%d\n",path,mode);
     
-    if (!(serial=(serial_t *)rtkcalloc(1,sizeof(serial_t)))) return NULL;
+    if (!(serial=(serial_t *)rtkport_calloc(1,sizeof(serial_t)))) return NULL;
     
     if ((p=strchr(path,':'))) {
         strncpy(port,path,p-path); port[p-path]='\0';
@@ -383,7 +411,7 @@ static serial_t *openserial(const char *path, int mode, char *msg)
     if (i>=14) {
         sprintf(msg,"bitrate error (%d)",brate);
         tracet(1,"openserial: %s path=%s\n",msg,path);
-        rtkfree(serial);
+        rtkport_free(serial);
         return NULL;
     }
     parity=(char)toupper((int)parity);
@@ -397,14 +425,14 @@ static serial_t *openserial(const char *path, int mode, char *msg)
     if (serial->dev==INVALID_HANDLE_VALUE) {
         sprintf(msg,"%s open error (%d)",port,(int)GetLastError());
         tracet(1,"openserial: %s path=%s\n",msg,path);
-        rtkfree(serial);
+        rtkport_free(serial);
         return NULL;
     }
     if (!GetCommConfig(serial->dev,&cc,&siz)) {
         sprintf(msg,"%s getconfig error (%d)",port,(int)GetLastError());
         tracet(1,"openserial: %s\n",msg);
         CloseHandle(serial->dev);
-        rtkfree(serial);
+        rtkport_free(serial);
         return NULL;
     }
     sprintf(dcb,"baud=%d parity=%c data=%d stop=%d",brate,parity,bsize,stopb);
@@ -412,7 +440,7 @@ static serial_t *openserial(const char *path, int mode, char *msg)
         sprintf(msg,"%s buiddcb error (%d)",port,(int)GetLastError());
         tracet(1,"openserial: %s\n",msg);
         CloseHandle(serial->dev);
-        rtkfree(serial);
+        rtkport_free(serial);
         return NULL;
     }
     if (!strcmp(fctr,"rts")) {
@@ -427,9 +455,9 @@ static serial_t *openserial(const char *path, int mode, char *msg)
     initlock(&serial->lock);
     serial->state=serial->wp=serial->rp=serial->error=0;
     serial->buffsize=buffsize;
-    if (!(serial->buff=(uint8_t *)rtkmalloc(buffsize))) {
+    if (!(serial->buff=(uint8_t *)rtkport_malloc(buffsize))) {
         CloseHandle(serial->dev);
-        rtkfree(serial);
+        rtkport_free(serial);
         return NULL;
     }
     serial->state=1;
@@ -438,7 +466,7 @@ static serial_t *openserial(const char *path, int mode, char *msg)
         tracet(1,"openserial: %s\n",msg);
         CloseHandle(serial->dev);
         serial->state=0;
-        rtkfree(serial);
+        rtkport_free(serial);
         return NULL;
     }
     sprintf(msg,"%s",port);
@@ -452,7 +480,7 @@ static serial_t *openserial(const char *path, int mode, char *msg)
     if ((serial->dev=open(dev,rw|O_NOCTTY|O_NONBLOCK))<0) {
         sprintf(msg,"%s open error (%d)",dev,errno);
         tracet(1,"openserial: %s dev=%s\n",msg,dev);
-        rtkfree(serial);
+        rtkport_free(serial);
         return NULL;
     }
     tcgetattr(serial->dev,&ios);
@@ -498,7 +526,7 @@ static void closeserial(serial_t *serial)
     if (serial->tcpsvr) {
         closetcpsvr(serial->tcpsvr);
     }
-    rtkfree(serial);
+    rtkport_free(serial);
 }
 /* read serial ---------------------------------------------------------------*/
 static int readserial(serial_t *serial, uint8_t *buff, int n, char *msg)
@@ -565,12 +593,17 @@ static int statexserial(serial_t *serial, char *msg)
 #endif
     return state;
 }
+
+#endif
+
 /* open file -----------------------------------------------------------------*/
 static int openfile_(file_t *file, gtime_t time, char *msg)
 {    
     FILE *fp;
     double time_sec;
     uint32_t time_time;
+    uint64_t time_time2;
+
     char *rw,tagpath[MAXSTRPATH+4]="";
     char tagh[TIMETAGH_LEN+1]="";
     
@@ -613,19 +646,37 @@ static int openfile_(file_t *file, gtime_t time, char *msg)
             return 0;
         }
         tracet(4,"openfile_: open tag file %s (%s)\n",tagpath,rw);
-        
+
         if (file->mode&STR_MODE_R) {
             if (fread(&tagh,TIMETAGH_LEN,1,file->fp_tag)==1&&
-                fread(&time_time,sizeof(time_time),1,file->fp_tag)==1&&
+                fread(&time_time2,sizeof(time_time2),1,file->fp_tag)==1&&
                 fread(&time_sec ,sizeof(time_sec ),1,file->fp_tag)==1) {
                 memcpy(&file->tick_f,tagh+TIMETAGH_LEN-4,sizeof(file->tick_f));
-                file->time.time=(time_t)time_time;
+                file->time.time=(time_t)time_time2;
                 file->time.sec =time_sec;
                 file->wtime=file->time;
             }
             else {
                 file->tick_f=0;
             }
+
+            {
+                #if CONFIG_DISABLE_STREAM_TAG_TIME
+                uint32_t first_tick = 0;
+                long     rec_start  = ftell(file->fp_tag);
+                if (fread(&first_tick, sizeof(first_tick), 1, file->fp_tag) == 1) {
+                    if (first_tick > 86400000U) {
+                        file->tag_absolute = 1;
+                        file->tick_f = first_tick;
+                    }
+                    else {
+                        file->tag_absolute = 0;
+                    }
+                    fseek(file->fp_tag, rec_start, SEEK_SET);
+                }
+                #endif
+            }
+
             /* adust time to read playback file */
             timeset(gpst2utc(file->time));
         }
@@ -633,9 +684,11 @@ static int openfile_(file_t *file, gtime_t time, char *msg)
             sprintf(tagh,"TIMETAG RTKLIB %s",VER_RTKLIB);
             memcpy(tagh+TIMETAGH_LEN-4,&file->tick_f,sizeof(file->tick_f));
             time_time=(uint32_t)file->time.time;
+            time_time2=(uint64_t)file->time.time;
             time_sec=file->time.sec;
             fwrite(&tagh,1,TIMETAGH_LEN,file->fp_tag);
-            fwrite(&time_time,1,sizeof(time_time),file->fp_tag);
+            // fwrite(&time_time,1,sizeof(time_time),file->fp_tag);
+            fwrite(&time_time2,1,sizeof(time_time2),file->fp_tag);
             fwrite(&time_sec ,1,sizeof(time_sec ),file->fp_tag);
             /* time tag file structure   */
             /*   HEADER(60)+TICK(4)+TIME(4+8)+ */
@@ -651,6 +704,7 @@ static int openfile_(file_t *file, gtime_t time, char *msg)
     }
     return 1;
 }
+
 /* close file ----------------------------------------------------------------*/
 static void closefile_(file_t *file)
 {
@@ -665,6 +719,7 @@ static void closefile_(file_t *file)
     /* reset time offset */
     timereset();
 }
+
 /* open file (path=filepath[::T[::+<off>][::x<speed>]][::S=swapintv][::P={4|8}] */
 static file_t *openfile(const char *path, int mode, char *msg)
 {
@@ -689,7 +744,7 @@ static file_t *openfile(const char *path, int mode, char *msg)
     if (start<=0.0) start=0.0;
     if (swapintv<=0.0) swapintv=0.0;
     
-    if (!(file=(file_t *)rtkmalloc(sizeof(file_t)))) return NULL;
+    if (!(file=(file_t *)rtkport_malloc(sizeof(file_t)))) return NULL;
     
     file->fp=file->fp_tag=file->fp_tmp=file->fp_tag_tmp=NULL;
     strcpy(file->path,path);
@@ -705,17 +760,19 @@ static file_t *openfile(const char *path, int mode, char *msg)
     file->start=start;
     file->speed=speed;
     file->swapintv=swapintv;
+    file->tag_absolute = 0;
     initlock(&file->lock);
     
     time=utc2gpst(timeget());
     
     /* open new file */
     if (!openfile_(file,time,msg)) {
-        rtkfree(file);
+        rtkport_free(file);
         return NULL;
     }
     return file;
 }
+
 /* close file ----------------------------------------------------------------*/
 static void closefile(file_t *file)
 {
@@ -723,8 +780,9 @@ static void closefile(file_t *file)
     
     if (!file) return;
     closefile_(file);
-    rtkfree(file);
+    rtkport_free(file);
 }
+
 /* open new swap file --------------------------------------------------------*/
 static void swapfile(file_t *file, gtime_t time, char *msg)
 {
@@ -749,6 +807,7 @@ static void swapfile(file_t *file, gtime_t time, char *msg)
     /* open new swap file */
     openfile_(file,time,msg);
 }
+
 /* close old swap file -------------------------------------------------------*/
 static void swapclose(file_t *file)
 {
@@ -758,11 +817,13 @@ static void swapclose(file_t *file)
     if (file->fp_tag_tmp) fclose(file->fp_tag_tmp);
     file->fp_tmp=file->fp_tag_tmp=NULL;
 }
+
 /* get state file ------------------------------------------------------------*/
 static int statefile(file_t *file)
 {
     return file?2:0;
 }
+
 /* get extended state file ---------------------------------------------------*/
 static int statexfile(file_t *file, char *msg)
 {
@@ -789,6 +850,7 @@ static int statexfile(file_t *file, char *msg)
     p+=sprintf(p,"  swapintv= %.3f\n",file->swapintv);
     return state;
 }
+
 /* read file -----------------------------------------------------------------*/
 static int readfile(file_t *file, uint8_t *buff, int nmax, char *msg)
 {
@@ -798,9 +860,10 @@ static int readfile(file_t *file, uint8_t *buff, int nmax, char *msg)
     uint32_t t,tick,fpos_4B;
     long pos,n;
     int nr=0;
-    
+    uint32_t tn;
+
     tracet(4,"readfile: fp=%d nmax=%d\n",file->fp,nmax);
-    
+
     if (!file) return 0;
     
     if (file->fp==stdin) {
@@ -824,9 +887,26 @@ static int readfile(file_t *file, uint8_t *buff, int nmax, char *msg)
             t=(uint32_t)((tickget()-file->tick)*file->speed+file->start*1000.0);
             tick_master=t;
         }
+
+        {
+            #if CONFIG_DISABLE_STREAM_TAG_TIME
+            if (file->tick_n == (uint32_t)(-1)) {
+                tn = (uint32_t)(-1);
+            } else if (file->tag_absolute) {
+                tn = file->tick_n - file->tick_f;
+            } else {
+                tn = file->tick_n;
+            }
+            #endif
+        }
+
+        #if CONFIG_DISABLE_STREAM_TAG_TIME
+        while ((int)(tn-t)<=0)
+        #else
         /* seek time-tag file to get next tick and file position */
-        while ((int)(file->tick_n-t)<=0) {
-            
+        while ((int)(file->tick_n-t)<=0) 
+        #endif
+        {
             if (fread(&file->tick_n,sizeof(tick),1,file->fp_tag)<1||
                 fread((file->size_fpos==4)?(void *)&fpos_4B:(void *)&fpos_8B,
                       file->size_fpos,1,file->fp_tag)<1) {
@@ -837,7 +917,19 @@ static int readfile(file_t *file, uint8_t *buff, int nmax, char *msg)
                 fseek(file->fp,pos,SEEK_SET);
                 break;
             }
+
+            #if !(CONFIG_DISABLE_STREAM_TAG_TIME)
+            if ((unsigned)file->tick_n > file->tick_f) {
+                file->tick_n = 0;
+            }
+            #endif
+
             file->fpos_n=(long)((file->size_fpos==4)?fpos_4B:fpos_8B);
+
+            #if CONFIG_DISABLE_STREAM_TAG_TIME
+            tn = file->tag_absolute ? (file->tick_n - file->tick_f)
+                                                : file->tick_n;
+            #endif
         }
         if (file->tick_n==(uint32_t)(-1)) {
             sprintf(msg,"end");
@@ -845,7 +937,12 @@ static int readfile(file_t *file, uint8_t *buff, int nmax, char *msg)
         else {
             sprintf(msg,"T%+.1fs",(int)t*0.001);
             file->wtime=timeadd(file->time,(int)t*0.001);
+
+            #if CONFIG_DISABLE_STREAM_TAG_TIME
             timeset(timeadd(gpst2utc(file->time),(int)file->tick_n*0.001));
+            #else
+            timeset(timeadd(gpst2utc(file->time),(int)tn*0.001));
+            #endif
         }
         if ((n=file->fpos_n-ftell(file->fp))<nmax) {
             nmax=n;
@@ -860,6 +957,7 @@ static int readfile(file_t *file, uint8_t *buff, int nmax, char *msg)
     tracet(5,"readfile: fp=%d nr=%d\n",file->fp,nr);
     return nr;
 }
+
 /* write file ----------------------------------------------------------------*/
 static int writefile(file_t *file, uint8_t *buff, int n, char *msg)
 {
@@ -934,6 +1032,7 @@ static int writefile(file_t *file, uint8_t *buff, int n, char *msg)
     
     return ns;
 }
+
 /* sync files by time-tag ----------------------------------------------------*/
 static void syncfile(file_t *file1, file_t *file2)
 {
@@ -942,6 +1041,10 @@ static void syncfile(file_t *file1, file_t *file2)
     file2->repmode=1;
     file2->offset=(int)(file1->tick_f-file2->tick_f);
 }
+
+#if defined(CONFIG_RTKLIB_INNER_STREAM_TCP_ENABLE) || \
+    defined(CONFIG_RTKLIB_INNER_STREAM_NTRIP_ENABLE)
+
 /* decode tcp/ntrip path (path=[user[:passwd]@]addr[:port][/mntpnt[:str]]) ---*/
 static void decodetcppath(const char *path, char *addr, char *port, char *user,
                           char *passwd, char *mntpnt, char *str)
@@ -980,6 +1083,11 @@ static void decodetcppath(const char *path, char *addr, char *port, char *user,
     }
     if (addr) sprintf(addr,"%.255s",p);
 }
+
+#endif
+
+#if defined(CONFIG_RTKLIB_INNER_STREAM_TCP_ENABLE)
+
 /* get socket error ----------------------------------------------------------*/
 #ifdef WIN32
 static int errsock(void) {return WSAGetLastError();}
@@ -1016,6 +1124,7 @@ static int setsock(socket_t sock, char *msg)
     }
     return 1;
 }
+
 /* non-block accept ----------------------------------------------------------*/
 static socket_t accept_nb(socket_t sock, struct sockaddr *addr, socklen_t *len)
 {
@@ -1028,6 +1137,7 @@ static socket_t accept_nb(socket_t sock, struct sockaddr *addr, socklen_t *len)
     if (ret<=0) return (socket_t)ret;
     return accept(sock,addr,len);
 }
+
 /* non-block connect ---------------------------------------------------------*/
 static int connect_nb(socket_t sock, struct sockaddr *addr, socklen_t len)
 {
@@ -1058,6 +1168,7 @@ static int connect_nb(socket_t sock, struct sockaddr *addr, socklen_t len)
 #endif
     return 1;
 }
+
 /* non-block receive ---------------------------------------------------------*/
 static int recv_nb(socket_t sock, uint8_t *buff, int n)
 {
@@ -1071,6 +1182,7 @@ static int recv_nb(socket_t sock, uint8_t *buff, int n)
     nr=recv(sock,(char *)buff,n,0);
     return nr<=0?-1:nr;
 }
+
 /* non-block send ------------------------------------------------------------*/
 static int send_nb(socket_t sock, uint8_t *buff, int n)
 {
@@ -1084,6 +1196,7 @@ static int send_nb(socket_t sock, uint8_t *buff, int n)
     ns=send(sock,(char *)buff,n,0);
     return ns<n?-1:ns;
 }
+
 /* generate tcp socket -------------------------------------------------------*/
 static int gentcp(tcp_t *tcp, int type, char *msg)
 {
@@ -1142,6 +1255,7 @@ static int gentcp(tcp_t *tcp, int type, char *msg)
     tracet(5,"gentcp: exit sock=%d\n",tcp->sock);
     return 1;
 }
+
 /* disconnect tcp ------------------------------------------------------------*/
 static void discontcp(tcp_t *tcp, int tcon)
 {
@@ -1152,6 +1266,7 @@ static void discontcp(tcp_t *tcp, int tcon)
     tcp->tcon=tcon;
     tcp->tdis=tickget();
 }
+
 /* open tcp server -----------------------------------------------------------*/
 static tcpsvr_t *opentcpsvr(const char *path, char *msg)
 {
@@ -1160,22 +1275,23 @@ static tcpsvr_t *opentcpsvr(const char *path, char *msg)
     
     tracet(3,"opentcpsvr: path=%s\n",path);
     
-    if (!(tcpsvr=(tcpsvr_t *)rtkmalloc(sizeof(tcpsvr_t)))) return NULL;
+    if (!(tcpsvr=(tcpsvr_t *)rtkport_malloc(sizeof(tcpsvr_t)))) return NULL;
     *tcpsvr=tcpsvr0;
     decodetcppath(path,tcpsvr->svr.saddr,port,NULL,NULL,NULL,NULL);
     if (sscanf(port,"%d",&tcpsvr->svr.port)<1) {
         sprintf(msg,"port error: %s",port);
         tracet(1,"opentcpsvr: port error port=%s\n",port);
-        rtkfree(tcpsvr);
+        rtkport_free(tcpsvr);
         return NULL;
     }
     if (!gentcp(&tcpsvr->svr,0,msg)) {
-        rtkfree(tcpsvr);
+        rtkport_free(tcpsvr);
         return NULL;
     }
     tcpsvr->svr.tcon=0;
     return tcpsvr;
 }
+
 /* close tcp server ----------------------------------------------------------*/
 static void closetcpsvr(tcpsvr_t *tcpsvr)
 {
@@ -1187,8 +1303,9 @@ static void closetcpsvr(tcpsvr_t *tcpsvr)
         if (tcpsvr->cli[i].state) closesocket(tcpsvr->cli[i].sock);
     }
     closesocket(tcpsvr->svr.sock);
-    rtkfree(tcpsvr);
+    rtkport_free(tcpsvr);
 }
+
 /* update tcp server ---------------------------------------------------------*/
 static void updatetcpsvr(tcpsvr_t *tcpsvr, char *msg)
 {
@@ -1212,6 +1329,7 @@ static void updatetcpsvr(tcpsvr_t *tcpsvr, char *msg)
     tcpsvr->svr.state=2;
     if (n==1) sprintf(msg,"%s",saddr); else sprintf(msg,"%d clients",n);
 }
+
 /* accept client connection --------------------------------------------------*/
 static int accsock(tcpsvr_t *tcpsvr, char *msg)
 {
@@ -1250,6 +1368,7 @@ static int accsock(tcpsvr_t *tcpsvr, char *msg)
     tcpsvr->cli[i].tact=tickget();
     return 1;
 }
+
 /* wait socket accept --------------------------------------------------------*/
 static int waittcpsvr(tcpsvr_t *tcpsvr, char *msg)
 {
@@ -1262,6 +1381,7 @@ static int waittcpsvr(tcpsvr_t *tcpsvr, char *msg)
     updatetcpsvr(tcpsvr,msg);
     return tcpsvr->svr.state==2;
 }
+
 /* read tcp server -----------------------------------------------------------*/
 static int readtcpsvr(tcpsvr_t *tcpsvr, uint8_t *buff, int n, char *msg)
 {
@@ -1316,11 +1436,13 @@ static int writetcpsvr(tcpsvr_t *tcpsvr, uint8_t *buff, int n, char *msg)
     }
     return nmax;
 }
+
 /* get state tcp server ------------------------------------------------------*/
 static int statetcpsvr(tcpsvr_t *tcpsvr)
 {
     return tcpsvr?tcpsvr->svr.state:0;
 }
+
 /* print extended state tcp --------------------------------------------------*/
 static int statextcp(tcp_t *tcp, char *msg)
 {
@@ -1337,6 +1459,7 @@ static int statextcp(tcp_t *tcp, char *msg)
 #endif
     return (int)(p-msg);
 }
+
 /* get extended state tcp server ---------------------------------------------*/
 static int statextcpsvr(tcpsvr_t *tcpsvr, char *msg)
 {
@@ -1355,6 +1478,7 @@ static int statextcpsvr(tcpsvr_t *tcpsvr, char *msg)
     }
     return state;
 }
+
 /* connect server ------------------------------------------------------------*/
 static int consock(tcpcli_t *tcpcli, char *msg)
 {
@@ -1387,6 +1511,7 @@ static int consock(tcpcli_t *tcpcli, char *msg)
     tcpcli->svr.tact=tickget();
     return 1;
 }
+
 /* open tcp client -----------------------------------------------------------*/
 static tcpcli_t *opentcpcli(const char *path, char *msg)
 {
@@ -1395,13 +1520,13 @@ static tcpcli_t *opentcpcli(const char *path, char *msg)
     
     tracet(3,"opentcpcli: path=%s\n",path);
     
-    if (!(tcpcli=(tcpcli_t *)rtkmalloc(sizeof(tcpcli_t)))) return NULL;
+    if (!(tcpcli=(tcpcli_t *)rtkport_malloc(sizeof(tcpcli_t)))) return NULL;
     *tcpcli=tcpcli0;
     decodetcppath(path,tcpcli->svr.saddr,port,NULL,NULL,NULL,NULL);
     if (sscanf(port,"%d",&tcpcli->svr.port)<1) {
         sprintf(msg,"port error: %s",port);
         tracet(2,"opentcp: port error port=%s\n",port);
-        rtkfree(tcpcli);
+        rtkport_free(tcpcli);
         return NULL;
     }
     tcpcli->svr.tcon=0;
@@ -1409,14 +1534,16 @@ static tcpcli_t *opentcpcli(const char *path, char *msg)
     tcpcli->tirecon=ticonnect;
     return tcpcli;
 }
+
 /* close tcp client ----------------------------------------------------------*/
 static void closetcpcli(tcpcli_t *tcpcli)
 {
     tracet(3,"closetcpcli: sock=%d\n",tcpcli->svr.sock);
     
     closesocket(tcpcli->svr.sock);
-    rtkfree(tcpcli);
+    rtkport_free(tcpcli);
 }
+
 /* wait socket connect -------------------------------------------------------*/
 static int waittcpcli(tcpcli_t *tcpcli, char *msg)
 {
@@ -1441,6 +1568,7 @@ static int waittcpcli(tcpcli_t *tcpcli, char *msg)
     }
     return 1;
 }
+
 /* read tcp client -----------------------------------------------------------*/
 static int readtcpcli(tcpcli_t *tcpcli, uint8_t *buff, int n, char *msg)
 {
@@ -1465,6 +1593,7 @@ static int readtcpcli(tcpcli_t *tcpcli, uint8_t *buff, int n, char *msg)
     tracet(5,"readtcpcli: exit sock=%d nr=%d\n",tcpcli->svr.sock,nr);
     return nr;
 }
+
 /* write tcp client ----------------------------------------------------------*/
 static int writetcpcli(tcpcli_t *tcpcli, uint8_t *buff, int n, char *msg)
 {
@@ -1486,16 +1615,21 @@ static int writetcpcli(tcpcli_t *tcpcli, uint8_t *buff, int n, char *msg)
     tracet(5,"writetcpcli: exit sock=%d ns=%d\n",tcpcli->svr.sock,ns);
     return ns;
 }
+
 /* get state tcp client ------------------------------------------------------*/
 static int statetcpcli(tcpcli_t *tcpcli)
 {
     return tcpcli?tcpcli->svr.state:0;
 }
+
 /* get extended state tcp client ---------------------------------------------*/
 static int statextcpcli(tcpcli_t *tcpcli, char *msg)
 {
     return tcpcli?tcpcli->svr.state:0;
 }
+
+#endif
+
 /* base64 encoder ------------------------------------------------------------*/
 static int encbase64(char *str, const uint8_t *byte, int n)
 {
@@ -1516,6 +1650,9 @@ static int encbase64(char *str, const uint8_t *byte, int n)
     tracet(5,"encbase64: str=%s\n",str);
     return j;
 }
+
+#if defined(CONFIG_RTKLIB_INNER_STREAM_NTRIP_ENABLE)
+
 /* send ntrip server request -------------------------------------------------*/
 static int reqntrip_s(ntrip_t *ntrip, char *msg)
 {
@@ -1535,6 +1672,7 @@ static int reqntrip_s(ntrip_t *ntrip, char *msg)
     ntrip->state=1;
     return 1;
 }
+
 /* send ntrip client request -------------------------------------------------*/
 static int reqntrip_c(ntrip_t *ntrip, char *msg)
 {
@@ -1564,6 +1702,7 @@ static int reqntrip_c(ntrip_t *ntrip, char *msg)
     ntrip->state=1;
     return 1;
 }
+
 /* test ntrip server response ------------------------------------------------*/
 static int rspntrip_s(ntrip_t *ntrip, char *msg)
 {
@@ -1605,6 +1744,7 @@ static int rspntrip_s(ntrip_t *ntrip, char *msg)
     tracet(5,"rspntrip_s: exit state=%d nb=%d\n",ntrip->state,ntrip->nb);
     return 0;
 }
+
 /* test ntrip client response ------------------------------------------------*/
 static int rspntrip_c(ntrip_t *ntrip, char *msg)
 {
@@ -1659,6 +1799,7 @@ static int rspntrip_c(ntrip_t *ntrip, char *msg)
     tracet(5,"rspntrip_c: exit state=%d nb=%d\n",ntrip->state,ntrip->nb);
     return 0;
 }
+
 /* wait ntrip request/response -----------------------------------------------*/
 static int waitntrip(ntrip_t *ntrip, char *msg)
 {
@@ -1690,6 +1831,7 @@ static int waitntrip(ntrip_t *ntrip, char *msg)
     }
     return 1;
 }
+
 /* open ntrip ----------------------------------------------------------------*/
 static ntrip_t *openntrip(const char *path, int type, char *msg)
 {
@@ -1699,7 +1841,7 @@ static ntrip_t *openntrip(const char *path, int type, char *msg)
     
     tracet(3,"openntrip: path=%s type=%d\n",path,type);
     
-    if (!(ntrip=(ntrip_t *)rtkmalloc(sizeof(ntrip_t)))) return NULL;
+    if (!(ntrip=(ntrip_t *)rtkport_malloc(sizeof(ntrip_t)))) return NULL;
     
     ntrip->state=0;
     ntrip->type=type; /* 0:server,1:client */
@@ -1726,19 +1868,21 @@ static ntrip_t *openntrip(const char *path, int type, char *msg)
     /* open tcp client stream */
     if (!(ntrip->tcp=opentcpcli(tpath,msg))) {
         tracet(2,"openntrip: opentcp error\n");
-        rtkfree(ntrip);
+        rtkport_free(ntrip);
         return NULL;
     }
     return ntrip;
 }
+
 /* close ntrip ---------------------------------------------------------------*/
 static void closentrip(ntrip_t *ntrip)
 {
     tracet(3,"closentrip: state=%d\n",ntrip->state);
     
     closetcpcli(ntrip->tcp);
-    rtkfree(ntrip);
+    rtkport_free(ntrip);
 }
+
 /* read ntrip ----------------------------------------------------------------*/
 static int readntrip(ntrip_t *ntrip, uint8_t *buff, int n, char *msg)
 {
@@ -1756,6 +1900,7 @@ static int readntrip(ntrip_t *ntrip, uint8_t *buff, int n, char *msg)
     }
     return readtcpcli(ntrip->tcp,buff,n,msg);
 }
+
 /* write ntrip ---------------------------------------------------------------*/
 static int writentrip(ntrip_t *ntrip, uint8_t *buff, int n, char *msg)
 {
@@ -1765,11 +1910,13 @@ static int writentrip(ntrip_t *ntrip, uint8_t *buff, int n, char *msg)
     
     return writetcpcli(ntrip->tcp,buff,n,msg);
 }
+
 /* get state ntrip -----------------------------------------------------------*/
 static int statentrip(ntrip_t *ntrip)
 {
     return !ntrip?0:(ntrip->state==0?ntrip->tcp->svr.state:ntrip->state);
 }
+
 /* get extended state ntrip --------------------------------------------------*/
 static int statexntrip(ntrip_t *ntrip, char *msg)
 {
@@ -1791,6 +1938,7 @@ static int statexntrip(ntrip_t *ntrip, char *msg)
     p+=statextcp(&ntrip->tcp->svr,p);
     return state;
 }
+
 /* open ntrip-caster ---------------------------------------------------------*/
 static ntripc_t *openntripc(const char *path, char *msg)
 {
@@ -1800,7 +1948,7 @@ static ntripc_t *openntripc(const char *path, char *msg)
     
     tracet(3,"openntripc: path=%s\n",path);
     
-    if (!(ntripc=(ntripc_t *)rtkmalloc(sizeof(ntripc_t)))) return NULL;
+    if (!(ntripc=(ntripc_t *)rtkport_malloc(sizeof(ntripc_t)))) return NULL;
     
     ntripc->state=0;
     ntripc->mntpnt[0]=ntripc->user[0]=ntripc->passwd[0]=ntripc->srctbl[0]='\0';
@@ -1815,7 +1963,7 @@ static ntripc_t *openntripc(const char *path, char *msg)
     
     if (!*ntripc->mntpnt) {
         tracet(2,"openntripc: no mountpoint path=%s\n",path);
-        rtkfree(ntripc);
+        rtkport_free(ntripc);
         return NULL;
     }
     /* use default port if no port specified */
@@ -1827,19 +1975,21 @@ static ntripc_t *openntripc(const char *path, char *msg)
     /* open tcp server stream */
     if (!(ntripc->tcp=opentcpsvr(tpath,msg))) {
         tracet(2,"openntripc: opentcpsvr error port=%d\n",port);
-        rtkfree(ntripc);
+        rtkport_free(ntripc);
         return NULL;
     }
     return ntripc;
 }
+
 /* close ntrip-caster --------------------------------------------------------*/
 static void closentripc(ntripc_t *ntripc)
 {
     tracet(3,"closentripc: state=%d\n",ntripc->state);
     
     closetcpsvr(ntripc->tcp);
-    rtkfree(ntripc);
+    rtkport_free(ntripc);
 }
+
 /* disconnect ntrip-caster connection ----------------------------------------*/
 static void discon_ntripc(ntripc_t *ntripc, int i)
 {
@@ -1850,6 +2000,7 @@ static void discon_ntripc(ntripc_t *ntripc, int i)
     ntripc->con[i].buff[0]='\0';
     ntripc->con[i].state=0;
 }
+
 /* send ntrip source table ---------------------------------------------------*/
 static void send_srctbl(ntripc_t *ntripc, socket_t sock)
 {
@@ -1866,6 +2017,7 @@ static void send_srctbl(ntripc_t *ntripc, socket_t sock)
     send_nb(sock,(uint8_t *)buff,(int)(p-buff));
     send_nb(sock,(uint8_t *)srctbl,(int)strlen(srctbl));
 }
+
 /* test ntrip client request -------------------------------------------------*/
 static void rsp_ntripc(ntripc_t *ntripc, int i)
 {
@@ -1927,6 +2079,7 @@ static void rsp_ntripc(ntripc_t *ntripc, int i)
     con->state=1;
     strcpy(con->mntpnt,mntpnt);
 }
+
 /* handle ntrip client connect request ---------------------------------------*/
 static void wait_ntripc(ntripc_t *ntripc, char *msg)
 {
@@ -1961,6 +2114,7 @@ static void wait_ntripc(ntripc_t *ntripc, char *msg)
         rsp_ntripc(ntripc,i);
     }
 }
+
 /* read ntrip-caster ---------------------------------------------------------*/
 static int readntripc(ntripc_t *ntripc, uint8_t *buff, int n, char *msg)
 {
@@ -1989,6 +2143,7 @@ static int readntripc(ntripc_t *ntripc, uint8_t *buff, int n, char *msg)
     }
     return 0;
 }
+
 /* write ntrip-caster --------------------------------------------------------*/
 static int writentripc(ntripc_t *ntripc, uint8_t *buff, int n, char *msg)
 {
@@ -2016,11 +2171,13 @@ static int writentripc(ntripc_t *ntripc, uint8_t *buff, int n, char *msg)
     }
     return ns;
 }
+
 /* get state ntrip-caster ----------------------------------------------------*/
 static int statentripc(ntripc_t *ntripc)
 {
     return !ntripc?0:ntripc->state;
 }
+
 /* get extended state ntrip-caster -------------------------------------------*/
 static int statexntripc(ntripc_t *ntripc, char *msg)
 {
@@ -2046,6 +2203,10 @@ static int statexntripc(ntripc_t *ntripc, char *msg)
     }
     return state;
 }
+#endif
+
+#if defined(CONFIG_RTKLIB_INNER_STREAM_UDP_ENABLE)
+
 /* generate udp socket -------------------------------------------------------*/
 static udp_t *genudp(int type, int port, const char *saddr, char *msg)
 {
@@ -2055,7 +2216,7 @@ static udp_t *genudp(int type, int port, const char *saddr, char *msg)
     
     tracet(3,"genudp: type=%d\n",type);
     
-    if (!(udp=(udp_t *)rtkmalloc(sizeof(udp_t)))) return NULL;
+    if (!(udp=(udp_t *)rtkport_malloc(sizeof(udp_t)))) return NULL;
     udp->state=2;
     udp->type=type;
     udp->port=port;
@@ -2083,7 +2244,7 @@ static udp_t *genudp(int type, int port, const char *saddr, char *msg)
             tracet(2,"genudp: bind error sock=%d port=%d err=%d\n",udp->sock,port,errsock());
             sprintf(msg,"bind error (%d): %d",errsock(),port);
             closesocket(udp->sock);
-            rtkfree(udp);
+            rtkport_free(udp);
             return NULL;
         }
     }
@@ -2097,13 +2258,14 @@ static udp_t *genudp(int type, int port, const char *saddr, char *msg)
         if (!(hp=gethostbyname(saddr))) {
             sprintf(msg,"address error (%s)",saddr);
             closesocket(udp->sock);
-            rtkfree(udp);
+            rtkport_free(udp);
             return NULL;
         }
         memcpy(&udp->addr.sin_addr,hp->h_addr,hp->h_length);
     }
     return udp;
 }
+
 /* open udp server -----------------------------------------------------------*/
 static udp_t *openudpsvr(const char *path, char *msg)
 {
@@ -2121,14 +2283,16 @@ static udp_t *openudpsvr(const char *path, char *msg)
     }
     return genudp(0,port,"",msg);
 }
+
 /* close udp server ----------------------------------------------------------*/
 static void closeudpsvr(udp_t *udpsvr)
 {
     tracet(3,"closeudpsvr: sock=%d\n",udpsvr->sock);
     
     closesocket(udpsvr->sock);
-    rtkfree(udpsvr);
+    rtkport_free(udpsvr);
 }
+
 /* read udp server -----------------------------------------------------------*/
 static int readudpsvr(udp_t *udpsvr, uint8_t *buff, int n, char *msg)
 {
@@ -2144,11 +2308,13 @@ static int readudpsvr(udp_t *udpsvr, uint8_t *buff, int n, char *msg)
     nr=recvfrom(udpsvr->sock,(char *)buff,n,0,NULL,NULL);
     return nr<=0?-1:nr;
 }
+
 /* get state udp server ------------------------------------------------------*/
 static int stateudpsvr(udp_t *udpsvr)
 {
     return udpsvr?udpsvr->state:0;
 }
+
 /* get extended state udp server ---------------------------------------------*/
 static int statexudpsvr(udp_t *udpsvr, char *msg)
 {
@@ -2163,6 +2329,7 @@ static int statexudpsvr(udp_t *udpsvr, char *msg)
     p+=sprintf(p,"  port    = %d\n",udpsvr->port);
     return state;
 }
+
 /* open udp client -----------------------------------------------------------*/
 static udp_t *openudpcli(const char *path, char *msg)
 {
@@ -2180,14 +2347,16 @@ static udp_t *openudpcli(const char *path, char *msg)
     }
     return genudp(1,port,saddr,msg);
 }
+
 /* close udp client ----------------------------------------------------------*/
 static void closeudpcli(udp_t *udpcli)
 {
     tracet(3,"closeudpcli: sock=%d\n",udpcli->sock);
     
     closesocket(udpcli->sock);
-    rtkfree(udpcli);
+    rtkport_free(udpcli);
 }
+
 /* write udp client -----------------------------------------------------------*/
 static int writeudpcli(udp_t *udpcli, uint8_t *buff, int n, char *msg)
 {
@@ -2196,11 +2365,13 @@ static int writeudpcli(udp_t *udpcli, uint8_t *buff, int n, char *msg)
     return (int)sendto(udpcli->sock,(char *)buff,n,0,
                        (struct sockaddr *)&udpcli->addr,sizeof(udpcli->addr));
 }
+
 /* get state udp client ------------------------------------------------------*/
 static int stateudpcli(udp_t *udpcli)
 {
     return udpcli?udpcli->state:0;
 }
+
 /* get extended state udp client ---------------------------------------------*/
 static int statexudpcli(udp_t *udpcli, char *msg)
 {
@@ -2216,6 +2387,11 @@ static int statexudpcli(udp_t *udpcli, char *msg)
     p+=sprintf(p,"  port    = %d\n",udpcli->port);
     return state;
 }
+
+#endif
+
+#if defined(CONFIG_RTKLIB_INNER_STREAM_FTP_ENABLE)
+
 /* decode ftp path -----------------------------------------------------------*/
 static void decodeftppath(const char *path, char *addr, char *file, char *user,
                           char *passwd, int *topts)
@@ -2255,6 +2431,7 @@ static void decodeftppath(const char *path, char *addr, char *file, char *user,
     
     strcpy(addr,p);
 }
+
 /* next download time --------------------------------------------------------*/
 static gtime_t nextdltime(const int *topts, int stat)
 {
@@ -2281,6 +2458,7 @@ static gtime_t nextdltime(const int *topts, int stat)
     
     return time;
 }
+
 /* ftp thread ----------------------------------------------------------------*/
 #ifdef WIN32
 static DWORD WINAPI ftpthread(void *arg)
@@ -2377,6 +2555,7 @@ static void *ftpthread(void *arg)
     tracet(3,"ftpthread: complete cmd=%s\n",cmd);
     return 0;
 }
+
 /* open ftp ------------------------------------------------------------------*/
 static ftp_t *openftp(const char *path, int type, char *msg)
 {
@@ -2386,7 +2565,7 @@ static ftp_t *openftp(const char *path, int type, char *msg)
     
     msg[0]='\0';
     
-    if (!(ftp=(ftp_t *)rtkmalloc(sizeof(ftp_t)))) return NULL;
+    if (!(ftp=(ftp_t *)rtkport_malloc(sizeof(ftp_t)))) return NULL;
     
     ftp->state=0;
     ftp->proto=type;
@@ -2402,13 +2581,15 @@ static ftp_t *openftp(const char *path, int type, char *msg)
     
     return ftp;
 }
+
 /* close ftp -----------------------------------------------------------------*/
 static void closeftp(ftp_t *ftp)
 {
     tracet(3,"closeftp: state=%d\n",ftp->state);
     
-    if (ftp->state!=1) rtkfree(ftp);
+    if (ftp->state!=1) rtkport_free(ftp);
 }
+
 /* read ftp ------------------------------------------------------------------*/
 static int readftp(ftp_t *ftp, uint8_t *buff, int n, char *msg)
 {
@@ -2461,16 +2642,23 @@ static int readftp(ftp_t *ftp, uint8_t *buff, int n, char *msg)
     
     return (int)(p-buff);
 }
+
 /* get state ftp -------------------------------------------------------------*/
 static int stateftp(ftp_t *ftp)
 {
     return !ftp?0:(ftp->state==0?2:(ftp->state<=2?3:-1));
 }
+
 /* get extended state ftp ----------------------------------------------------*/
 static int statexftp(ftp_t *ftp, char *msg)
 {
     return !ftp?0:(ftp->state==0?2:(ftp->state<=2?3:-1));
 }
+
+#endif
+
+#if defined(CONFIG_RTKLIB_INNER_STREAM_MEMBUF_ENABLE)
+
 /* open memory buffer --------------------------------------------------------*/
 static membuf_t *openmembuf(const char *path, char *msg)
 {
@@ -2483,12 +2671,12 @@ static membuf_t *openmembuf(const char *path, char *msg)
     
     sscanf(path,"%d",&bufsize);
     
-    if (!(membuf=(membuf_t *)rtkmalloc(sizeof(membuf_t)))) return NULL;
+    if (!(membuf=(membuf_t *)rtkport_malloc(sizeof(membuf_t)))) return NULL;
     membuf->state=1;
     membuf->rp=0;
     membuf->wp=0;
-    if (!(membuf->buf=(uint8_t *)rtkmalloc(bufsize))) {
-        rtkfree(membuf);
+    if (!(membuf->buf=(uint8_t *)rtkport_malloc(bufsize))) {
+        rtkport_free(membuf);
         return NULL;
     }
     membuf->bufsize=bufsize;
@@ -2503,8 +2691,8 @@ static void closemembuf(membuf_t *membuf)
 {
     tracet(3,"closemembufp\n");
     
-    rtkfree(membuf->buf);
-    rtkfree(membuf);
+    rtkport_free(membuf->buf);
+    rtkport_free(membuf);
 }
 /* read memory buffer --------------------------------------------------------*/
 static int readmembuf(membuf_t *membuf, uint8_t *buff, int n, char *msg)
@@ -2568,6 +2756,9 @@ static int statexmembuf(membuf_t *membuf, char *msg)
     p+=sprintf(p,"  rp      = %d\n",membuf->rp);
     return state;
 }
+
+#endif
+
 /* initialize stream environment -----------------------------------------------
 * initialize stream environment
 * args   : none
@@ -2584,6 +2775,7 @@ extern void strinitcom(void)
     WSAStartup(MAKEWORD(2,0),&data);
 #endif
 }
+
 /* initialize stream -----------------------------------------------------------
 * initialize stream struct
 * args   : stream_t *stream IO  stream
@@ -2727,23 +2919,36 @@ extern int stropen(stream_t *stream, int type, int mode, const char *path)
     stream->msg[0]='\0';
     stream->port=NULL;
     switch (type) {
+#if defined(CONFIG_RTKLIB_INNER_STREAM_SERIAL_ENABLE)
         case STR_SERIAL  : stream->port=openserial(path,mode,stream->msg); break;
+#endif
         case STR_FILE    : stream->port=openfile  (path,mode,stream->msg); break;
+#if defined(CONFIG_RTKLIB_INNER_STREAM_TCP_ENABLE)
         case STR_TCPSVR  : stream->port=opentcpsvr(path,     stream->msg); break;
         case STR_TCPCLI  : stream->port=opentcpcli(path,     stream->msg); break;
+#endif
+#if defined(CONFIG_RTKLIB_INNER_STREAM_NTRIP_ENABLE)
         case STR_NTRIPSVR: stream->port=openntrip (path,0,   stream->msg); break;
         case STR_NTRIPCLI: stream->port=openntrip (path,1,   stream->msg); break;
         case STR_NTRIPCAS: stream->port=openntripc(path,     stream->msg); break;
+#endif
+#if defined(CONFIG_RTKLIB_INNER_STREAM_UDP_ENABLE)
         case STR_UDPSVR  : stream->port=openudpsvr(path,     stream->msg); break;
         case STR_UDPCLI  : stream->port=openudpcli(path,     stream->msg); break;
+#endif
+#if defined(CONFIG_RTKLIB_INNER_STREAM_MEMBUF_ENABLE)
         case STR_MEMBUF  : stream->port=openmembuf(path,     stream->msg); break;
+#endif
+#if defined(CONFIG_RTKLIB_INNER_STREAM_FTP_ENABLE)
         case STR_FTP     : stream->port=openftp   (path,0,   stream->msg); break;
         case STR_HTTP    : stream->port=openftp   (path,1,   stream->msg); break;
+#endif
         default: stream->state=0; return 1;
     }
     stream->state=!stream->port?-1:1;
     return stream->port!=NULL;
 }
+
 /* close stream ----------------------------------------------------------------
 * close stream
 * args   : stream_t *stream IO  stream
@@ -2757,18 +2962,30 @@ extern void strclose(stream_t *stream)
     
     if (stream->port) {
         switch (stream->type) {
+#if defined(CONFIG_RTKLIB_INNER_STREAM_SERIAL_ENABLE)
             case STR_SERIAL  : closeserial((serial_t *)stream->port); break;
+#endif
             case STR_FILE    : closefile  ((file_t   *)stream->port); break;
+#if defined(CONFIG_RTKLIB_INNER_STREAM_TCP_ENABLE)
             case STR_TCPSVR  : closetcpsvr((tcpsvr_t *)stream->port); break;
             case STR_TCPCLI  : closetcpcli((tcpcli_t *)stream->port); break;
+#endif
+#if defined(CONFIG_RTKLIB_INNER_STREAM_NTRIP_ENABLE)
             case STR_NTRIPSVR: closentrip ((ntrip_t  *)stream->port); break;
             case STR_NTRIPCLI: closentrip ((ntrip_t  *)stream->port); break;
             case STR_NTRIPCAS: closentripc((ntripc_t *)stream->port); break;
+#endif
+#if defined(CONFIG_RTKLIB_INNER_STREAM_UDP_ENABLE)
             case STR_UDPSVR  : closeudpsvr((udp_t    *)stream->port); break;
             case STR_UDPCLI  : closeudpcli((udp_t    *)stream->port); break;
+#endif
+#if defined(CONFIG_RTKLIB_INNER_STREAM_MEMBUF_ENABLE)
             case STR_MEMBUF  : closemembuf((membuf_t *)stream->port); break;
+#endif
+#if defined(CONFIG_RTKLIB_INNER_STREAM_FTP_ENABLE)
             case STR_FTP     : closeftp   ((ftp_t    *)stream->port); break;
             case STR_HTTP    : closeftp   ((ftp_t    *)stream->port); break;
+#endif
         }
     }
     else {
@@ -2784,6 +3001,7 @@ extern void strclose(stream_t *stream)
     
     strunlock(stream);
 }
+
 /* sync streams ----------------------------------------------------------------
 * sync time for streams
 * args   : stream_t *stream1 IO stream 1
@@ -2799,6 +3017,7 @@ extern void strsync(stream_t *stream1, stream_t *stream2)
     file2=(file_t*)stream2->port;
     if (file1&&file2) syncfile(file1,file2);
 }
+
 /* lock/unlock stream ----------------------------------------------------------
 * lock/unlock stream
 * args   : stream_t *stream I  stream
@@ -2828,17 +3047,29 @@ extern int strread(stream_t *stream, uint8_t *buff, int n)
     strlock(stream);
     
     switch (stream->type) {
+#if defined(CONFIG_RTKLIB_INNER_STREAM_SERIAL_ENABLE)
         case STR_SERIAL  : nr=readserial((serial_t *)stream->port,buff,n,msg); break;
+#endif
         case STR_FILE    : nr=readfile  ((file_t   *)stream->port,buff,n,msg); break;
+#if defined(CONFIG_RTKLIB_INNER_STREAM_TCP_ENABLE)
         case STR_TCPSVR  : nr=readtcpsvr((tcpsvr_t *)stream->port,buff,n,msg); break;
         case STR_TCPCLI  : nr=readtcpcli((tcpcli_t *)stream->port,buff,n,msg); break;
+#endif
+#if defined(CONFIG_RTKLIB_INNER_STREAM_NTRIP_ENABLE)
         case STR_NTRIPSVR:
         case STR_NTRIPCLI: nr=readntrip ((ntrip_t  *)stream->port,buff,n,msg); break;
         case STR_NTRIPCAS: nr=readntripc((ntripc_t *)stream->port,buff,n,msg); break;
+#endif
+#if defined(CONFIG_RTKLIB_INNER_STREAM_UDP_ENABLE)
         case STR_UDPSVR  : nr=readudpsvr((udp_t    *)stream->port,buff,n,msg); break;
+#endif
+#if defined(CONFIG_RTKLIB_INNER_STREAM_MEMBUF_ENABLE)
         case STR_MEMBUF  : nr=readmembuf((membuf_t *)stream->port,buff,n,msg); break;
+#endif
+#if defined(CONFIG_RTKLIB_INNER_STREAM_FTP_ENABLE)
         case STR_FTP     : nr=readftp   ((ftp_t    *)stream->port,buff,n,msg); break;
         case STR_HTTP    : nr=readftp   ((ftp_t    *)stream->port,buff,n,msg); break;
+#endif
         default:
             strunlock(stream);
             return 0;
@@ -2857,6 +3088,7 @@ extern int strread(stream_t *stream, uint8_t *buff, int n)
     strunlock(stream);
     return nr;
 }
+
 /* write stream ----------------------------------------------------------------
 * write data to stream (unblocked)
 * args   : stream_t *stream I   stream
@@ -2872,21 +3104,31 @@ extern int strwrite(stream_t *stream, uint8_t *buff, int n)
     int ns,tt;
     
     tracet(4,"strwrite: n=%d\n",n);
-    
+
     if (!(stream->mode&STR_MODE_W)||!stream->port) return 0;
     
     strlock(stream);
     
     switch (stream->type) {
+#if defined(CONFIG_RTKLIB_INNER_STREAM_SERIAL_ENABLE)
         case STR_SERIAL  : ns=writeserial((serial_t *)stream->port,buff,n,msg); break;
+#endif
         case STR_FILE    : ns=writefile  ((file_t   *)stream->port,buff,n,msg); break;
+#if defined(CONFIG_RTKLIB_INNER_STREAM_TCP_ENABLE)
         case STR_TCPSVR  : ns=writetcpsvr((tcpsvr_t *)stream->port,buff,n,msg); break;
         case STR_TCPCLI  : ns=writetcpcli((tcpcli_t *)stream->port,buff,n,msg); break;
+#endif
+#if defined(CONFIG_RTKLIB_INNER_STREAM_NTRIP_ENABLE)
         case STR_NTRIPSVR:
         case STR_NTRIPCLI: ns=writentrip ((ntrip_t  *)stream->port,buff,n,msg); break;
         case STR_NTRIPCAS: ns=writentripc((ntripc_t *)stream->port,buff,n,msg); break;
+#endif
+#if defined(CONFIG_RTKLIB_INNER_STREAM_UDP_ENABLE)
         case STR_UDPCLI  : ns=writeudpcli((udp_t    *)stream->port,buff,n,msg); break;
+#endif
+#if defined(CONFIG_RTKLIB_INNER_STREAM_MEMBUF_ENABLE)
         case STR_MEMBUF  : ns=writemembuf((membuf_t *)stream->port,buff,n,msg); break;
+#endif
         case STR_FTP     :
         case STR_HTTP    :
         default:
@@ -2907,6 +3149,7 @@ extern int strwrite(stream_t *stream, uint8_t *buff, int n)
     strunlock(stream);
     return ns;
 }
+
 /* get stream status -----------------------------------------------------------
 * get stream status
 * args   : stream_t *stream I   stream
@@ -2928,18 +3171,30 @@ extern int strstat(stream_t *stream, char *msg)
         return stream->state;
     }
     switch (stream->type) {
+#if defined(CONFIG_RTKLIB_INNER_STREAM_SERIAL_ENABLE)
         case STR_SERIAL  : state=stateserial((serial_t *)stream->port); break;
+#endif
         case STR_FILE    : state=statefile  ((file_t   *)stream->port); break;
+#if defined(CONFIG_RTKLIB_INNER_STREAM_TCP_ENABLE)
         case STR_TCPSVR  : state=statetcpsvr((tcpsvr_t *)stream->port); break;
         case STR_TCPCLI  : state=statetcpcli((tcpcli_t *)stream->port); break;
+#endif
+#if defined(CONFIG_RTKLIB_INNER_STREAM_NTRIP_ENABLE)
         case STR_NTRIPSVR:
         case STR_NTRIPCLI: state=statentrip ((ntrip_t  *)stream->port); break;
         case STR_NTRIPCAS: state=statentripc((ntripc_t *)stream->port); break;
+#endif
+#if defined(CONFIG_RTKLIB_INNER_STREAM_UDP_ENABLE)
         case STR_UDPSVR  : state=stateudpsvr((udp_t    *)stream->port); break;
         case STR_UDPCLI  : state=stateudpcli((udp_t    *)stream->port); break;
+#endif
+#if defined(CONFIG_RTKLIB_INNER_STREAM_MEMBUF_ENABLE)
         case STR_MEMBUF  : state=statemembuf((membuf_t *)stream->port); break;
+#endif
+#if defined(CONFIG_RTKLIB_INNER_STREAM_FTP_ENABLE)
         case STR_FTP     : state=stateftp   ((ftp_t    *)stream->port); break;
         case STR_HTTP    : state=stateftp   ((ftp_t    *)stream->port); break;
+#endif
         default:
             strunlock(stream);
             return 0;
@@ -2948,6 +3203,7 @@ extern int strstat(stream_t *stream, char *msg)
     strunlock(stream);
     return state;
 }
+
 /* get extended stream status ---------------------------------------------------
 * get extended stream status
 * args   : stream_t *stream I   stream
@@ -2967,18 +3223,30 @@ extern int strstatx(stream_t *stream, char *msg)
         return stream->state;
     }
     switch (stream->type) {
+#if defined(CONFIG_RTKLIB_INNER_STREAM_SERIAL_ENABLE)
         case STR_SERIAL  : state=statexserial((serial_t *)stream->port,msg); break;
+#endif
         case STR_FILE    : state=statexfile  ((file_t   *)stream->port,msg); break;
+#if defined(CONFIG_RTKLIB_INNER_STREAM_TCP_ENABLE)
         case STR_TCPSVR  : state=statextcpsvr((tcpsvr_t *)stream->port,msg); break;
         case STR_TCPCLI  : state=statextcpcli((tcpcli_t *)stream->port,msg); break;
+#endif
+#if defined(CONFIG_RTKLIB_INNER_STREAM_NTRIP_ENABLE)
         case STR_NTRIPSVR:
         case STR_NTRIPCLI: state=statexntrip ((ntrip_t  *)stream->port,msg); break;
         case STR_NTRIPCAS: state=statexntripc((ntripc_t *)stream->port,msg); break;
+#endif
+#if defined(CONFIG_RTKLIB_INNER_STREAM_UDP_ENABLE)
         case STR_UDPSVR  : state=statexudpsvr((udp_t    *)stream->port,msg); break;
         case STR_UDPCLI  : state=statexudpcli((udp_t    *)stream->port,msg); break;
+#endif
+#if defined(CONFIG_RTKLIB_INNER_STREAM_MEMBUF_ENABLE)
         case STR_MEMBUF  : state=statexmembuf((membuf_t *)stream->port,msg); break;
+#endif
+#if defined(CONFIG_RTKLIB_INNER_STREAM_FTP_ENABLE)
         case STR_FTP     : state=statexftp   ((ftp_t    *)stream->port,msg); break;
         case STR_HTTP    : state=statexftp   ((ftp_t    *)stream->port,msg); break;
+#endif
         default:
             msg[0]='\0';
             strunlock(stream);
@@ -2988,6 +3256,7 @@ extern int strstatx(stream_t *stream, char *msg)
     strunlock(stream);
     return state;
 }
+
 /* get stream statistics summary -----------------------------------------------
 * get stream statistics summary
 * args   : stream_t *stream I   stream
@@ -3008,6 +3277,7 @@ extern void strsum(stream_t *stream, int *inb, int *inr, int *outb, int *outr)
     if (outr) *outr=stream->outr;
     strunlock(stream);
 }
+
 /* set global stream options ---------------------------------------------------
 * set global stream options
 * args   : int    *opt      I   options
@@ -3032,6 +3302,7 @@ extern void strsetopt(const int *opt)
     buffsize   =opt[3]<4096?4096:opt[3]; /* >=4096byte */
     fswapmargin=opt[4]<0?0:opt[4];
 }
+
 /* set timeout time ------------------------------------------------------------
 * set timeout time
 * args   : stream_t *stream I   stream (STR_TCPCLI,STR_NTRIPCLI,STR_NTRIPSVR)
@@ -3041,21 +3312,32 @@ extern void strsetopt(const int *opt)
 *-----------------------------------------------------------------------------*/
 extern void strsettimeout(stream_t *stream, int toinact, int tirecon)
 {
+#if defined(CONFIG_RTKLIB_INNER_STREAM_TCP_ENABLE)
     tcpcli_t *tcpcli;
-    
+#endif
+
     tracet(3,"strsettimeout: toinact=%d tirecon=%d\n",toinact,tirecon);
     
+#if defined(CONFIG_RTKLIB_INNER_STREAM_TCP_ENABLE)
     if (stream->type==STR_TCPCLI) {
         tcpcli=(tcpcli_t *)stream->port;
-    }
-    else if (stream->type==STR_NTRIPCLI||stream->type==STR_NTRIPSVR) {
+    } else
+#endif
+#if defined(CONFIG_RTKLIB_INNER_STREAM_NTRIP_ENABLE)
+    if (stream->type==STR_NTRIPCLI||stream->type==STR_NTRIPSVR) {
         tcpcli=((ntrip_t *)stream->port)->tcp;
+    } else
+#endif
+    {
+        return;
     }
-    else return;
-    
+
+#if defined(CONFIG_RTKLIB_INNER_STREAM_TCP_ENABLE)
     tcpcli->toinact=toinact;
     tcpcli->tirecon=tirecon;
+#endif
 }
+
 /* set local directory ---------------------------------------------------------
 * set local directory path for ftp/http download
 * args   : char   *dir      I   directory for download files
@@ -3067,6 +3349,7 @@ extern void strsetdir(const char *dir)
     
     strcpy(localdir,dir);
 }
+
 /* set http/ntrip proxy address ------------------------------------------------
 * set http/ntrip proxy address
 * args   : char   *addr     I   http/ntrip proxy address <address>:<port>
@@ -3078,6 +3361,7 @@ extern void strsetproxy(const char *addr)
     
     strcpy(proxyaddr,addr);
 }
+
 /* get stream time -------------------------------------------------------------
 * get stream time
 * args   : stream_t *stream I   stream
@@ -3092,6 +3376,7 @@ extern gtime_t strgettime(stream_t *stream)
     }
     return utc2gpst(timeget());
 }
+
 /* send nmea request -----------------------------------------------------------
 * send nmea gpgga message to stream
 * args   : stream_t *stream I   stream
@@ -3108,6 +3393,7 @@ extern void strsendnmea(stream_t *stream, const sol_t *sol)
     n=outnmea_gga(buff,sol);
     strwrite(stream,buff,n);
 }
+
 /* generate general hex message ----------------------------------------------*/
 static int gen_hex(const char *msg, uint8_t *buff)
 {
@@ -3127,6 +3413,7 @@ static int gen_hex(const char *msg, uint8_t *buff)
     }
     return (int)(q-buff);
 }
+
 /* set bitrate ---------------------------------------------------------------*/
 static int set_brate(stream_t *str, int brate)
 {
@@ -3147,6 +3434,7 @@ static int set_brate(stream_t *str, int brate)
     strclose(str);
     return stropen(str,type,mode,path);
 }
+
 /* send receiver command -------------------------------------------------------
 * send receiver commands to stream
 * args   : stream_t *stream I   stream
@@ -3181,6 +3469,7 @@ extern void strsendcmd(stream_t *str, const char *cmd)
                 set_brate(str,brate);
                 sleepms(500);
             }
+#if 0 /* No send CMD */
             else if (!strncmp(msg+1,"UBX",3)) { /* ublox */
                 if ((m=gen_ubx(msg+4,buff))>0) strwrite(str,buff,m);
             }
@@ -3193,6 +3482,7 @@ extern void strsendcmd(stream_t *str, const char *cmd)
             else if (!strncmp(msg+1,"HEX",3)) { /* general hex message */
                 if ((m=gen_hex(msg+4,buff))>0) strwrite(str,buff,m);
             }
+#endif
         }
         else {
             strcat(msg,cmdend);

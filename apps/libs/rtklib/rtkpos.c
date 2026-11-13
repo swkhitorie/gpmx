@@ -479,7 +479,7 @@ static void udpos(rtk_t *rtk, double tt)
         if (rtk->x[i]!=0.0&&rtk->P[i+i*rtk->nx]>0.0) ix[nx++]=i;
     }
     if (nx<9) {
-        rtkfree(ix);
+        rtkport_free(ix);
         return;
     }
     /* state transition of position/velocity/acceleration */
@@ -516,7 +516,7 @@ static void udpos(rtk_t *rtk, double tt)
     for (i=0;i<3;i++) for (j=0;j<3;j++) {
         rtk->P[i+6+(j+6)*rtk->nx]+=Qv[i+j*3];
     }
-    rtkfree(ix); rtkfree(F); rtkfree(P); rtkfree(FP); rtkfree(x); rtkfree(xp);
+    rtkport_free(ix); rtkport_free(F); rtkport_free(P); rtkport_free(FP); rtkport_free(x); rtkport_free(xp);
 }
 /* temporal update of ionospheric parameters ---------------------------------*/
 static void udion(rtk_t *rtk, double tt, double bl, const int *sat, int ns)
@@ -800,7 +800,7 @@ static void udbias(rtk_t *rtk, double tt, const obsd_t *obs, const int *sat,
             if (bias[i]==0.0||rtk->x[IB(sat[i],k,&rtk->opt)]!=0.0) continue;
             initx(rtk,bias[i],SQR(rtk->opt.std[0]),IB(sat[i],k,&rtk->opt));
         }
-        rtkfree(bias);
+        rtkport_free(bias);
     }
 }
 /* temporal update of states --------------------------------------------------*/
@@ -914,11 +914,13 @@ static int zdres(int base, const obsd_t *obs, int n, const double *rs,
         /* troposphere delay model (hydrostatic) */
         zhd=tropmodel(obs[0].time,pos,zazel,0.0);
         r+=tropmapf(obs[i].time,pos,azel+i*2,NULL)*zhd;
-        
+
+#if defined(CONFIG_RTKLIB_ANTENNA_PARAMETER_ENABLE)
         /* receiver antenna phase center correction */
         antmodel(opt->pcvr+index,opt->antdel[index],azel+i*2,opt->posopt[1],
                  dant);
-        
+#endif
+
         /* UD phase/code residual for satellite */
         zdres_sat(base,r,obs+i,nav,azel+i*2,dant,opt,y+i*nf*2,freq+i*nf);
     }
@@ -1188,8 +1190,8 @@ static int ddres(rtk_t *rtk, const nav_t *nav, double dt, const double *x,
     /* DD measurement error covariance */
     ddcov(nb,b,Ri,Rj,nv,R);
     
-    rtkfree(Ri); rtkfree(Rj); rtkfree(im);
-    rtkfree(tropu); rtkfree(tropr); rtkfree(dtdxu); rtkfree(dtdxr);
+    rtkport_free(Ri); rtkport_free(Rj); rtkport_free(im);
+    rtkport_free(tropu); rtkport_free(tropr); rtkport_free(dtdxu); rtkport_free(dtdxr);
     
     return nv;
 }
@@ -1339,9 +1341,9 @@ static void holdamb(rtk_t *rtk, const double *xa)
         if ((info=filter(rtk->x,rtk->P,H,v,R,rtk->nx,nv))) {
             errmsg(rtk,"filter error (info=%d)\n",info);
         }
-        rtkfree(R);
+        rtkport_free(R);
     }
-    rtkfree(v); rtkfree(H);
+    rtkport_free(v); rtkport_free(H);
 }
 /* resolve integer ambiguity by LAMBDA ---------------------------------------*/
 static int resamb_LAMBDA(rtk_t *rtk, double *bias, double *xa)
@@ -1363,7 +1365,7 @@ static int resamb_LAMBDA(rtk_t *rtk, double *bias, double *xa)
     ix=imat(nx,2);
     if ((nb=ddidx(rtk,ix))<=0) {
         errmsg(rtk,"no valid double-difference\n");
-        rtkfree(ix);
+        rtkport_free(ix);
         return 0;
     }
     y=mat(nb,1); DP=mat(nb,nx-na); b=mat(nb,2); db=mat(nb,1); Qb=mat(nb,nb);
@@ -1428,8 +1430,8 @@ static int resamb_LAMBDA(rtk_t *rtk, double *bias, double *xa)
         errmsg(rtk,"lambda error (info=%d)\n",info);
         nb=0;
     }
-    rtkfree(ix);
-    rtkfree(y); rtkfree(DP); rtkfree(b); rtkfree(db); rtkfree(Qb); rtkfree(Qab); rtkfree(QQ);
+    rtkport_free(ix);
+    rtkport_free(y); rtkport_free(DP); rtkport_free(b); rtkport_free(db); rtkport_free(Qb); rtkport_free(Qab); rtkport_free(QQ);
     
     return nb; /* number of ambiguities */
 }
@@ -1488,8 +1490,8 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
                y+nu*nf*2,e+nu*3,azel+nu*2,freq+nu*nf)) {
         errmsg(rtk,"initial base station position error\n");
         
-        rtkfree(rs); rtkfree(dts); rtkfree(var); rtkfree(y); rtkfree(e); rtkfree(azel);
-        rtkfree(freq);
+        rtkport_free(rs); rtkport_free(dts); rtkport_free(var); rtkport_free(y); rtkport_free(e); rtkport_free(azel);
+        rtkport_free(freq);
         return 0;
     }
     /* time-interpolation of residuals (for post-processing) */
@@ -1500,8 +1502,8 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
     if ((ns=selsat(obs,azel,nu,nr,opt,sat,iu,ir))<=0) {
         errmsg(rtk,"no common satellite\n");
         
-        rtkfree(rs); rtkfree(dts); rtkfree(var); rtkfree(y); rtkfree(e); rtkfree(azel);
-        rtkfree(freq);
+        rtkport_free(rs); rtkport_free(dts); rtkport_free(var); rtkport_free(y); rtkport_free(e); rtkport_free(azel);
+        rtkport_free(freq);
         return 0;
     }
     /* temporal update of states */
@@ -1642,8 +1644,8 @@ static int relpos(rtk_t *rtk, const obsd_t *obs, int nu, int nr,
         if (rtk->ssat[i].fix[j]==2&&stat!=SOLQ_FIX) rtk->ssat[i].fix[j]=1;
         if (rtk->ssat[i].slip[j]&1) rtk->ssat[i].slipc[j]++;
     }
-    rtkfree(rs); rtkfree(dts); rtkfree(var); rtkfree(y); rtkfree(e); rtkfree(azel); rtkfree(freq);
-    rtkfree(xp); rtkfree(Pp);  rtkfree(xa);  rtkfree(v); rtkfree(H); rtkfree(R); rtkfree(bias);
+    rtkport_free(rs); rtkport_free(dts); rtkport_free(var); rtkport_free(y); rtkport_free(e); rtkport_free(azel); rtkport_free(freq);
+    rtkport_free(xp); rtkport_free(Pp);  rtkport_free(xa);  rtkport_free(v); rtkport_free(H); rtkport_free(R); rtkport_free(bias);
     
     if (stat!=SOLQ_NONE) rtk->sol.stat=stat;
     
@@ -1688,13 +1690,13 @@ extern void rtkinit(rtk_t *rtk, const prcopt_t *opt)
 *-----------------------------------------------------------------------------*/
 extern void rtktfree(rtk_t *rtk)
 {
-    trace(3,"rtkfree :\n");
+    trace(3,"rtkport_free :\n");
     
     rtk->nx=rtk->na=0;
-    rtkfree(rtk->x ); rtk->x =NULL;
-    rtkfree(rtk->P ); rtk->P =NULL;
-    rtkfree(rtk->xa); rtk->xa=NULL;
-    rtkfree(rtk->Pa); rtk->Pa=NULL;
+    rtkport_free(rtk->x ); rtk->x =NULL;
+    rtkport_free(rtk->P ); rtk->P =NULL;
+    rtkport_free(rtk->xa); rtk->xa=NULL;
+    rtkport_free(rtk->Pa); rtk->Pa=NULL;
 }
 /* precise positioning ---------------------------------------------------------
 * input observation data and navigation message, compute rover position by 

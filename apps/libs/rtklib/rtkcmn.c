@@ -377,7 +377,7 @@ static void fatalerr(const char *format, ...)
 * add fatal callback function for mat(),zeros(),imat()
 * args   : fatalfunc_t *func I  callback function
 * return : none
-* notes  : if rtkmalloc() failed in return : none
+* notes  : if rtkport_malloc() failed in return : none
 *-----------------------------------------------------------------------------*/
 extern void add_fatal(fatalfunc_t *func)
 {
@@ -964,7 +964,7 @@ extern double *mat(int n, int m)
     double *p;
 
     if (n<=0||m<=0) return NULL;
-    if (!(p=(double *)rtkmalloc(sizeof(double)*n*m))) {
+    if (!(p=(double *)rtkport_malloc(sizeof(double)*n*m))) {
         fatalerr("matrix memory allocation error: n=%d,m=%d\n",n,m);
     }
     return p;
@@ -979,7 +979,7 @@ extern int *imat(int n, int m)
     int *p;
 
     if (n<=0||m<=0) return NULL;
-    if (!(p=(int *)rtkmalloc(sizeof(int)*n*m))) {
+    if (!(p=(int *)rtkport_malloc(sizeof(int)*n*m))) {
         fatalerr("integer matrix memory allocation error: n=%d,m=%d\n",n,m);
     }
     return p;
@@ -997,7 +997,7 @@ extern double *zeros(int n, int m)
     if ((p=mat(n,m))) for (n=n*m-1;n>=0;n--) p[n]=0.0;
 #else
     if (n<=0||m<=0) return NULL;
-    if (!(p=(double *)rtkcalloc(sizeof(double),n*m))) {
+    if (!(p=(double *)rtkport_calloc(sizeof(double),n*m))) {
         fatalerr("matrix memory allocation error: n=%d,m=%d\n",n,m);
     }
 #endif
@@ -1113,7 +1113,7 @@ extern int matinv(double *A, int n)
     work=mat(lwork,1);
     dgetrf_(&n,&n,A,&n,ipiv,&info);
     if (!info) dgetri_(&n,A,&n,ipiv,work,&lwork,&info);
-    rtkfree(ipiv); rtkfree(work);
+    rtkport_free(ipiv); rtkport_free(work);
     return info;
 }
 /* solve linear equation -------------------------------------------------------
@@ -1137,7 +1137,7 @@ extern int solve(const char *tr, const double *A, const double *Y, int n,
     matcpy(X,Y,n,m);
     dgetrf_(&n,&n,B,&n,ipiv,&info);
     if (!info) dgetrs_((char *)tr,&n,&m,B,&n,ipiv,X,&n,&info);
-    rtkfree(ipiv); rtkfree(B); 
+    rtkport_free(ipiv); rtkport_free(B); 
     return info;
 }
 
@@ -1170,7 +1170,7 @@ static int ludcmp(double *A, int n, int *indx, double *d)
     *d=1.0;
     for (i=0;i<n;i++) {
         big=0.0; for (j=0;j<n;j++) if ((tmp=fabs(A[i+j*n]))>big) big=tmp;
-        if (big>0.0) vv[i]=1.0/big; else {rtkfree(vv); return -1;}
+        if (big>0.0) vv[i]=1.0/big; else {rtkport_free(vv); return -1;}
     }
     for (j=0;j<n;j++) {
         for (i=0;i<j;i++) {
@@ -1188,12 +1188,12 @@ static int ludcmp(double *A, int n, int *indx, double *d)
             *d=-(*d); vv[imax]=vv[j];
         }
         indx[j]=imax;
-        if (A[j+j*n]==0.0) {rtkfree(vv); return -1;}
+        if (A[j+j*n]==0.0) {rtkport_free(vv); return -1;}
         if (j!=n-1) {
             tmp=1.0/A[j+j*n]; for (i=j+1;i<n;i++) A[i+j*n]*=tmp;
         }
     }
-    rtkfree(vv);
+    rtkport_free(vv);
     return 0;
 }
 /* LU back-substitution ------------------------------------------------------*/
@@ -1218,13 +1218,13 @@ extern int matinv(double *A, int n)
     int i,j,*indx;
     
     indx=imat(n,1); B=mat(n,n); matcpy(B,A,n,n);
-    if (ludcmp(B,n,indx,&d)) {rtkfree(indx); rtkfree(B); return -1;}
+    if (ludcmp(B,n,indx,&d)) {rtkport_free(indx); rtkport_free(B); return -1;}
     for (j=0;j<n;j++) {
         for (i=0;i<n;i++) A[i+j*n]=0.0;
         A[j+j*n]=1.0;
         lubksb(B,n,indx,A+j*n);
     }
-    rtkfree(indx); rtkfree(B);
+    rtkport_free(indx); rtkport_free(B);
     return 0;
 }
 /* solve linear equation -----------------------------------------------------*/
@@ -1236,7 +1236,7 @@ extern int solve(const char *tr, const double *A, const double *Y, int n,
 
     matcpy(B,A,n,n);
     if (!(info=matinv(B,n))) matmul(tr[0]=='N'?"NN":"TN",n,m,n,1.0,B,Y,0.0,X);
-    rtkfree(B);
+    rtkport_free(B);
     return info;
 }
 #endif
@@ -1264,7 +1264,7 @@ extern int lsq(const double *A, const double *y, int n, int m, double *x,
     matmul("NN",n,1,m,1.0,A,y,0.0,Ay); /* Ay=A*y */
     matmul("NT",n,n,m,1.0,A,A,0.0,Q);  /* Q=A*A' */
     if (!(info=matinv(Q,n))) matmul("NN",n,1,n,1.0,Q,Ay,0.0,x); /* x=Q^-1*Ay */
-    rtkfree(Ay);
+    rtkport_free(Ay);
     return info;
 }
 /* kalman filter ---------------------------------------------------------------
@@ -1301,7 +1301,7 @@ static int filter_(const double *x, const double *P, const double *H,
         matmul("NT",n,n,m,-1.0,K,H,1.0,I);  /* Pp=(I-K*H')*P */
         matmul("NN",n,n,n,1.0,I,P,0.0,Pp);
     }
-    rtkfree(F); rtkfree(Q); rtkfree(K); rtkfree(I);
+    rtkport_free(F); rtkport_free(Q); rtkport_free(K); rtkport_free(I);
     return info;
 }
 extern int filter(double *x, double *P, const double *H, const double *v,
@@ -1322,7 +1322,7 @@ extern int filter(double *x, double *P, const double *H, const double *v,
         x[ix[i]]=xp_[i];
         for (j=0;j<k;j++) P[ix[i]+ix[j]*n]=Pp_[i+j*k];
     }
-    rtkfree(ix); rtkfree(x_); rtkfree(xp_); rtkfree(P_); rtkfree(Pp_); rtkfree(H_);
+    rtkport_free(ix); rtkport_free(x_); rtkport_free(xp_); rtkport_free(P_); rtkport_free(Pp_); rtkport_free(H_);
     return info;
 }
 /* smoother --------------------------------------------------------------------
@@ -1357,7 +1357,7 @@ extern int smoother(const double *xf, const double *Qf, const double *xb,
             matmul("NN",n,1,n,1.0,Qs,xx,0.0,xs);
         }
     }
-    rtkfree(invQf); rtkfree(invQb); rtkfree(xx);
+    rtkport_free(invQf); rtkport_free(invQb); rtkport_free(xx);
     return info;
 }
 /* print matrix ----------------------------------------------------------------
@@ -1610,9 +1610,9 @@ extern double timediff(gtime_t t1, gtime_t t2)
 * return : current time in utc
 *-----------------------------------------------------------------------------*/
 double timeoffset_ = 0.0;        /* time offset (s) */
-#if !defined(CONFIG_RTKLIB_USR_PLATFORM)
 extern gtime_t timeget(void)
 {
+#if !defined(CONFIG_RTKLIB_TIME_PORT)
     gtime_t time;
     double ep[6]={0};
 #ifdef WIN32
@@ -1636,8 +1636,10 @@ extern gtime_t timeget(void)
     time=gpst2utc(time);
 #endif
     return timeadd(time,timeoffset_);
+#else
+    return rtkport_timeget();
+#endif
 }
-#endif  // end with CONFIG_RTKLIB_USR_PLATFORM
 
 /* set current time in utc -----------------------------------------------------
 * set current time in utc
@@ -1878,9 +1880,9 @@ extern int adjgpsweek(int week)
 * args   : none
 * return : current tick in ms
 *-----------------------------------------------------------------------------*/
-#if !defined(CONFIG_RTKLIB_USR_PLATFORM)
 extern uint32_t tickget(void)
 {
+#if !defined(CONFIG_RTKLIB_TIME_PORT)
 #ifdef WIN32
     return (uint32_t)timeGetTime();
 #else
@@ -1901,6 +1903,9 @@ extern uint32_t tickget(void)
     return tv.tv_sec*1000u+tv.tv_usec/1000u;
 #endif
 #endif /* WIN32 */
+#else
+    return rtkport_tickget();
+#endif
 }
 /* sleep ms --------------------------------------------------------------------
 * sleep ms
@@ -1909,6 +1914,7 @@ extern uint32_t tickget(void)
 *-----------------------------------------------------------------------------*/
 extern void sleepms(int ms)
 {
+#if !defined(CONFIG_RTKLIB_TIME_PORT)
 #ifdef WIN32
     if (ms<5) Sleep(1); else Sleep(ms);
 #else
@@ -1918,8 +1924,10 @@ extern void sleepms(int ms)
     ts.tv_nsec=(long)(ms%1000*1000000);
     nanosleep(&ts,NULL);
 #endif
+#else
+    rtkport_sleepms(ms);
+#endif
 }
-#endif // end with CONFIG_RTKLIB_USR_PLATFORM
 
 /* convert degree to deg-min-sec -----------------------------------------------
 * convert degree to degree-minute-second
@@ -2311,6 +2319,8 @@ static int decodef(char *p, int n, double *v)
     }
     return i;
 }
+
+#if defined(CONFIG_RTKLIB_ANTENNA_PARAMETER_ENABLE)
 /* add antenna parameter -----------------------------------------------------*/
 static void addpcv(const pcv_t *pcv, pcvs_t *pcvs)
 {
@@ -2318,9 +2328,9 @@ static void addpcv(const pcv_t *pcv, pcvs_t *pcvs)
 
     if (pcvs->nmax<=pcvs->n) {
         pcvs->nmax+=256;
-        if (!(pcvs_pcv=(pcv_t *)rtkrealloc(pcvs->pcv,sizeof(pcv_t)*pcvs->nmax))) {
+        if (!(pcvs_pcv=(pcv_t *)rtkport_realloc(pcvs->pcv,sizeof(pcv_t)*pcvs->nmax))) {
             trace(1,"addpcv: memory allocation error\n");
-            rtkfree(pcvs->pcv); pcvs->pcv=NULL; pcvs->n=pcvs->nmax=0;
+            rtkport_free(pcvs->pcv); pcvs->pcv=NULL; pcvs->n=pcvs->nmax=0;
             return;
         }
         pcvs->pcv=pcvs_pcv;
@@ -2532,6 +2542,7 @@ extern pcv_t *searchpcv(int sat, const char *type, gtime_t time,
     }
     return NULL;
 }
+#endif
 /* read station positions ------------------------------------------------------
 * read positions from station position file
 * args   : char  *file      I   station position file containing
@@ -2624,6 +2635,8 @@ extern int readblq(const char *file, const char *sta, double *odisp)
     trace(2,"no otl parameters: sta=%s file=%s\n",sta,file);
     return 0;
 }
+
+#if defined(CONFIG_RTKLIB_TLE_ENABLE) || defined(CONFIG_RTKLIB_EARTH_TIDE_MODLE_ENABLE)
 /* read earth rotation parameters ----------------------------------------------
 * read earth rotation parameters
 * args   : char   *file       I   IGS ERP file (IGS ERP ver.2)
@@ -2650,9 +2663,9 @@ extern int readerp(const char *file, erp_t *erp)
         }
         if (erp->n>=erp->nmax) {
             erp->nmax=erp->nmax<=0?128:erp->nmax*2;
-            erp_data=(erpd_t *)rtkrealloc(erp->data,sizeof(erpd_t)*erp->nmax);
+            erp_data=(erpd_t *)rtkport_realloc(erp->data,sizeof(erpd_t)*erp->nmax);
             if (!erp_data) {
-                rtkfree(erp->data); erp->data=NULL; erp->n=erp->nmax=0;
+                rtkport_free(erp->data); erp->data=NULL; erp->n=erp->nmax=0;
                 fclose(fp);
                 return 0;
             }
@@ -2720,6 +2733,7 @@ extern int geterp(const erp_t *erp, gtime_t time, double *erpv)
     erpv[3]=(1.0-a)*erp->data[j].lod    +a*erp->data[j+1].lod;
     return 1;
 }
+#endif
 /* compare ephemeris ---------------------------------------------------------*/
 static int cmpeph(const void *p1, const void *p2)
 {
@@ -2748,9 +2762,9 @@ static void uniqeph(nav_t *nav)
     }
     nav->n=j+1;
 
-    if (!(nav_eph=(eph_t *)rtkrealloc(nav->eph,sizeof(eph_t)*nav->n))) {
+    if (!(nav_eph=(eph_t *)rtkport_realloc(nav->eph,sizeof(eph_t)*nav->n))) {
         trace(1,"uniqeph malloc error n=%d\n",nav->n);
-        rtkfree(nav->eph); nav->eph=NULL; nav->n=nav->nmax=0;
+        rtkport_free(nav->eph); nav->eph=NULL; nav->n=nav->nmax=0;
         return;
     }
     nav->eph=nav_eph;
@@ -2788,9 +2802,9 @@ static void uniqgeph(nav_t *nav)
     }
     nav->ng=j+1;
 
-    if (!(nav_geph=(geph_t *)rtkrealloc(nav->geph,sizeof(geph_t)*nav->ng))) {
+    if (!(nav_geph=(geph_t *)rtkport_realloc(nav->geph,sizeof(geph_t)*nav->ng))) {
         trace(1,"uniqgeph malloc error ng=%d\n",nav->ng);
-        rtkfree(nav->geph); nav->geph=NULL; nav->ng=nav->ngmax=0;
+        rtkport_free(nav->geph); nav->geph=NULL; nav->ng=nav->ngmax=0;
         return;
     }
     nav->geph=nav_geph;
@@ -2828,9 +2842,9 @@ static void uniqseph(nav_t *nav)
     }
     nav->ns=j+1;
 
-    if (!(nav_seph=(seph_t *)rtkrealloc(nav->seph,sizeof(seph_t)*nav->ns))) {
+    if (!(nav_seph=(seph_t *)rtkport_realloc(nav->seph,sizeof(seph_t)*nav->ns))) {
         trace(1,"uniqseph malloc error ns=%d\n",nav->ns);
-        rtkfree(nav->seph); nav->seph=NULL; nav->ns=nav->nsmax=0;
+        rtkport_free(nav->seph); nav->seph=NULL; nav->ns=nav->nsmax=0;
         return;
     }
     nav->seph=nav_seph;
@@ -3061,7 +3075,7 @@ extern int savenav(const char *file, const nav_t *nav)
 *-----------------------------------------------------------------------------*/
 extern void freeobs(obs_t *obs)
 {
-    rtkfree(obs->data); obs->data=NULL; obs->n=obs->nmax=0;
+    rtkport_free(obs->data); obs->data=NULL; obs->n=obs->nmax=0;
 }
 /* free navigation data ---------------------------------------------------------
 * free memory for navigation data
@@ -3075,21 +3089,21 @@ extern void freeobs(obs_t *obs)
 *-----------------------------------------------------------------------------*/
 extern void freenav(nav_t *nav, int opt)
 {
-    if (opt&0x01) {rtkfree(nav->eph ); nav->eph =NULL; nav->n =nav->nmax =0;}
+    if (opt&0x01) {rtkport_free(nav->eph ); nav->eph =NULL; nav->n =nav->nmax =0;}
 #if defined(ENAGLO)
-    if (opt&0x02) {rtkfree(nav->geph); nav->geph=NULL; nav->ng=nav->ngmax=0;}
+    if (opt&0x02) {rtkport_free(nav->geph); nav->geph=NULL; nav->ng=nav->ngmax=0;}
 #endif
 #if defined(CONFIG_RTKLIB_SBAS_CORR_ENABLE)
-    if (opt&0x04) {rtkfree(nav->seph); nav->seph=NULL; nav->ns=nav->nsmax=0;}
+    if (opt&0x04) {rtkport_free(nav->seph); nav->seph=NULL; nav->ns=nav->nsmax=0;}
 #endif
 #if defined(CONFIG_RTKLIB_PRECISE_EPH_CLK_ENABLE)
-    if (opt&0x08) {rtkfree(nav->peph); nav->peph=NULL; nav->ne=nav->nemax=0;}
-    if (opt&0x10) {rtkfree(nav->pclk); nav->pclk=NULL; nav->nc=nav->ncmax=0;}
+    if (opt&0x08) {rtkport_free(nav->peph); nav->peph=NULL; nav->ne=nav->nemax=0;}
+    if (opt&0x10) {rtkport_free(nav->pclk); nav->pclk=NULL; nav->nc=nav->ncmax=0;}
 #endif
 #if defined(CONFIG_RTKLIB_ALMANAC_ENABLE)
-    if (opt&0x20) {rtkfree(nav->alm ); nav->alm =NULL; nav->na=nav->namax=0;}
+    if (opt&0x20) {rtkport_free(nav->alm ); nav->alm =NULL; nav->na=nav->namax=0;}
 #endif
-    // if (opt&0x40) {rtkfree(nav->tec ); nav->tec =NULL; nav->nt=nav->ntmax=0;}
+    // if (opt&0x40) {rtkport_free(nav->tec ); nav->tec =NULL; nav->nt=nav->ntmax=0;}
 }
 /* debug trace functions -----------------------------------------------------*/
 #ifdef TRACE
@@ -3404,65 +3418,69 @@ extern void traceb  (int level, const uint8_t *p, int n) {}
 
 //     return n;
 // }
+
+#if defined(CONFIG_RTKLIB_STREAM_INNER_ENABLE)
 /* generate local directory recursively --------------------------------------*/
-// static int mkdir_r(const char *dir)
-// {
-//     char pdir[1024],*p;
+static int mkdir_r(const char *dir)
+{
+    char pdir[1024],*p;
 
-// #ifdef WIN32
-//     HANDLE h;
-//     WIN32_FIND_DATA data;
+#ifdef WIN32
+    HANDLE h;
+    WIN32_FIND_DATA data;
 
-//     if (!*dir||!strcmp(dir+1,":\\")) return 1;
+    if (!*dir||!strcmp(dir+1,":\\")) return 1;
 
-//     sprintf(pdir,"%.1023s",dir);
-//     if ((p=strrchr(pdir,FILEPATHSEP))) {
-//         *p='\0';
-//         h=FindFirstFile(pdir,&data);
-//         if (h==INVALID_HANDLE_VALUE) {
-//             if (!mkdir_r(pdir)) return 0;
-//         }
-//         else FindClose(h);
-//     }
-//     if (CreateDirectory(dir,NULL)||GetLastError()==ERROR_ALREADY_EXISTS) {
-//         return 1;
-//     }
-// #else
-//     FILE *fp;
+    sprintf(pdir,"%.1023s",dir);
+    if ((p=strrchr(pdir,FILEPATHSEP))) {
+        *p='\0';
+        h=FindFirstFile(pdir,&data);
+        if (h==INVALID_HANDLE_VALUE) {
+            if (!mkdir_r(pdir)) return 0;
+        }
+        else FindClose(h);
+    }
+    if (CreateDirectory(dir,NULL)||GetLastError()==ERROR_ALREADY_EXISTS) {
+        return 1;
+    }
+#else
+    FILE *fp;
 
-//     if (!*dir) return 1;
+    if (!*dir) return 1;
 
-//     sprintf(pdir,"%.1023s",dir);
-//     if ((p=strrchr(pdir,FILEPATHSEP))) {
-//         *p='\0';
-//         if (!(fp=fopen(pdir,"r"))) {
-//             if (!mkdir_r(pdir)) return 0;
-//         }
-//         else fclose(fp);
-//     }
-//     if (!mkdir(dir,0777)||errno==EEXIST) return 1;
-// #endif
-//     trace(2,"directory generation error: dir=%s\n",dir);
-//     return 0;
-// }
+    sprintf(pdir,"%.1023s",dir);
+    if ((p=strrchr(pdir,FILEPATHSEP))) {
+        *p='\0';
+        if (!(fp=fopen(pdir,"r"))) {
+            if (!mkdir_r(pdir)) return 0;
+        }
+        else fclose(fp);
+    }
+    if (!mkdir(dir,0777)||errno==EEXIST) return 1;
+#endif
+    trace(2,"directory generation error: dir=%s\n",dir);
+    return 0;
+}
+
 /* create directory ------------------------------------------------------------
 * create directory if not exists
 * args   : char   *path     I   file path to be saved
 * return : none
 * notes  : recursively.
 *-----------------------------------------------------------------------------*/
-// extern void createdir(const char *path)
-// {
-//     char buff[1024],*p;
+extern void createdir(const char *path)
+{
+    char buff[1024],*p;
 
-//     tracet(3,"createdir: path=%s\n",path);
+    tracet(3,"createdir: path=%s\n",path);
 
-//     strcpy(buff,path);
-//     if (!(p=strrchr(buff,FILEPATHSEP))) return;
-//     *p='\0';
+    strcpy(buff,path);
+    if (!(p=strrchr(buff,FILEPATHSEP))) return;
+    *p='\0';
 
-//     mkdir_r(buff);
-// }
+    mkdir_r(buff);
+}
+#endif
 /* replace string ------------------------------------------------------------*/
 static int repstr(char *str, const char *pat, const char *rep)
 {
@@ -3895,6 +3913,9 @@ static double interpvar(double ang, const double *var)
     if (i<0) return var[0]; else if (i>=18) return var[18];
     return var[i]*(1.0-a+i)+var[i+1]*(a-i);
 }
+
+#if defined(CONFIG_RTKLIB_ANTENNA_PARAMETER_ENABLE)
+
 /* receiver antenna model ------------------------------------------------------
 * compute antenna offset by antenna phase center parameters
 * args   : pcv_t *pcv       I   antenna phase center parameters
@@ -3912,7 +3933,7 @@ extern void antmodel(const pcv_t *pcv, const double *del, const double *azel,
     int i,j;
 
     trace(4,"antmodel: azel=%6.1f %4.1f opt=%d\n",azel[0]*R2D,azel[1]*R2D,opt);
-
+    gsh_kprintf("antmodel: azel=%6.1f %4.1f opt=%d\n",azel[0]*R2D,azel[1]*R2D,opt);
     e[0]=sin(azel[0])*cosel;
     e[1]=cos(azel[0])*cosel;
     e[2]=sin(azel[1]);
@@ -3923,6 +3944,7 @@ extern void antmodel(const pcv_t *pcv, const double *del, const double *azel,
         dant[i]=-dot(off,e,3)+(opt?interpvar(90.0-azel[1]*R2D,pcv->var[i]):0.0);
     }
     trace(5,"antmodel: dant=%6.3f %6.3f\n",dant[0],dant[1]);
+    gsh_kprintf("antmodel: dant=%6.3f %6.3f\n",dant[0],dant[1]);
 }
 /* satellite antenna model ------------------------------------------------------
 * compute satellite antenna phase center parameters
@@ -3988,6 +4010,9 @@ static void sunmoonpos_eci(gtime_t tut, double *rsun, double *rmoon)
         trace(5,"rmoon=%.3f %.3f %.3f\n",rmoon[0],rmoon[1],rmoon[2]);
     }
 }
+#endif
+
+#if defined(CONFIG_RTKLIB_EARTH_TIDE_MODLE_ENABLE)
 /* sun and moon position -------------------------------------------------------
 * get sun and moon position in ecef
 * args   : gtime_t tut      I   time in ut1
@@ -4018,6 +4043,8 @@ extern void sunmoonpos(gtime_t tutc, const double *erpv, double *rsun,
     if (rmoon) matmul("NN",3,1,3,1.0,U,rm,0.0,rmoon);
     if (gmst ) *gmst=gmst_;
 }
+#endif
+
 /* uncompress file -------------------------------------------------------------
 * uncompress (uncompress/unzip/uncompact hatanaka-compression/tar) file
 * args   : char   *file     I   input file
@@ -4104,38 +4131,38 @@ extern void settime(gtime_t time) {}
 #endif
 
 /* user platform interface ----------------------------*/
-__attribute__((weak)) void *rtkmalloc(size_t sz)
+__attribute__((weak)) void *rtkport_malloc(size_t sz)
 {
     return malloc(sz);
 }
 
-__attribute__((weak)) void *rtkrealloc(void *p, size_t sz)
+__attribute__((weak)) void *rtkport_realloc(void *p, size_t sz)
 {
     return realloc(p, sz);
 }
 
-__attribute__((weak)) void *rtkcalloc(size_t num, size_t sz)
+__attribute__((weak)) void *rtkport_calloc(size_t num, size_t sz)
 {
     return calloc(num, sz);
 }
 
-__attribute__((weak)) void rtkfree(void *p)
+__attribute__((weak)) void rtkport_free(void *p)
 {
     free(p);
 }
 
-__attribute__((weak)) gtime_t timeget()
+__attribute__((weak)) gtime_t rtkport_timeget()
 {
     gtime_t tmp = {0};
     return tmp;
 }
 
-__attribute__((weak)) uint32_t tickget()
+__attribute__((weak)) uint32_t rtkport_tickget()
 {
     return 0;
 }
 
-__attribute__((weak)) void sleepms(int ms)
+__attribute__((weak)) void rtkport_sleepms(int ms)
 {
 
 }

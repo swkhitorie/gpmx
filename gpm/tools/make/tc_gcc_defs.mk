@@ -41,8 +41,8 @@ TC_CC_VIA  = @${1}
 TC_LINK_VIA= @${1}
 TC_LINK_LIBUSE =
 TC_LINK_ENTRY = -e ${1}
-TC_LINK_SCF   = -T ${1}
-TC_LINK_LIST  = -Wl,-Map=${1}
+TC_LINK_SCF   =
+TC_LINK_LIST  =
 
 ########################################
 # constants                            #
@@ -110,8 +110,6 @@ TC_LIBOPTS := \
   -Wl,--gc-sections          \
   -Wl,--sort-section=alignment \
   -Wl,--sort-common           \
-  -Wl,--print-memory-usage    \
-  -Wl,--cref                  \
   -lc -lm                     \
   ${EXT_LIBOPTS}
 

@@ -128,9 +128,9 @@ static int addpeph(nav_t *nav, peph_t *peph)
     
     if (nav->ne>=nav->nemax) {
         nav->nemax+=256;
-        if (!(nav_peph=(peph_t *)rtkrealloc(nav->peph,sizeof(peph_t)*nav->nemax))) {
+        if (!(nav_peph=(peph_t *)rtkport_realloc(nav->peph,sizeof(peph_t)*nav->nemax))) {
             trace(1,"readsp3b malloc error n=%d\n",nav->nemax);
-            rtkfree(nav->peph); nav->peph=NULL; nav->ne=nav->nemax=0;
+            rtkport_free(nav->peph); nav->peph=NULL; nav->ne=nav->nemax=0;
             return 0;
         }
         nav->peph=nav_peph;
@@ -285,8 +285,8 @@ extern void readsp3(const char *file, nav_t *nav, int opt)
     trace(3,"readpephs: file=%s\n",file);
     
     for (i=0;i<MAXEXFILE;i++) {
-        if (!(efiles[i]=(char *)rtkmalloc(1024))) {
-            for (i--;i>=0;i--) rtkfree(efiles[i]);
+        if (!(efiles[i]=(char *)rtkport_malloc(1024))) {
+            for (i--;i>=0;i--) rtkport_free(efiles[i]);
             return;
         }
     }
@@ -311,7 +311,7 @@ extern void readsp3(const char *file, nav_t *nav, int opt)
         
         fclose(fp);
     }
-    for (i=0;i<MAXEXFILE;i++) rtkfree(efiles[i]);
+    for (i=0;i<MAXEXFILE;i++) rtkport_free(efiles[i]);
     
     /* combine precise ephemeris */
     if (nav->ne>0) combpeph(nav,opt);
@@ -338,7 +338,7 @@ extern int readsap(const char *file, gtime_t time, nav_t *nav)
         pcv=searchpcv(i+1,"",time,&pcvs);
         nav->pcvs[i]=pcv?*pcv:pcv0;
     }
-    rtkfree(pcvs.pcv);
+    rtkport_free(pcvs.pcv);
     return 1;
 }
 /* read DCB parameters file --------------------------------------------------*/
@@ -402,8 +402,8 @@ extern int readdcb(const char *file, nav_t *nav, const sta_t *sta)
         nav->cbias[i][j]=0.0;
     }
     for (i=0;i<MAXEXFILE;i++) {
-        if (!(efiles[i]=(char *)rtkmalloc(1024))) {
-            for (i--;i>=0;i--) rtkfree(efiles[i]);
+        if (!(efiles[i]=(char *)rtkport_malloc(1024))) {
+            for (i--;i>=0;i--) rtkport_free(efiles[i]);
             return 0;
         }
     }
@@ -412,7 +412,7 @@ extern int readdcb(const char *file, nav_t *nav, const sta_t *sta)
     for (i=0;i<n;i++) {
         readdcbf(efiles[i],nav,sta);
     }
-    for (i=0;i<MAXEXFILE;i++) rtkfree(efiles[i]);
+    for (i=0;i<MAXEXFILE;i++) rtkport_free(efiles[i]);
     
     return 1;
 }

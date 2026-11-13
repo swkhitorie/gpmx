@@ -506,7 +506,7 @@ static void udpos_ppp(rtk_t *rtk)
         if (rtk->x[i]!=0.0&&rtk->P[i+i*rtk->nx]>0.0) ix[nx++]=i;
     }
     if (nx<9) {
-        rtkfree(ix);
+        rtkport_free(ix);
         return;
     }
     /* state transition of position/velocity/acceleration */
@@ -543,7 +543,7 @@ static void udpos_ppp(rtk_t *rtk)
     for (i=0;i<3;i++) for (j=0;j<3;j++) {
         rtk->P[i+6+(j+6)*rtk->nx]+=Qv[i+j*3];
     }
-    rtkfree(ix); rtkfree(F); rtkfree(P); rtkfree(FP); rtkfree(x); rtkfree(xp);
+    rtkport_free(ix); rtkport_free(F); rtkport_free(P); rtkport_free(FP); rtkport_free(x); rtkport_free(xp);
 }
 /* temporal update of clock --------------------------------------------------*/
 static void udclk_ppp(rtk_t *rtk)
@@ -1172,7 +1172,7 @@ extern void pppos(rtk_t *rtk, const obsd_t *obs, int n, const nav_t *nav)
             rtk->nfix=0;
         }
     }
-    rtkfree(rs); rtkfree(dts); rtkfree(var); rtkfree(azel);
-    rtkfree(xp); rtkfree(Pp); rtkfree(v); rtkfree(H); rtkfree(R);
+    rtkport_free(rs); rtkport_free(dts); rtkport_free(var); rtkport_free(azel);
+    rtkport_free(xp); rtkport_free(Pp); rtkport_free(v); rtkport_free(H); rtkport_free(R);
 }
 #endif // end with CONFIG_RTKLIB_PPP_ENABLE
