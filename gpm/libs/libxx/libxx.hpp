@@ -4,7 +4,7 @@
 #include <new>
 #include <gpmx/config.h>
 
-#include "driver/drv_sched.h"
+#include "drivers/drv_sched.h"
 
 #define lib_malloc(s)    kmm_malloc(s)
 #define lib_free(p)      kmm_free(p)

@@ -56,7 +56,7 @@ static void *built_task_entry(void *ptr)
 	build_pthdata_t *data = (build_pthdata_t *) ptr;
 
 	pthread_setname_np(pthread_self(), data->name);
-	ret = data->entry(data->argc, data->argv);
+	ret = data->entry(data->argc-1, &data->argv[1]);
 
 	free(ptr);
 	built_task_exit(0);

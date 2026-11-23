@@ -32,7 +32,7 @@
 #include <stdbool.h>
 
 #include <gpm/fs/fs.h>
-#include <driver/drv_sched.h>
+#include <drivers/drv_sched.h>
 
 /****************************************************************************
  * Pre-processor Definitions

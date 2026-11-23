@@ -2,7 +2,7 @@
 #define DEV_OPS_SPI_H_
 
 #include <gpmx/config.h>
-#include "driver/drv_sched.h"
+#include "drivers/drv_sched.h"
 
 /****************************************************************************
  * Name: SPI_LOCK

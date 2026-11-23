@@ -16,6 +16,8 @@ class Subscription
 {
 public:
 
+	Subscription() = default;
+
 	/**
 	 * Constructor
 	 *
@@ -38,6 +40,30 @@ public:
 		_orb_id((meta == nullptr) ? ORB_ID_INVALID : static_cast<enum ORB_ID>(meta->o_id)),
 		_instance(instance)
 	{
+	}
+
+	// Copy constructor
+	Subscription(const Subscription &other) : _orb_id(other._orb_id), _instance(other._instance) {}
+
+	// Move constructor
+	Subscription(const Subscription &&other) noexcept : _orb_id(other._orb_id), _instance(other._instance) {}
+
+	// copy assignment
+	Subscription &operator=(const Subscription &other)
+	{
+		unsubscribe();
+		_orb_id = other._orb_id;
+		_instance = other._instance;
+		return *this;
+	}
+
+	// move assignment
+	Subscription &operator=(Subscription &&other) noexcept
+	{
+		unsubscribe();
+		_orb_id = other._orb_id;
+		_instance = other._instance;
+		return *this;
 	}
 
 	~Subscription()
@@ -82,6 +108,12 @@ public:
 	 * @param dst The uORB message struct we are updating.
 	 */
 	bool copy(void *dst) { return advertised() ? uorb_device_node_copy(_node, dst, &_last_generation) : false; }
+
+	/**
+	 * Change subscription instance
+	 * @param instance The new multi-Subscription instance
+	 */
+	bool ChangeInstance(uint8_t instance);
 
 	uint8_t  get_instance() const { return _instance; }
 	unsigned get_last_generation() const { return _last_generation; }

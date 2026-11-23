@@ -27,7 +27,7 @@
 #include <fcntl.h>
 #include <string.h>
 
-#include <driver/drv_sched.h>
+#include <drivers/drv_sched.h>
 
 /****************************************************************************
  * Public Functions

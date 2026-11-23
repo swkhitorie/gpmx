@@ -1,5 +1,5 @@
 #include "drv_gpio.h"
-#include "driver/drv_sched.h"
+#include "drivers/drv_sched.h"
 
 struct irq_pin_t irq_pin_list[CONFIG_STM32_IO_IRQ_LINE_NUM];
 

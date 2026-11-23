@@ -2,7 +2,7 @@
 #define MODULE_LOG_H_
 
 #include <gpmx/config.h>
-#include <driver/drv_sched.h>
+#include <drivers/drv_sched.h>
 
 #define mlog_out(...)    do { if (mlog_printf) mlog_printf(__VA_ARGS__); }while(0);
 

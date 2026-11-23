@@ -39,8 +39,8 @@
 #include <time.h>
 #include <queue.h>
 
-#include <driver/drv_hrt.h>
-#include <driver/drv_sched.h>
+#include <drivers/drv_hrt.h>
+#include <drivers/drv_sched.h>
 
 #include "hrt_stm32.h"
 

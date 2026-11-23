@@ -55,4 +55,26 @@ void Subscription::unsubscribe()
 	_last_generation = 0;
 }
 
+bool Subscription::ChangeInstance(uint8_t instance)
+{
+	struct __uorb_device_master *device_master = uorb_manager_get_device_master(uorb_manager_instance());
+
+	if (instance != _instance) {
+
+		if (uorb_device_master_node_exists(device_master, _orb_id, _instance)) {
+			// if desired new instance exists, unsubscribe from current
+			unsubscribe();
+			_instance = instance;
+			subscribe();
+			return true;
+		}
+
+	} else {
+		// already on desired index
+		return true;
+	}
+
+	return false;
+}
+
 } // namespace uORB

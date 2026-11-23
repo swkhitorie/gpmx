@@ -55,7 +55,7 @@
 #include <string.h>
 #include <fcntl.h>
 
-#include <driver/drv_sched.h>
+#include <drivers/drv_sched.h>
 #include <gpm/mtd/mtd.h>
 #include <gpm/fs/ioctl.h>
 #include <gpm/fs/fs.h>

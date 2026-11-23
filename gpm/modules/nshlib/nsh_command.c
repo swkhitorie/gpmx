@@ -196,7 +196,7 @@ static inline void help_cmdlist(struct nsh_vtbl_s *vtbl)
         if (cmdwidth > colwidth) {
             colwidth = cmdwidth;
         }
-      }
+    }
 
     colwidth += 2;
 

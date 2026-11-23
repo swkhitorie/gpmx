@@ -3,7 +3,7 @@
 #include <lwipopts.h>
 #include <string.h>
 
-#include "driver/drv_sched.h"
+#include "drivers/drv_sched.h"
 
 #define LOG_TAG             "drv.emac"
 

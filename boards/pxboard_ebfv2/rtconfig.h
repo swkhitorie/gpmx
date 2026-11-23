@@ -25,8 +25,6 @@
 
 #define RT_USING_CPU_USAGE
 #if defined(RT_USING_CPU_USAGE)
-// #include "driver/drv_sched.h"
-extern unsigned long long hrt_absolute_time();
 #define RT_CPU_USAGE_HRT_VALUE hrt_absolute_time
 #endif
 

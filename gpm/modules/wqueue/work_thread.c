@@ -10,7 +10,7 @@
 #include "work_lock.h"
 #include "wqueue.h"
 
-#include <driver/drv_hrt.h>
+#include <drivers/drv_hrt.h>
 
 #ifdef	__cplusplus
 extern "C" {

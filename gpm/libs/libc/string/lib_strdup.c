@@ -1,5 +1,5 @@
 #include <string.h>
-#include <driver/drv_sched.h>
+#include <drivers/drv_sched.h>
 
 char *strdup(const char *s)
 {

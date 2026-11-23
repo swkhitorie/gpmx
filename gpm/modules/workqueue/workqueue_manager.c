@@ -3,7 +3,7 @@
 #include "workqueue_manager.h"
 #include "workqueue.h"
 
-#include <driver/drv_sched.h>
+#include <drivers/drv_sched.h>
 
 #include <string.h>
 #include <pthread.h>
@@ -17,15 +17,15 @@
 #include <limits.h>
 #endif
 
-const struct wq_config_t wq_config_rate_ctrl = {"wq:rate_ctrl", 1664, 0};
+const struct wq_config_t wq_config_rate_ctrl = {"wq:rate_ctrl", 3150, 0};
 
-const struct wq_config_t wq_config_spi0 = {"wq:SPI0", 2336, -1};
-const struct wq_config_t wq_config_spi1 = {"wq:SPI1", 2336, -2};
-const struct wq_config_t wq_config_spi2 = {"wq:SPI2", 2336, -3};
-const struct wq_config_t wq_config_spi3 = {"wq:SPI3", 2336, -4};
-const struct wq_config_t wq_config_spi4 = {"wq:SPI4", 2336, -5};
-const struct wq_config_t wq_config_spi5 = {"wq:SPI5", 2336, -6};
-const struct wq_config_t wq_config_spi6 = {"wq:SPI6", 2336, -7};
+const struct wq_config_t wq_config_spi0 = {"wq:SPI0", 2392, -1};
+const struct wq_config_t wq_config_spi1 = {"wq:SPI1", 2392, -2};
+const struct wq_config_t wq_config_spi2 = {"wq:SPI2", 2392, -3};
+const struct wq_config_t wq_config_spi3 = {"wq:SPI3", 2392, -4};
+const struct wq_config_t wq_config_spi4 = {"wq:SPI4", 2392, -5};
+const struct wq_config_t wq_config_spi5 = {"wq:SPI5", 2392, -6};
+const struct wq_config_t wq_config_spi6 = {"wq:SPI6", 2392, -7};
 
 const struct wq_config_t wq_config_i2c0 = {"wq:I2C0", 2336, -8};
 const struct wq_config_t wq_config_i2c1 = {"wq:I2C1", 2336, -9};
@@ -33,23 +33,30 @@ const struct wq_config_t wq_config_i2c2 = {"wq:I2C2", 2336, -10};
 const struct wq_config_t wq_config_i2c3 = {"wq:I2C3", 2336, -11};
 const struct wq_config_t wq_config_i2c4 = {"wq:I2C4", 2336, -12};
 
-const struct wq_config_t wq_config_attitude_ctrl = {"wq:attitude_ctrl", 1672, -13};
-const struct wq_config_t wq_config_nav_and_controllers = {"wq:nav_and_controllers", 7200, -14};
+const struct wq_config_t wq_config_nav_and_controllers = {"wq:nav_and_controllers", 2240, -13};
 
-const struct wq_config_t wq_config_hp_default = {"wq:hp_default", 1900, -15};
+const struct wq_config_t wq_config_ins0 = {"wq:INS0", 6000, -14};
+const struct wq_config_t wq_config_ins1 = {"wq:INS1", 6000, -15};
+const struct wq_config_t wq_config_ins2 = {"wq:INS2", 6000, -16};
+const struct wq_config_t wq_config_ins3 = {"wq:INS3", 6000, -17};
 
-const struct wq_config_t wq_config_uart0 = {"wq:UART0", 1400, -17};
-const struct wq_config_t wq_config_uart1 = {"wq:UART1", 1400, -18};
-const struct wq_config_t wq_config_uart2 = {"wq:UART2", 1400, -19};
-const struct wq_config_t wq_config_uart3 = {"wq:UART3", 1400, -20};
-const struct wq_config_t wq_config_uart4 = {"wq:UART4", 1400, -21};
-const struct wq_config_t wq_config_uart5 = {"wq:UART5", 1400, -22};
-const struct wq_config_t wq_config_uart6 = {"wq:UART6", 1400, -23};
-const struct wq_config_t wq_config_uart7 = {"wq:UART7", 1400, -24};
-const struct wq_config_t wq_config_uart8 = {"wq:UART8", 1400, -25};
-const struct wq_config_t wq_config_uart_unknown = {"wq:UART_UNKNOWN", 1400, -26};
+const struct wq_config_t wq_config_hp_default = {"wq:hp_default", 1900, -18};
 
-const struct wq_config_t wq_config_lp_default = {"wq:lp_default", 1700, -50};
+const struct wq_config_t wq_config_uavcan = {"wq:uavcan", 3624, -19};
+
+const struct wq_config_t wq_config_uart0 = {"wq:UART0", 1728, -21};
+const struct wq_config_t wq_config_uart1 = {"wq:UART1", 1728, -22};
+const struct wq_config_t wq_config_uart2 = {"wq:UART2", 1728, -23};
+const struct wq_config_t wq_config_uart3 = {"wq:UART3", 1728, -24};
+const struct wq_config_t wq_config_uart4 = {"wq:UART4", 1728, -25};
+const struct wq_config_t wq_config_uart5 = {"wq:UART5", 1728, -26};
+const struct wq_config_t wq_config_uart6 = {"wq:UART6", 1728, -27};
+const struct wq_config_t wq_config_uart7 = {"wq:UART7", 1728, -28};
+const struct wq_config_t wq_config_uart8 = {"wq:UART8", 1728, -29};
+const struct wq_config_t wq_config_ttyacm0 = {"wq:ttyACM0", 1728, -30};
+const struct wq_config_t wq_config_uart_unknown = {"wq:UART_UNKNOWN", 1728, -31};
+
+const struct wq_config_t wq_config_lp_default = {"wq:lp_default", 1700, -32};
 
 const struct wq_config_t wq_config_test1 = {"wq:test1", 2000, 0};
 const struct wq_config_t wq_config_test2 = {"wq:test2", 2000, 0};
@@ -146,6 +153,21 @@ const struct wq_config_t *serial_port_to_wq(const char *serial)
 	}
 
 	return &wq_config_uart_unknown;
+}
+
+const struct wq_config_t *ins_instance_to_wq(uint8_t instance)
+{
+	switch (instance) {
+	case 0: return &wq_config_ins0;
+
+	case 1: return &wq_config_ins1;
+
+	case 2: return &wq_config_ins2;
+
+	case 3: return &wq_config_ins3;
+	}
+
+	return &wq_config_ins0;
 }
 
 static struct __workqueue *find_workqueue_by_name(const char *name)
@@ -452,18 +474,3 @@ int workqueue_manager_status()
 
     return 0;
 }
-
-#if defined(CONFIG_GMSH)
-#include "gmsh.h"
-int workqueue_main(int argc, char **argv)
-{
-    if (argc == 2 && !strcmp(argv[1], "status")) {
-        workqueue_manager_status();
-    }
-
-    gsh_kprintf("Usage: work_queue status\r\n");
-    return 0;
-}
-MSH_FUNCTION_EXPORT_CMD(workqueue_main, work_queue, check workqueue status.);
-#endif
-

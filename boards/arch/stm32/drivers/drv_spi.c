@@ -1,5 +1,5 @@
 #include "drv_spi.h"
-#include "driver/drv_sched.h"
+#include "drivers/drv_sched.h"
 
 struct spi_dev_s *g_spi_list[CONFIG_STM32_SPI_NUM];
 

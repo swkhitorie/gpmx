@@ -3,7 +3,7 @@
 #include "uorb_gnode.h"
 #include <math.h>
 #include <errno.h>
-#include <driver/drv_sched.h>
+#include <drivers/drv_sched.h>
 #include <mlog.h>
 
 static void uorb_device_master_lock(struct __uorb_device_master *master)

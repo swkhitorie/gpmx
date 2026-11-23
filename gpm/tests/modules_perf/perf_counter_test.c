@@ -5,7 +5,7 @@
 #include "perf_counter.h"
 #include "perf_counter_test.h"
 
-#include "driver/drv_hrt.h"
+#include "drivers/drv_hrt.h"
 
 #include <pthread.h>
 #include <time.h>

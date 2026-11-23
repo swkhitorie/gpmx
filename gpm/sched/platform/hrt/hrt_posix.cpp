@@ -4,7 +4,7 @@
 #include <string.h>
 #include <time.h>
 #include <semaphore.h>
-#include <driver/drv_hrt.h>
+#include <drivers/drv_hrt.h>
 
 #include <wqueue.h>
 #include "hrt_work.h"

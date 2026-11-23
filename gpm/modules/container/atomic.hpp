@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <driver/drv_sched.h>
+#include <drivers/drv_sched.h>
 
 template <typename T>
 class xatomic

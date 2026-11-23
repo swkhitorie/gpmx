@@ -10,7 +10,7 @@
 #include <gpm/i2c/i2c_master.h>
 #include <gpm/spi/spi.h>
 
-#include "driver/drv_sched.h"
+#include "drivers/drv_sched.h"
 
 #include "fm25vxx_flash.h"
 #include "l3gd20_drv.h"
@@ -48,7 +48,7 @@ __attribute__((section(".ccmram"))) uint8_t ucHeap[configTOTAL_HEAP_SIZE];
 #endif
 
 #if defined(CONFIG_HRT)
-#include "driver/drv_hrt.h"
+#include "drivers/drv_hrt.h"
 #endif
 
 #if defined(CONFIG_GMSH)

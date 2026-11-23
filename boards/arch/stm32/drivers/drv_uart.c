@@ -1,5 +1,5 @@
 #include "drv_uart.h"
-#include "driver/drv_sched.h"
+#include "drivers/drv_sched.h"
 
 struct uart_dev_s *g_uart_list[CONFIG_STM32_UART_NUM] = {0};
 

@@ -5,7 +5,7 @@
 #include <queue.h>
 #include <signal.h>
 #include <semaphore.h>
-#include <driver/drv_hrt.h>
+#include <drivers/drv_hrt.h>
 
 #include "hrt_work.h"
 #include <wqueue.h>

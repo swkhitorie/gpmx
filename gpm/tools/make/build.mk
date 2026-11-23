@@ -34,6 +34,8 @@ include ${MAKEFILES_ROOTDIR}/make/common.mk
 # 1 - source to look for (with or without path)
 # 2 - target sources lists
 MK_LOOKUPSRC=$(filter %/$(notdir ${1}),${2})
+MK_RELROOT = $(patsubst ${SDK_ROOTDIR}/%,%,$(1))
+MK_OBJREL  = $(basename $(call MK_RELROOT,$(1))).o
 
 ################################################################################
 # Variable section
@@ -41,30 +43,14 @@ MK_LOOKUPSRC=$(filter %/$(notdir ${1}),${2})
 
 # C thumb sources
 BUILD_CSOURCES:=$(foreach src,${PROJ_CSOURCES},${SDK_ROOTDIR}/$(src))
-ifneq (${USR_ROOTDIR},)
-BUILD_CSOURCES+=
-BUILD_CSOURCES+=$(foreach src,${USR_CSOURCES},${USR_ROOTDIR}/$(src))
-endif
 
 BUILD_CPPSOURCES:=$(foreach src,${PROJ_CPPSOURCES},${SDK_ROOTDIR}/$(src))
-ifneq (${USR_ROOTDIR},)
-BUILD_CPPSOURCES+=
-BUILD_CPPSOURCES+=$(foreach src,${USR_CPPSOURCES},${USR_ROOTDIR}/$(src))
-endif
 
 # C ARM sources
 BUILD_CARMSOURCES:=$(foreach src,${PROJ_CARMSOURCES},${SDK_ROOTDIR}/$(src))
-ifneq (${USR_ROOTDIR},)
-BUILD_CARMSOURCES+=
-BUILD_CARMSOURCES+=$(foreach src,${USR_CARMSOURCES},${USR_ROOTDIR}/$(src))
-endif
 
 # Assembly sources
 BUILD_ASMSOURCES:=$(foreach src,${PROJ_ASMSOURCES},${SDK_ROOTDIR}/$(src))
-ifneq (${USR_ROOTDIR},)
-BUILD_ASMSOURCES+=
-BUILD_ASMSOURCES+=$(foreach src,${USR_ASMSOURCES},${USR_ROOTDIR}/$(src))
-endif
 
 # All sources
 BUILD_SOURCES:=${BUILD_CSOURCES} ${BUILD_CPPSOURCES} ${BUILD_CARMSOURCES} ${BUILD_ASMSOURCES}
@@ -73,13 +59,16 @@ BUILD_SOURCES:=${BUILD_CSOURCES} ${BUILD_CPPSOURCES} ${BUILD_CARMSOURCES} ${BUIL
 BUILD_DEPENDS:=$(patsubst %.c,%.d,${BUILD_CSOURCES} ${BUILD_CARMSOURCES})
 
 # All sources
-PROJ_OBJS:=$(foreach obj,$(basename $(notdir ${BUILD_SOURCES})),${OBJS_FOLDER}/${obj}.o)
+# PROJ_OBJS:=$(foreach obj,$(basename $(notdir ${BUILD_SOURCES})),${OBJS_FOLDER}/${obj}.o)
+PROJ_OBJS:=$(foreach src,${BUILD_SOURCES},${OBJS_FOLDER}/$(call MK_OBJREL,${src}))
+
 BUILD_OBJS:=${PROJ_OBJS}
 PROJ_OBJS+=$(foreach src,${EXT_OBJS},${SDK_ROOTDIR}/$(src))
-ifneq (${USR_ROOTDIR},)
-PROJ_OBJS+=
-PROJ_OBJS+=$(foreach src,${USR_EXT_OBJS},${USR_ROOTDIR}/$(src))
-endif
+
+C_OBJS    := $(foreach src,${BUILD_CSOURCES},${OBJS_FOLDER}/$(call MK_OBJREL,${src}))
+CARM_OBJS := $(foreach src,${BUILD_CARMSOURCES},${OBJS_FOLDER}/$(call MK_OBJREL,${src}))
+CPP_OBJS  := $(foreach src,${BUILD_CPPSOURCES},${OBJS_FOLDER}/$(call MK_OBJREL,${src}))
+ASM_OBJS  := $(foreach src,${BUILD_ASMSOURCES},${OBJS_FOLDER}/$(call MK_OBJREL,${src}))
 
 #
 # dependency file or dependency variable
@@ -87,13 +76,31 @@ endif
 #C_ADEP := $(call TC_CC_VIA,${TARGET_ROOTDIR}/copts.via)
 #ASM_ADEP := $(call TC_ASM_VIA,${TARGET_ROOTDIR}/asmopts.via)
 #LINK_ADEP := $(call TC_LINK_VIA, ${TARGET_ROOTDIR}/lopts.via)
+
 EXT_ADEP ?=
+# define add_ext_opt
+# $(foreach src,$($(1)_SRC), \
+#     $(eval $(OBJS_FOLDER)/$(basename $(src)).o: EXT_ADEP += $($(1)_OPT)) \
+# )
+# endef
 define add_ext_opt
 $(foreach src,$($(1)_SRC), \
-    $(eval $(OBJS_FOLDER)/$(basename $(src)).o: EXT_ADEP += $($(1)_OPT)) \
+    $(eval ${OBJS_FOLDER}/$(call MK_OBJREL,$(src)): EXT_ADEP += $($(1)_OPT)) \
 )
 endef
 $(foreach group,$(ALL_EXT_GROUPS),$(call add_ext_opt,$(group)))
+
+define add_header_dep
+$(foreach tgt,$($(1)_TGT), \
+    $(eval ${OBJS_FOLDER}/$(call MK_OBJREL,$(tgt)): $($(1)_HDR)) \
+)
+endef
+
+BUILD_OBJDIRS := $(filter-out ${OBJS_FOLDER} ${OBJS_FOLDER}/, \
+    $(sort $(foreach src,${BUILD_SOURCES},$(dir ${OBJS_FOLDER}/$(call MK_OBJREL,${src})))))
+
+${BUILD_OBJDIRS}:
+	$(call MK_MKDIR,"$(call MK_PATHTOWIN,$@)")
 
 C_ADEP := ${COPTS} ${CDEFS} ${CINCDIRS}
 CPP_ADEP := ${CPPOPTS} ${CDEFS} ${CINCDIRS}
@@ -101,10 +108,14 @@ ASM_ADEP := ${ASMOPTS} ${ASMDEFS} ${CDEFS} ${ASMINCDIRS}
 LINK_ADEP := ${LIBOPTS} $(call MK_TC_LIBDIRS,${LIBDIRS}) $(call MK_TC_LIBS,${LIBS})
 
 # Add sources paths to makefile search paths specific for each pattern
-vpath %.c $(dir ${BUILD_CSOURCES} ${BUILD_CARMSOURCES})
-vpath %.cpp $(dir ${BUILD_CPPSOURCES})
-vpath %.S $(dir ${BUILD_ASMSOURCES})
-vpath %.asm $(dir ${BUILD_ASMSOURCES})
+# vpath %.c $(dir ${BUILD_CSOURCES} ${BUILD_CARMSOURCES})
+# vpath %.cpp $(dir ${BUILD_CPPSOURCES})
+# vpath %.S $(dir ${BUILD_ASMSOURCES})
+# vpath %.asm $(dir ${BUILD_ASMSOURCES})
+vpath %.c   ${SDK_ROOTDIR}
+vpath %.cpp ${SDK_ROOTDIR}
+vpath %.S   ${SDK_ROOTDIR}
+vpath %.asm ${SDK_ROOTDIR}
 
 ##################################
 # Targets section - Folder
@@ -171,24 +182,52 @@ ${GLOBAL_CMACROS_FILE}: ${GLOBAL_CMACROS_PATH} ${BUILD_CONFIG_FILE} ${LIST_DEFSI
 ##################################
 # Targets section - Compiler implicit targets
 ##################################
-#${OBJS_FOLDER}/%.o: %.c ${OBJS_FOLDER}/%.d
-${OBJS_FOLDER}/%.o: %.c ${COPTS_FILE} ${CINC_FILE} ${GLOBAL_CMACROS_FILE}
-	$(eval SRCFILE:=$(call MK_LOOKUPSRC,$^,${BUILD_CSOURCES} ${BUILD_CARMSOURCES}))
-	$(eval SRCMODE:=$(if $(findstring $<,${BUILD_CARMSOURCES}),${TC_TARGETARM},${TC_TARGETTHUMB}))
-	$(call MK_ECHO,Compiling ${SRCFILE} )
-	@${TC_CC} ${C_ADEP} ${EXT_ADEP} ${SRCMODE} -o $@ ${SRCFILE}
+# ${OBJS_FOLDER}/%.o: %.c ${OBJS_FOLDER}/%.d
+# ${OBJS_FOLDER}/%.o: %.c ${COPTS_FILE} ${CINC_FILE} ${GLOBAL_CMACROS_FILE}
+# 	$(eval SRCFILE:=$(call MK_LOOKUPSRC,$^,${BUILD_CSOURCES} ${BUILD_CARMSOURCES}))
+# 	$(eval SRCMODE:=$(if $(findstring $<,${BUILD_CARMSOURCES}),${TC_TARGETARM},${TC_TARGETTHUMB}))
+# 	$(call MK_ECHO,Compiling ${SRCFILE} )
+# 	@${TC_CC} ${C_ADEP} ${EXT_ADEP} ${SRCMODE} -o $@ ${SRCFILE}
 
-${OBJS_FOLDER}/%.o: %.cpp ${CPPOPTS_FILE} ${CINC_FILE} ${GLOBAL_CMACROS_FILE}
-	$(eval SRCFILE:=$(call MK_LOOKUPSRC,$^,${BUILD_CPPSOURCES}))
-	$(eval SRCMODE:=$(if $(findstring $<,${BUILD_CARMSOURCES}),${TC_TARGETARM},${TC_TARGETTHUMB}))
-	$(call MK_ECHO,Compiling ${SRCFILE})
-	@${TC_CPP} ${CPP_ADEP} ${EXT_ADEP} ${SRCMODE} -o $@ ${SRCFILE}
+# ${OBJS_FOLDER}/%.o: %.cpp ${CPPOPTS_FILE} ${CINC_FILE} ${GLOBAL_CMACROS_FILE}
+# 	$(eval SRCFILE:=$(call MK_LOOKUPSRC,$^,${BUILD_CPPSOURCES}))
+# 	$(eval SRCMODE:=$(if $(findstring $<,${BUILD_CARMSOURCES}),${TC_TARGETARM},${TC_TARGETTHUMB}))
+# 	$(call MK_ECHO,Compiling ${SRCFILE})
+# 	@${TC_CPP} ${CPP_ADEP} ${EXT_ADEP} ${SRCMODE} -o $@ ${SRCFILE}
 
-# asm file suffix for arm is (.s), not (.asm)
-${OBJS_FOLDER}/%.o: %.S ${ASMOPTS_FILE} ${CINC_FILE} ${GLOBAL_CMACROS_FILE}
-	$(eval SRCFILE:=$(call MK_LOOKUPSRC,$^,${BUILD_ASMSOURCES}))
-	$(call MK_ECHO,Assembling ${SRCFILE})
-	@${TC_ASM} ${ASM_ADEP} ${EXT_ADEP} -o $@ ${SRCFILE}
+# # asm file suffix for arm is (.s), not (.asm)
+# ${OBJS_FOLDER}/%.o: %.S ${ASMOPTS_FILE} ${CINC_FILE} ${GLOBAL_CMACROS_FILE}
+# 	$(eval SRCFILE:=$(call MK_LOOKUPSRC,$^,${BUILD_ASMSOURCES}))
+# 	$(call MK_ECHO,Assembling ${SRCFILE})
+# 	@${TC_ASM} ${ASM_ADEP} ${EXT_ADEP} -o $@ ${SRCFILE}
+
+# C sources (Thumb)
+ifneq (${C_OBJS},)
+${C_OBJS}: ${OBJS_FOLDER}/%.o: %.c ${COPTS_FILE} ${CINC_FILE} ${GLOBAL_CMACROS_FILE} | ${BUILD_OBJDIRS} ${SRCDEP_FILE}
+	$(call MK_ECHO,Compiling $<)
+	@${TC_CC} ${C_ADEP} $(EXT_ADEP) ${TC_TARGETTHUMB} -o $@ $<
+endif
+
+# C sources (ARM)
+ifneq (${CARM_OBJS},)
+${CARM_OBJS}: ${OBJS_FOLDER}/%.o: %.c ${COPTS_FILE} ${CINC_FILE} ${GLOBAL_CMACROS_FILE} | ${BUILD_OBJDIRS} ${SRCDEP_FILE}
+	$(call MK_ECHO,Compiling $<)
+	@${TC_CC} ${C_ADEP} $(EXT_ADEP) ${TC_TARGETARM} -o $@ $<
+endif
+
+# C++ sources
+ifneq (${CPP_OBJS},)
+${CPP_OBJS}: ${OBJS_FOLDER}/%.o: %.cpp ${CPPOPTS_FILE} ${CINC_FILE} ${GLOBAL_CMACROS_FILE} | ${BUILD_OBJDIRS} ${SRCDEP_FILE}
+	$(call MK_ECHO,Compiling $<)
+	@${TC_CPP} ${CPP_ADEP} $(EXT_ADEP) ${TC_TARGETTHUMB} -o $@ $<
+endif
+
+# Assembly sources (.S / .asm)
+ifneq (${ASM_OBJS},)
+${ASM_OBJS}: ${OBJS_FOLDER}/%.o: %.S ${ASMOPTS_FILE} ${CINC_FILE} ${GLOBAL_CMACROS_FILE} | ${BUILD_OBJDIRS} ${SRCDEP_FILE}
+	$(call MK_ECHO,Assembling $<)
+	@${TC_ASM} ${ASM_ADEP} $(EXT_ADEP) -o $@ $<
+endif
 
 # ${OBJS_FOLDER}/%.o: %.asm ${ASMOPTS_FILE}
 # 	$(eval SRCFILE:=$(call MK_LOOKUPSRC,$^,${BUILD_ASMSOURCES}))

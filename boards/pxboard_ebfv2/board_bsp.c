@@ -13,7 +13,7 @@
 #include <gpm/spi/spi.h>
 #include <gpm/can/can.h>
 
-#include "driver/drv_sched.h"
+#include "drivers/drv_sched.h"
 
 #include <stdarg.h>
 #include <string.h>
@@ -52,7 +52,7 @@ mmcsd_obj_t _board_mmcsd_spi_obj;
 #endif
 
 #if defined(CONFIG_HRT)
-#include "driver/drv_hrt.h"
+#include "drivers/drv_hrt.h"
 #endif
 
 #if defined(CONFIG_GMSH)

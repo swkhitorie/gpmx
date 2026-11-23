@@ -1,7 +1,7 @@
 #include "uorb_device_node.h"
 #include "uorb_gnode.h"
 #include <errno.h>
-#include <driver/drv_hrt.h>
+#include <drivers/drv_hrt.h>
 #include <mlog.h>
 struct __update_interval_data {
     uint64_t last_update; /**< time at which the last update was provided, used when update_interval is nonzero */

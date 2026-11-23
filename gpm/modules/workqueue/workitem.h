@@ -4,7 +4,7 @@
 #include <gpmx/config.h>
 
 #include <stdint.h>
-#include <driver/drv_hrt.h>
+#include <drivers/drv_hrt.h>
 #include "workqueue_manager.h"
 #include "workqueue.h"
 #include "container/intrusive_node.h"

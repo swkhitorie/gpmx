@@ -9,7 +9,7 @@
 #include <string.h>
 
 #include <gpm/fs/fs.h>
-#include <driver/drv_sched.h>
+#include <drivers/drv_sched.h>
 #include <gpm/mtd/mtd.h>
 #include <semaphore.h>
 

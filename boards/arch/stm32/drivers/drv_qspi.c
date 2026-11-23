@@ -1,5 +1,5 @@
 #include <drv_qspi.h>
-#include "driver/drv_sched.h"
+#include "drivers/drv_sched.h"
 
 typedef QSPI_CommandTypeDef qcmd_t;
 

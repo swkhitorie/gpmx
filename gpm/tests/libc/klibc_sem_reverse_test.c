@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <pthread.h>
 
-#include <driver/drv_hrt.h>
+#include <drivers/drv_hrt.h>
 
 static sem_t rev_sem;
 

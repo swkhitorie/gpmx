@@ -3,7 +3,7 @@
 
 #include <gpmx/config.h>
 #include "sys/ioctl.h"
-#include "driver/drv_sched.h"
+#include "drivers/drv_sched.h"
 
 /* Configuration ********************************************************************/
 

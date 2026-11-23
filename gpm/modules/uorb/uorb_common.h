@@ -4,7 +4,7 @@
 #include <sys/types.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <driver/drv_hrt.h>
+#include <drivers/drv_hrt.h>
 
 #ifndef __EXPORT
 #define __EXPORT

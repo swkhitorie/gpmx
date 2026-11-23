@@ -1,6 +1,6 @@
 #include <gpmx/config.h>
 
-#include <driver/drv_sched.h>
+#include <drivers/drv_sched.h>
 #include <string.h>
 
 void *kmm_realloc(void *oldmem, size_t newsize)

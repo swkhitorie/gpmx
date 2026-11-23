@@ -3,7 +3,7 @@
 
 #include <gpmx/config.h>
 #include "workitem.h"
-#include <driver/drv_hrt.h>
+#include <drivers/drv_hrt.h>
 
 struct __scheduledworkitem {
     struct __workitem item;

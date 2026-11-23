@@ -26,7 +26,7 @@
 #include <errno.h>
 #include <unistd.h>
 
-#include <driver/drv_sched.h>
+#include <drivers/drv_sched.h>
 
 /****************************************************************************
  * Public Functions

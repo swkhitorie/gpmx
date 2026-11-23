@@ -7,6 +7,7 @@
 #include "uorb_device_master.h"
 
 #if defined(CONFIG_ORB_USE_PUBLISHER_RULES)
+// only px4 layer can use
 #define ORB_USE_PUBLISHER_RULES
 #endif
 

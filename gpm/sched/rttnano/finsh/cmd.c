@@ -1005,7 +1005,7 @@ MSH_CMD_EXPORT_ALIAS(cmd_list, list, list objects);
 #include <time.h>
 #include <stdlib.h>
 #include "gpm/rtc/rtc.h"
-#include "driver/drv_hrt.h"
+#include "drivers/drv_hrt.h"
 
 int systime_handle(int argc, char **argv)
 {

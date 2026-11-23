@@ -38,7 +38,7 @@
 #include <debug.h>
 #include <errno.h>
 
-#include <driver/drv_sched.h>
+#include <drivers/drv_sched.h>
 #include <gpm/fs/fs.h>
 #include <gpm/fs/ioctl.h>
 #include <gpm/mtd/mtd.h>

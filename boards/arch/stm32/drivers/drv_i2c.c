@@ -1,5 +1,5 @@
 #include "drv_i2c.h"
-#include "driver/drv_sched.h"
+#include "drivers/drv_sched.h"
 
 static struct i2c_master_s *g_i2c_list[CONFIG_STM32_I2C_NUM] = {0};
 

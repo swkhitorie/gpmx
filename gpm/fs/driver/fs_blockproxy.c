@@ -37,7 +37,7 @@
 #include <debug.h>
 
 #include <semaphore.h>
-#include "driver/drv_sched.h"
+#include "drivers/drv_sched.h"
 #include "gpm/fs/fs.h"
 #include "gpm/drivers/drivers.h"
 

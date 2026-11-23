@@ -10,8 +10,8 @@
 
 #include "perf_counter.h"
 #include "container/container_of.h"
-#include <driver/drv_hrt.h>
-#include <driver/drv_sched.h>
+#include <drivers/drv_hrt.h>
+#include <drivers/drv_sched.h>
 #include <mlog.h>
 
 /**

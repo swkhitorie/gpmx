@@ -6,8 +6,8 @@
 #include <string.h>
 #include <pthread.h>
 
-#include <driver/drv_sched.h>
-#include <driver/drv_hrt.h>
+#include <drivers/drv_sched.h>
+#include <drivers/drv_hrt.h>
 #include <mlog.h>
 
 bool workqueue_cmp_method(struct intrusive_node *a, struct intrusive_node *b)
@@ -113,7 +113,7 @@ void workqueue_detach(struct __workqueue *queue, struct __workitem *item)
 
 	if (blocking_list_size(&queue->_work_items) == 0) {
 		// shutdown, no active WorkItems
-		KMDEBUG("stopping: %s, last active WorkItem closing", queue->_config.name);
+		KMDEBUG("stopping: %s, last active WorkItem closing\r\n", queue->_config.name);
 
 		workqueue_request_stop(queue);
 		signal_worker_thread(queue);

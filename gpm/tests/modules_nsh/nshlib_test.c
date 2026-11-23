@@ -1,6 +1,6 @@
 #include <gpmx/config.h>
 
-#include "driver/drv_hrt.h"
+#include "drivers/drv_hrt.h"
 #include "mlog/mlog.h"
 
 #include <pthread.h>

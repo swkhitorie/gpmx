@@ -33,6 +33,10 @@
 #include <rtthread.h>
 #include <rthw.h>
 
+#if defined(RT_USING_CPU_USAGE)
+#include <drivers/drv_hrt.h>
+#endif
+
 rt_list_t rt_thread_priority_table[RT_THREAD_PRIORITY_MAX];
 rt_uint32_t rt_thread_ready_priority_group;
 #if RT_THREAD_PRIORITY_MAX > 32

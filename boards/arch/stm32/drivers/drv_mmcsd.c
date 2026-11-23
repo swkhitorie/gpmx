@@ -1,6 +1,6 @@
 #include "drv_mmcsd.h"
 
-#include "driver/drv_sched.h"
+#include "drivers/drv_sched.h"
 
 #include <board_config.h>
 #ifndef MMCSD_INFO

@@ -2,7 +2,7 @@
 #include <mlog.h>
 #include <string.h>
 
-#include <driver/drv_hrt.h>
+#include <drivers/drv_hrt.h>
 
 #include <stdio.h>
 #include <pthread.h>

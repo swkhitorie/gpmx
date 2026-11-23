@@ -2,7 +2,7 @@
 
 #include "board_usb_cdc.h"
 
-#include "driver/drv_sched.h"
+#include "drivers/drv_sched.h"
 #include "drv_grb.h"
 
 /*!< endpoint address */

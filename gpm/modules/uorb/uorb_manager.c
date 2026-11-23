@@ -4,7 +4,7 @@
 #include "uorb_device_node.h"
 #include "uorb_gnode.h"
 #include <errno.h>
-#include <driver/drv_sched.h>
+#include <drivers/drv_sched.h>
 #include <mlog.h>
 
 #ifdef ORB_USE_PUBLISHER_RULES
@@ -151,8 +151,8 @@ orb_advert_t orb_manager_advertise_multi(struct __uorb_manager *manager, const s
 	// check publisher rule
 	if (_has_publisher_rules) {
 
-		extern const char *px_get_taskname(void);
-		const char *prog_name = px_get_taskname();
+		extern const char *px4_get_taskname(void);
+		const char *prog_name = px4_get_taskname();
 
 		if (strcmp(_publisher_rule.module_name, prog_name) == 0) {
 			if (_publisher_rule.ignore_other_topics) {

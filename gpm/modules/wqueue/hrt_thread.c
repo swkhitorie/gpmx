@@ -1,4 +1,5 @@
 #include <gpmx/config.h>
+#define _GNU_SOURCE
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -10,7 +11,7 @@
 #include <signal.h>
 #include <wqueue.h>
 #include "hrt_work.h"
-#include <driver/drv_hrt.h>
+#include <drivers/drv_hrt.h>
 
 /* The state of each work queue. */
 struct wqueue_s g_hrt_work;
@@ -162,7 +163,7 @@ void hrt_work_queue_init(void)
 		pthread_attr_setschedparam(&attr, &attr_param);
 		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 		pthread_attr_setstacksize(&attr, 2000);
-		g_hrt_work.pid = pthread_create(&id, &attr, &work_hrtthread, NULL);
+		pthread_create(&g_hrt_work.pid, &attr, &work_hrtthread, NULL);
 	}
 
 	// Create high priority worker thread

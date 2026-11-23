@@ -1,7 +1,7 @@
 #include <errno.h>
 #include <string.h>
 #include <time.h>
-#include <driver/drv_hrt.h>
+#include <drivers/drv_hrt.h>
 
 /* latency baseline (last compare value applied) */
 static uint64_t			latency_baseline;

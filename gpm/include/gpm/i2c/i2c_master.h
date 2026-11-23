@@ -2,7 +2,7 @@
 #define DEV_OPS_I2C_MASTER_H_
 
 #include <gpmx/config.h>
-#include "driver/drv_sched.h"
+#include "drivers/drv_sched.h"
 
 /* I2C address calculation.  Convert 7- and 10-bit address to 8-bit and
  * 16-bit read/write address

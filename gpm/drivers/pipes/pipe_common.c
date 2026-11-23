@@ -38,7 +38,7 @@
 #include <assert.h>
 #include <debug.h>
 
-#include <driver/drv_sched.h>
+#include <drivers/drv_sched.h>
 #include <semaphore.h>
 #include <gpm/fs/fs.h>
 #include <gpm/fs/ioctl.h>

@@ -50,7 +50,7 @@
 #include <errno.h>
 #include <debug.h>
 
-#include <driver/drv_sched.h>
+#include <drivers/drv_sched.h>
 #include <gpm/fs/fs.h>
 #include <gpm/fs/ioctl.h>
 #include <gpm/i2c/i2c_master.h>

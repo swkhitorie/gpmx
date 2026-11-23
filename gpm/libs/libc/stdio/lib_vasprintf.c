@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdarg.h>
-#include <driver/drv_sched.h>
+#include <drivers/drv_sched.h>
 #if defined(CONFIG_KPRINTF)
 #include "kprintf.h"
 #endif

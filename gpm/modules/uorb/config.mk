@@ -22,6 +22,15 @@ CSOURCES += ${GPMPATH}/modules/uorb/uorb_gnode.c
 CSOURCES += ${GPMPATH}/modules/uorb/uorb_manager.c
 CSOURCES += ${GPMPATH}/modules/uorb/uorb.c
 
+CSOURCES += ${GPMPATH}/modules/uorb/cmd.c
+
+ifeq (${CONFIG_MODULE_NSHLIB},y)
+MODULE_LIBRARIES += uorb_built
+MOD_MAIN_uorb_built  := uorb
+MOD_PRIO_uorb_built  := 16
+MOD_STACK_uorb_built := 1024
+endif
+
 # uorb include and source
 UORB_CINCDIRSS = $(subst ;,,$(UORB_INCLUDING))
 PROJ_CINCDIRS += $(subst ${SDK_ROOTDIR},,$(subst ;, ,$(UORB_INCLUDING)))

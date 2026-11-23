@@ -23,11 +23,8 @@ MAKEFILES_PROJDIR := ${MAKEFILES_ROOTDIR}/${PROJ_NAME}
 
 # folder for target files
 TARGET_ROOTDIR_RAW := build/${PROJ_NAME}
-ifneq (${USR_ROOTDIR},)
-TARGET_ROOTDIR := ${USR_ROOTDIR}/build/${PROJ_NAME}
-else
+
 TARGET_ROOTDIR := ${SDK_ROOTDIR}/build/${PROJ_NAME}
-endif
 
 # folder for binary outputs
 COMMON_BINDIR := bin
@@ -56,11 +53,7 @@ include ${COREDEFSINC}
 endif
 
 # definitions for binary folder target outputs
-ifneq (${USR_ROOTDIR},)
-TARGET_DEST_ROOTDIR       := ${USR_ROOTDIR}/${COMMON_BINDIR}
-else
 TARGET_DEST_ROOTDIR       := ${SDK_ROOTDIR}/${COMMON_BINDIR}
-endif
 ifeq (${COMPILE_TIME},)
 COMPILE_TIME              := 0
 endif
@@ -102,11 +95,7 @@ LOPTS_FILE := ${TARGET_ROOTDIR}/lopts.via
 PROJ_MAKEFILE := ${SDK_ROOTDIR}/Makefile
 
 # scatter file name
-ifneq (${USCF_FILE},)
-SCF_TEMPLATE_FILE_NAME := ${USR_ROOTDIR}/${USCF_FILE}
-else
 SCF_TEMPLATE_FILE_NAME := ${SDK_ROOTDIR}/${SCF_FILE}
-endif
 
 SCF_FILE_NAME:=${TARGET_ROOTDIR}/${PROJ_NAME}_gen_link.${TC_SCFEXT}
 
@@ -156,11 +145,7 @@ CDEFS:=$(foreach def,$(strip ${TC_CDEFS} ${OS_CDEFS} ${EXT_CDEFS}),-D${def})
 
 CINCDIRS:=$(foreach inc,$(strip ${PROJ_CINCDIRS} ${OS_CINCDIRS} ${EXT_CINCDIRS}),-I$(call MK_TC_PATH,${SDK_ROOTDIR}/${inc}))
 CINCDIRS_FILSRC:=$(foreach inc,$(strip ${PROJ_CINCDIRS} ${OS_CINCDIRS} ${EXT_CINCDIRS}),$(call MK_TC_PATH,${SDK_ROOTDIR}/${inc}))
-ifneq (${USR_ROOTDIR},)
-# wtf?? bug occurs because of no space front of next CINCDIRS add
-CINCDIRS+=
-CINCDIRS+=$(foreach inc,$(strip ${USR_CINCDIRS}),-I$(call MK_TC_PATH,${USR_ROOTDIR}/${inc}))
-endif
+
 
 #####################################
 # linker section

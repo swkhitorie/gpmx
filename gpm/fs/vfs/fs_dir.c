@@ -30,7 +30,7 @@
 #include <gpm/fs/ioctl.h>
 #include <inode/inode.h>
 
-#include <driver/drv_sched.h>
+#include <drivers/drv_sched.h>
 
 /****************************************************************************
  * Private Types
